@@ -66,11 +66,191 @@ window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),audit,version:'61.4'};
 </script>
 
 
+<style id="omnios-v621-iphone-icon-first-css">
+/* ===== OmniOS v62.1 — iPhone icon-first controls + restored Bible navigation ===== */
+@media(max-width:480px){
+  /* The native iPhone tab bar is intentionally icon-only. Accessible names stay in aria-label/title. */
+  html.omni-iphone-pro #ios-native-tabs .ios-tab{
+    gap:0!important;
+    padding:0!important;
+    min-width:44px!important;
+  }
+  html.omni-iphone-pro #ios-native-tabs .ios-tab>span{display:none!important}
+  html.omni-iphone-pro #ios-native-tabs .ios-tab>svg{
+    width:22px!important;height:22px!important;
+  }
+  html.omni-iphone-pro #ios-native-tabs .ios-tab.active{
+    background:color-mix(in srgb,var(--accent-cyan) 11%,transparent)!important;
+  }
+
+  /* Explicit icon-bearing secondary actions become square icon controls instead of squeezed text pills. */
+  html.omni-iphone-pro .ios-icon-only{
+    flex:0 0 38px!important;
+    width:38px!important;min-width:38px!important;max-width:38px!important;
+    height:38px!important;min-height:38px!important;
+    padding:0!important;
+    display:inline-grid!important;place-items:center!important;
+    gap:0!important;
+    font-size:0!important;line-height:1!important;
+    white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;
+    border-radius:10px!important;
+  }
+  html.omni-iphone-pro .ios-icon-only svg{
+    display:block!important;width:18px!important;height:18px!important;flex:none!important;
+  }
+  html.omni-iphone-pro .ios-icon-only .ios-control-icon,
+  html.omni-iphone-pro .ios-icon-only .nav-icon,
+  html.omni-iphone-pro .ios-icon-only [aria-hidden="true"]:not(svg){
+    display:grid!important;place-items:center!important;
+    width:20px!important;height:20px!important;
+    font-size:17px!important;line-height:20px!important;
+  }
+
+  /* Keep compact controls in one clean action rail; readable copy gets the width, controls do not. */
+  html.omni-iphone-pro .toolbar:has(.ios-icon-only),
+  html.omni-iphone-pro .card-header:has(.ios-icon-only),
+  html.omni-iphone-pro .v35-card-head:has(.ios-icon-only),
+  html.omni-iphone-pro .v43-card-head:has(.ios-icon-only),
+  html.omni-iphone-pro .org-card-head:has(.ios-icon-only),
+  html.omni-iphone-pro .v55-card-head:has(.ios-icon-only),
+  html.omni-iphone-pro .v60-card-head:has(.ios-icon-only){
+    column-gap:6px!important;
+  }
+
+  /* Bible entry gets the same native library treatment as the rest of OmniOS. */
+  html.omni-iphone-pro [data-ios-library="bible"] .ios-library-icon{
+    background:color-mix(in srgb,#d3a55e 15%,var(--bg-elevated))!important;
+    color:#d3a55e!important;
+  }
+
+  /* Bible's own compact reader controls stay on one line where possible. */
+  html.omni-iphone-pro #view-bible .bib-reader-controls{
+    flex-wrap:nowrap!important;gap:5px!important;
+  }
+  html.omni-iphone-pro #view-bible .bib-top-actions,
+  html.omni-iphone-pro #view-bible .bib-passage-actions{
+    gap:6px!important;
+  }
+}
+</style>
+
+<script id="omnios-v621-iphone-icon-first-js">
+(function(){
+'use strict';
+const root=document.documentElement;
+const isPhone=()=>root.classList.contains('omni-iphone-pro')||/iPhone|iPod/i.test(navigator.userAgent||'');
+const q=s=>document.querySelector(s),qa=s=>[...document.querySelectorAll(s)];
+let timer=0;
+
+function controlLabel(btn){
+  const explicit=(btn.getAttribute('aria-label')||btn.getAttribute('title')||'').trim();
+  if(explicit)return explicit;
+  return (btn.textContent||'').replace(/\s+/g,' ').trim();
+}
+function prepareIconNode(btn){
+  const children=[...btn.children];
+  children.forEach(el=>{
+    const cls=String(el.className||'');
+    const txt=(el.textContent||'').trim();
+    if(el.matches('svg,.nav-icon,.v48-mobile-icon,.v48-nav-icon,.icon,[class*="icon"]') ||
+       (el.getAttribute('aria-hidden')==='true' && txt.length<=4) ||
+       (txt.length>0 && txt.length<=3 && /[^A-Za-z0-9]/.test(txt))){
+      el.classList.add('ios-control-icon');
+    }
+  });
+}
+function hasExplicitIcon(btn){
+  return !!btn.querySelector('svg,.nav-icon,.v48-mobile-icon,.v48-nav-icon,.icon,[class*="icon"],[aria-hidden="true"]');
+}
+function iconifyCrowdedControls(){
+  const selector=[
+    '.toolbar .btn','.toolbar .view-btn',
+    '.card-header .btn','.v35-card-head .btn','.v43-card-head .btn','.org-card-head .btn','.v55-card-head .btn','.v60-card-head .btn',
+    '.master-cal-nav .btn','.notes-toolbar .btn','.nut-toolbar .btn','.nut-library-toolbar .btn','.list-controls .btn',
+    '.workout-hero-actions .btn','.v35-page-actions .btn','.v43-hero-actions .btn','.org-hero-actions .btn','.conn34-hero-actions .btn','.goal586-actions .btn','.v60-actions .btn',
+    '#view-bible .bib-reader-controls .btn','#view-bible .bib-passage-actions .btn'
+  ].join(',');
+  qa(selector).forEach(btn=>{
+    if(btn.classList.contains('ios-overflow-trigger')||btn.classList.contains('ios-icon-only'))return;
+    if(btn.classList.contains('btn-primary'))return; // keep the principal CTA explicit
+    if(!hasExplicitIcon(btn))return;
+    const label=controlLabel(btn);if(!label||label.length<2)return;
+    btn.setAttribute('aria-label',label);
+    if(!btn.hasAttribute('title'))btn.title=label;
+    prepareIconNode(btn);
+    btn.classList.add('ios-icon-only');
+  });
+}
+
+function makeTabsAccessible(){
+  qa('#ios-native-tabs .ios-tab').forEach(tab=>{
+    const label=(tab.querySelector(':scope > span')?.textContent||tab.getAttribute('aria-label')||'').trim();
+    if(label){
+      tab.setAttribute('aria-label',label);
+      if(!tab.title)tab.title=label;
+    }
+  });
+}
+
+function ensureBibleLibraryEntry(){
+  const body=q('#ios-native-more-body');if(!body)return;
+  if(body.querySelector('[data-ios-library="bible"]'))return;
+  const section=document.createElement('section');
+  section.className='ios-library-section';
+  section.dataset.iosBibleSection='1';
+  section.innerHTML='<div class="ios-library-title">Reflect</div><div class="ios-library-list"><button type="button" class="ios-library-row" data-ios-library="bible"><span class="ios-library-icon" aria-hidden="true">▤</span><span class="ios-library-main"><strong>Bible</strong><span>Read, meditate, highlight & journal</span></span><span class="ios-library-chevron" aria-hidden="true">›</span></button></div>';
+  const system=[...body.querySelectorAll('.ios-library-section')].find(s=>/system/i.test(s.querySelector('.ios-library-title')?.textContent||''));
+  if(system)body.insertBefore(section,system);else body.appendChild(section);
+  const row=section.querySelector('[data-ios-library="bible"]');
+  row.onclick=()=>{
+    q('#ios-native-more')?.classList.remove('open');
+    window.switchView?.('bible');
+  };
+}
+
+function syncBibleHeader(){
+  if(!q('#view-bible.active'))return;
+  const title=q('#ios-native-title'),section=q('#ios-native-section');
+  if(title)title.textContent='Bible';
+  if(section)section.textContent='Reflect';
+}
+
+function audit(){
+  if(!isPhone())return;
+  makeTabsAccessible();
+  ensureBibleLibraryEntry();
+  iconifyCrowdedControls();
+  syncBibleHeader();
+}
+
+const baseSwitch=window.switchView;
+if(typeof baseSwitch==='function'&&!baseSwitch.__v621IPhone){
+  const wrapped=function(){
+    const r=baseSwitch.apply(this,arguments);
+    setTimeout(audit,20);
+    return r;
+  };
+  wrapped.__v621IPhone=true;
+  window.switchView=wrapped;
+}
+
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(audit,220),{once:true});
+else setTimeout(audit,220);
+
+new MutationObserver(()=>{
+  clearTimeout(timer);timer=setTimeout(audit,120);
+}).observe(document.body,{subtree:true,childList:true});
+
+window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),audit,version:'62.1'};
+})();
+</script>
+
+
 <script id="omnios-v620-static-pwa-mode">
 (function(){
   const standalone=window.matchMedia?.('(display-mode: standalone)')?.matches||navigator.standalone===true;
   document.documentElement.classList.toggle('omnios-pwa-standalone',!!standalone);
-  window.OmniStaticPWA={version:'62.0',standalone:!!standalone,localOnly:true};
+  window.OmniStaticPWA={version:'62.1',standalone:!!standalone,localOnly:true};
 })();
 </script>
 

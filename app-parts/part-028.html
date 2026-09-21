@@ -241,7 +241,245 @@ new MutationObserver(()=>{
   clearTimeout(timer);timer=setTimeout(audit,120);
 }).observe(document.body,{subtree:true,childList:true});
 
-window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),audit,version:'62.1'};\nwindow.OmniBuild={version:'62.1',name:'iPhone Icon-First + Bible'};\ndocument.documentElement.dataset.omniosVersion='62.1';\ndocument.title='OmniOS v62.1 — iPhone PWA';
+window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),audit,version:'62.1'};\nwindow.OmniBuild={version:'62.2',name:'Modern iPhone UI + Bible + Covers'};\ndocument.documentElement.dataset.omniosVersion='62.2';\ndocument.title='OmniOS v62.2 — iPhone PWA';
+})();
+</script>
+
+
+<style id="omnios-v622-iphone-modern-layout-css">
+/* ===== OmniOS v62.2 — modern iPhone layout, swipe tabs, native cover editor ===== */
+@media(max-width:480px){
+  html.omni-iphone-pro{
+    --ios-modern-gap:10px;
+    --ios-modern-radius:16px;
+  }
+
+  /* Header: compact icon rail, enough room for page title. */
+  html.omni-iphone-pro #ios-native-header{
+    grid-template-columns:36px minmax(0,1fr) auto!important;
+    gap:4px!important;
+    background:color-mix(in srgb,var(--bg-surface) 90%,transparent)!important;
+    -webkit-backdrop-filter:blur(24px) saturate(145%)!important;
+    backdrop-filter:blur(24px) saturate(145%)!important;
+  }
+  html.omni-iphone-pro .ios-native-header-actions{gap:2px!important}
+  html.omni-iphone-pro .ios-native-back,
+  html.omni-iphone-pro .ios-native-action{
+    width:36px!important;height:36px!important;min-width:36px!important;
+    border-radius:11px!important;
+  }
+  html.omni-iphone-pro .ios-native-action svg,
+  html.omni-iphone-pro .ios-native-back svg{width:18px!important;height:18px!important}
+
+  /* Bottom bar stays icon-first and visually lighter. */
+  html.omni-iphone-pro #ios-native-tabs{
+    background:color-mix(in srgb,var(--bg-surface) 91%,transparent)!important;
+    -webkit-backdrop-filter:blur(26px) saturate(155%)!important;
+    backdrop-filter:blur(26px) saturate(155%)!important;
+    box-shadow:0 -8px 30px rgba(0,0,0,.07)!important;
+  }
+  html.omni-iphone-pro #ios-native-tabs .ios-tab>span{display:none!important}
+  html.omni-iphone-pro #ios-native-tabs .ios-tab{height:48px!important}
+  html.omni-iphone-pro #ios-native-tabs .ios-tab svg{width:22px!important;height:22px!important}
+
+  /* Every page-level tab menu becomes a swipe rail; no wrapping, no crushed side-by-side labels. */
+  html.omni-iphone-pro .view.active :is(
+    .bib-tabs,.bib-library-tabs,.workout-tabs,.nut-tabs,.tab-btns,.cal-subview-btns,.help-nav,
+    .v55-tabs,.v60-tabs,.studio-tabs,.settings-tabs,.planner-tabs,.finance-tabs,
+    [class$="-tabs"],[class*="-tabs "]
+  ),
+  html.omni-iphone-pro #ios-task-bar .ios-segment{
+    display:flex!important;
+    grid-template-columns:none!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:6px!important;
+    width:100%!important;max-width:100%!important;
+    overflow-x:auto!important;overflow-y:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-x:contain!important;
+    scrollbar-width:none!important;
+    scroll-snap-type:x proximity!important;
+    padding:2px 1px 5px!important;
+  }
+  html.omni-iphone-pro .view.active :is(
+    .bib-tabs,.bib-library-tabs,.workout-tabs,.nut-tabs,.tab-btns,.cal-subview-btns,.help-nav,
+    .v55-tabs,.v60-tabs,.studio-tabs,.settings-tabs,.planner-tabs,.finance-tabs,
+    [class$="-tabs"],[class*="-tabs "]
+  )::-webkit-scrollbar,
+  html.omni-iphone-pro #ios-task-bar .ios-segment::-webkit-scrollbar{display:none!important}
+
+  html.omni-iphone-pro .view.active :is(
+    .bib-tabs,.bib-library-tabs,.workout-tabs,.nut-tabs,.tab-btns,.cal-subview-btns,.help-nav,
+    .v55-tabs,.v60-tabs,.studio-tabs,.settings-tabs,.planner-tabs,.finance-tabs,
+    [class$="-tabs"],[class*="-tabs "]
+  ) > :is(button,a,label,.btn,.view-btn,.tab-btn,.nut-tab,.bib-tab,.bib-lib-tab),
+  html.omni-iphone-pro #ios-task-bar .ios-segment>button{
+    flex:0 0 auto!important;
+    width:auto!important;min-width:max-content!important;max-width:none!important;
+    white-space:nowrap!important;
+    word-break:normal!important;overflow-wrap:normal!important;hyphens:none!important;
+    scroll-snap-align:start!important;
+  }
+
+  /* Modern App Library: full-screen, searchable, two-column app cards. */
+  html.omni-iphone-pro #ios-native-more{
+    display:none!important;
+    position:fixed!important;inset:0!important;z-index:2400!important;
+    flex-direction:column!important;
+    background:color-mix(in srgb,var(--bg-base) 96%,var(--bg-surface))!important;
+    padding:max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right))
+            max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))!important;
+  }
+  html.omni-iphone-pro #ios-native-more.open{display:flex!important}
+  html.omni-iphone-pro #ios-native-more .ios-sheet-head{
+    display:grid!important;grid-template-columns:40px minmax(0,1fr) 40px!important;
+    align-items:center!important;gap:8px!important;
+    flex:0 0 auto!important;
+    padding:4px 0 10px!important;
+    border-bottom:0!important;background:transparent!important;
+  }
+  html.omni-iphone-pro #ios-native-more .ios-sheet-head>div{text-align:center;min-width:0!important}
+  html.omni-iphone-pro #ios-native-more .ios-sheet-kicker{
+    font-size:8px!important;font-weight:760!important;letter-spacing:.11em!important;
+    color:var(--text-muted)!important;margin-bottom:2px!important;
+  }
+  html.omni-iphone-pro #ios-native-more .ios-sheet-head h3{
+    margin:0!important;font-size:18px!important;line-height:1.1!important;letter-spacing:-.025em!important;
+  }
+  html.omni-iphone-pro #ios-native-more .ios-sheet-close{
+    width:36px!important;height:36px!important;border-radius:12px!important;
+    font-size:22px!important;background:var(--bg-elevated)!important;
+  }
+  html.omni-iphone-pro #ios-native-more .ios-sheet-body{
+    flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch!important;padding:4px 0 20px!important;
+  }
+  html.omni-iphone-pro #ios-native-more .ios-library-search-wrap{
+    position:sticky!important;top:0!important;z-index:5!important;
+    padding:5px 0 10px!important;
+    background:linear-gradient(to bottom,var(--bg-base) 78%,transparent)!important;
+  }
+  html.omni-iphone-pro #ios-native-more .ios-library-search{
+    height:44px!important;border-radius:14px!important;padding-inline:13px!important;
+    background:var(--bg-surface)!important;border-color:var(--ios-line)!important;
+  }
+  html.omni-iphone-pro #ios-native-more .ios-library-section{margin:8px 0 17px!important}
+  html.omni-iphone-pro #ios-native-more .ios-library-title{
+    margin:0 4px 7px!important;font-size:9px!important;font-weight:780!important;
+    letter-spacing:.08em!important;text-transform:uppercase!important;
+  }
+  html.omni-iphone-pro #ios-native-more .ios-library-list{
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;border:0!important;background:transparent!important;border-radius:0!important;
+  }
+  html.omni-iphone-pro #ios-native-more .ios-library-row{
+    display:grid!important;grid-template-columns:38px minmax(0,1fr)!important;
+    grid-template-areas:"icon title" "icon desc"!important;
+    align-items:center!important;column-gap:9px!important;row-gap:1px!important;
+    min-height:72px!important;padding:10px!important;
+    border:1px solid var(--ios-line)!important;border-radius:15px!important;
+    background:var(--bg-surface)!important;text-align:left!important;
+    box-shadow:0 6px 20px rgba(0,0,0,.025)!important;
+  }
+  html.omni-iphone-pro #ios-native-more .ios-library-row:active{
+    transform:scale(.985)!important;background:var(--ios-pressed)!important;
+  }
+  html.omni-iphone-pro #ios-native-more .ios-library-icon{
+    grid-area:icon!important;width:38px!important;height:38px!important;border-radius:11px!important;
+    display:grid!important;place-items:center!important;background:var(--bg-elevated)!important;
+    font-size:17px!important;
+  }
+  html.omni-iphone-pro #ios-native-more .ios-library-main{display:contents!important}
+  html.omni-iphone-pro #ios-native-more .ios-library-main strong{
+    grid-area:title!important;align-self:end!important;font-size:12px!important;font-weight:760!important;
+    white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  }
+  html.omni-iphone-pro #ios-native-more .ios-library-main>span{
+    grid-area:desc!important;align-self:start!important;font-size:9px!important;line-height:1.25!important;
+    white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  }
+  html.omni-iphone-pro #ios-native-more .ios-library-chevron{display:none!important}
+  html.omni-iphone-pro #ios-native-more [data-ios-library="bible"]{
+    grid-column:1/-1!important;
+    background:linear-gradient(135deg,color-mix(in srgb,#d3a55e 13%,var(--bg-surface)),var(--bg-surface))!important;
+    border-color:color-mix(in srgb,#d3a55e 28%,var(--ios-line))!important;
+  }
+  html.omni-iphone-pro #ios-native-more [data-ios-library="bible"] .ios-library-icon{
+    background:color-mix(in srgb,#d3a55e 18%,var(--bg-elevated))!important;color:#d3a55e!important;
+  }
+
+  /* Covers are touch-editable. The page banner is smaller on iPhone and the editor is a native bottom sheet. */
+  html.omni-iphone-pro .v44-page-cover-shell{margin:0 0 10px!important;border-radius:15px!important}
+  html.omni-iphone-pro .v44-page-cover{height:138px!important;border-radius:15px!important}
+  html.omni-iphone-pro .v44-page-cover-empty{min-height:0!important}
+  html.omni-iphone-pro .v44-add-cover{display:none!important}
+  html.omni-iphone-pro .v44-cover-tools{display:none!important}
+
+  html.omni-iphone-pro .v44-cover-dialog{
+    align-items:flex-end!important;justify-content:stretch!important;
+    padding:0!important;background:rgba(0,0,0,.42)!important;
+    -webkit-backdrop-filter:blur(5px)!important;backdrop-filter:blur(5px)!important;
+  }
+  html.omni-iphone-pro .v44-cover-dialog-card{
+    width:100%!important;max-width:none!important;max-height:calc(100dvh - max(12px,env(safe-area-inset-top)))!important;
+    border-radius:24px 24px 0 0!important;border-bottom:0!important;
+    overflow:auto!important;padding-bottom:max(8px,env(safe-area-inset-bottom))!important;
+  }
+  html.omni-iphone-pro .v44-cover-dialog-card::before{
+    content:"";display:block;width:38px;height:4px;border-radius:999px;
+    background:var(--text-muted);opacity:.36;margin:8px auto 1px;
+  }
+  html.omni-iphone-pro .v44-cover-dialog-head{padding:10px 13px!important}
+  html.omni-iphone-pro .v44-cover-dialog-body{padding:12px 13px!important}
+  html.omni-iphone-pro .v44-cover-dialog-actions{grid-template-columns:1fr 1fr!important;gap:7px!important}
+  html.omni-iphone-pro .v44-cover-dialog-actions .btn{min-width:0!important;white-space:nowrap!important}
+  html.omni-iphone-pro .v44-reposition-layout{grid-template-columns:1fr!important;gap:10px!important}
+  html.omni-iphone-pro .v44-focal-stage{min-height:230px!important}
+  html.omni-iphone-pro .v44-cover-dialog-foot{
+    position:sticky!important;bottom:0!important;background:var(--bg-surface)!important;
+    padding:9px 13px max(9px,env(safe-area-inset-bottom))!important;
+  }
+
+  /* Cleaner spacing: fewer desktop-like boxes touching the screen edge. */
+  html.omni-iphone-pro .view.active{padding-inline:0!important}
+  html.omni-iphone-pro .view.active>.v44-page-cover-shell,
+  html.omni-iphone-pro .view.active>.v35-page-head,
+  html.omni-iphone-pro .view.active>.v43-hero,
+  html.omni-iphone-pro .view.active>.org-hero,
+  html.omni-iphone-pro .view.active>.workout-hero,
+  html.omni-iphone-pro .view.active>.nut-hero,
+  html.omni-iphone-pro .view.active>.toolbar,
+  html.omni-iphone-pro .view.active>section,
+  html.omni-iphone-pro .view.active>div:not(.v44-page-cover-shell){
+    max-width:100%!important;
+  }
+}
+</style>
+
+<script id="omnios-v622-iphone-modern-layout-js">
+(function(){
+'use strict';
+const root=document.documentElement;
+const isPhone=()=>root.classList.contains('omni-iphone-pro')||/iPhone|iPod/i.test(navigator.userAgent||'');
+const railSelector='.bib-tabs,.bib-library-tabs,.workout-tabs,.nut-tabs,.tab-btns,.cal-subview-btns,.help-nav,.v55-tabs,.v60-tabs,.studio-tabs,.settings-tabs,.planner-tabs,.finance-tabs,[class$="-tabs"],[class*="-tabs "]';
+let t=0;
+function revealActiveTabs(){
+  if(!isPhone())return;
+  document.querySelectorAll('.view.active '+railSelector).forEach(rail=>{
+    const active=rail.querySelector('.active,[aria-selected="true"]');
+    if(active&&active.scrollIntoView)active.scrollIntoView({block:'nearest',inline:'nearest',behavior:'smooth'});
+  });
+}
+document.addEventListener('click',e=>{
+  if(!isPhone())return;
+  const tab=e.target.closest?.('.bib-tab,.bib-lib-tab,.tab-btn,.view-btn,.nut-tab,[role="tab"],[data-tab]');
+  if(tab)setTimeout(revealActiveTabs,30);
+},true);
+new MutationObserver(()=>{clearTimeout(t);t=setTimeout(revealActiveTabs,100)}).observe(document.body,{subtree:true,childList:true});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(revealActiveTabs,250),{once:true});else setTimeout(revealActiveTabs,250);
+window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),version:'62.2',revealActiveTabs};
 })();
 </script>
 
@@ -250,7 +488,7 @@ window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),audit,version:'62.1'};\nwindow
 (function(){
   const standalone=window.matchMedia?.('(display-mode: standalone)')?.matches||navigator.standalone===true;
   document.documentElement.classList.toggle('omnios-pwa-standalone',!!standalone);
-  window.OmniStaticPWA={version:'62.1',standalone:!!standalone,localOnly:true};
+  window.OmniStaticPWA={version:'62.2',standalone:!!standalone,localOnly:true};
 })();
 </script>
 

@@ -659,6 +659,25 @@ html.omni-iphone-pro .omni-assistant-panel{border-radius:0!important;border:0!im
 html.omni-iphone-pro .omni-assistant-messages{padding-inline:12px!important}
 html.omni-iphone-pro .omni-assistant-composer{padding:8px 10px max(8px,env(safe-area-inset-bottom))!important}
 
+
+@media(orientation:landscape) and (max-height:500px){
+  html.omni-iphone-pro #ios-native-header{
+    min-height:calc(48px + env(safe-area-inset-top))!important;
+    padding:max(4px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) 4px max(8px,env(safe-area-inset-left))!important;
+  }
+  html.omni-iphone-pro .ios-native-back,
+  html.omni-iphone-pro .ios-native-action{width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important}
+  html.omni-iphone-pro #ios-native-tabs{
+    min-height:calc(54px + env(safe-area-inset-bottom))!important;
+    padding-top:2px!important;
+  }
+  html.omni-iphone-pro #ios-native-tabs .ios-tab{height:44px!important}
+  html.omni-iphone-pro .ios-tab-add{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;margin-bottom:3px!important}
+  html.omni-iphone-pro .view-container{padding-bottom:calc(68px + env(safe-area-inset-bottom))!important}
+  html.omni-iphone-pro .modal,
+  html.omni-iphone-pro .v44-cover-dialog-card{max-height:var(--ios-vvh,100dvh)!important;border-radius:17px 17px 0 0!important}
+}
+
 @media(max-width:360px){
   html.omni-iphone-pro{--ios-x:12px}
   html.omni-iphone-pro #ios-native-header{grid-template-columns:38px minmax(0,1fr) auto!important}

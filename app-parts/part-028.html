@@ -623,8 +623,8 @@ html.omni-iphone-pro .nut-week>*{scroll-snap-align:start!important}
 
 /* Calendar: preserve the useful 7-column month, simplify auxiliary panes. */
 html.omni-iphone-pro :is(.v36-event-extra,.v36-preview-schedule){grid-template-columns:1fr!important}
-html.omni-iphone-pro .v36-month-grid{min-width:560px!important}
-html.omni-iphone-pro .calendar-container:has(.v36-month-grid){overflow-x:auto!important;-webkit-overflow-scrolling:touch!important}
+html.omni-iphone-pro .v36-month-grid{min-width:0!important;width:100%!important}
+html.omni-iphone-pro .v36-time-wrap{max-width:100%!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch!important}
 
 /* Bible: reader/study/journal/map side layouts collapse cleanly on iPhone. */
 html.omni-iphone-pro #view-bible :is(

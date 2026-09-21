@@ -1,0 +1,1000 @@
+  /* ===== OmniOS v57.29 — filter-aware Atlas visuals ===== */
+  const _visiblePlaces5729=visiblePlaces;
+  visiblePlaces=function(){
+    const s=atlasUi5728();
+    let base=_visiblePlaces5729();
+    if(s.mode!=='timeline'&&s.person!=='all'){
+      const ids=new Set();
+      visibleRoutes().filter(r=>r.person===s.person).forEach(r=>r.stops.forEach(id=>ids.add(id)));
+      if(s.selectedPlace)ids.add(s.selectedPlace);
+      base=base.filter(p=>ids.has(p.id));
+    }
+    if(s.mode!=='timeline'&&s.route!=='all'&&ROUTE_MAP.has(s.route)){
+      const ids=new Set(ROUTE_MAP.get(s.route).stops||[]);
+      if(s.selectedPlace)ids.add(s.selectedPlace);
+      base=base.filter(p=>ids.has(p.id));
+    }
+    return base;
+  };
+
+  const ATLAS_ROUTE_COLORS_5729={
+    paul1:'#2563eb',paul2:'#0f766e',paul3:'#7c3aed',paulrome:'#c2410c',
+    peter:'#15803d',philip:'#0891b2',john:'#6d28d9',thomas:'#be185d',barnabas:'#b45309'
+  };
+  const ATLAS_PLACE_COLORS_5729={city:'#355fbc',town:'#426ecd',port:'#087f8c',region:'#7c3aed',mountain:'#9a6115',island:'#0f766e',route:'#64748b'};
+  function routeColor5729(route){return ATLAS_ROUTE_COLORS_5729[route?.id]||'#426ecd'}
+  function placeColor5729(place){return ATLAS_PLACE_COLORS_5729[place?.kind]||'#355fbc'}
+  function isTraditionalPlace5729(place){return (place?.sources||[]).some(x=>/Tradition/i.test(x.type||''))&&!routeCountsByPlace.get(place.id)}
+  function routeStopLabels5729(route){const out=new Map();(route?.stops||[]).forEach((id,i)=>{if(!out.has(id))out.set(id,[]);out.get(id).push(i+1)});return out}
+  function activeFilterLabels5729(){
+    const s=atlasUi5728(),out=[];
+    out.push(s.mode==='journeys'?'Journeys':s.mode==='timeline'?'Timeline':'Places');
+    if(s.period!=='all')out.push(PERIOD_META[s.period]?.label||s.period);
+    if(s.person!=='all')out.push(PERSON_META[s.person]||s.person);
+    if(s.route!=='all')out.push(ROUTE_MAP.get(s.route)?.name||s.route);
+    if(s.includeTradition)out.push('Traditions on');
+    return out;
+  }
+  function visualContext5729(){
+    const s=atlasUi5728(),routes=visibleRoutes(),places=visiblePlaces(),events=visibleEvents();
+    const selectedRoute=s.selectedRoute?ROUTE_MAP.get(s.selectedRoute):null,selectedEvent=s.selectedEvent?EVENT_MAP.get(s.selectedEvent):null,selectedPlace=s.selectedPlace?PLACE_MAP.get(s.selectedPlace):null;
+    if(selectedRoute)return{title:selectedRoute.name,sub:`${selectedRoute.person} · ${selectedRoute.years||''} · ${places.length} mapped places`,tone:'journeys'};
+    if(selectedEvent)return{title:selectedEvent.title,sub:`${selectedEvent.dateLabel} · ${(selectedEvent.places||[]).length} highlighted places`,tone:'timeline'};
+    if(selectedPlace)return{title:selectedPlace.name,sub:`${selectedPlace.kind} · ${selectedPlace.periods.map(p=>PERIOD_META[p]?.short||p).join(' · ')}`,tone:'places'};
+    if(s.mode==='journeys')return{title:s.person!=='all'?`${PERSON_META[s.person]||s.person} — journeys`:(s.period!=='all'?`${PERIOD_META[s.period]?.label||s.period} — journeys`:'Mission journeys'),sub:`${routes.length} route${routes.length===1?'':'s'} · ${places.length} relevant place${places.length===1?'':'s'}`,tone:'journeys'};
+    if(s.mode==='timeline')return{title:s.period!=='all'?`${PERIOD_META[s.period]?.label||s.period} — timeline`:'Biblical timeline',sub:`${events.length} event${events.length===1?'':'s'} · ${places.length} mapped place${places.length===1?'':'s'}`,tone:'timeline'};
+    if(s.person!=='all')return{title:`Places connected with ${PERSON_META[s.person]||s.person}`,sub:`${places.length} place${places.length===1?'':'s'} from the visible mission routes`,tone:'places'};
+    if(s.period!=='all')return{title:`${PERIOD_META[s.period]?.label||s.period} — places`,sub:`${places.length} place${places.length===1?'':'s'} in the selected period`,tone:'places'};
+    return{title:'Biblical places',sub:`${places.length} places · choose a period, person, or journey to reduce the map`,tone:'places'};
+  }
+
+  routeStyle5728=function(route,selected){
+    const s=atlasUi5728(),kind=routeSourceKind(route),trad=kind==='tradition'||kind==='mixed',hasSelection=!!s.selectedRoute;
+    return{
+      color:routeColor5729(route),
+      weight:selected?6.5:(hasSelection?2.4:4.2),
+      opacity:selected?0.98:(hasSelection?0.18:0.78),
+      dashArray:trad?'10 8':null,
+      lineCap:'round',lineJoin:'round'
+    };
+  };
+
+  mapBoundsForSelection5728=function(s){
+    if(s.selectedRoute){const r=ROUTE_MAP.get(s.selectedRoute);return (r?.stops||[]).map(id=>PLACE_MAP.get(id)).filter(Boolean).map(p=>[p.lat,p.lon])}
+    if(s.selectedEvent){const e=EVENT_MAP.get(s.selectedEvent);return (e?.places||[]).map(id=>PLACE_MAP.get(id)).filter(Boolean).map(p=>[p.lat,p.lon])}
+    if(s.selectedPlace){const p=PLACE_MAP.get(s.selectedPlace);return p?[[p.lat,p.lon]]:[]}
+    return visiblePlaces().map(p=>[p.lat,p.lon]);
+  };
+
+  const _atlasSelect5729=atlasSelect5728;
+  atlasSelect5728=function(kind,id,focus=true){
+    const s=atlasUi5728();
+    if(kind==='route'){
+      const r=ROUTE_MAP.get(id);s.mode='journeys';s.route=id;if(r){s.person=r.person;if(s.period!=='all'&&!periodMatch(r.periods,s.period))s.period='all'}
+    }else if(kind==='event'){
+      const e=EVENT_MAP.get(id);s.mode='timeline';s.route='all';if(e&&s.period!=='all'&&!periodMatch(e.period,s.period))s.period=e.period;
+    }
+    return _atlasSelect5729(kind,id,focus);
+  };
+
+  addAtlasLayers5728=function(L,map){
+    const s=atlasUi5728();
+    atlasOverlayLayer5728=L.layerGroup().addTo(map);
+    const places=visiblePlaces(),routes=visibleRoutes(),selectedRoute=s.selectedRoute?ROUTE_MAP.get(s.selectedRoute):null,selectedEvent=s.selectedEvent?EVENT_MAP.get(s.selectedEvent):null;
+    const highlighted=new Set([...(selectedRoute?.stops||[]),...(selectedEvent?.places||[]),s.selectedPlace||'']);
+    const routesToDraw=s.mode==='journeys'?routes:(selectedRoute?[selectedRoute]:[]);
+    const routeMembership=new Map();
+    routes.forEach(r=>(r.stops||[]).forEach(id=>{if(!routeMembership.has(id))routeMembership.set(id,[]);if(!routeMembership.get(id).includes(r.id))routeMembership.get(id).push(r.id)}));
+
+    routesToDraw.forEach(r=>{
+      const ll=r.stops.map(id=>PLACE_MAP.get(id)).filter(Boolean).map(p=>[p.lat,p.lon]);if(ll.length<2)return;
+      const selected=s.selectedRoute===r.id,line=L.polyline(ll,routeStyle5728(r,selected)).addTo(atlasOverlayLayer5728);
+      line.bindTooltip(r.name,{sticky:!selected,permanent:selected,className:`atlas28-tooltip atlas29-route-label ${selected?'selected':''}`});
+      line.on('click',()=>atlasSelect5728('route',r.id,true));
+    });
+
+    if(selectedEvent){
+      (selectedEvent.places||[]).map(id=>PLACE_MAP.get(id)).filter(Boolean).forEach(p=>{
+        L.circleMarker([p.lat,p.lon],{radius:16,color:'#cf7d22',weight:2.5,fillColor:'#f2a64b',fillOpacity:.16,interactive:false,className:'atlas29-event-halo'}).addTo(atlasOverlayLayer5728)
+      });
+    }
+
+    const selectedStops=routeStopLabels5729(selectedRoute),filtered=s.period!=='all'||s.person!=='all'||s.route!=='all',labelMany=places.length<=18&&(filtered||s.mode!=='all');
+    places.forEach(p=>{
+      const memberships=routeMembership.get(p.id)||[],traditional=isTraditionalPlace5729(p),selected=s.selectedPlace===p.id,eventHit=!!selectedEvent?.places?.includes(p.id),stopNums=selectedStops.get(p.id)||[];
+      let html='',iconSize=[24,24],iconAnchor=[12,12],tooltipPermanent=selected||eventHit||labelMany;
+      if(s.mode==='journeys'&&selectedRoute&&stopNums.length){
+        const label=stopNums.length<=2?stopNums.join('·'):`${stopNums[0]}…${stopNums[stopNums.length-1]}`;
+        const c=routeColor5729(selectedRoute);html=`<div class="atlas29-stop-pin ${selected?'selected':''}" style="--atlas29-color:${c}"><span>${esc(label)}</span></div>`;iconSize=[31,31];iconAnchor=[15.5,15.5];tooltipPermanent=true;
+      }else if(s.mode==='journeys'){
+        const c=memberships.length===1?routeColor5729(ROUTE_MAP.get(memberships[0])):'#334155';html=`<div class="atlas29-journey-pin ${highlighted.has(p.id)?'highlight':''}" style="--atlas29-color:${c}"><span>${memberships.length>1?memberships.length:''}</span></div>`;iconSize=[22,22];iconAnchor=[11,11];tooltipPermanent=tooltipPermanent||(s.person!=='all'&&places.length<=24);
+      }else if(s.mode==='timeline'){
+        html=`<div class="atlas29-event-pin ${eventHit?'active':''} ${selected?'selected':''}"><span></span></div>`;iconSize=eventHit?[27,27]:[19,19];iconAnchor=[iconSize[0]/2,iconSize[1]/2];tooltipPermanent=selected||eventHit||(s.period!=='all'&&places.length<=16);
+      }else{
+        const c=placeColor5729(p);html=`<div class="atlas29-place-pin kind-${esc(p.kind)} ${selected?'selected':''} ${traditional?'tradition':''}" style="--atlas29-color:${c}"><span></span></div>`;iconSize=selected?[28,28]:[20,20];iconAnchor=[iconSize[0]/2,iconSize[1]/2];
+      }
+      const icon=L.divIcon({className:'atlas28-pin-wrap atlas29-pin-wrap',html,iconSize,iconAnchor});
+      const m=L.marker([p.lat,p.lon],{icon,riseOnHover:true,title:p.name,zIndexOffset:selected||highlighted.has(p.id)?600:0}).addTo(atlasOverlayLayer5728);
+      m.bindTooltip(p.name,{direction:'top',offset:[0,-10],permanent:tooltipPermanent,className:`atlas28-tooltip atlas29-place-label ${tooltipPermanent?'permanent':''}`});
+      m.on('click',()=>atlasSelect5728('place',p.id,false));
+    });
+  };
+
+  const _bindAtlas5729=bindAtlas5728;
+  bindAtlas5728=function(h){
+    _bindAtlas5729(h);
+    const s=atlasUi5728();
+    h.querySelectorAll('[data-atlas28-mode]').forEach(b=>{const old=b.onclick;b.onclick=()=>{atlasFocusRequest5728={kind:'filters'};old?.()}});
+    const period=h.querySelector('#atlas28-period');if(period){const old=period.onchange;period.onchange=e=>{atlasFocusRequest5728={kind:'filters'};old?.(e)}}
+    const person=h.querySelector('#atlas28-person');if(person){const old=person.onchange;person.onchange=e=>{atlasFocusRequest5728={kind:'filters'};old?.(e)}}
+    const route=h.querySelector('#atlas28-route');if(route){const old=route.onchange;route.onchange=e=>{if(e.target.value==='all')atlasFocusRequest5728={kind:'filters'};old?.(e)}}
+    const trad=h.querySelector('#atlas28-tradition');if(trad){const old=trad.onchange;trad.onchange=e=>{atlasFocusRequest5728={kind:'filters'};old?.(e)}}
+    h.querySelectorAll('[data-atlas28-quick]').forEach(b=>{const q=b.dataset.atlas28Quick;b.onclick=()=>{const st=atlasUi5728();if(q==='world'){st.mode='all';st.period='all';st.person='all';st.route='all';st.selectedRoute='';st.selectedEvent='';st.selectedPlace='';atlasFocusRequest5728={kind:'world'}}else if(q==='paul'){st.mode='journeys';st.period='all';st.person='Paul';st.route='all';st.selectedRoute='';st.selectedEvent='';st.selectedPlace='';atlasFocusRequest5728={kind:'filters'}}else if(q==='gospels'){st.mode='timeline';st.period='gospels';st.person='all';st.route='all';st.selectedEvent='jesus-ministry';st.selectedRoute='';st.selectedPlace='';atlasFocusRequest5728={kind:'event',id:'jesus-ministry'}}else if(q==='jerusalem'){st.mode='all';st.period='all';st.person='all';st.route='all';st.selectedPlace='jerusalem';st.selectedRoute='';st.selectedEvent='';atlasFocusRequest5728={kind:'place',id:'jerusalem'}}save();renderAtlas(h)}});
+  };
+
+  const _renderAtlas5729=renderAtlas;
+  renderAtlas=function(h){
+    _renderAtlas5729(h);
+    const s=atlasUi5728(),ctx=visualContext5729(),root=h.querySelector('.atlas28');
+    if(root){root.classList.add(`atlas29-mode-${s.mode}`);root.dataset.atlasPeriod=s.period;root.dataset.atlasPerson=s.person}
+    const title=h.querySelector('.atlas28-mapbar-title'),sub=h.querySelector('.atlas28-mapbar-sub');if(title)title.textContent=ctx.title;if(sub)sub.textContent=ctx.sub;
+    const mapCard=h.querySelector('.atlas28-map-card'),mapEl=h.querySelector('#atlas28-map');if(mapCard&&mapEl&&!h.querySelector('.atlas29-filter-strip')){
+      const strip=document.createElement('div');strip.className='atlas29-filter-strip';const labels=activeFilterLabels5729();strip.innerHTML=`<span class="atlas29-filter-caption">Showing</span>${labels.map((x,i)=>`<span class="atlas29-filter-chip ${i===0?'mode':''}">${esc(x)}</span>`).join('')}<span class="atlas29-filter-spacer"></span><span class="atlas29-visual-hint">${s.mode==='journeys'?'Numbered stops appear when one journey is selected.':s.mode==='timeline'?'Event places use amber emphasis.':'Unrelated journey lines are hidden in Places view.'}</span>`;mapCard.insertBefore(strip,mapEl)
+    }
+    const routeSelect=h.querySelector('#atlas28-route');if(routeSelect){[...routeSelect.options].forEach(o=>{if(o.value==='all')return;const r=ROUTE_MAP.get(o.value);if(!r)return;const validPeriod=s.period==='all'||periodMatch(r.periods,s.period),validPerson=s.person==='all'||r.person===s.person,validTrad=s.includeTradition||routeSourceKind(r)!=='tradition';o.hidden=!(validPeriod&&validPerson&&validTrad);o.disabled=o.hidden})}
+    const personSelect=h.querySelector('#atlas28-person');if(personSelect){[...personSelect.options].forEach(o=>{if(o.value==='all')return;const has=ROUTES.some(r=>r.person===o.value&&(s.period==='all'||periodMatch(r.periods,s.period))&&(s.includeTradition||routeSourceKind(r)!=='tradition'));o.disabled=!has})}
+    const stats=h.querySelector('.atlas28-mini-stats');if(stats){const pc=visiblePlaces().length,rc=s.mode==='journeys'?visibleRoutes().length:(s.selectedRoute?1:0),ec=visibleEvents().length;stats.innerHTML=s.mode==='journeys'?`<span class="atlas28-mini-stat">${pc} relevant places</span><span class="atlas28-mini-stat">${rc} visible journeys</span>`:s.mode==='timeline'?`<span class="atlas28-mini-stat">${pc} event places</span><span class="atlas28-mini-stat">${ec} events</span>`:`<span class="atlas28-mini-stat">${pc} visible places</span>${s.person!=='all'?`<span class="atlas28-mini-stat">${visibleRoutes().length} matching journeys</span>`:''}`}
+  };
+
+
+  /* ===== OmniOS v57.30 — Atlas behavior, route geometry, and contextual details ===== */
+  function atlasEvidencePlaceAllowed5730(place,s){
+    if(s.includeTradition)return true;
+    const src=place?.sources||[];
+    if(src.some(x=>!/Tradition/i.test(x.type||'')))return true;
+    return ROUTES.some(r=>(r.stops||[]).includes(place.id)&&routeSourceKind(r)!=='tradition');
+  }
+  function filteredRoutes5730(){
+    const s=atlasUi5728();
+    return ROUTES.filter(r=>{
+      const rk=routeSourceKind(r);
+      if(!s.includeTradition&&rk==='tradition')return false;
+      if(s.period!=='all'&&!periodMatch(r.periods,s.period))return false;
+      if(s.person!=='all'&&r.person!==s.person)return false;
+      if(s.route!=='all'&&r.id!==s.route)return false;
+      return true;
+    });
+  }
+  function filteredEvents5730(){
+    const s=atlasUi5728();
+    return EVENTS.filter(e=>{
+      if(s.period!=='all'&&!periodMatch(e.period,s.period))return false;
+      if(s.person!=='all'){
+        const needle=String(PERSON_META[s.person]||s.person).toLowerCase();
+        const hay=(e.title+' '+e.summary).toLowerCase();
+        if(!hay.includes(needle))return false;
+      }
+      return true;
+    });
+  }
+  function filteredPlaces5730(){
+    const s=atlasUi5728(),routes=filteredRoutes5730(),events=filteredEvents5730(),ids=new Set();
+    if(s.mode==='journeys'){
+      routes.forEach(r=>(r.stops||[]).forEach(id=>ids.add(id)));
+    }else if(s.mode==='timeline'){
+      events.forEach(e=>(e.places||[]).forEach(id=>ids.add(id)));
+    }else if(s.route!=='all'){
+      routes.forEach(r=>(r.stops||[]).forEach(id=>ids.add(id)));
+    }else if(s.person!=='all'){
+      routes.forEach(r=>(r.stops||[]).forEach(id=>ids.add(id)));
+    }else{
+      PLACES.forEach(p=>{if((s.period==='all'||periodMatch(p.periods,s.period))&&atlasEvidencePlaceAllowed5730(p,s))ids.add(p.id)});
+    }
+    if(s.selectedRoute){(ROUTE_MAP.get(s.selectedRoute)?.stops||[]).forEach(id=>ids.add(id))}
+    if(s.selectedEvent){(EVENT_MAP.get(s.selectedEvent)?.places||[]).forEach(id=>ids.add(id))}
+    if(s.selectedPlace)ids.add(s.selectedPlace);
+    return PLACES.filter(p=>ids.has(p.id)&&atlasEvidencePlaceAllowed5730(p,s));
+  }
+  visibleRoutes=filteredRoutes5730;
+  visibleEvents=filteredEvents5730;
+  visiblePlaces=filteredPlaces5730;
+
+  function currentFilterText5730(){
+    const s=atlasUi5728(),parts=[];
+    parts.push(s.mode==='journeys'?'Journeys':s.mode==='timeline'?'Timeline':'Places');
+    if(s.period!=='all')parts.push(PERIOD_META[s.period]?.label||s.period);
+    if(s.person!=='all')parts.push(PERSON_META[s.person]||s.person);
+    if(s.route!=='all')parts.push(ROUTE_MAP.get(s.route)?.name||s.route);
+    if(s.includeTradition)parts.push('traditional missions included');
+    return parts;
+  }
+  function contextSummary5730(){return `<div class="atlas30-context"><span>Current view</span><div>${currentFilterText5730().map(x=>`<b>${esc(x)}</b>`).join('')}</div></div>`}
+  function evidenceLabel5730(entity){
+    if(!entity)return{label:'',cls:''};
+    const rk=entity.stops?routeSourceKind(entity):((entity.sources||[]).some(x=>/Tradition/i.test(x.type||''))?'tradition':'scripture');
+    return rk==='tradition'?{label:'Tradition',cls:'tradition'}:rk==='mixed'?{label:'Mixed evidence',cls:'tradition'}:{label:'Scripture',cls:'scripture'};
+  }
+  function emptyContextDetails5730(){
+    const s=atlasUi5728(),routes=filteredRoutes5730(),events=filteredEvents5730(),places=filteredPlaces5730();
+    if(s.mode==='journeys')return `${contextSummary5730()}<div class="atlas30-overview"><div class="atlas30-overview-icon">↠</div><div><strong>${routes.length?`${routes.length} journey${routes.length===1?'':'s'} in view`:'No journeys match these filters'}</strong><span>Select a journey to see its ordered itinerary, evidence type, Scripture anchors, and numbered stops on the map.</span></div></div>${routes.length?`<div class="atlas30-result-list">${routes.map(r=>{const ev=evidenceLabel5730(r);return `<button data-atlas28-route="${esc(r.id)}"><span class="atlas30-route-swatch" style="--atlas30-route:${routeColor5729(r)}"></span><span><strong>${esc(r.name)}</strong><small>${esc(r.person)} · ${esc(r.years||'')}</small></span><em>${esc(ev.label)}</em></button>`}).join('')}</div>`:'<div class="atlas28-empty">Try another period/person, or enable traditional missions.</div>'}`;
+    if(s.mode==='timeline')return `${contextSummary5730()}<div class="atlas30-overview"><div class="atlas30-overview-icon timeline">◷</div><div><strong>${events.length?`${events.length} timeline event${events.length===1?'':'s'} in view`:'No timeline events match these filters'}</strong><span>Select an event to highlight only its documented locations and see its source anchors.</span></div></div>${events.length?`<div class="atlas30-result-list">${events.map(e=>`<button data-atlas28-event="${esc(e.id)}"><span class="atlas30-event-dot"></span><span><strong>${esc(e.title)}</strong><small>${esc(e.dateLabel)} · ${(e.places||[]).length} places</small></span><em>${esc(PERIOD_META[e.period]?.short||e.period)}</em></button>`).join('')}</div>`:'<div class="atlas28-empty">The person filter only retains timeline events that explicitly mention that person in this Atlas dataset.</div>'}`;
+    return `${contextSummary5730()}<div class="atlas30-overview"><div class="atlas30-overview-icon place">⌖</div><div><strong>${places.length} place${places.length===1?'':'s'} visible</strong><span>The map contains only places allowed by the active period, person, route, and evidence filters.</span></div></div>${places.length?`<div class="atlas30-result-list atlas30-place-list">${places.slice(0,14).map(p=>`<button data-atlas28-place="${esc(p.id)}"><span class="atlas30-place-dot" style="--atlas30-place:${placeColor5729(p)}"></span><span><strong>${esc(p.name)}</strong><small>${esc(p.kind)} · ${p.periods.map(k=>PERIOD_META[k]?.short||k).join(' / ')}</small></span></button>`).join('')}${places.length>14?`<div class="atlas30-more">+ ${places.length-14} more places on the map</div>`:''}</div>`:'<div class="atlas28-empty">No places match the current filters.</div>'}`;
+  }
+  function placeEvidence5733(place){
+    const s=String(place?.locationStatus||'');
+    if(s==='traditional')return{label:'Traditional location',cls:'tradition',note:'The biblical text does not establish this modern identification.'};
+    if(s==='debated')return{label:'Debated identification',cls:'period',note:'The marker follows a major scholarly identification, but alternatives exist.'};
+    if(s==='representative')return{label:'Representative map point',cls:'period',note:'The source describes a broader locality or the text does not fix an exact event coordinate; the plotted point is for navigation rather than false precision.'};
+    if(s==='illustrative')return{label:'Illustrative location',cls:'period',note:'The text does not preserve an exact point; this marker only visualizes the stated geographic corridor.'};
+    if(s==='probable')return{label:'Leading identification',cls:'period',note:'This marker uses the leading modern identification in the attached gazetteer, but meaningful alternatives remain.'};
+    if(s==='high-confidence')return{label:'High-confidence identification',cls:'scripture',note:'The ancient-to-modern identification is strongly supported by the gazetteer source attached below.'};
+    return{label:'Mapped biblical place',cls:'scripture',note:'The pin is a geographic study aid; see the attached sources for identification evidence.'}
+  }
+  function pointPrecision5733(place){
+    const p=String(place?.pointPrecision||'');
+    if(p==='representative-waypoint')return{label:'Representative voyage point',cls:'period',note:'The named island or waypoint is secure, but the biblical text does not identify the exact harbor, anchorage, or position plotted.'};
+    if(p==='representative-island')return{label:'Representative island point',cls:'period',note:'The island identification is secure, but the text does not identify an exact location on the island.'};
+    if(p==='representative-region')return{label:'Representative regional point',cls:'period',note:'The source identifies a region; the plotted coordinate is only a navigation anchor and not an event location.'};
+    return null
+  }
+  function routeEvidence5733(route){
+    if(route?.routeType==='association')return{label:'Association — not itinerary',cls:'tradition',note:'These locations are associated by Scripture and/or early tradition; no continuous travel sequence is claimed and no connecting route line is drawn.'};
+    const rk=routeSourceKind(route);
+    if(rk==='tradition')return{label:'Later tradition',cls:'tradition',note:'This is a traditional association rather than a route narrated by the New Testament.'};
+    if(rk==='mixed')return{label:'Mixed evidence',cls:'tradition',note:'Direct biblical evidence and later tradition are intentionally distinguished in the source list.'};
+    return{label:'Textual itinerary',cls:'scripture',note:'The sequence uses places explicitly named in the cited biblical text; connecting lines show sequence only, not the exact ancient road or ship track.'}
+  }
+  function eventEvidence5733(event){return{label:(event?.dateLabel||'').toLowerCase().includes('reconstruct')?'Approximate chronology':'Text-based event',cls:(event?.dateLabel||'').toLowerCase().includes('reconstruct')?'period':'scripture'}}
+  atlasDetails5728=function(){
+    const s=atlasUi5728(),route=s.selectedRoute?ROUTE_MAP.get(s.selectedRoute):null,event=s.selectedEvent?EVENT_MAP.get(s.selectedEvent):null,place=s.selectedPlace?PLACE_MAP.get(s.selectedPlace):null;
+    if(route){
+      const evidence=routeEvidence5733(route),points=(route.stops||[]).map(id=>PLACE_MAP.get(id)).filter(Boolean),ref=firstRef5728(route),association=route.routeType==='association';
+      return `${contextSummary5730()}<div class="atlas30-detail-hero journey"><div class="atlas30-detail-icon" style="--atlas30-accent:${routeColor5729(route)}">${association?'◎':'↠'}</div><div><div class="atlas30-detail-kicker">${association?'Historical association':'Journey'} · ${esc(PERSON_META[route.person]||route.person)}</div><h4>${esc(route.name)}</h4><div class="atlas30-detail-meta"><span>${esc(route.years||'Date not specified')}</span><span>${points.length} ${association?'associated location'+(points.length===1?'':'s'):'itinerary point'+(points.length===1?'':'s')}</span><span class="${evidence.cls}">${esc(evidence.label)}</span></div></div>${ref?`<button class="btn btn-sm" data-atlas28-read="${esc(ref)}">Open Bible</button>`:''}</div><p class="atlas30-detail-copy">${esc(route.summary)}</p><div class="atlas33-verification ${evidence.cls}"><strong>${esc(evidence.label)}</strong><span>${esc(evidence.note)}</span></div><div class="atlas30-section"><div class="atlas30-section-head"><strong>${association?'Associated locations':'Ordered itinerary points'}</strong><span>${association?'No continuous route is claimed':'Map lines connect narrative sequence, not exact paths'}</span></div><div class="atlas30-itinerary">${points.map((p,i)=>`<button data-atlas28-place="${esc(p.id)}"><i style="--atlas30-accent:${routeColor5729(route)}">${i+1}</i><span><strong>${esc(p.name)}</strong><small>${esc(p.kind)}${p.pointPrecision?' · representative point':p.locationStatus==='representative'?' · representative':''}</small></span><em>Focus</em></button>`).join('')}</div></div><div class="atlas30-section"><div class="atlas30-section-head"><strong>Sources & evidence</strong><span>${route.sources.length} anchor${route.sources.length===1?'':'s'}</span></div>${sourceRows5728(route.sources)}</div>`;
+    }
+    if(event){
+      const places=(event.places||[]).map(id=>PLACE_MAP.get(id)).filter(Boolean),ref=firstRef5728(event),ev=eventEvidence5733(event);
+      return `${contextSummary5730()}<div class="atlas30-detail-hero timeline"><div class="atlas30-detail-icon">◷</div><div><div class="atlas30-detail-kicker">Timeline / narrative context</div><h4>${esc(event.title)}</h4><div class="atlas30-detail-meta"><span>${esc(event.dateLabel)}</span><span>${esc(PERIOD_META[event.period]?.label||event.period)}</span><span>${places.length} mapped location${places.length===1?'':'s'}</span><span class="${ev.cls}">${esc(ev.label)}</span></div></div>${ref?`<button class="btn btn-sm" data-atlas28-read="${esc(ref)}">Open Bible</button>`:''}</div><p class="atlas30-detail-copy">${esc(event.summary)}</p><div class="atlas33-verification period"><strong>Chronology note</strong><span>Where the biblical text does not provide an absolute year, the Atlas uses a broad narrative period or explicitly labels scholarly reconstruction.</span></div><div class="atlas30-section"><div class="atlas30-section-head"><strong>Locations in this context</strong><span>Only locations named or explicitly represented by the event are highlighted</span></div><div class="atlas30-location-grid">${places.map((p,i)=>`<button data-atlas28-place="${esc(p.id)}"><i>${i+1}</i><span><strong>${esc(p.name)}</strong><small>${esc(p.kind)}${p.pointPrecision?' · '+esc(pointPrecision5733(p)?.label||'representative point'):['representative','illustrative','traditional','debated'].includes(p.locationStatus)?' · '+esc(placeEvidence5733(p).label):''}</small></span></button>`).join('')}</div></div><div class="atlas30-section"><div class="atlas30-section-head"><strong>Sources</strong><span>Biblical and chronology anchors</span></div>${sourceRows5728(event.sources)}</div>`;
+    }
+    if(place){
+      const ref=firstRef5728(place),ev=placeEvidence5733(place),precision=pointPrecision5733(place),routes=filteredRoutes5730().filter(r=>(r.stops||[]).includes(place.id)),events=filteredEvents5730().filter(e=>(e.places||[]).includes(place.id));
+      return `${contextSummary5730()}<div class="atlas30-detail-hero place"><div class="atlas30-detail-icon" style="--atlas30-accent:${placeColor5729(place)}">⌖</div><div><div class="atlas30-detail-kicker">${esc(place.kind)}</div><h4>${esc(place.name)}</h4><div class="atlas30-detail-meta">${place.periods.map(k=>`<span>${esc(PERIOD_META[k]?.short||k)}</span>`).join('')}<span class="${ev.cls}">${esc(ev.label)}</span>${precision?`<span class="${precision.cls}">${esc(precision.label)}</span>`:''}</div></div>${ref?`<button class="btn btn-sm" data-atlas28-read="${esc(ref)}">Open Bible</button>`:''}</div><p class="atlas30-detail-copy">${esc(place.summary)}</p><div class="atlas33-verification ${ev.cls}"><strong>${esc(ev.label)}</strong><span>${esc(ev.note)}</span></div>${precision?`<div class="atlas33-verification ${precision.cls}"><strong>${esc(precision.label)}</strong><span>${esc(precision.note)}</span></div>`:''}<div class="atlas30-section"><div class="atlas30-section-head"><strong>Visible connections</strong><span>Respects current filters</span></div>${routes.length||events.length?`<div class="atlas30-connections">${routes.map(r=>`<button data-atlas28-route="${esc(r.id)}"><span class="atlas30-route-swatch" style="--atlas30-route:${routeColor5729(r)}"></span><span><strong>${esc(r.name)}</strong><small>${esc(PERSON_META[r.person]||r.person)} · ${esc(r.years||'')}</small></span></button>`).join('')}${events.map(e=>`<button data-atlas28-event="${esc(e.id)}"><span class="atlas30-event-dot"></span><span><strong>${esc(e.title)}</strong><small>${esc(e.dateLabel)}</small></span></button>`).join('')}</div>`:'<div class="atlas28-empty">No route or timeline connection remains under the current filters.</div>'}</div><div class="atlas30-section"><div class="atlas30-section-head"><strong>Sources & identification</strong><span>Scripture first; external identification sources where needed</span></div>${sourceRows5728(place.sources)}</div>`;
+    }
+    return emptyContextDetails5730();
+  };
+  function routeLatLngs5730(route){return (route?.stops||[]).map(id=>PLACE_MAP.get(id)).filter(Boolean).map(p=>[Number(p.lat),Number(p.lon)])}
+  addAtlasLayers5728=function(L,map){
+    const s=atlasUi5728(),routes=filteredRoutes5730(),places=filteredPlaces5730(),events=filteredEvents5730();
+    atlasOverlayLayer5728=L.layerGroup().addTo(map);
+    const selectedRoute=s.selectedRoute?ROUTE_MAP.get(s.selectedRoute):null,selectedEvent=s.selectedEvent?EVENT_MAP.get(s.selectedEvent):null;
+    const selectedStopNums=routeStopLabels5729(selectedRoute),eventIds=new Set(selectedEvent?.places||[]);
+    const routesToDraw=s.mode==='journeys'?routes:(selectedRoute?[selectedRoute]:[]);
+    const routeMembership=new Map();routes.forEach(r=>(r.stops||[]).forEach(id=>{if(!routeMembership.has(id))routeMembership.set(id,[]);routeMembership.get(id).push(r.id)}));
+
+    routesToDraw.forEach(r=>{
+      if(r.routeType==='association')return;
+      const ll=routeLatLngs5730(r);if(ll.length<2)return;
+      const selected=s.selectedRoute===r.id,style=routeStyle5728(r,selected),color=routeColor5729(r);
+      for(let i=0;i<ll.length-1;i++){
+        const seg=L.polyline([ll[i],ll[i+1]],{...style,color,weight:selected?6.5:style.weight,opacity:selected?1:style.opacity,interactive:true}).addTo(atlasOverlayLayer5728);
+        seg.on('click',()=>atlasSelect5728('route',r.id,true));
+        if(selected){seg.bindTooltip(`${i+1} → ${i+2}`,{sticky:true,className:'atlas28-tooltip atlas30-leg-tip'})}
+      }
+      const routeHit=L.polyline(ll,{color,weight:16,opacity:0,interactive:true}).addTo(atlasOverlayLayer5728);routeHit.on('click',()=>atlasSelect5728('route',r.id,true));
+      if(!selected&&routesToDraw.length<=4){const mid=ll[Math.floor(ll.length/2)];L.marker(mid,{interactive:false,icon:L.divIcon({className:'atlas30-route-name-wrap',html:`<div class="atlas30-route-name" style="--atlas30-route:${color}">${esc(r.name)}</div>`,iconSize:[180,24],iconAnchor:[90,12]})}).addTo(atlasOverlayLayer5728)}
+    });
+
+    if(s.mode==='timeline'&&selectedEvent){(selectedEvent.places||[]).map(id=>PLACE_MAP.get(id)).filter(Boolean).forEach(p=>L.circleMarker([p.lat,p.lon],{radius:17,color:'#c87318',weight:2.5,fillColor:'#f0a145',fillOpacity:.18,interactive:false}).addTo(atlasOverlayLayer5728))}
+
+    const filtered=s.period!=='all'||s.person!=='all'||s.route!=='all',showPlaceLabels=places.length<=14&&filtered;
+    places.forEach(p=>{
+      const membership=routeMembership.get(p.id)||[],selected=s.selectedPlace===p.id,eventHit=eventIds.has(p.id),nums=selectedStopNums.get(p.id)||[],traditional=isTraditionalPlace5729(p);
+      let html,size,anchor,permanent=false;
+      if(s.mode==='journeys'){
+        const routeForColor=selectedRoute||(membership.length===1?ROUTE_MAP.get(membership[0]):null),color=routeForColor?routeColor5729(routeForColor):'#475569';
+        if(selectedRoute&&nums.length){const text=nums.length<=2?nums.join('·'):`${nums[0]}…${nums[nums.length-1]}`;html=`<div class="atlas30-stop-pin ${selected?'selected':''}" style="--atlas30-accent:${color}"><span>${esc(text)}</span></div>`;size=[32,32];anchor=[16,16];permanent=true}
+        else{html=`<div class="atlas30-journey-dot ${selected?'selected':''}" style="--atlas30-accent:${color}"><span>${membership.length>1?membership.length:''}</span></div>`;size=[23,23];anchor=[11.5,11.5];permanent=showPlaceLabels}
+      }else if(s.mode==='timeline'){
+        html=`<div class="atlas30-timeline-pin ${eventHit?'active':''} ${selected?'selected':''}"></div>`;size=eventHit?[27,27]:[19,19];anchor=[size[0]/2,size[1]/2];permanent=eventHit||selected||(places.length<=10&&s.period!=='all')
+      }else{
+        const color=placeColor5729(p);html=`<div class="atlas30-place-pin ${selected?'selected':''} ${traditional?'tradition':''}" style="--atlas30-accent:${color}"></div>`;size=selected?[28,28]:[21,21];anchor=[size[0]/2,size[1]/2];permanent=selected||showPlaceLabels
+      }
+      const marker=L.marker([p.lat,p.lon],{icon:L.divIcon({className:'atlas30-pin-wrap',html,iconSize:size,iconAnchor:anchor}),riseOnHover:true,title:p.name,zIndexOffset:selected||eventHit?700:0}).addTo(atlasOverlayLayer5728);
+      marker.bindTooltip(p.name,{direction:'top',offset:[0,-10],permanent,className:'atlas28-tooltip atlas30-place-label'});
+      marker.on('click',()=>atlasSelect5728('place',p.id,false));
+    });
+  };
+
+  mapBoundsForSelection5728=function(s){
+    if(s.selectedRoute){const p=routeLatLngs5730(ROUTE_MAP.get(s.selectedRoute));if(p.length)return p}
+    if(s.selectedEvent){const e=EVENT_MAP.get(s.selectedEvent);const p=(e?.places||[]).map(id=>PLACE_MAP.get(id)).filter(Boolean).map(x=>[x.lat,x.lon]);if(p.length)return p}
+    if(s.selectedPlace){const p=PLACE_MAP.get(s.selectedPlace);if(p)return[[p.lat,p.lon]]}
+    return filteredPlaces5730().map(p=>[p.lat,p.lon]);
+  };
+
+  bindAtlas5728=function(h){
+    const s=atlasUi5728();renderSearch5728(h);
+    h.querySelectorAll('[data-atlas28-mode]').forEach(b=>b.onclick=()=>{
+      const mode=b.dataset.atlas28Mode;if(!['all','journeys','timeline'].includes(mode))return;
+      s.mode=mode;s.selectedPlace='';s.selectedRoute='';s.selectedEvent='';s.route='all';
+      if(mode==='timeline'&&s.person!=='all'&&!filteredEvents5730().length)s.person='all';
+      atlasFocusRequest5728={kind:'filters'};save();renderAtlas(h)
+    });
+    const period=h.querySelector('#atlas28-period');if(period)period.onchange=e=>{s.period=e.target.value;s.selectedPlace='';s.selectedRoute='';s.selectedEvent='';s.route='all';atlasFocusRequest5728={kind:'filters'};save();renderAtlas(h)};
+    const person=h.querySelector('#atlas28-person');if(person)person.onchange=e=>{s.person=e.target.value;s.selectedPlace='';s.selectedRoute='';s.selectedEvent='';s.route='all';atlasFocusRequest5728={kind:'filters'};save();renderAtlas(h)};
+    const route=h.querySelector('#atlas28-route');if(route)route.onchange=e=>{s.route=e.target.value;s.selectedPlace='';s.selectedEvent='';s.selectedRoute='';if(s.route!=='all'){const r=ROUTE_MAP.get(s.route);s.mode='journeys';s.selectedRoute=s.route;if(r)s.person=r.person;atlasFocusRequest5728={kind:'route',id:s.route}}else atlasFocusRequest5728={kind:'filters'};save();renderAtlas(h)};
+    const trad=h.querySelector('#atlas28-tradition');if(trad)trad.onchange=e=>{s.includeTradition=e.target.checked;if(!s.includeTradition&&s.route!=='all'&&routeSourceKind(ROUTE_MAP.get(s.route)||{})==='tradition'){s.route='all';s.selectedRoute=''}atlasFocusRequest5728={kind:'filters'};save();renderAtlas(h)};
+    h.querySelector('[data-atlas28-reset]')?.addEventListener('click',atlasResetFilters5728);
+    h.querySelectorAll('[data-atlas28-basemap]').forEach(b=>b.onclick=()=>setBasemap5728(b.dataset.atlas28Basemap));
+    h.querySelectorAll('[data-atlas28-quick]').forEach(b=>b.onclick=()=>{const q=b.dataset.atlas28Quick;if(q==='world'){s.mode='all';s.period='all';s.person='all';s.route='all';s.selectedPlace='';s.selectedRoute='';s.selectedEvent='';atlasFocusRequest5728={kind:'world'}}else if(q==='paul'){s.mode='journeys';s.period='all';s.person='Paul';s.route='all';s.selectedPlace='';s.selectedRoute='';s.selectedEvent='';atlasFocusRequest5728={kind:'filters'}}else if(q==='gospels'){s.mode='timeline';s.period='gospels';s.person='all';s.route='all';s.selectedPlace='';s.selectedRoute='';s.selectedEvent='jesus-ministry';atlasFocusRequest5728={kind:'event',id:'jesus-ministry'}}else if(q==='jerusalem'){s.mode='all';s.period='all';s.person='all';s.route='all';s.selectedPlace='jerusalem';s.selectedRoute='';s.selectedEvent='';atlasFocusRequest5728={kind:'place',id:'jerusalem'}}save();renderAtlas(h)});
+    h.querySelector('[data-atlas28-fit]')?.addEventListener('click',()=>{atlasFocusRequest5728={kind:'filters'};renderAtlas(h)});
+    h.querySelectorAll('[data-atlas28-read]').forEach(b=>b.onclick=()=>setRef(b.dataset.atlas28Read,'read'));
+    h.querySelectorAll('[data-atlas28-place]').forEach(b=>b.onclick=()=>atlasSelect5728('place',b.dataset.atlas28Place,true));
+    h.querySelectorAll('[data-atlas28-route]').forEach(b=>b.onclick=()=>atlasSelect5728('route',b.dataset.atlas28Route,true));
+    h.querySelectorAll('[data-atlas28-event]').forEach(b=>b.onclick=()=>atlasSelect5728('event',b.dataset.atlas28Event,true));
+    initAtlasMap5728(h);
+  };
+
+  const _renderAtlas5730=renderAtlas;
+  renderAtlas=function(h){
+    _renderAtlas5730(h);
+    const s=atlasUi5728(),details=h.querySelector('.atlas28-details'),head=details?.querySelector('.atlas28-panel-head'),title=head?.querySelector('.atlas28-panel-title'),sub=head?.querySelector('.atlas28-panel-sub');
+    if(title)title.textContent=s.selectedRoute?'Journey details':s.selectedEvent?'Timeline context':s.selectedPlace?'Place context':s.mode==='journeys'?'Journeys in view':s.mode==='timeline'?'Timeline in view':'Places in view';
+    if(sub)sub.textContent=s.selectedRoute?'Ordered stops, evidence, and Scripture anchors.':s.selectedEvent?'Event locations, chronology, and source anchors.':s.selectedPlace?'This place and its connections under the active filters.':s.mode==='journeys'?'Choose a route to inspect its itinerary.':s.mode==='timeline'?'Choose an event to focus its documented locations.':'Choose a pin to inspect its biblical context.';
+    const timeline=h.querySelector('.atlas28-timeline');if(timeline)timeline.style.display=s.mode==='timeline'?'block':'none';
+    const mapNote=h.querySelector('.atlas28-map-note span:last-child');if(mapNote)mapNote.innerHTML=s.mode==='journeys'?'<b>Journey view:</b> dots are connected in itinerary order; numbered stops appear when a journey is selected.':s.mode==='timeline'?'<b>Timeline view:</b> only event locations matching the filters are shown; selecting an event highlights its places.':'<b>Places view:</b> only pins matching the active period/person/evidence filters are shown.';
+  };
+
+  if(document.getElementById('view-bible')?.classList.contains('active')) render();
+  window.OmniBuild={version:'57.30',name:'Bible Atlas — Behavior Fixed'}; document.documentElement.dataset.omniosVersion='57.30'; document.title='OmniOS v57.30 — Bible Atlas';
+
+  /* ===== OmniOS v57.33 — canonical Atlas filter engine (fact-checked build) ===== */
+  function candidateRoutes5731(respectRoute=true){
+    const s=atlasUi5728();
+    return ROUTES.filter(r=>{
+      const rk=routeSourceKind(r);
+      if(!s.includeTradition&&rk==='tradition')return false;
+      if(s.period!=='all'&&!periodMatch(r.periods,s.period))return false;
+      if(s.person!=='all'&&r.person!==s.person)return false;
+      if(respectRoute&&s.route!=='all'&&r.id!==s.route)return false;
+      return true;
+    });
+  }
+  function filteredEvents5731(){
+    const s=atlasUi5728();
+    const personPlaces=new Set();
+    if(s.person!=='all')candidateRoutes5731(false).forEach(r=>(r.stops||[]).forEach(id=>personPlaces.add(id)));
+    return EVENTS.filter(e=>{
+      if(s.period!=='all'&&!periodMatch(e.period,s.period))return false;
+      if(s.person!=='all'){
+        const named=(e.title+' '+e.summary).toLowerCase().includes(String(PERSON_META[s.person]||s.person).toLowerCase());
+        const intersects=(e.places||[]).some(id=>personPlaces.has(id));
+        if(!named&&!intersects)return false;
+      }
+      return true;
+    });
+  }
+  function filteredPlaces5731(){
+    const s=atlasUi5728(),routes=candidateRoutes5731(true),events=filteredEvents5731(),ids=new Set();
+    if(s.mode==='journeys') routes.forEach(r=>(r.stops||[]).forEach(id=>ids.add(id)));
+    else if(s.mode==='timeline') events.forEach(e=>(e.places||[]).forEach(id=>ids.add(id)));
+    else if(s.route!=='all'||s.person!=='all') routes.forEach(r=>(r.stops||[]).forEach(id=>ids.add(id)));
+    else PLACES.forEach(p=>{if((s.period==='all'||periodMatch(p.periods,s.period))&&atlasEvidencePlaceAllowed5730(p,s))ids.add(p.id)});
+    return PLACES.filter(p=>ids.has(p.id)&&atlasEvidencePlaceAllowed5730(p,s));
+  }
+  visibleRoutes=function(){return candidateRoutes5731(true)};
+  visibleEvents=filteredEvents5731;
+  visiblePlaces=filteredPlaces5731;
+
+  function clearAtlasSelection5731(){const s=atlasUi5728();s.selectedPlace='';s.selectedRoute='';s.selectedEvent=''}
+  function routeOptions5731(){return candidateRoutes5731(false)}
+  function fitFilteredAtlas5731(){
+    const map=atlasLeafletMap5728,L=window.L;if(!map||!L)return;
+    const s=atlasUi5728();let pts=[];
+    if(s.selectedRoute)pts=routeLatLngs5730(ROUTE_MAP.get(s.selectedRoute));
+    else if(s.selectedEvent)pts=(EVENT_MAP.get(s.selectedEvent)?.places||[]).map(id=>PLACE_MAP.get(id)).filter(Boolean).map(p=>[p.lat,p.lon]);
+    else if(s.selectedPlace){const p=PLACE_MAP.get(s.selectedPlace);if(p)pts=[[p.lat,p.lon]]}
+    else if(s.mode==='journeys')pts=candidateRoutes5731(true).flatMap(r=>routeLatLngs5730(r));
+    else if(s.mode==='timeline')pts=filteredEvents5731().flatMap(e=>(e.places||[]).map(id=>PLACE_MAP.get(id)).filter(Boolean).map(p=>[p.lat,p.lon]));
+    else pts=filteredPlaces5731().map(p=>[p.lat,p.lon]);
+    const uniq=[];const seen=new Set();pts.forEach(x=>{const k=Number(x[0]).toFixed(5)+','+Number(x[1]).toFixed(5);if(!seen.has(k)){seen.add(k);uniq.push(x)}});pts=uniq;
+    if(!pts.length)return;
+    if(pts.length===1){map.setView(pts[0],Math.max(6,Math.min(9,map.getZoom()||6)),{animate:false});return}
+    try{map.fitBounds(L.latLngBounds(pts),{padding:[46,46],maxZoom:s.mode==='journeys'?7:8,animate:false})}catch(_){}
+  }
+  function redrawAtlasLayers5731(fit=true){
+    const map=atlasLeafletMap5728,L=window.L;if(!map||!L)return;
+    try{if(atlasOverlayLayer5728)map.removeLayer(atlasOverlayLayer5728)}catch(_){}
+    atlasOverlayLayer5728=null;
+    addAtlasLayers5728(L,map);
+    if(fit)fitFilteredAtlas5731();
+  }
+  function syncRouteSelect5731(h){
+    const s=atlasUi5728(),sel=h.querySelector('#atlas28-route');if(!sel)return;
+    const routes=routeOptions5731();
+    if(s.route!=='all'&&!routes.some(r=>r.id===s.route)){s.route='all';s.selectedRoute=''}
+    sel.innerHTML='<option value="all">All matching journeys</option>'+routes.map(r=>`<option value="${esc(r.id)}" ${s.route===r.id?'selected':''}>${esc(r.name)}</option>`).join('');
+    sel.disabled=!routes.length;
+  }
+  function bindContextActions5731(root){
+    root.querySelectorAll('[data-atlas28-read]').forEach(b=>b.onclick=()=>setRef(b.dataset.atlas28Read,'read'));
+    root.querySelectorAll('[data-atlas28-place]').forEach(b=>b.onclick=()=>atlasSelect5728('place',b.dataset.atlas28Place,true));
+    root.querySelectorAll('[data-atlas28-route]').forEach(b=>b.onclick=()=>atlasSelect5728('route',b.dataset.atlas28Route,true));
+    root.querySelectorAll('[data-atlas28-event]').forEach(b=>b.onclick=()=>atlasSelect5728('event',b.dataset.atlas28Event,true));
+  }
+  function refreshAtlasContext5731(h){
+    const s=atlasUi5728(),ctx=visualContext5729();
+    h.querySelectorAll('[data-atlas28-mode]').forEach(b=>b.classList.toggle('active',b.dataset.atlas28Mode===s.mode));
+    const per=h.querySelector('#atlas28-period');if(per)per.value=s.period;
+    const person=h.querySelector('#atlas28-person');if(person)person.value=s.person;
+    const trad=h.querySelector('#atlas28-tradition');if(trad)trad.checked=!!s.includeTradition;
+    syncRouteSelect5731(h);
+    const mapTitle=h.querySelector('.atlas28-mapbar-title'),mapSub=h.querySelector('.atlas28-mapbar-sub');if(mapTitle)mapTitle.textContent=ctx.title;if(mapSub)mapSub.textContent=ctx.sub;
+    let strip=h.querySelector('.atlas29-filter-strip');const mapEl=h.querySelector('#atlas28-map');if(!strip&&mapEl){strip=document.createElement('div');strip.className='atlas29-filter-strip';mapEl.parentNode.insertBefore(strip,mapEl)}
+    if(strip){const labels=currentFilterText5730();strip.innerHTML=`<span class="atlas29-filter-caption">Showing</span>${labels.map((x,i)=>`<span class="atlas29-filter-chip ${i===0?'mode':''}">${esc(x)}</span>`).join('')}<span class="atlas29-filter-spacer"></span><span class="atlas31-live-count">${filteredPlaces5731().length} places · ${candidateRoutes5731(true).length} journeys · ${filteredEvents5731().length} events</span>`}
+    const details=h.querySelector('.atlas28-details'),head=details?.querySelector('.atlas28-panel-head'),title=head?.querySelector('.atlas28-panel-title'),sub=head?.querySelector('.atlas28-panel-sub'),body=details?.querySelector('.atlas28-panel-body');
+    if(title)title.textContent=s.selectedRoute?'Journey details':s.selectedEvent?'Timeline context':s.selectedPlace?'Place context':s.mode==='journeys'?'Journeys in view':s.mode==='timeline'?'Timeline in view':'Places in view';
+    if(sub)sub.textContent=s.selectedRoute?'Ordered stops, evidence, and Scripture anchors.':s.selectedEvent?'Mapped locations and source anchors for this event.':s.selectedPlace?'Connections that still match the active filters.':s.mode==='journeys'?'Choose a journey to inspect its connected itinerary.':s.mode==='timeline'?'Choose an event to highlight its mapped locations.':'Choose a visible pin for biblical context.';
+    if(body){body.innerHTML=atlasDetails5728();bindContextActions5731(body)}
+    const timeline=h.querySelector('.atlas28-timeline');if(timeline){timeline.style.display=s.mode==='timeline'?'block':'none';const track=timeline.querySelector('.atlas28-timeline-track');if(track){track.innerHTML=atlasTimeline5728();bindContextActions5731(track)}const stats=timeline.querySelector('.atlas28-mini-stats');if(stats)stats.innerHTML=`<span class="atlas28-mini-stat">${filteredPlaces5731().length} places</span><span class="atlas28-mini-stat">${candidateRoutes5731(true).length} journeys</span><span class="atlas28-mini-stat">${filteredEvents5731().length} events</span>`}
+    const note=h.querySelector('.atlas28-map-note span:last-child');if(note)note.innerHTML=s.mode==='journeys'?'<b>Journey view:</b> only matching route stops are pinned, with continuous itinerary lines between consecutive stops.':s.mode==='timeline'?'<b>Timeline view:</b> pins come only from events that match the active filters.':'<b>Places view:</b> only locations that satisfy the active period/person/evidence filters remain on the map.';
+  }
+  function applyAtlasFilters5731(h,change,fit=true){
+    const s=atlasUi5728();
+    if(change.mode!==undefined){s.mode=change.mode;clearAtlasSelection5731();s.route='all'}
+    if(change.period!==undefined){s.period=change.period;clearAtlasSelection5731();s.route='all'}
+    if(change.person!==undefined){s.person=change.person;clearAtlasSelection5731();s.route='all'}
+    if(change.tradition!==undefined){s.includeTradition=!!change.tradition;if(!s.includeTradition&&s.route!=='all'&&routeSourceKind(ROUTE_MAP.get(s.route)||{})==='tradition')s.route='all';clearAtlasSelection5731()}
+    if(change.route!==undefined){s.route=change.route||'all';clearAtlasSelection5731();if(s.route!=='all'){const r=ROUTE_MAP.get(s.route);s.mode='journeys';s.selectedRoute=s.route;if(r&&s.person==='all')s.person=r.person}}
+    save();refreshAtlasContext5731(h);redrawAtlasLayers5731(fit)
+  }
+  function installCanonicalAtlasFilters5731(h){
+    const s=atlasUi5728();
+    h.querySelectorAll('[data-atlas28-mode]').forEach(b=>{b.onclick=null;b.onclick=e=>{e.preventDefault();e.stopPropagation();applyAtlasFilters5731(h,{mode:b.dataset.atlas28Mode},true)}});
+    const period=h.querySelector('#atlas28-period');if(period){period.onchange=null;period.onchange=e=>applyAtlasFilters5731(h,{period:e.target.value},true)}
+    const person=h.querySelector('#atlas28-person');if(person){person.onchange=null;person.onchange=e=>applyAtlasFilters5731(h,{person:e.target.value},true)}
+    const route=h.querySelector('#atlas28-route');if(route){route.onchange=null;route.onchange=e=>applyAtlasFilters5731(h,{route:e.target.value},true)}
+    const trad=h.querySelector('#atlas28-tradition');if(trad){trad.onchange=null;trad.onchange=e=>applyAtlasFilters5731(h,{tradition:e.target.checked},true)}
+    h.querySelector('[data-atlas28-fit]')?.addEventListener('click',e=>{e.preventDefault();fitFilteredAtlas5731()});
+    refreshAtlasContext5731(h);
+  }
+  const _renderAtlas5731=renderAtlas;
+  renderAtlas=function(h){_renderAtlas5731(h);installCanonicalAtlasFilters5731(h)};
+
+  /* Keep selections compatible with the canonical filter engine. */
+  const _atlasSelect5731=atlasSelect5728;
+  atlasSelect5728=function(kind,id,focus=true){
+    const result=_atlasSelect5731(kind,id,focus);
+    return result;
+  };
+
+
+  if(document.getElementById('view-bible')?.classList.contains('active'))render();
+  window.OmniBuild={version:'57.33',name:'Bible Atlas — Fact Checked'};document.documentElement.dataset.omniosVersion='57.33';document.title='OmniOS v57.33 — Bible Atlas Fact Checked';
+})();
+
+
+
+/* Escape exits reading focus too. */
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('view-bible')?.classList.remove('bib-reader-focus')});
+
+const baseSwitch=window.switchView;if(typeof baseSwitch==='function'&&!baseSwitch.__bible571){const wrapped=function(target){const r=baseSwitch.apply(this,arguments);if(target==='bible')render();return r};wrapped.__bible571=true;window.switchView=wrapped}
+function init(){ensureView();installNav();ensureMiniTimer();document.addEventListener('click',e=>{const b=e.target.closest('.mobile-nav button');if(b&&/more/i.test(b.textContent||''))setTimeout(augmentMobileMore,30)},true);document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.shiftKey&&String(e.key).toLowerCase()==='b'){e.preventDefault();window.switchView?.('bible')}if(e.key==='Escape')document.getElementById('view-bible')?.classList.remove('bib-reader-focus')});if(document.getElementById('view-bible')?.classList.contains('active'))render();save()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else queueMicrotask(init);
+
+
+/* ===== OmniOS v58.2 — canonical Bible 365 + fixed Mood controls ===== */
+const BIBLE365_TOTAL_DAYS=365;
+function buildBible365Plan582(){
+  const chapters=[];
+  BOOKS.forEach(book=>{for(let chapter=1;chapter<=Number(book.chapters||0);chapter++)chapters.push({book:book.name,chapter})});
+  const total=chapters.length;
+  const plan=[];
+  const dateCursor=new Date(Date.UTC(2001,0,1)); // non-leap calendar => exactly 365 scheduled dates
+  for(let i=0;i<BIBLE365_TOTAL_DAYS;i++){
+    const start=Math.floor(i*total/BIBLE365_TOTAL_DAYS);
+    const end=Math.floor((i+1)*total/BIBLE365_TOTAL_DAYS);
+    const reading=chapters.slice(start,end);
+    const groups=[];
+    reading.forEach(ch=>{
+      const last=groups[groups.length-1];
+      if(last&&last.book===ch.book&&last.end+1===ch.chapter)last.end=ch.chapter;
+      else groups.push({book:ch.book,start:ch.chapter,end:ch.chapter});
+    });
+    const refs=groups.map(g=>({label:`${g.book} ${g.start}${g.end>g.start?'–'+g.end:''}`,openRef:`${g.book} ${g.start}`}));
+    const first=reading[0]||{book:'Genesis',chapter:1};
+    const books=[...new Set(reading.map(x=>x.book))];
+    plan.push({
+      id:i+1,
+      month:MONTHS[dateCursor.getUTCMonth()],
+      day:dateCursor.getUTCDate(),
+      ref:`${first.book} ${first.chapter}`,
+      refs,
+      chapters:reading,
+      displayRef:refs.map(x=>x.label).join(' · '),
+      theme:'Bible in a Year',
+      subtheme:`Canonical order · ${reading.length} chapter${reading.length===1?'':'s'}${books.length?` · ${books.join(' → ')}`:''}`,
+      question:'What do these chapters reveal about God, people, covenant, wisdom, redemption, or faithful response?',
+      practice:'Read the assigned chapters in order. Mark one sentence or scene to carry into the rest of the day.',
+      prayer:'Ask for understanding, honesty, endurance, and a concrete response to what you read today.'
+    });
+    dateCursor.setUTCDate(dateCursor.getUTCDate()+1);
+  }
+  return plan;
+}
+const BIBLE365_PLAN=buildBible365Plan582();
+/* The previous 365 module used a different topical schedule with the same numeric day ids.
+   Preserve it for recovery, but do not mislabel old completion marks as canonical-Bible progress. */
+if(B.planVersion!=='canonical365-v1'){
+  if(B.planCompleted&&Object.keys(B.planCompleted).length)B.planLegacyCompleted={...B.planCompleted};
+  B.planCompleted={};
+  B.planVersion='canonical365-v1';
+  save();
+}
+function bible365ForDate582(d=new Date()){
+  const month=MONTHS[d.getMonth()],day=d.getDate();
+  if(month==='February'&&day===29){
+    const prev=BIBLE365_PLAN.find(x=>x.month==='February'&&x.day===28)||BIBLE365_PLAN[58];
+    return {...prev,displayRef:'Catch-up / reflection',theme:'Leap-day catch-up',subtheme:'No new chapters assigned',question:'What have you noticed in the year so far that deserves more attention?',practice:'Catch up on an unfinished reading, revisit a marked passage, or spend the time in quiet reflection.',prayer:'Give thanks for what has been read so far and ask for steadiness for the next part of the year.'};
+  }
+  return BIBLE365_PLAN.find(x=>x.month===month&&x.day===day)||BIBLE365_PLAN[0];
+}
+todayPlan=function(){return bible365ForDate582(new Date())};
+planForRef=function(ref){
+  const p=parseRef(ref);
+  if(p){
+    const hit=BIBLE365_PLAN.find(day=>day.chapters?.some(ch=>ch.book===p.book&&ch.chapter===p.chapter));
+    if(hit)return {...hit,ref};
+  }
+  return {...todayPlan(),ref};
+};
+
+/* Mood click bug fix: previous renderers called recordMood(), but no such function existed. */
+function recordMood(key){
+  if(!MOODS[key])return false;
+  const now=new Date(),date=todayKey(),last=B.moodHistory?.[0];
+  const entry={id:`mood_${Date.now()}`,key,label:MOODS[key].label,date,at:now.toISOString()};
+  B.moodHistory=Array.isArray(B.moodHistory)?B.moodHistory:[];
+  if(last&&last.key===key&&last.date===date)B.moodHistory[0]={...last,...entry,id:last.id||entry.id};
+  else B.moodHistory.unshift(entry);
+  B.moodHistory=B.moodHistory.slice(0,365);
+  save();
+  return true;
+}
+function moodSvg582(key){
+  const icons={
+    anxious:'<path d="M3 12h3l2-5 4 10 2-5h7"/>',
+    overwhelmed:'<path d="m12 3 8 4-8 4-8-4 8-4Z"/><path d="m4 12 8 4 8-4"/><path d="m4 17 8 4 8-4"/>',
+    lonely:'<circle cx="12" cy="8" r="3"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
+    sad:'<path d="M8 15s1.5-2 4-2 4 2 4 2"/><circle cx="9" cy="9" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r=".7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="9"/>',
+    grieving:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/><path d="m12 5.7-2 4 4 2-2 4"/>',
+    discouraged:'<path d="M3 7l6 6 4-4 8 8"/><path d="M15 17h6v-6"/>',
+    afraid:'<path d="M12 3 4.5 6v5c0 5 3.2 8.2 7.5 10 4.3-1.8 7.5-5 7.5-10V6L12 3Z"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+    angry:'<path d="m13 2-8 11h6l-1 9 9-12h-6l0-8Z"/>',
+    guilty:'<path d="M9 7H4v-5"/><path d="M4 7a8 8 0 1 1-1 8"/>',
+    confused:'<circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 1 1 3.9 1.9c-1 .7-1.7 1.2-1.7 2.6"/><path d="M12 17h.01"/>',
+    tired:'<path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>',
+    tempted:'<path d="M4 12h10"/><path d="m11 8 4 4-4 4"/><path d="M15 6h5v12h-5"/>',
+    'need-wisdom':'<path d="M9 18h6"/><path d="M10 22h4"/><path d="M8.5 14.5A6 6 0 1 1 15.5 14.5c-.9.8-1.5 1.5-1.5 3.5h-4c0-2-.6-2.7-1.5-3.5Z"/>',
+    'need-courage':'<path d="M12 3 4.5 6v5c0 5 3.2 8.2 7.5 10 4.3-1.8 7.5-5 7.5-10V6L12 3Z"/><path d="m9 12 2 2 4-5"/>',
+    'need-peace':'<path d="M3 8c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M3 16c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/>',
+    'need-purpose':'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M22 12h-3M12 22v-3M2 12h3"/>',
+    forgive:'<path d="M20 11a8 8 0 1 1-2.3-5.7"/><path d="M20 4v7h-7"/><path d="m9.5 12 1.6 1.6 3.4-3.6"/>',
+    grateful:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',
+    hopeful:'<path d="M4 18h16"/><path d="M6 18a6 6 0 0 1 12 0"/><path d="M12 3v3M4.2 7.2l2.1 2.1M19.8 7.2l-2.1 2.1"/>',
+    joyful:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'
+  };
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">${icons[key]||icons.confused}</svg>`;
+}
+
+renderMood=function(h){
+  const selected=MOODS[B.ui.mood]?B.ui.mood:Object.keys(MOODS)[0],m=MOODS[selected];
+  const last=B.moodHistory?.[0];
+  h.innerHTML=`<div class="bib-mood-layout"><section class="bib-card"><div class="bib-card-title">Choose a mood or need</div><div class="bib-card-sub bib-mood-intro">These are Scripture pathways, not diagnoses or promises of an instant emotional change.</div><div class="bib-all-moods">${Object.entries(MOODS).map(([k,x])=>`<button type="button" class="bib-mood ${selected===k?'active':''}" data-mood="${k}" aria-pressed="${selected===k?'true':'false'}" title="${esc(x.label)}"><div class="bib-mood-icon">${moodSvg582(k)}</div><div class="bib-mood-name">${esc(x.label)}</div></button>`).join('')}</div>${last?`<div class="bib-mood-history-note">Last check-in: <strong>${esc(last.label||MOODS[last.key]?.label||'Mood')}</strong><span>·</span><span>${esc(last.date||'')}</span></div>`:''}</section><section class="bib-card"><div class="bib-card-head"><div><div class="bib-card-title">${esc(m.label)}</div><div class="bib-card-sub">${esc(m.guide)}</div></div><button type="button" class="btn btn-sm" data-mood-journal>Journal</button></div>${m.refs.map(ref=>{const copy=selectedPassageText(ref);return `<article class="bib-mood-card-v573"><div class="bib-passage-ref">${esc(ref)}</div><div class="bib-mood-excerpt">${esc(copy||'Open the passage to read the full text.')}</div><div class="bib-actions"><button type="button" class="btn btn-sm" data-read="${esc(ref)}">Read</button><button type="button" class="btn btn-sm" data-med="${esc(ref)}">Meditate</button><button type="button" class="btn btn-sm" data-mood-study="${esc(ref)}">Study</button></div></article>`}).join('')}</section></div>`;
+  bindCommon(h);
+  h.querySelectorAll('[data-mood]').forEach(b=>b.onclick=()=>{B.ui.mood=b.dataset.mood;recordMood(b.dataset.mood);renderMood(h)});
+  h.querySelectorAll('[data-mood-study]').forEach(b=>b.onclick=()=>{const p=parseRef(b.dataset.moodStudy);if(!p)return;B.reader.book=p.book;B.reader.chapter=p.chapter;B.reader.verse=p.verse;B.tab='study';save();render()});
+  h.querySelector('[data-mood-journal]')?.addEventListener('click',()=>{B.ui.journalEdit='';B.meditation.mood=selected;save();setTab('journal')});
+};
+
+renderPlan=function(h){
+  const monthIndex=Math.max(0,Math.min(11,Number(B.planMonth)||0)),month=MONTHS[monthIndex],items=BIBLE365_PLAN.filter(x=>x.month===month),today=todayPlan(),now=new Date(),year=now.getFullYear();
+  const monday=(state.settings?.calendar?.weekStart||'sunday')==='monday',weekdays=monday?['Mon','Tue','Wed','Thu','Fri','Sat','Sun']:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const firstDow=new Date(year,monthIndex,1,12).getDay(),offset=monday?(firstDow+6)%7:firstDow,daysInMonth=new Date(year,monthIndex+1,0,12).getDate(),byDay=new Map(items.map(x=>[Number(x.day),x])),cells=Array(offset).fill(null);
+  for(let day=1;day<=daysInMonth;day++)cells.push(byDay.get(day)||{calendarOnly:true,day});
+  while(cells.length%7)cells.push(null);
+  const completedThisMonth=items.filter(x=>B.planCompleted[x.id]).length,isCurrentMonth=now.getMonth()===monthIndex;
+  const selectedId=Number(B.ui.planSelected||today.id||items[0]?.id||1),selected=BIBLE365_PLAN.find(x=>x.id===selectedId)||today;
+  h.innerHTML=`<section class="bib-card"><div class="bib-plan-head"><div><div class="bib-card-title">Bible 365 · Genesis → Revelation</div><div class="bib-card-sub">A canonical-order Bible-in-a-year plan covering all ${BOOKS.reduce((n,b)=>n+Number(b.chapters||0),0)} chapters exactly once across 365 scheduled days. Most days contain 3 chapters; 94 days contain 4. February 29 is a catch-up / reflection day.</div></div><div class="bib-plan-progress-copy"><span>${completedThisMonth}/${items.length} this month</span><strong>${planPct()}%</strong><span>year complete</span></div></div><div class="bib-progress"><i style="width:${planPct()}%"></i></div><div class="bib-plan-calnav"><button class="btn btn-sm" type="button" data-plan-prev aria-label="Previous month">‹</button><div class="bib-plan-month-title">${esc(month)} ${year}</div><button class="btn btn-sm" type="button" data-plan-today ${isCurrentMonth?'disabled':''}>Today</button><button class="btn btn-sm" type="button" data-plan-next aria-label="Next month">›</button><select class="form-select bib-plan-month-select" data-plan-month-select aria-label="Choose month">${MONTHS.map((m,i)=>`<option value="${i}" ${i===monthIndex?'selected':''}>${m}</option>`).join('')}</select></div><div class="bib-plan-calendar-wrap"><div class="bib-plan-calendar">${weekdays.map(w=>`<div class="bib-plan-weekday">${w}</div>`).join('')}${cells.map(x=>{if(!x)return '<div class="bib-plan-cell empty" aria-hidden="true"></div>';if(x.calendarOnly)return `<div class="bib-plan-cell leap"><div class="bib-plan-cell-head"><span class="bib-plan-date">${x.day}</span></div><div class="bib-plan-leap-copy">Catch-up / reflection day.</div></div>`;const dateIsToday=isCurrentMonth&&Number(x.day)===now.getDate();return `<article class="bib-plan-cell ${B.planCompleted[x.id]?'done':''} ${dateIsToday?'today':''} ${selected.id===x.id?'selected':''}" data-plan-day="${x.id}" tabindex="0" aria-label="${esc(month)} ${x.day}: ${esc(x.displayRef)}"><div class="bib-plan-cell-head"><span class="bib-plan-date">${x.day}</span><button class="bib-plan-check" type="button" data-plan-check="${x.id}" title="${B.planCompleted[x.id]?'Mark incomplete':'Mark complete'}" aria-label="${B.planCompleted[x.id]?'Mark incomplete':'Mark complete'}">${B.planCompleted[x.id]?'✓':''}</button></div><div class="bib-plan-ref">${esc(x.displayRef)}</div><div class="bib-plan-sub">${esc(x.subtheme)}</div><div class="bib-plan-daynum">Day ${x.id}</div></article>`}).join('')}</div></div><div class="bib-plan-detail"><div class="bib-plan-detail-head"><div><div class="bib-plan-detail-title">Day ${selected.id} · ${esc(selected.displayRef)}</div><div class="bib-plan-detail-meta">${esc(selected.month)} ${selected.day} · ${selected.chapters.length} chapters · canonical order</div></div><button class="btn btn-primary btn-sm" type="button" data-plan-meditate="${esc(selected.ref)}">Meditate on first chapter</button></div><div class="bib-plan-readings">${selected.chapters.map(ch=>`<div class="bib-plan-reading"><span>${esc(ch.book)} ${ch.chapter}</span><button class="btn btn-sm" type="button" data-plan-read="${esc(ch.book+' '+ch.chapter)}">Read</button></div>`).join('')}</div><div class="bib-plan-note">Read the chapters in order. Completion is tracked by day, while each chapter opens in the native reader so notes, highlights, study tools, and meditation remain available.</div></div></section>`;
+  const setMonth=i=>{B.planMonth=(i+12)%12;save();renderPlan(h)};
+  h.querySelector('[data-plan-prev]').onclick=()=>setMonth(monthIndex-1);h.querySelector('[data-plan-next]').onclick=()=>setMonth(monthIndex+1);h.querySelector('[data-plan-month-select]').onchange=e=>setMonth(Number(e.target.value));
+  h.querySelector('[data-plan-today]').onclick=()=>{B.planMonth=now.getMonth();B.ui.planSelected=today.id;save();renderPlan(h)};
+  h.querySelectorAll('[data-plan-day]').forEach(c=>{const select=()=>{B.ui.planSelected=Number(c.dataset.planDay);save();renderPlan(h)};c.onclick=e=>{if(e.target.closest('[data-plan-check]'))return;select()};c.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('[data-plan-check]')){e.preventDefault();select()}}});
+  h.querySelectorAll('[data-plan-check]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=Number(b.dataset.planCheck);B.planCompleted[id]=!B.planCompleted[id];B.ui.planSelected=id;save();renderPlan(h)});
+  h.querySelectorAll('[data-plan-read]').forEach(b=>b.onclick=()=>setRef(b.dataset.planRead,'read'));
+  h.querySelector('[data-plan-meditate]')?.addEventListener('click',b=>startMeditation(b.currentTarget.dataset.planMeditate));
+};
+
+/* Make the top Today action describe the full assigned reading while still opening its first chapter. */
+const _topHtml582=topHtml;
+topHtml=function(){
+  const p=todayPlan(),html=_topHtml582();
+  return html.replace(`Today · ${esc(p.ref)}`,`Today · ${esc(p.displayRef||p.ref)}`).replace('>365 Plan<','>Bible 365<');
+};
+
+window.OmniBible572=window.OmniBible571={open:()=>window.switchView?.('bible'),read:ref=>setRef(ref,'read'),meditate:startMeditation,render,get plan(){return BIBLE365_PLAN},get moods(){return MOODS},state:B};
+})();
+</script>
+<style id="omnios-v5714-bible-read-redesign-css">
+/* ===== OmniOS v57.14 — full Bible Read page redesign ===== */
+#view-bible .bib-read-v5814{--b14-border:color-mix(in srgb,var(--border-color) 86%,transparent);--b14-surface:var(--bg-surface);--b14-alt:color-mix(in srgb,var(--bg-base) 80%,var(--bg-surface) 20%);display:flex!important;flex-direction:column!important;gap:12px!important;min-width:0!important;padding-bottom:22px!important}
+#view-bible .bib-toolbar-v5814{position:sticky!important;top:calc(var(--omni-header-h,58px) + 6px)!important;z-index:50!important;display:grid!important;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto!important;gap:10px!important;padding:12px!important;border:1px solid var(--b14-border)!important;border-radius:16px!important;background:var(--b14-surface)!important;box-shadow:0 8px 22px rgba(0,0,0,.05)!important}
+#view-bible .bib-toolbar-group-v5814{display:flex!important;flex-direction:column!important;gap:7px!important;min-width:0!important}
+#view-bible .bib-toolbar-label-v5814{font-size:.7rem!important;line-height:1!important;font-weight:800!important;letter-spacing:.08em!important;text-transform:uppercase!important;color:var(--text-muted)!important;padding-left:2px!important}
+#view-bible .bib-toolbar-controls-v5814{display:flex!important;align-items:center!important;gap:6px!important;min-height:44px!important;padding:4px!important;border:1px solid color-mix(in srgb,var(--border-color) 84%,transparent)!important;border-radius:12px!important;background:var(--b14-alt)!important;min-width:0!important}
+#view-bible .bib-toolbar-books-v5814 #bib-book{flex:1 1 auto!important;min-width:0!important}
+#view-bible .bib-toolbar-books-v5814 #bib-chapter{flex:0 0 96px!important;width:96px!important}
+#view-bible .bib-toolbar-ref-v5814 .form-input{flex:1 1 auto!important;min-width:0!important}
+#view-bible .bib-toolbar-tools-v5814{min-width:210px!important}
+#view-bible .bib-toolbar-tools-row-v5814{justify-content:flex-end!important}
+#view-bible .bib-search-v5814{display:none!important;margin:0!important;padding:12px!important;border:1px solid var(--b14-border)!important;border-radius:14px!important;background:var(--b14-surface)!important;box-shadow:0 4px 14px rgba(0,0,0,.03)!important}
+#view-bible .bib-search-v5814.open{display:block!important}
+#view-bible .bib-search-inner-v5814{display:grid!important;grid-template-columns:minmax(0,1fr) auto auto!important;gap:8px!important}
+#view-bible .bib-read-grid-v5814{display:grid!important;grid-template-columns:minmax(0,1fr) 360px!important;gap:16px!important;align-items:start!important;min-width:0!important}
+#view-bible .bib-reader-pane-v5814{display:flex!important;flex-direction:column!important;min-width:0!important;height:clamp(600px,calc(100dvh - var(--omni-header-h,58px) - 152px),900px)!important;border:1px solid var(--b14-border)!important;border-radius:20px!important;background:var(--b14-surface)!important;box-shadow:0 12px 28px rgba(0,0,0,.05)!important;overflow:hidden!important}
+#view-bible .bib-reader-header-v5814{flex:0 0 auto!important;display:flex!important;align-items:flex-end!important;justify-content:space-between!important;gap:16px!important;padding:22px 24px 16px!important;border-bottom:1px solid var(--b14-border)!important;background:linear-gradient(180deg,color-mix(in srgb,var(--bg-surface) 96%,white 4%),var(--bg-surface))!important}
+#view-bible .bib-reader-kicker-v5814{font-size:.72rem!important;font-weight:800!important;letter-spacing:.09em!important;text-transform:uppercase!important;color:var(--text-muted)!important}
+#view-bible .bib-reader-header-v5814 h2{margin:4px 0 0!important;font-size:2rem!important;line-height:1.08!important;letter-spacing:-.03em!important;color:var(--text-primary)!important}
+#view-bible .bib-reader-meta-v5814{display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin-top:8px!important;color:var(--text-muted)!important;font-size:.78rem!important}
+#view-bible .bib-reader-meta-v5814 span+span::before{content:'•';margin-right:8px;opacity:.55}
+#view-bible .bib-reader-scroll-v5814{flex:1 1 auto!important;min-height:0!important;overflow:auto!important;overscroll-behavior:contain!important;scrollbar-gutter:stable!important;scroll-behavior:smooth!important;background:var(--bg-surface)!important}
+html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-behavior:auto!important}
+#view-bible .bib-reader-scroll-v5814::-webkit-scrollbar{width:10px!important}
+#view-bible .bib-reader-scroll-v5814::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text-muted) 32%,transparent)!important;border:3px solid transparent!important;background-clip:padding-box!important;border-radius:999px!important}
+#view-bible .bib-reader-copy-v5814{width:min(100%,860px)!important;max-width:860px!important;margin:0 auto!important;padding:24px 28px 42px!important}
+#view-bible .bib-reader-copy-v5814 .bib-verse-row.v573{grid-template-columns:36px minmax(0,1fr)!important;gap:11px!important;padding:9px 12px!important;margin:0 0 4px!important;border-radius:10px!important;border:1px solid transparent!important;scroll-margin-top:18px!important}
+#view-bible .bib-reader-copy-v5814 .bib-verse-row.v573:not([data-highlight="1"]):hover{background:color-mix(in srgb,var(--bg-base) 80%,var(--bg-surface) 20%)!important}
+#view-bible .bib-reader-copy-v5814 .bib-vnum{align-self:start!important;margin-top:2px!important}
+#view-bible .bib-reader-copy-v5814 .bib-vtext{line-height:1.76!important;font-size:var(--bib-font-size,1rem)!important;color:var(--text-primary)!important}
+#view-bible .bib-reader-copy-v5814 .bib-verse-row.v573.selected:not([data-highlight="1"]){background:color-mix(in srgb,var(--accent-color, #6b5cff) 10%,var(--bg-surface) 90%)!important;border-color:color-mix(in srgb,var(--accent-color, #6b5cff) 24%,transparent)!important}
+#view-bible .bib-side-v5814{position:sticky!important;top:calc(var(--omni-header-h,58px) + 82px)!important;display:flex!important;flex-direction:column!important;gap:12px!important;min-width:0!important;max-height:calc(100dvh - var(--omni-header-h,58px) - 98px)!important;overflow:auto!important;padding-right:2px!important}
+#view-bible .bib-side-card-v5814{padding:14px!important;border:1px solid var(--b14-border)!important;border-radius:16px!important;background:var(--b14-surface)!important;box-shadow:0 8px 20px rgba(0,0,0,.04)!important}
+#view-bible .bib-side-card-head-v5814{margin-bottom:10px!important}
+#view-bible .bib-side-card-kicker-v5814{font-size:.7rem!important;font-weight:800!important;letter-spacing:.08em!important;text-transform:uppercase!important;color:var(--text-muted)!important}
+#view-bible .bib-selection-ref-v5814{margin-top:4px!important;font-size:1.06rem!important;font-weight:800!important;color:var(--text-primary)!important}
+#view-bible .bib-selection-meta-v5814{margin-top:4px!important;color:var(--text-muted)!important;font-size:.8rem!important;line-height:1.35!important}
+#view-bible .bib-side-card-title-v5814{font-weight:800!important;color:var(--text-primary)!important;margin-bottom:3px!important}
+#view-bible .bib-side-card-sub-v5814{font-size:.82rem!important;line-height:1.42!important;color:var(--text-muted)!important;margin-bottom:10px!important}
+#view-bible .bib-side-actions-v5814{display:flex!important;flex-wrap:wrap!important;gap:7px!important;margin-top:10px!important}
+#view-bible .bib-side-actions-compact-v5814 .btn{flex:1 1 calc(33.333% - 6px)!important}
+#view-bible .bib-side-v5814 .bib-passage-preview.v573{max-height:190px!important;overflow:auto!important;padding:12px!important;border:1px solid var(--b14-border)!important;border-radius:12px!important;background:color-mix(in srgb,var(--bg-base) 75%,var(--bg-surface) 25%)!important}
+#view-bible .bib-side-v5814 .bib-section-label{margin-top:9px!important;margin-bottom:6px!important}
+#view-bible .bib-side-v5814 .bib-purpose-grid{gap:5px!important}
+#view-bible .bib-side-v5814 .bib-style-seg{gap:5px!important}
+#view-bible .bib-side-v5814 .form-textarea{min-height:150px!important}
+#view-bible .bib-side-v5814 .bib-inline-callout{padding:10px 12px!important;border-radius:12px!important;background:color-mix(in srgb,var(--bg-base) 74%,var(--bg-surface) 26%)!important}
+#view-bible.bib-reader-focus .bib-read-grid-v5814{grid-template-columns:minmax(0,980px)!important;justify-content:center!important}
+#view-bible.bib-reader-focus .bib-side-v5814{display:none!important}
+#view-bible.bib-reader-focus .bib-reader-pane-v5814{height:calc(100dvh - var(--omni-header-h,58px) - 96px)!important;max-height:none!important}
+@media(max-width:1100px){#view-bible .bib-read-grid-v5814{grid-template-columns:minmax(0,1fr) 330px!important;gap:14px!important}#view-bible .bib-reader-copy-v5814{padding-left:22px!important;padding-right:22px!important}}
+@media(max-width:920px){#view-bible .bib-toolbar-v5814{grid-template-columns:1fr!important}#view-bible .bib-toolbar-tools-v5814{min-width:0!important}#view-bible .bib-toolbar-tools-row-v5814{justify-content:flex-start!important}#view-bible .bib-search-inner-v5814{grid-template-columns:minmax(0,1fr) auto auto!important}#view-bible .bib-read-grid-v5814{grid-template-columns:1fr!important}#view-bible .bib-reader-pane-v5814{height:clamp(540px,calc(100dvh - var(--omni-header-h,58px) - 206px),760px)!important}#view-bible .bib-side-v5814{position:relative!important;top:auto!important;max-height:none!important;overflow:visible!important}}
+@media(max-width:640px){#view-bible .bib-toolbar-v5814{padding:9px!important;border-radius:14px!important}#view-bible .bib-toolbar-controls-v5814{padding:3px!important;min-height:40px!important}#view-bible .bib-toolbar-books-v5814 .bib-toolbar-controls-v5814{display:grid!important;grid-template-columns:34px minmax(0,1fr) 82px 34px!important}#view-bible .bib-toolbar-ref-v5814 .bib-toolbar-controls-v5814{display:grid!important;grid-template-columns:minmax(0,1fr) auto auto!important}#view-bible .bib-reader-pane-v5814{height:calc(100dvh - var(--omni-header-h,58px) - 228px)!important;min-height:480px!important;border-radius:16px!important}#view-bible .bib-reader-header-v5814{padding:16px 14px 12px!important;align-items:flex-start!important;flex-direction:column!important}#view-bible .bib-reader-header-v5814 h2{font-size:1.58rem!important}#view-bible .bib-reader-copy-v5814{padding:14px 8px 26px!important}#view-bible .bib-reader-copy-v5814 .bib-verse-row.v573{grid-template-columns:29px minmax(0,1fr)!important;gap:6px!important;padding:8px 6px!important;border-radius:8px!important}#view-bible .bib-side-card-v5814{padding:12px!important}#view-bible .bib-side-actions-compact-v5814 .btn{flex:1 1 100%!important}}
+</style>
+
+
+<style id="omnios-v5716-audit-clean-css">
+/* ===== OmniOS v57.16 — audited cleanup layer ===== */
+#view-bible .bib-icon-btn{
+  height:34px!important;
+  min-width:34px!important;
+  padding:0 8px!important;
+  border:1px solid color-mix(in srgb,var(--border-color) 86%,transparent)!important;
+  border-radius:9px!important;
+  background:color-mix(in srgb,var(--bg-base) 82%,var(--bg-surface) 18%)!important;
+  color:var(--text-primary)!important;
+  font:inherit!important;
+  font-weight:700!important;
+  cursor:pointer!important;
+}
+#view-bible .bib-icon-btn:hover{
+  background:color-mix(in srgb,var(--bg-base) 68%,var(--bg-surface) 32%)!important;
+}
+#view-bible .bib-icon-btn:focus-visible{
+  outline:2px solid color-mix(in srgb,var(--accent-color,#6b5cff) 58%,transparent)!important;
+  outline-offset:2px!important;
+}
+#view-bible .bib-search-results{
+  margin-top:8px!important;
+  max-height:340px!important;
+  overflow:auto!important;
+}
+</style>
+
+
+<script id="omnios-v5716-audit-clean-js">
+(function(){
+  const BUILD={version:'57.16',name:'Bible Restored · Audited'};
+  function stamp(){
+    document.documentElement.dataset.omniosVersion=BUILD.version;
+    document.title='OmniOS v57.16 — Bible Restored · Audited';
+    window.OmniBuild=BUILD;
+    if(window.OmniBible571){
+      window.OmniBible=window.OmniBible571;
+      window.OmniBible5716=window.OmniBible571;
+    }
+    window.OmniAudit5716={
+      build:BUILD,
+      removedBibleStyleLayers:['v57.5','v57.6','v57.7','v57.8','v57.9','v57.10','v57.13'],
+      notes:'Compatibility wrappers for switchView/saveState were intentionally preserved because active modules chain them.'
+    };
+  }
+
+  /* ===== OmniOS v58.4.2 — Bible Journal new-entry interaction fix ===== */
+  renderJournal=function(h){
+    const edit=B.journal.find(x=>String(x.id)===String(B.ui.journalEdit))||blankJournal();
+    const isEditing=!!edit.id;
+    h.innerHTML=`<div class="bib-journal-layout"><section class="bib-card"><div class="bib-card-head"><div><div class="bib-card-title">Journal</div><div class="bib-card-sub">Meditation reflections and free-form Scripture notes.</div></div><button type="button" class="btn btn-sm btn-primary" data-new-journal>+ New journal</button></div><div class="bib-journal-list">${B.journal.length?B.journal.map(x=>`<article class="bib-journal-item ${String(x.id)===String(edit.id)?'active':''}" data-journal-id="${esc(x.id)}" tabindex="0"><div class="bib-journal-item-title">${esc(x.ref||x.title||'Reflection')}</div><div class="bib-journal-item-meta">${esc(x.date||'')} ${x.mood?'· '+esc(MOODS[x.mood]?.label||x.mood):''}${x.minutes?' · '+esc(x.minutes)+' min':''}</div><div class="bib-journal-item-copy">${esc(x.text||x.prayer||'')}</div></article>`).join(''):'<div class="bib-empty">Your reflections will appear here.</div>'}</div></section><section class="bib-card bib-journal-editor-card" data-bib-journal-editor><div class="bib-card-head"><div><div class="bib-card-title">${isEditing?'Edit reflection':'New reflection'}</div><div class="bib-card-sub">${isEditing?'Update this saved Bible journal entry.':'Write a new reflection, prayer, or response to Scripture.'}</div></div>${isEditing?'<span class="tag tag-cat">Editing</span>':'<span class="tag tag-low">New</span>'}</div><div class="form-grid" style="margin-top:10px"><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="bj-date" value="${esc(edit.date||todayKey())}"></div><div class="form-group"><label class="form-label">Mood</label><select class="form-select" id="bj-mood"><option value="">None</option>${Object.entries(MOODS).map(([k,m])=>`<option value="${k}" ${edit.mood===k?'selected':''}>${esc(m.label)}</option>`).join('')}</select></div><div class="form-group full"><label class="form-label">Scripture reference / title</label><input class="form-input" id="bj-ref" value="${esc(edit.ref||edit.title||'')}" placeholder="e.g. Psalm 23 or Morning reflection"></div><div class="form-group full"><label class="form-label">Reflection</label><textarea class="form-textarea" id="bj-text" rows="8" placeholder="What stood out to you?">${esc(edit.text||'')}</textarea></div><div class="form-group full"><label class="form-label">Prayer</label><textarea class="form-textarea" id="bj-prayer" rows="4" placeholder="Write a prayer…">${esc(edit.prayer||'')}</textarea></div><div class="form-group full"><label class="form-label">Response / next step</label><input class="form-input" id="bj-response" value="${esc(edit.response||'')}" placeholder="One concrete response"></div></div><div class="bib-actions"><button type="button" class="btn btn-primary" data-save-journal>${isEditing?'Update':'Save'} reflection</button>${isEditing?'<button type="button" class="btn btn-danger" data-delete-journal>Delete</button>':''}</div></section></div>`;
+
+    const focusEditor=(announce=false)=>{
+      const editor=h.querySelector('[data-bib-journal-editor]');
+      requestAnimationFrame(()=>{
+        try{editor?.scrollIntoView({behavior:'smooth',block:'start'})}catch(_){editor?.scrollIntoView()}
+        setTimeout(()=>h.querySelector('#bj-ref')?.focus(),120);
+      });
+      if(announce)toast('New Bible journal ready');
+    };
+    const beginNew=()=>{
+      B.ui.journalEdit='';
+      /* A true fresh journal should not silently reuse old unsaved meditation text. */
+      save();
+      renderJournal(h);
+      const editor=h.querySelector('[data-bib-journal-editor]');
+      requestAnimationFrame(()=>{
+        try{editor?.scrollIntoView({behavior:'smooth',block:'start'})}catch(_){editor?.scrollIntoView()}
+        setTimeout(()=>h.querySelector('#bj-ref')?.focus(),120);
+      });
+      toast('New Bible journal ready');
+    };
+
+    h.querySelector('[data-new-journal]')?.addEventListener('click',beginNew);
+    h.querySelectorAll('[data-journal-id]').forEach(x=>{
+      const open=()=>{B.ui.journalEdit=x.dataset.journalId;save();renderJournal(h);focusEditor(false)};
+      x.addEventListener('click',open);
+      x.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
+    });
+    h.querySelector('[data-save-journal]')?.addEventListener('click',()=>{
+      const data={
+        date:h.querySelector('#bj-date')?.value||todayKey(),
+        mood:h.querySelector('#bj-mood')?.value||'',
+        ref:h.querySelector('#bj-ref')?.value.trim()||'',
+        text:h.querySelector('#bj-text')?.value.trim()||'',
+        prayer:h.querySelector('#bj-prayer')?.value.trim()||'',
+        response:h.querySelector('#bj-response')?.value.trim()||'',
+        updatedAt:new Date().toISOString()
+      };
+      if(!data.ref&&!data.text&&!data.prayer&&!data.response){
+        toast('Write something before saving');
+        h.querySelector('#bj-ref')?.focus();
+        return;
+      }
+      if(isEditing){Object.assign(edit,data)}else{
+        const x={id:'bj-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),createdAt:new Date().toISOString(),...data};
+        B.journal.unshift(x);B.ui.journalEdit=x.id;
+      }
+      save();toast(isEditing?'Bible journal updated':'Bible journal saved');renderJournal(h);
+    });
+    h.querySelector('[data-delete-journal]')?.addEventListener('click',()=>{
+      if(!confirm('Delete this Bible journal entry?'))return;
+      B.journal=B.journal.filter(x=>String(x.id)!==String(edit.id));B.ui.journalEdit='';save();renderJournal(h);toast('Bible journal deleted');
+    });
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',stamp,{once:true});else stamp();
+})();
+</script>
+
+
+<style id="omnios-v5717-bible-tabs-restored-css">
+/* ===== OmniOS v57.19 — Today / Study / Meditate restoration ===== */
+#view-bible .bib-today-v5717{display:flex;flex-direction:column;gap:12px}
+#view-bible .bib-today-feature-v5717{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);gap:12px;padding:20px;border:1px solid color-mix(in srgb,var(--border-color) 84%,transparent);border-radius:18px;background:var(--bg-surface);box-shadow:0 10px 26px rgba(0,0,0,.04)}
+#view-bible .bib-today-copy-v5717 h3{margin:5px 0 2px;font-family:Georgia,'Times New Roman',serif;font-size:1.7rem;color:var(--text-primary)}
+#view-bible .bib-today-subtheme-v5717{color:var(--text-secondary);font-size:.88rem}
+#view-bible .bib-today-scripture-v5717{margin:16px 0;padding:16px;border-left:3px solid var(--bib-accent);border-radius:0 12px 12px 0;background:color-mix(in srgb,var(--bg-base) 75%,var(--bg-surface) 25%);font-family:Georgia,'Times New Roman',serif;line-height:1.7;color:var(--text-primary)}
+#view-bible .bib-today-guide-v5717{display:flex;flex-direction:column;gap:9px}
+#view-bible .bib-today-guide-v5717 .bib-guide-item{padding:12px;border:1px solid var(--border-color);border-radius:12px;background:color-mix(in srgb,var(--bg-base) 78%,var(--bg-surface) 22%)}
+#view-bible .bib-today-guide-v5717 .bib-guide-item p{margin:5px 0 0;color:var(--text-secondary);line-height:1.5}
+#view-bible .bib-today-grid-v5717{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#view-bible .bib-today-metrics-v5717{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+#view-bible .bib-today-metrics-v5717>div{padding:12px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-base);display:flex;flex-direction:column;gap:2px}
+#view-bible .bib-today-metrics-v5717 strong{font-size:1.2rem;color:var(--text-primary)}
+#view-bible .bib-today-metrics-v5717 span{font-size:.76rem;color:var(--text-muted)}
+#view-bible .bib-today-reflection-v5717{margin-top:10px;line-height:1.55;color:var(--text-secondary)}
+@media(max-width:900px){#view-bible .bib-today-feature-v5717,#view-bible .bib-today-grid-v5717{grid-template-columns:1fr}}
+@media(max-width:600px){#view-bible .bib-today-feature-v5717{padding:14px;border-radius:14px}#view-bible .bib-today-metrics-v5717{grid-template-columns:1fr 1fr 1fr}}
+</style>
+
+
+<style id="omnios-v5718-bible-unsticky-toolbar-css">
+/* ===== OmniOS v57.19 — Bible toolbar scrolls normally ===== */
+#view-bible .bib-toolbar-v5814{
+  position:relative!important;
+  top:auto!important;
+  z-index:10!important;
+}
+/* The study panel can still remain available while reading, but its offset no longer reserves space for the old sticky toolbar. */
+#view-bible .bib-side-v5814{
+  top:calc(var(--omni-header-h,58px) + 8px)!important;
+}
+#view-bible.bib-reader-focus .bib-toolbar-v5814{
+  position:relative!important;
+  top:auto!important;
+}
+@media(max-width:920px){
+  #view-bible .bib-toolbar-v5814{position:relative!important;top:auto!important}
+}
+</style>
+
+
+<style id="omnios-v5720-bible-study-maps-css">
+/* ===== OmniOS v57.20 — Bible Study Mind Maps & Knowledge Maps ===== */
+#view-bible .bib-map-studio-v5720{margin-top:14px;padding:16px;border:1px solid color-mix(in srgb,var(--border-color) 86%,transparent);border-radius:18px;background:var(--bg-surface);box-shadow:0 10px 28px rgba(0,0,0,.04)}
+#view-bible .bib-map-studio-head-v5720{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
+#view-bible .bib-map-studio-title-v5720{font-size:1.1rem;font-weight:800;color:var(--text-primary);margin:2px 0}
+#view-bible .bib-map-create-v5720{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+#view-bible .bib-map-manager-v5720{display:grid;grid-template-columns:minmax(220px,1.1fr) minmax(220px,1fr) auto auto;gap:8px;align-items:center;margin-bottom:10px}
+#view-bible .bib-map-type-chip-v5720{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 10px;border:1px solid var(--border-color);border-radius:999px;background:color-mix(in srgb,var(--bg-base) 76%,var(--bg-surface) 24%);font-size:.76rem;font-weight:700;color:var(--text-secondary);white-space:nowrap}
+#view-bible .bib-map-editor-shell-v5720{border:1px solid color-mix(in srgb,var(--border-color) 86%,transparent);border-radius:16px;overflow:hidden;background:var(--bg-base)}
+#view-bible .bib-map-toolbar-v5720{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:9px;border-bottom:1px solid var(--border-color);background:var(--bg-surface)}
+#view-bible .bib-map-relation-v5720{max-width:190px;min-width:140px;height:34px!important}
+#view-bible .bib-map-workspace-v5720{display:grid;grid-template-columns:minmax(0,1fr) 275px;min-height:570px}
+#view-bible .bib-map-board-wrap-v5720{position:relative;min-width:0;overflow:auto;background-color:var(--bg-base);background-image:radial-gradient(circle at 1px 1px,color-mix(in srgb,var(--text-muted) 20%,transparent) 1px,transparent 0);background-size:22px 22px;scrollbar-width:thin}
+#view-bible .bib-map-board-v5720{position:relative;width:1320px;height:820px;min-width:1320px;min-height:820px}
+#view-bible .bib-map-svg-v5720{position:absolute;inset:0;z-index:1;overflow:visible}
+#view-bible .bib-map-edge-v5720{fill:none;stroke:color-mix(in srgb,var(--text-muted) 58%,transparent);stroke-width:2}
+#view-bible .bib-map-edge-hit-v5720{fill:none;stroke:transparent;stroke-width:14;pointer-events:stroke;cursor:pointer}
+#view-bible .bib-map-edge-g-v5720.selected .bib-map-edge-v5720{stroke:var(--accent-color,#6b5cff);stroke-width:3}
+#view-bible .bib-map-edge-label-bg-v5720{fill:var(--bg-surface);stroke:var(--border-color);stroke-width:1;pointer-events:none}
+#view-bible .bib-map-edge-label-v5720{fill:var(--text-secondary);font-size:11px;font-weight:700;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+#view-bible .bib-map-node-v5720{position:absolute;z-index:2;width:190px;min-height:84px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;padding:11px 12px;text-align:left;border:1px solid color-mix(in srgb,var(--border-color) 90%,transparent);border-radius:14px;background:var(--bg-surface);box-shadow:0 8px 20px rgba(0,0,0,.06);color:var(--text-primary);cursor:grab;touch-action:none;user-select:none}
+#view-bible .bib-map-node-v5720:active{cursor:grabbing}
+#view-bible .bib-map-node-v5720:hover{border-color:color-mix(in srgb,var(--accent-color,#6b5cff) 34%,var(--border-color));box-shadow:0 10px 24px rgba(0,0,0,.085)}
+#view-bible .bib-map-node-v5720.selected{outline:2px solid color-mix(in srgb,var(--accent-color,#6b5cff) 68%,transparent);outline-offset:2px}
+#view-bible .bib-map-node-v5720.connecting{outline:2px dashed var(--accent-color,#6b5cff);outline-offset:3px}
+#view-bible .bib-map-node-kind-v5720{font-size:.62rem;line-height:1;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)}
+#view-bible .bib-map-node-v5720 strong{font-size:.88rem;line-height:1.25;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+#view-bible .bib-map-node-ref-v5720{font-size:.7rem;color:var(--text-muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#view-bible .bib-map-node-v5720.kind-person{border-left:4px solid #9b7bff}#view-bible .bib-map-node-v5720.kind-place{border-left:4px solid #56b98a}#view-bible .bib-map-node-v5720.kind-event{border-left:4px solid #e58c5b}#view-bible .bib-map-node-v5720.kind-theme{border-left:4px solid #d7aa42}#view-bible .bib-map-node-v5720.kind-verse,#view-bible .bib-map-node-v5720.kind-passage{border-left:4px solid #5b8ee5}#view-bible .bib-map-node-v5720.kind-concept{border-left:4px solid #c768a7}
+#view-bible .bib-map-inspector-v5720{border-left:1px solid var(--border-color);padding:13px;background:var(--bg-surface);overflow:auto}
+#view-bible .bib-map-inspector-v5720 .form-label{display:block;margin:10px 0 5px}
+#view-bible .bib-map-inspector-kicker-v5720{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:9px}
+#view-bible .bib-map-inspector-actions-v5720{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+#view-bible .bib-map-ref-row-v5720{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
+#view-bible .bib-map-inspector-empty-v5720,#view-bible .bib-map-empty-v5720{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--text-muted);gap:7px}
+#view-bible .bib-map-inspector-empty-v5720{min-height:220px;padding:20px}
+#view-bible .bib-map-inspector-empty-v5720 strong,#view-bible .bib-map-empty-v5720 strong{color:var(--text-primary)}
+#view-bible .bib-map-empty-v5720{min-height:360px;padding:30px;border:1px dashed color-mix(in srgb,var(--border-color) 90%,transparent);border-radius:16px;background:color-mix(in srgb,var(--bg-base) 74%,var(--bg-surface) 26%)}
+#view-bible .bib-map-empty-icon-v5720{font-size:2rem;width:52px;height:52px;display:grid;place-items:center;border:1px solid var(--border-color);border-radius:15px;background:var(--bg-surface);color:var(--text-secondary)}
+@media(max-width:1050px){#view-bible .bib-map-manager-v5720{grid-template-columns:1fr 1fr auto}#view-bible .bib-map-manager-v5720 #bst-map-delete{grid-column:3}#view-bible .bib-map-workspace-v5720{grid-template-columns:minmax(0,1fr) 245px}}
+@media(max-width:820px){#view-bible .bib-map-studio-head-v5720{flex-direction:column}#view-bible .bib-map-create-v5720{justify-content:flex-start}#view-bible .bib-map-manager-v5720{grid-template-columns:1fr}#view-bible .bib-map-manager-v5720 #bst-map-delete{grid-column:auto}#view-bible .bib-map-workspace-v5720{grid-template-columns:1fr}#view-bible .bib-map-board-wrap-v5720{height:520px}#view-bible .bib-map-inspector-v5720{border-left:0;border-top:1px solid var(--border-color)}}
+@media(max-width:560px){#view-bible .bib-map-studio-v5720{padding:11px;border-radius:14px}#view-bible .bib-map-toolbar-v5720{align-items:stretch}#view-bible .bib-map-toolbar-v5720 .btn{flex:1 1 auto}#view-bible .bib-map-relation-v5720{max-width:none;flex:1 1 100%}#view-bible .bib-map-board-wrap-v5720{height:430px}}
+</style>
+
+<script id="omnios-v5720-build-stamp-js">(function(){const stamp=()=>{document.documentElement.dataset.omniosVersion="57.20";window.OmniBuild={version:"57.20",name:"Bible Study Maps"};};if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",stamp,{once:true});else stamp();})();</script>
+
+<style id="omnios-v5721-bible-map-navigation-css">
+/* ===== OmniOS v57.21 — advanced Bible map navigation ===== */
+#view-bible .bib-map-editor-v5721{--map-side-w:292px}
+#view-bible .bib-map-toolbar-v5721{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:8px 9px!important}
+#view-bible .bib-map-toolbar-section-v5721{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+#view-bible .bib-map-toolbar-spacer-v5721{flex:1 1 auto;min-width:10px}
+#view-bible .bib-map-jump-v5721{width:190px;min-width:150px;height:36px!important;font-size:.76rem!important}
+#view-bible .bib-map-nav-group-v5721{display:inline-flex;align-items:center;gap:3px;padding:3px;border:1px solid color-mix(in srgb,var(--border-color) 86%,transparent);border-radius:10px;background:color-mix(in srgb,var(--bg-base) 74%,var(--bg-surface) 26%)}
+#view-bible .bib-map-icon-btn-v5721,#view-bible .bib-map-zoom-label-v5721{height:30px;min-width:30px;padding:0 7px;display:inline-grid;place-items:center;border:0;border-radius:7px;background:transparent;color:var(--text-secondary);font:inherit;font-size:.82rem;font-weight:800;cursor:pointer}
+#view-bible .bib-map-icon-btn-v5721:hover,#view-bible .bib-map-zoom-label-v5721:hover{background:var(--bg-surface);color:var(--text-primary)}
+#view-bible .bib-map-icon-btn-v5721.active{background:color-mix(in srgb,var(--accent-color,#6b5cff) 12%,var(--bg-surface));color:var(--accent-color,#6b5cff)}
+#view-bible .bib-map-icon-btn-v5721:disabled{opacity:.38;cursor:not-allowed}
+#view-bible .bib-map-zoom-label-v5721{min-width:52px;font-size:.72rem}
+#view-bible .bib-map-nav-divider-v5721{width:1px;height:19px;background:var(--border-color);margin:0 2px}
+#view-bible .bib-map-breadcrumb-v5721{display:flex;align-items:center;gap:5px;min-height:36px;padding:6px 10px;border-bottom:1px solid var(--border-color);background:color-mix(in srgb,var(--bg-surface) 94%,var(--bg-base) 6%);overflow:auto;white-space:nowrap;font-size:.76rem;color:var(--text-muted)}
+#view-bible .bib-map-breadcrumb-v5721 button{border:0;background:transparent;color:var(--text-secondary);font:inherit;font-weight:650;padding:4px 6px;border-radius:6px;cursor:pointer;white-space:nowrap}
+#view-bible .bib-map-breadcrumb-v5721 button:hover{background:var(--bg-base);color:var(--text-primary)}
+#view-bible .bib-map-breadcrumb-v5721 button.current{color:var(--text-primary);font-weight:800}
+#view-bible .bib-map-breadcrumb-v5721 .muted{opacity:.78}
+#view-bible .bib-map-workspace-v5721{grid-template-columns:minmax(0,1fr) var(--map-side-w)!important;transition:grid-template-columns .18s ease}
+#view-bible .bib-map-editor-v5721.inspector-collapsed .bib-map-workspace-v5721{grid-template-columns:minmax(0,1fr) 0!important}
+#view-bible .bib-map-board-wrap-v5721{height:620px;cursor:grab;overscroll-behavior:contain;position:relative;outline:none}
+#view-bible .bib-map-board-wrap-v5721:focus-visible{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent-color,#6b5cff) 55%,transparent)}
+#view-bible .bib-map-board-wrap-v5721.is-panning{cursor:grabbing;user-select:none}
+#view-bible .bib-map-stage-v5721{position:relative;min-width:1px;min-height:1px}
+#view-bible .bib-map-inspector-v5721{min-width:0;width:var(--map-side-w);transition:opacity .16s ease,transform .16s ease;padding-top:9px!important}
+#view-bible .bib-map-editor-v5721.inspector-collapsed .bib-map-inspector-v5721{opacity:0;transform:translateX(12px);pointer-events:none;overflow:hidden;padding:0!important;border-left:0!important;width:0}
+#view-bible .bib-map-inspector-top-v5721{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:7px;margin-bottom:4px;border-bottom:1px solid color-mix(in srgb,var(--border-color) 76%,transparent)}
+#view-bible .bib-map-inspector-top-v5721 strong{font-size:.82rem;color:var(--text-primary)}
+#view-bible .bib-map-statusbar-v5721{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:31px;padding:6px 10px;border-top:1px solid var(--border-color);background:var(--bg-surface);font-size:.68rem;color:var(--text-muted);white-space:nowrap;overflow:hidden}
+#view-bible .bib-map-statusbar-v5721 span{overflow:hidden;text-overflow:ellipsis}
+#view-bible .bib-map-shortcut-hint-v5721{font-size:.72rem;opacity:.82;margin-top:4px}
+@media(max-width:1000px){#view-bible .bib-map-editor-v5721{--map-side-w:250px}#view-bible .bib-map-board-wrap-v5721{height:560px}#view-bible .bib-map-statusbar-v5721 span:last-child{display:none}}
+@media(max-width:820px){#view-bible .bib-map-workspace-v5721{grid-template-columns:1fr!important}#view-bible .bib-map-inspector-v5721{width:100%;border-left:0!important;border-top:1px solid var(--border-color)}#view-bible .bib-map-editor-v5721.inspector-collapsed .bib-map-inspector-v5721{display:none}#view-bible .bib-map-board-wrap-v5721{height:500px}#view-bible .bib-map-toolbar-spacer-v5721{display:none}#view-bible .bib-map-jump-v5721{width:100%;order:2}#view-bible .bib-map-nav-group-v5721{order:3;width:100%;justify-content:center}#view-bible .bib-map-statusbar-v5721{justify-content:flex-start}#view-bible .bib-map-statusbar-v5721 span:nth-child(2){display:none}}
+@media(max-width:560px){#view-bible .bib-map-board-wrap-v5721{height:430px}#view-bible .bib-map-toolbar-v5721 .bib-map-toolbar-section-v5721{width:100%}#view-bible .bib-map-toolbar-v5721 .bib-map-toolbar-section-v5721 .btn{flex:1 1 auto}#view-bible .bib-map-nav-divider-v5721{display:none}}
+@media(prefers-reduced-motion:reduce){#view-bible .bib-map-workspace-v5721,#view-bible .bib-map-inspector-v5721{transition:none}}
+</style>
+
+<style id="omnios-v5722-bible-map-context-css">
+/* ===== OmniOS v57.22 — pointer gestures + map contextual menu ===== */
+#view-bible .bib-map-board-wrap-v5721{touch-action:none}
+#view-bible .bib-map-node-v5720,#view-bible .bib-map-edge-g-v5720{cursor:context-menu}
+.bib-map-context-v5722{position:fixed;z-index:2600;display:none;min-width:230px;max-width:min(310px,calc(100vw - 16px));padding:6px;border:1px solid color-mix(in srgb,var(--border-color) 92%,transparent);border-radius:12px;background:var(--bg-surface);box-shadow:0 20px 56px rgba(0,0,0,.28);color:var(--text-primary)}
+.bib-map-context-v5722.open{display:block}
+.bib-map-context-title-v5722{padding:7px 9px 6px;font-size:.65rem;font-weight:800;letter-spacing:.075em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bib-map-context-item-v5722{width:100%;min-height:36px;display:flex;align-items:center;gap:9px;padding:7px 9px;border:0;border-radius:8px;background:transparent;color:inherit;text-align:left;font:inherit;font-size:.76rem;cursor:pointer}
+.bib-map-context-item-v5722:hover,.bib-map-context-item-v5722:focus{outline:none;background:color-mix(in srgb,var(--bg-base) 78%,var(--bg-surface) 22%)}
+.bib-map-context-item-v5722:disabled{opacity:.38;cursor:not-allowed}
+.bib-map-context-item-v5722.danger{color:var(--accent-red,#ef4444)}
+.bib-map-context-icon-v5722{width:19px;flex:0 0 19px;text-align:center;font-weight:800;color:currentColor}
+.bib-map-context-label-v5722{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bib-map-context-hint-v5722{margin-left:auto;color:var(--text-muted);font-size:.62rem}
+.bib-map-context-sep-v5722{height:1px;margin:5px 4px;background:var(--border-color)}
+@media(max-width:760px){.bib-map-context-v5722{min-width:min(250px,calc(100vw - 20px))}}
+</style>
+
+<script id="omnios-v5722-build-stamp-js">(function(){const stamp=()=>{document.documentElement.dataset.omniosVersion='57.22';window.OmniBuild={version:'57.22',name:'Bible Map Gestures & Context'};document.title='OmniOS v57.22 — Bible Map Gestures & Context';};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',stamp,{once:true});else stamp();})();</script>
+
+<!-- OmniOS v57.23: Bible map mini-navigation and canvas instruction strip removed. -->
+
+<style id="omnios-v5724-map-hidden-scrollbars-css">
+/* Bible Study map: preserve scrolling/panning but never show scrollbar chrome. */
+#view-bible .bib-map-board-wrap-v5720,
+#view-bible .bib-map-inspector-v5720,
+#view-bible .bib-map-breadcrumb-v5721{
+  scrollbar-width:none!important;
+  -ms-overflow-style:none!important;
+}
+#view-bible .bib-map-board-wrap-v5720::-webkit-scrollbar,
+#view-bible .bib-map-inspector-v5720::-webkit-scrollbar,
+#view-bible .bib-map-breadcrumb-v5721::-webkit-scrollbar{
+  width:0!important;
+  height:0!important;
+  display:none!important;
+}
+</style>
+
+
+<style id="omnios-v5725-bible-task-bridge-css">
+#view-bible .bib-top-actions [data-bib-task]{white-space:nowrap}
+#view-bible #bib-today-task,#view-bible #bib-create-task,#view-bible #bst-task,#view-bible #bst-response-task{white-space:nowrap}
+@media(max-width:640px){#view-bible .bib-top-actions [data-bib-task]{width:100%}}
+</style>
+
+
+<!-- OmniOS v57.26: Bible Atlas with sourced places, routes, timelines, and full navigation. -->
+<style id="omnios-v5726-bible-atlas-css">
+#view-bible .bib-atlas-shell{display:grid;grid-template-columns:320px minmax(0,1fr);gap:14px;align-items:start}
+#view-bible .bib-atlas-side{display:flex;flex-direction:column;gap:12px;position:sticky;top:8px}
+#view-bible .bib-atlas-card{border:1px solid var(--border-color);border-radius:16px;background:var(--bg-surface);box-shadow:0 10px 26px rgba(0,0,0,.05);overflow:hidden}
+#view-bible .bib-atlas-card-head{padding:14px 16px 12px;border-bottom:1px solid var(--border-color);background:linear-gradient(145deg,rgba(213,173,104,.08),transparent)}
+#view-bible .bib-atlas-card-head h3{margin:0;font-size:1rem;letter-spacing:-.02em}
+#view-bible .bib-atlas-card-head p{margin:4px 0 0;color:var(--text-muted);font-size:.68rem;line-height:1.5}
+#view-bible .bib-atlas-card-body{padding:14px 16px 16px}
+#view-bible .bib-atlas-controls{display:grid;gap:10px}
+#view-bible .bib-atlas-label{display:block;font-size:.58rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:5px}
+#view-bible .bib-atlas-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-base)}
+#view-bible .bib-atlas-seg button{border:0;border-radius:9px;background:transparent;color:var(--text-muted);padding:8px 7px;font:inherit;font-size:.67rem;font-weight:700;cursor:pointer}
+#view-bible .bib-atlas-seg button.active{background:var(--bg-elevated);color:var(--text-primary);box-shadow:0 1px 5px rgba(0,0,0,.08)}
+#view-bible .bib-atlas-check{display:flex;align-items:flex-start;gap:8px;padding:10px 11px;border-radius:12px;background:var(--bg-base);border:1px solid var(--border-color);font-size:.68rem;line-height:1.45;color:var(--text-secondary)}
+#view-bible .bib-atlas-check input{margin-top:2px}
+#view-bible .bib-atlas-presets{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#view-bible .bib-atlas-presets .btn{justify-content:flex-start}
+#view-bible .bib-atlas-legend{display:grid;gap:7px}
+#view-bible .bib-atlas-legend-row{display:flex;align-items:center;gap:8px;font-size:.64rem;color:var(--text-secondary)}
+#view-bible .bib-atlas-dot{width:12px;height:12px;border-radius:999px;display:inline-block;background:var(--bib-accent)}
+#view-bible .bib-atlas-dot.route{border-radius:4px;background:#4477dd}
+#view-bible .bib-atlas-dot.tradition{background:#b474d8}
+#view-bible .bib-atlas-dot.event{background:#e19147}
+#view-bible .bib-atlas-main{display:flex;flex-direction:column;gap:12px}
+#view-bible .bib-atlas-map-card{border:1px solid var(--border-color);border-radius:18px;background:var(--bg-surface);box-shadow:0 12px 30px rgba(0,0,0,.06);overflow:hidden}
+#view-bible .bib-atlas-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border-color);background:linear-gradient(135deg,rgba(68,119,221,.06),transparent 70%)}
+#view-bible .bib-atlas-toolbar .bib-grow{flex:1}
+#view-bible .bib-atlas-zoom{font-size:.7rem;color:var(--text-muted);padding:0 3px;min-width:56px;text-align:center}
+#view-bible .bib-atlas-map-wrap{position:relative;height:560px;overflow:auto;background:linear-gradient(180deg,#dbeaf6 0%,#d6e9f5 38%,#d0e2ef 100%);cursor:grab;scrollbar-width:none;-ms-overflow-style:none}
+#view-bible .bib-atlas-map-wrap::-webkit-scrollbar{width:0;height:0;display:none}
+#view-bible .bib-atlas-map-wrap.is-dragging{cursor:grabbing}
+#view-bible .bib-atlas-map-inner{position:relative;min-width:max-content;min-height:max-content}

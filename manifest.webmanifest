@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "OmniOS",
+  "short_name": "OmniOS",
+  "description": "Local-first personal operating system for tasks, calendar, finance, habits, notes and planning.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone","minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#0f0f11",
+  "theme_color": "#18181b",
+  "categories": ["productivity","utilities","lifestyle"],
+  "icons": [
+    {"src":"icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"}
+  ],
+  "share_target":{"action":"./index.html","method":"GET","params":{"title":"title","text":"text","url":"url"}}
+}

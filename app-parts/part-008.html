@@ -1,0 +1,1000 @@
+</script>
+
+<script id="omnios-ux-v20-js">
+(function(){
+  const start = getSetting('appearance.startView','dashboard');
+  if(start && document.getElementById('view-'+start)) switchView(start);
+
+  // Auto-focus only when the user explicitly enables it; never steal focus on mobile.
+  if(getSetting('appearance.autoFocusSearch',false) && !matchMedia('(max-width:760px)').matches){
+    setTimeout(()=>{
+      const v=document.querySelector('.view.active');
+      const input=v?.querySelector('.search-input');
+      if(input) input.focus();
+    },80);
+  }
+
+  // Make the top bar easier to scan: keep primary actions grouped and label compact controls.
+  document.querySelectorAll('.icon-btn').forEach(b=>{
+    if(!b.getAttribute('aria-label') && b.title) b.setAttribute('aria-label',b.title);
+  });
+
+  // Use the setting for destructive reset confirmation. Existing behavior remains the safe default.
+  const originalConfirm = window.confirm;
+  window.omniosConfirm = function(message){
+    return getSetting('appearance.confirmDestructive',true) ? originalConfirm(message) : true;
+  };
+})();
+</script>
+
+<script id="omnios-v25-stabilization-js">
+(function(){
+'use strict';
+
+const V25={
+  selectionMode:{task:false,note:false,grocery:false},
+  selected:{task:new Set(),note:new Set(),grocery:new Set()},
+  refreshing:false,
+  observerTimer:null
+};
+const GROUP_TYPES=['task','note','grocery'];
+const GROUP_LABELS={task:'Tasks',note:'Notes',grocery:'Grocery Lists'};
+
+function groupsV25(){
+  state.core=state.core||{};
+  state.core.groups=Array.isArray(state.core.groups)?state.core.groups:[];
+  return state.core.groups;
+}
+function escV25(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function itemExistsV25(type,id){
+  id=String(id);
+  if(type==='task')return state.entries.some(x=>String(x.id)===id);
+  if(type==='note')return state.notes.some(x=>String(x.id)===id);
+  if(type==='grocery')return (state.groceryLists||[]).some(x=>String(x.id)===id);
+  return false;
+}
+function inferTypeV25(id){
+  const hits=GROUP_TYPES.filter(t=>itemExistsV25(t,id));
+  return hits.length===1?hits[0]:null;
+}
+function normalizeGroupsV25(){
+  const source=groupsV25();
+  const cleaned=[];
+  source.forEach((raw,idx)=>{
+    if(!raw||typeof raw!=='object')return;
+    const ids=[...new Set((Array.isArray(raw.itemIds)?raw.itemIds:[]).map(String))];
+    let type=GROUP_TYPES.includes(raw.type)?raw.type:null;
+    if(!type){
+      const byType={task:[],note:[],grocery:[]};
+      ids.forEach(id=>{const t=inferTypeV25(id);if(t)byType[t].push(id)});
+      const used=GROUP_TYPES.filter(t=>byType[t].length);
+      if(used.length>1){
+        used.forEach(t=>cleaned.push({id:`${raw.id||'grp_'+idx}_${t}`,name:`${raw.name||'Group'} · ${GROUP_LABELS[t]}`,type:t,icon:'folder',collapsed:!!raw.collapsed,itemIds:byType[t]}));
+        return;
+      }
+      type=used[0]||'task';
+    }
+    cleaned.push({id:String(raw.id||`grp_${Date.now()}_${idx}`),name:String(raw.name||'Group').trim()||'Group',type,icon:'folder',collapsed:!!raw.collapsed,itemIds:ids.filter(id=>itemExistsV25(type,id))});
+  });
+  // One item can belong to only one group inside a module. First group wins during migration.
+  GROUP_TYPES.forEach(type=>{
+    const seen=new Set();
+    cleaned.filter(g=>g.type===type).forEach(g=>{g.itemIds=g.itemIds.filter(id=>!seen.has(id)&&(seen.add(id),true));});
+  });
+  state.core.groups=cleaned.filter(g=>GROUP_TYPES.includes(g.type));
+  return state.core.groups;
+}
+function groupingEnabledV25(){return getSetting('groups.enabled',true)!==false}
+function groupsForTypeV25(type){return groupsV25().filter(g=>g&&g.type===type)}
+function groupForItemV25(type,id){id=String(id);return groupsForTypeV25(type).find(g=>g.itemIds.includes(id))||null}
+function persistGroupsV25(){normalizeGroupsV25();saveState();refreshGroupingV25();setTimeout(refreshGroupingV25,0)}
+function selectedSetV25(type){return V25.selected[type]||new Set()}
+function clearSelectionV25(type){selectedSetV25(type).clear();updateSelectionBarV25();syncSelectionControlsV25(type)}
+function removeIdsFromGroupsV25(type,ids,exceptId=null){
+  const set=new Set(ids.map(String));
+  groupsForTypeV25(type).forEach(g=>{if(exceptId&&String(g.id)===String(exceptId))return;g.itemIds=(g.itemIds||[]).filter(id=>!set.has(String(id)))});
+}
+
+function ensureSelectionBarV25(){
+  let bar=document.getElementById('omnios-v25-selection-bar');
+  if(bar)return bar;
+  bar=document.createElement('div');bar.id='omnios-v25-selection-bar';bar.className='v25-selection-bar';
+  bar.innerHTML=`<div><div class="v25-selection-count">0 selected</div><div class="v25-selection-context"></div></div><button type="button" class="btn btn-sm btn-primary" data-v25-bar-create>🗂 Create group</button><button type="button" class="btn btn-sm" data-v25-bar-move>Move to group</button><button type="button" class="btn btn-sm" data-v25-bar-ungroup>Ungroup</button><button type="button" class="btn btn-sm" data-v25-bar-done>Done</button>`;
+  document.body.appendChild(bar);
+  bar.addEventListener('click',e=>{
+    const type=bar.dataset.type;if(!type)return;const ids=[...selectedSetV25(type)];
+    if(e.target.closest('[data-v25-bar-create]'))openCreateGroupV25(type,ids);
+    if(e.target.closest('[data-v25-bar-move]'))openMoveGroupV25(type,ids);
+    if(e.target.closest('[data-v25-bar-ungroup]')){if(!ids.length)return;removeIdsFromGroupsV25(type,ids);clearSelectionV25(type);persistGroupsV25();window.toast?.('Items ungrouped');}
+    if(e.target.closest('[data-v25-bar-done]')){V25.selectionMode[type]=false;clearSelectionV25(type);refreshGroupingV25();}
+  });
+  return bar;
+}
+function activeSelectionTypeV25(){return GROUP_TYPES.find(t=>V25.selectionMode[t]&&selectedSetV25(t).size>0)||null}
+function updateSelectionBarV25(){
+  const bar=ensureSelectionBarV25();const type=activeSelectionTypeV25();
+  if(!type){bar.classList.remove('is-visible');bar.dataset.type='';return}
+  const n=selectedSetV25(type).size;bar.dataset.type=type;bar.classList.add('is-visible');bar.querySelector('.v25-selection-count').textContent=`${n} selected`;bar.querySelector('.v25-selection-context').textContent=GROUP_LABELS[type]||type;bar.querySelectorAll('[data-v25-bar-create],[data-v25-bar-move],[data-v25-bar-ungroup]').forEach(b=>{b.disabled=n<1;b.setAttribute('aria-disabled',String(n<1));b.title=n<1?'Select one or more items first':''});
+}
+function selectionCardListV25(type){
+  if(type==='task')return [...document.querySelectorAll('#tasks-content [data-entry-id]')];
+  if(type==='note')return [...document.querySelectorAll('#notes-grid [data-group-type="note"]')];
+  if(type==='grocery')return [...document.querySelectorAll('#grocery-grid [data-group-type="grocery"]')];
+  return [];
+}
+function cardIdV25(card,type){return String(type==='task'?card.dataset.entryId:card.dataset.groupItemId)}
+function syncSelectionControlsV25(type){
+  const root=type==='task'?document.getElementById('tasks-content'):type==='note'?document.getElementById('notes-grid'):document.getElementById('grocery-grid');
+  if(!root)return;
+  root.classList.toggle('v25-selection-mode',!!V25.selectionMode[type]);
+  root.querySelectorAll('.v25-group-check').forEach(x=>x.remove());
+  root.querySelectorAll('.v24-group-check,.group-inline-check').forEach(x=>x.remove());
+  selectionCardListV25(type).forEach(card=>{
+    card.classList.add('v25-selectable');
+    const id=cardIdV25(card,type);card.classList.toggle('v25-group-selected',selectedSetV25(type).has(id));
+    if(!V25.selectionMode[type])return;
+    const cb=document.createElement('input');cb.type='checkbox';cb.className='v25-group-check';cb.checked=selectedSetV25(type).has(id);cb.setAttribute('aria-label',`Select ${GROUP_LABELS[type]||type} item for grouping`);
+    cb.addEventListener('click',e=>{e.stopPropagation();const s=selectedSetV25(type);cb.checked?s.add(id):s.delete(id);card.classList.toggle('v25-group-selected',cb.checked);updateSelectionBarV25();});
+    card.prepend(cb);
+  });
+  document.querySelectorAll(`[data-v25-select="${type}"]`).forEach(b=>{b.classList.toggle('active',!!V25.selectionMode[type]);b.textContent=V25.selectionMode[type]?'✓ Done selecting':'☑ Select';});
+  updateSelectionBarV25();
+}
+function toggleSelectionModeV25(type){
+  if(!groupingEnabledV25()){window.toast?.('Grouping is disabled in Settings → Tasks.');return}
+  GROUP_TYPES.forEach(t=>{if(t!==type){V25.selectionMode[t]=false;V25.selected[t].clear();}});
+  V25.selectionMode[type]=!V25.selectionMode[type];if(!V25.selectionMode[type])V25.selected[type].clear();refreshGroupingV25();
+}
+
+function modalShellV25(id,title,body,foot=''){
+  document.getElementById(id)?.remove();const ov=document.createElement('div');ov.id=id;ov.className='omnios-group-modal-backdrop is-open';ov.innerHTML=`<div class="omnios-group-modal" role="dialog" aria-modal="true"><div class="omnios-group-modal-head"><h3>${escV25(title)}</h3></div><div class="omnios-group-modal-body">${body}</div>${foot?`<div class="omnios-group-modal-foot">${foot}</div>`:''}</div>`;document.body.appendChild(ov);ov.addEventListener('click',e=>{if(e.target===ov)ov.remove()});return ov;
+}
+function openCreateGroupV25(type,ids){
+  ids=[...new Set((ids||[]).map(String))].filter(id=>itemExistsV25(type,id));
+  if(!ids.length){window.toast?.('Select at least one item first.');return}
+  const ov=modalShellV25('omnios-v25-create-group','Create group',`<label for="v25-group-name">Group name</label><input id="v25-group-name" maxlength="80" placeholder="e.g. Project Alpha"><div class="settings-row-desc" style="margin-top:8px">${ids.length} selected ${GROUP_LABELS[type].toLowerCase()} item${ids.length===1?'':'s'}.</div>`,`<button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn btn-primary" data-create>Create group</button>`);
+  const input=ov.querySelector('#v25-group-name');requestAnimationFrame(()=>input.focus());ov.querySelector('[data-close]').onclick=()=>ov.remove();ov.querySelector('[data-create]').onclick=()=>{const name=input.value.trim();if(!name){input.focus();return}removeIdsFromGroupsV25(type,ids);groupsV25().push({id:`grp_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,name,type,icon:'folder',collapsed:!!getSetting('groups.defaultCollapsed',false),itemIds:ids});V25.selected[type].clear();V25.selectionMode[type]=false;ov.remove();persistGroupsV25();window.toast?.('Group created');};
+}
+function openMoveGroupV25(type,ids){
+  ids=[...new Set((ids||[]).map(String))].filter(id=>itemExistsV25(type,id));if(!ids.length){window.toast?.('Select at least one item first.');return}
+  const gs=groupsForTypeV25(type);if(!gs.length){openCreateGroupV25(type,ids);return}
+  const ov=modalShellV25('omnios-v25-move-group','Move to group',`<label for="v25-move-group">Destination</label><select id="v25-move-group" class="form-select">${gs.map(g=>`<option value="${escV25(g.id)}">${escV25(g.name)} · ${(g.itemIds||[]).length}</option>`).join('')}</select>`,`<button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn btn-primary" data-move>Move</button>`);ov.querySelector('[data-close]').onclick=()=>ov.remove();ov.querySelector('[data-move]').onclick=()=>{const id=ov.querySelector('#v25-move-group').value;const g=groupsForTypeV25(type).find(x=>String(x.id)===String(id));if(!g)return;removeIdsFromGroupsV25(type,ids,g.id);g.itemIds=[...new Set([...(g.itemIds||[]).map(String),...ids])];V25.selected[type].clear();V25.selectionMode[type]=false;ov.remove();persistGroupsV25();window.toast?.('Items moved');};
+}
+function openManageGroupsV25(type){
+  if(!groupingEnabledV25()){window.toast?.('Grouping is disabled in Settings → Tasks.');return}
+  const gs=groupsForTypeV25(type);const body=gs.length?`<div class="v25-manager-list">${gs.map(g=>`<div class="v25-manager-row" data-manage-group="${escV25(g.id)}"><div class="v25-manager-main"><span>🗂</span><div class="v25-manager-name"><input class="form-input" data-group-name value="${escV25(g.name)}"><div class="v25-manager-meta">${(g.itemIds||[]).length} item${(g.itemIds||[]).length===1?'':'s'} · ${g.collapsed?'collapsed':'expanded'}</div></div></div><div class="v25-manager-actions"><button type="button" class="btn btn-sm" data-toggle>${g.collapsed?'Expand':'Collapse'}</button><button type="button" class="btn btn-sm" data-empty>Ungroup all</button><button type="button" class="btn btn-sm btn-danger" data-delete>Delete</button></div></div>`).join('')}</div>`:'<div class="empty-state">No groups yet. Use Select, choose items, then Create group.</div>';
+  const ov=modalShellV25('omnios-v25-manage-groups',`${GROUP_LABELS[type]} groups`,body,`<button type="button" class="btn" data-close>Close</button>`);ov.querySelector('[data-close]').onclick=()=>ov.remove();ov.querySelectorAll('[data-manage-group]').forEach(row=>{const g=groupsForTypeV25(type).find(x=>String(x.id)===String(row.dataset.manageGroup));if(!g)return;row.querySelector('[data-group-name]').onchange=e=>{const n=e.target.value.trim();if(n)g.name=n;else e.target.value=g.name;persistGroupsV25()};row.querySelector('[data-toggle]').onclick=()=>{g.collapsed=!g.collapsed;ov.remove();persistGroupsV25();openManageGroupsV25(type)};row.querySelector('[data-empty]').onclick=()=>{g.itemIds=[];ov.remove();persistGroupsV25();openManageGroupsV25(type)};row.querySelector('[data-delete]').onclick=()=>{if(!confirm(`Delete group "${g.name}"? Items will remain.`))return;state.core.groups=groupsV25().filter(x=>String(x.id)!==String(g.id));ov.remove();persistGroupsV25();openManageGroupsV25(type)};});
+}
+
+function unwrapGeneratedGroupsV25(container){
+  if(!container)return;container.querySelectorAll(':scope > .v25-generated-group').forEach(group=>{const body=group.querySelector('.v25-group-body');if(body)[...body.children].forEach(child=>container.appendChild(child));group.remove()});
+}
+function groupHeaderV25(g,count){return `<div class="v25-group-head"><div class="v25-group-head-main" data-v25-head-toggle="${escV25(g.id)}"><span>🗂</span><span class="v25-group-title">${escV25(g.name)}</span><span class="v25-group-count">${count} item${count===1?'':'s'}</span></div><div class="v25-group-actions"><button type="button" class="icon-btn" data-v25-group-collapse="${escV25(g.id)}" title="${g.collapsed?'Expand':'Collapse'}">${g.collapsed?'⌄':'⌃'}</button><button type="button" class="icon-btn" data-v25-group-rename="${escV25(g.id)}" title="Rename">✎</button><button type="button" class="icon-btn" data-v25-group-delete="${escV25(g.id)}" title="Delete group">🗑</button></div></div>`}
+function bindGroupHeaderV25(section,g,type){
+  const toggle=()=>{g.collapsed=!g.collapsed;persistGroupsV25()};section.querySelector('[data-v25-head-toggle]')?.addEventListener('click',toggle);section.querySelector('[data-v25-group-collapse]')?.addEventListener('click',toggle);section.querySelector('[data-v25-group-rename]')?.addEventListener('click',()=>{const n=prompt('Group name',g.name);if(n?.trim()){g.name=n.trim();persistGroupsV25()}});section.querySelector('[data-v25-group-delete]')?.addEventListener('click',()=>{if(!confirm(`Delete group "${g.name}"? Items will remain.`))return;state.core.groups=groupsV25().filter(x=>String(x.id)!==String(g.id));persistGroupsV25()});
+}
+function applyParentGroupsV25(type){
+  if(!groupingEnabledV25())return;
+  if(type==='task')return; // Tasks have a dedicated Groups view.
+  const container=type==='note'?document.getElementById('notes-grid'):document.getElementById('grocery-grid');if(!container)return;
+  unwrapGeneratedGroupsV25(container);
+  const cards=selectionCardListV25(type).filter(x=>!x.closest('.v25-generated-group'));const map=new Map(cards.map(c=>[cardIdV25(c,type),c]));
+  groupsForTypeV25(type).slice().reverse().forEach(g=>{const children=(g.itemIds||[]).map(id=>map.get(String(id))).filter(Boolean);if(!children.length)return;const section=document.createElement('section');section.className='v25-group-card v25-generated-group';section.innerHTML=groupHeaderV25(g,children.length)+`<div class="v25-group-body ${g.collapsed?'is-collapsed':''}"><div class="v25-group-grid"></div></div>`;const grid=section.querySelector('.v25-group-grid');children.forEach(c=>grid.appendChild(c));container.prepend(section);bindGroupHeaderV25(section,g,type)});
+}
+window.renderTaskGroupsV25=function(entries,container){
+  entries=entries||getFilteredEntries();container=container||document.getElementById('tasks-content');if(!container)return;
+  const byId=new Map(entries.map(e=>[String(e.id),e]));const grouped=new Set();let html='';
+  groupsForTypeV25('task').forEach(g=>{const items=(g.itemIds||[]).map(id=>byId.get(String(id))).filter(Boolean);if(!items.length)return;items.forEach(x=>grouped.add(String(x.id)));html+=`<section class="v25-group-card" data-v25-task-group="${escV25(g.id)}">${groupHeaderV25(g,items.length)}<div class="v25-group-body ${g.collapsed?'is-collapsed':''}"><div class="list-view">${items.map(x=>renderTaskCard(x,true)).join('')}</div></div></section>`});
+  const ungrouped=entries.filter(e=>!grouped.has(String(e.id)));if(ungrouped.length)html+=`<section class="v25-group-card"><div class="v25-group-head"><div class="v25-group-head-main"><span>📋</span><span class="v25-group-title">Ungrouped</span><span class="v25-group-count">${ungrouped.length} items</span></div></div><div class="v25-group-body"><div class="list-view">${ungrouped.map(x=>renderTaskCard(x,true)).join('')}</div></div></section>`;container.innerHTML=html||'<div class="empty-state">No groups yet. Select tasks and create your first group.</div>';container.querySelectorAll('[data-v25-task-group]').forEach(section=>{const g=groupsForTypeV25('task').find(x=>String(x.id)===String(section.dataset.v25TaskGroup));if(g)bindGroupHeaderV25(section,g,'task')});attachCardClicks();syncSelectionControlsV25('task');
+};
+
+function refreshGroupingV25(){
+  if(V25.refreshing)return;V25.refreshing=true;
+  try{
+    normalizeGroupsV25();
+    // Remove dead legacy UI artifacts if a saved/old DOM injected them.
+    document.querySelectorAll('.group-selection-bar,.v24-selection-bar,#omnios-v24-selection-bar,.group-inline-check,.v24-group-check').forEach(x=>x.remove());
+    if(!groupingEnabledV25()){
+      GROUP_TYPES.forEach(t=>{V25.selectionMode[t]=false;V25.selected[t].clear()});unwrapGeneratedGroupsV25(document.getElementById('notes-grid'));unwrapGeneratedGroupsV25(document.getElementById('grocery-grid'));GROUP_TYPES.forEach(syncSelectionControlsV25);updateSelectionBarV25();
+      if(typeof currentTaskView!=='undefined'&&currentTaskView==='groups'){currentTaskView='list';document.querySelectorAll('[data-taskview]').forEach(b=>b.classList.toggle('active',b.dataset.taskview==='list'));renderTasks();}
+      return;
+    }
+    if(typeof currentTaskView!=='undefined'&&currentTaskView==='groups'&&document.getElementById('view-tasks')?.classList.contains('active'))window.renderTaskGroupsV25(getFilteredEntries(),document.getElementById('tasks-content'));
+    applyParentGroupsV25('note');applyParentGroupsV25('grocery');GROUP_TYPES.forEach(syncSelectionControlsV25);
+  } finally {V25.refreshing=false}
+}
+window.omniosV25RefreshGrouping=refreshGroupingV25;
+
+// Explicit grouping controls.
+document.addEventListener('click',e=>{const select=e.target.closest('[data-v25-select]');if(select){e.preventDefault();e.stopPropagation();toggleSelectionModeV25(select.dataset.v25Select);return}const manage=e.target.closest('[data-v25-manage]');if(manage){e.preventDefault();e.stopPropagation();openManageGroupsV25(manage.dataset.v25Manage);}},true);
+
+// Calendar recurrence: correct occurrence counts and make all advanced controls visibly reactive.
+const baseRecurrenceRaw=window.recurrenceOccursRaw||recurrenceOccursRaw;
+window.recurrenceOccursOn=function(r,startKey,key){
+  if(!r)return key===startKey;if(key<startKey)return false;const start=dateAtNoon(startKey),d=dateAtNoon(key);if((r.endMode||'never')==='until'&&key>(r.until||'9999-12-31'))return false;if(!baseRecurrenceRaw(r,start,d))return false;if((r.endMode||'never')!=='count')return true;const target=Math.max(1,Number(r.count||1));let count=0,cursor=dateAtNoon(startKey),guard=0;for(;cursor<=d&&guard<20000;cursor.setDate(cursor.getDate()+1),guard++){if(baseRecurrenceRaw(r,start,cursor))count++;if(count>target)return false}return count<=target;
+};
+function updateRecurrenceUiV25(){
+  const freq=document.getElementById('calendar-event-recurrence')?.value||'none';const label=document.getElementById('calendar-event-interval-label');if(label)label.textContent=({daily:'day(s)',weekly:'week(s)',monthly:'month(s)',yearly:'year(s)'})[freq]||'period';const preview=document.getElementById('calendar-event-recurrence-preview');if(preview)preview.textContent=freq==='none'?'One-time event':recurrenceLabel(collectCalendarRecurrence());
+}
+['calendar-event-recurrence','calendar-event-interval','calendar-event-monthly-mode','calendar-event-month-day','calendar-event-nth','calendar-event-weekday-month','calendar-event-end','calendar-event-count','calendar-event-until'].forEach(id=>{const el=document.getElementById(id);el?.addEventListener('change',updateRecurrenceUiV25);el?.addEventListener('input',updateRecurrenceUiV25)});document.querySelectorAll('[data-event-weekday]').forEach(x=>x.addEventListener('change',updateRecurrenceUiV25));
+const oldOpenCalendarEventModalV25=window.openCalendarEventModal;window.openCalendarEventModal=function(id){oldOpenCalendarEventModalV25(id);const del=document.getElementById('calendar-event-delete');if(del)del.style.display=id?'':'none';const date=document.getElementById('calendar-event-date')?.value;if(!id&&date){const d=dateAtNoon(date);const nth=Math.ceil(d.getDate()/7);const nthEl=document.getElementById('calendar-event-nth');const wdEl=document.getElementById('calendar-event-weekday-month');if(nthEl)nthEl.value=String(Math.min(5,nth));if(wdEl)wdEl.value=String(d.getDay())}updateRecurrenceUiV25();};
+
+// Honest in-app reminders for settings that are exposed.
+const oldRenderDashboardV25=window.renderDashboard;window.renderDashboard=function(){oldRenderDashboardV25();const host=document.getElementById('dash-attention');if(!host||!getSetting('notifications.dailySummary',true))return;const extra=[];const now=new Date();const today=localDateString();if(getSetting('notifications.habitReminders',true)){const reminder=getSetting('habits.reminderTime','08:00');const [rh,rm]=String(reminder).split(':').map(Number);const after=now.getHours()>rh||(now.getHours()===rh&&now.getMinutes()>=rm);const missing=state.habits.filter(h=>!h.log?.[today]);if(after&&missing.length)extra.push(`⚡ ${missing.length} habit${missing.length===1?'':'s'} still unchecked today`)}if(getSetting('notifications.eventReminders',true)){state.calendarEvents.forEach(ev=>{if(ev.date!==today||!ev.startTime)return;const [h,m]=ev.startTime.split(':').map(Number),when=new Date();when.setHours(h,m,0,0);const mins=(when-now)/60000;const lead=Number(ev.reminder??getSetting('calendar.defaultReminder',15));if(mins>=0&&mins<=lead)extra.push(`● ${escV25(ev.title)} starts in ${Math.max(0,Math.round(mins))} min`)})}if(getSetting('notifications.weeklyReview',true)&&now.getDay()===0)extra.push('↺ Weekly review: check Tasks, Habits and Budget before the new week starts');if(extra.length){let card=host.querySelector('.card');if(!card){host.innerHTML='<div class="card" style="margin-bottom:16px"><div class="card-header"><h3 class="card-title">🔔 Attention needed</h3></div><div class="mini-list"></div></div>';card=host.querySelector('.card')}const list=card.querySelector('.mini-list')||card;extra.forEach(x=>{const d=document.createElement('div');d.className='insight-box';d.style.marginBottom='6px';d.innerHTML=x;list.appendChild(d)})}};
+
+// Mobile navigation: six stable destinations + a complete More sheet. Extensions can add desktop nav freely.
+function rebuildMobileNavV25(){
+  const nav=document.querySelector('.mobile-nav');if(!nav)return;nav.innerHTML=`<button type="button" data-mobile-view="dashboard"><span class="nav-icon">⌂</span><span class="nav-label">Home</span></button><button type="button" data-mobile-view="master-calendar"><span class="nav-icon">▦</span><span class="nav-label">Calendar</span></button><button type="button" data-mobile-view="tasks"><span class="nav-icon">✓</span><span class="nav-label">Tasks</span></button><button type="button" data-mobile-view="habits"><span class="nav-icon">⚡</span><span class="nav-label">Habits</span></button><button type="button" data-mobile-view="workout"><span class="nav-icon">🏋️</span><span class="nav-label">Workout</span></button><button type="button" id="mobile-more-v25"><span class="nav-icon">•••</span><span class="nav-label">More</span></button>`;nav.querySelectorAll('[data-mobile-view]').forEach(b=>b.onclick=()=>window.switchView(b.dataset.mobileView));nav.querySelector('#mobile-more-v25').onclick=openMobileMoreV25;updateMobileActiveV25(document.querySelector('.view.active')?.id?.replace(/^view-/,'')||'dashboard');
+}
+function mobileDestinationsV25(){
+  const primary=new Set(['dashboard','master-calendar','tasks','habits','workout']);const out=[];let section='More';document.querySelectorAll('.nav-menu > *').forEach(el=>{if(el.classList.contains('nav-section'))section=el.textContent.trim()||'More';else if(el.classList.contains('nav-item')&&el.dataset.view&&!primary.has(el.dataset.view))out.push({view:el.dataset.view,label:el.textContent.trim(),section})});return out;
+}
+function openMobileMoreV25(){
+  const dest=mobileDestinationsV25();let last='';let body='<div class="v25-mobile-more-grid">';dest.forEach(d=>{if(d.section!==last){body+=`<div class="v25-mobile-more-section">${escV25(d.section)}</div>`;last=d.section}body+=`<button type="button" class="btn v25-mobile-destination" data-mobile-destination="${escV25(d.view)}">${escV25(d.label)}</button>`});body+='</div>';const ov=modalShellV25('omnios-v25-mobile-more','More',body,'<button type="button" class="btn" data-close>Close</button>');ov.querySelector('[data-close]').onclick=()=>ov.remove();ov.querySelectorAll('[data-mobile-destination]').forEach(b=>b.onclick=()=>{const target=b.dataset.mobileDestination;ov.remove();window.switchView(target)});
+}
+function updateMobileActiveV25(target){const primary=document.querySelectorAll('.mobile-nav [data-mobile-view]');primary.forEach(b=>b.classList.toggle('active',b.dataset.mobileView===target));const more=document.getElementById('mobile-more-v25');if(more)more.classList.toggle('active',![...primary].some(b=>b.dataset.mobileView===target))}
+const oldSwitchViewV25=window.switchView;window.switchView=function(target){const r=oldSwitchViewV25(target);updateMobileActiveV25(target);setTimeout(refreshGroupingV25,0);return r};document.addEventListener('click',e=>{const nav=e.target.closest('.nav-item[data-view]');if(nav)setTimeout(()=>updateMobileActiveV25(nav.dataset.view),0)},true);
+
+// Data screen should tell the truth when persistence is unavailable.
+const oldRenderSettingsV25=window.renderSettings;window.renderSettings=function(){oldRenderSettingsV25();if(currentSettingsTab==='data'&&!storageIsPersistent){const el=document.getElementById('settings-content');el?.insertAdjacentHTML('afterbegin','<div class="card settings-section" style="border-color:rgba(239,68,68,.45)"><h3 class="card-title">⚠ Session-only storage</h3><div class="settings-row-desc">This browser blocked persistent local storage. Your current data will disappear when the page is closed or reloaded. Export a JSON backup before leaving.</div></div>')}};
+
+// Make Group controls disappear cleanly when disabled and keep button semantics/accessibility sound.
+function auditButtonsV25(){document.querySelectorAll('button').forEach(b=>{if(!b.getAttribute('type'))b.type='button';if(!b.getAttribute('aria-label')&&!(b.textContent||'').trim()&&b.title)b.setAttribute('aria-label',b.title)});const enabled=groupingEnabledV25();document.querySelectorAll('[data-v25-select],[data-v25-manage],[data-taskview="groups"]').forEach(b=>b.style.display=enabled?'':'none')}
+auditButtonsV25(); /* v53: dynamic button hygiene is handled incrementally by the unified observer. */
+
+normalizeGroupsV25();ensureSelectionBarV25();rebuildMobileNavV25();auditButtonsV25();setTimeout(refreshGroupingV25,50);setTimeout(refreshGroupingV25,500);
+})();
+</script>
+
+
+<style id="omnios-v26-logic-css">
+/* v26 logic-stability feedback */
+.logic-health-badge{display:inline-flex;align-items:center;gap:5px;font-size:.65rem;color:var(--text-muted)}
+.v25-selection-bar:not(.is-visible){pointer-events:none}
+</style>
+<script id="omnios-v26-logic-kernel">
+/* ============================================================
+   OmniOS v26 — logic/data-model stabilization
+   ============================================================ */
+(function(){
+'use strict';
+const VALID_STATUS=new Set(['todo','in-progress','completed']);
+const VALID_IMPORTANCE=new Set(['high','medium','low']);
+const VALID_URGENCY=new Set(['urgent','not-urgent']);
+const VALID_CATS=new Set(['work','hobby','routine','gym','meal']);
+function normalizeTaskV26(x){
+  x=x&&typeof x==='object'?x:{};
+  const status=VALID_STATUS.has(x.status)?x.status:(x.completed===true?'completed':'todo');
+  let importance=VALID_IMPORTANCE.has(x.importance)?x.importance:(VALID_IMPORTANCE.has(x.priority)?x.priority:'medium');
+  if(x.priority==='urgent'&&!x.importance)importance='high';
+  return {...x,
+    id:x.id??(Date.now()+Math.random()),
+    title:String(x.title||x.name||'Untitled task'),
+    category:VALID_CATS.has(x.category)?x.category:'work',
+    status,
+    importance,
+    urgency:VALID_URGENCY.has(x.urgency)?x.urgency:'not-urgent',
+    date:x.date||x.dueDate||'',
+    notes:String(x.notes||''),
+    subtasks:Array.isArray(x.subtasks)?x.subtasks:[],
+    linkedIds:Array.isArray(x.linkedIds)?x.linkedIds:[],
+    createdAt:x.createdAt||new Date().toISOString()
+  };
+}
+function normalizeCalendarEventV26(e){
+  e=e&&typeof e==='object'?e:{};
+  // Strip accidental presentation/runtime fields previously written by calendar rendering.
+  const {type,label,meta,fullAction,action,occurrence,sourceEventId,...clean}=e;
+  return {...clean,
+    id:clean.id??(Date.now()+Math.random()),
+    title:String(clean.title||'Untitled Event'),
+    date:clean.date||localDateString(),
+    startTime:clean.startTime||'',
+    duration:Math.max(0,Number(clean.duration)||0),
+    reminder:Math.max(0,Number(clean.reminder)||0),
+    description:String(clean.description||''),
+    icon:String(clean.icon||'●'),
+    recurrence:clean.recurrence&&typeof clean.recurrence==='object'?clean.recurrence:null
+  };
+}
+function normalizeRelationsAndGroupsV26(){
+  const validRef=(ref)=>{
+    const [type,...rest]=String(ref||'').split(':'); const id=rest.join(':'); if(!id)return false;
+    const map={task:state.entries,event:state.calendarEvents,habit:state.habits,workout:state.workouts,note:state.notes,finance:state.transactions,bill:state.bills,plan:state.paymentPlans,goal:state.goals,wishlist:state.wishlist,grocery:state.groceryLists,food:state.dietFoods,meal:state.dietMeals,prep:state.dietPrep,pantry:state.pantry};
+    return Array.isArray(map[type])&&map[type].some(x=>String(x.id)===id);
+  };
+  state.relations=(Array.isArray(state.relations)?state.relations:[]).filter(r=>r&&validRef(r.a)&&validRef(r.b)&&r.a!==r.b);
+  if(state.core&&Array.isArray(state.core.groups)){
+    state.core.groups=state.core.groups.map(g=>({...g,itemIds:[...new Set((g.itemIds||[]).map(String))].filter(id=>{
+      if(g.type==='task')return state.entries.some(x=>String(x.id)===id);
+      if(g.type==='note')return state.notes.some(x=>String(x.id)===id);
+      if(g.type==='grocery')return (state.groceryLists||[]).some(x=>String(x.id)===id);
+      return false;
+    })})).filter(g=>['task','note','grocery'].includes(g.type)&&(g.itemIds||[]).length>0);
+  }
+}
+function migrateLogicV26(){
+  state.entries=(Array.isArray(state.entries)?state.entries:[]).map(normalizeTaskV26);
+  state.calendarEvents=(Array.isArray(state.calendarEvents)?state.calendarEvents:[]).map(normalizeCalendarEventV26);
+  normalizeRelationsAndGroupsV26();
+}
+
+// Ensure every normalization/save path uses the canonical task/event models.
+const baseNormalizeV26=window.normalizeState;
+window.normalizeState=function(){ if(typeof baseNormalizeV26==='function')baseNormalizeV26(); migrateLogicV26(); };
+
+// Re-normalize persisted state immediately, without creating duplicate user data.
+migrateLogicV26();
+
+// Do not let calendar rendering mutate persisted events. This also handles callers that bypass expandCalendarEvent.
+const baseMasterEventsV26=window.masterCalendarEvents;
+if(typeof baseMasterEventsV26==='function'){
+  window.masterCalendarEvents=function(){
+    const before=state.calendarEvents.map(e=>JSON.stringify(normalizeCalendarEventV26(e)));
+    const result=baseMasterEventsV26.apply(this,arguments);
+    state.calendarEvents=state.calendarEvents.map((e,i)=>normalizeCalendarEventV26(e));
+    return result;
+  };
+}
+
+// Canonical reminder model: days for bills/goals/tasks, minutes only for timed calendar events.
+function reminderItemsV26(){
+  const out=[]; const today=localDateString(); const now=new Date();
+  const dayDiff=k=>Math.round((dateAtNoon(k)-dateAtNoon(today))/86400000);
+  (state.bills||[]).filter(x=>x.active!==false).forEach(x=>{const date=x.nextDueDate||x.dueDate;if(!date)return;const d=dayDiff(date),lead=Math.max(0,Number(x.reminderDays)||0);if(d<=lead)out.push({type:'bill',id:x.id,title:x.name||'Bill',date,d,when:d<0?`Overdue ${Math.abs(d)}d`:d===0?'Due today':`Due in ${d}d`,amount:Number(x.amount)||0,extra:'Bill'});});
+  (state.paymentPlans||[]).filter(x=>!x.completed).forEach(x=>{const date=x.nextPayment;if(!date)return;const d=dayDiff(date),lead=Math.max(0,Number(x.reminderDays)||0);if(d<=lead)out.push({type:'plan',id:x.id,title:x.name||'Payment plan',date,d,when:d<0?`Overdue ${Math.abs(d)}d`:d===0?'Due today':`Due in ${d}d`,amount:Number(x.amount)||0,extra:'Payment plan'});});
+  if(getSetting('notifications.taskReminders',true)) (state.entries||[]).filter(x=>x.status!=='completed'&&x.date).forEach(x=>{const d=dayDiff(x.date);if(d<=0)out.push({type:'task',id:x.id,title:x.title,date:x.date,d,when:d<0?`Overdue ${Math.abs(d)}d`:'Due today',amount:0,extra:'Task'});});
+  (state.goals||[]).filter(x=>x.targetDate&&Number(x.currentAmount||0)<Number(x.targetAmount||0)).forEach(x=>{const d=dayDiff(x.targetDate);if(d<=2)out.push({type:'goal',id:x.id,title:x.name||'Goal',date:x.targetDate,d,when:d<0?`Overdue ${Math.abs(d)}d`:d===0?'Due today':`Due in ${d}d`,amount:Math.max(0,Number(x.targetAmount||0)-Number(x.currentAmount||0)),extra:'Goal'});});
+  if(getSetting('notifications.eventReminders',true)) (state.calendarEvents||[]).forEach(ev=>{
+    if(!ev.date)return;
+    const occurrences=expandCalendarEvent(ev,today,addDaysKey(today,1));
+    occurrences.forEach(occ=>{
+      if(occ.startTime){
+        const [hh,mm]=String(occ.startTime).split(':').map(Number);const when=new Date(occ.date+'T00:00:00');when.setHours(Number.isFinite(hh)?hh:0,Number.isFinite(mm)?mm:0,0,0);const mins=(when-now)/60000;const lead=Math.max(0,Number(occ.reminder)||0);if(mins>=0&&mins<=lead)out.push({type:'event',id:ev.id,title:ev.title,date:occ.date,d:0,minutes:mins,when:`Starts in ${Math.max(0,Math.round(mins))} min`,amount:0,extra:occ.occurrence?'Recurring event':'Calendar'});
+      } else if(occ.date===today) out.push({type:'event',id:ev.id,title:ev.title,date:occ.date,d:0,when:'Today',amount:0,extra:occ.occurrence?'Recurring event':'Calendar'});
+    });
+  });
+  return out.sort((a,b)=>(a.d??0)-(b.d??0));
+}
+window.omniReminderItemsV26=reminderItemsV26;
+
+// Replace the visible Reminder Center so it follows the canonical reminder model.
+function renderReminderCenterV26(){
+  const el=document.getElementById('power-reminders-view');if(!el)return;
+  const r=reminderItemsV26(),over=r.filter(x=>(x.d??0)<0).length,today=r.filter(x=>(x.d??0)===0).length,up=r.filter(x=>(x.d??0)>0).length;
+  const typeIcon={task:'✓',event:'●',bill:'🧾',plan:'↻',goal:'🎯'};
+  el.innerHTML=`<div class="power-grid" style="margin-bottom:12px"><div class="power-stat"><div class="l">Overdue</div><div class="v power-danger">${over}</div></div><div class="power-stat"><div class="l">Today / imminent</div><div class="v power-warn">${today}</div></div><div class="power-stat"><div class="l">Upcoming</div><div class="v">${up}</div></div></div><div class="power-card"><div class="card-header"><h3 class="card-title">Attention needed</h3><span class="power-badge">${r.length} reminders</span></div>${r.length?`<div class="power-list">${r.map(x=>`<div class="power-item"><div>${typeIcon[x.type]||'🔔'}</div><div class="power-item-main"><div class="power-item-title">${escapeHtml(x.title)}${x.amount?` · ${currencyLocal(x.amount)}`:''}</div><div class="power-item-meta">${escapeHtml(x.extra)} · ${escapeHtml(x.when)} · ${escapeHtml(x.date||'')}</div></div><button type="button" class="btn btn-sm" data-v26-rem-open="${escapeHtml(x.type)}|${escapeHtml(x.id)}">Open</button></div>`).join('')}</div>`:'<div class="power-empty">Nothing needs attention right now.</div>'}</div>`;
+  el.querySelectorAll('[data-v26-rem-open]').forEach(b=>b.onclick=()=>{const [t,i]=b.dataset.v26RemOpen.split('|');if(t==='task'){switchView('tasks');openInspector(i)}else if(t==='event')openCalendarEventModal(i);else if(typeof showPowerSidebarFor==='function')showPowerSidebarFor(t,i);});
+}
+
+// Wrap renderAll once so reminder center and stale relationship cleanup stay synchronized.
+const baseRenderAllV26=window.renderAll;
+window.renderAll=function(){migrateLogicV26();const r=baseRenderAllV26.apply(this,arguments);normalizeRelationsAndGroupsV26();renderReminderCenterV26();return r;};
+
+// Core deletes must clean groups/relations immediately, before persistence.
+const baseDeleteTaskV26=window.deleteTask;
+window.deleteTask=function(id){const r=baseDeleteTaskV26.apply(this,arguments);normalizeRelationsAndGroupsV26();try{storage.setItem('omnios_v3_state',JSON.stringify(state));}catch(e){}return r;};
+
+// Universal trash uses a delegated cleanup after any item is removed.
+document.addEventListener('click',()=>setTimeout(()=>{normalizeRelationsAndGroupsV26();},0),true);
+
+// Grouping: clear the action bar synchronously after successful create/move and refresh parent groups after render.
+/* v33: removed the self-triggering grouping MutationObserver. Normal render/save/switch hooks already refresh grouping; observing checkbox insertion caused an endless remove/recreate loop that made selection controls practically unclickable. */
+
+// Fix dashboard alert semantics and avoid duplicate stacking across repeated renders.
+const baseDashboardV26=window.renderDashboard;
+window.renderDashboard=function(){const r=baseDashboardV26.apply(this,arguments);const host=document.getElementById('dash-attention');if(!host)return r;if(!getSetting('notifications.dailySummary',true)){host.innerHTML='';return r}const due=reminderItemsV26().filter(x=>(x.d??0)<=0).slice(0,4);const extras=[];const now=new Date(),today=localDateString();if(getSetting('notifications.habitReminders',true)){const [h,m]=String(getSetting('habits.reminderTime','08:00')).split(':').map(Number);if(now.getHours()>h||(now.getHours()===h&&now.getMinutes()>=m)){const missing=state.habits.filter(x=>!x.log?.[today]).length;if(missing)extras.push(`⚡ ${missing} habit${missing===1?'':'s'} still unchecked today`)}}if(getSetting('notifications.weeklyReview',true)&&now.getDay()===0)extras.push('↺ Weekly review: check Tasks, Habits and Budget');if(!due.length&&!extras.length){host.innerHTML='';return r}host.innerHTML=`<div class="card" style="margin-bottom:16px"><div class="card-header"><h3 class="card-title">🔔 Attention needed</h3>${document.getElementById('view-reminders')?'<button type="button" class="btn btn-sm" id="v26-open-reminders">View all</button>':''}</div><div class="mini-list">${due.map(x=>`<div class="mini-item"><div class="mini-item-main"><div class="mini-item-title">${escapeHtml(x.title)}</div><div class="mini-item-meta">${escapeHtml(x.when)}</div></div></div>`).join('')}${extras.map(x=>`<div class="insight-box">${x}</div>`).join('')}</div></div>`;host.querySelector('#v26-open-reminders')?.addEventListener('click',()=>switchView('reminders'));return r;};
+
+// Migration must be persisted once so old template tasks and polluted events are repaired permanently.
+try{storage.setItem('omnios_v3_state',JSON.stringify(state));}catch(e){}
+try{window.renderAll();}catch(e){console.error('v26 initial render failed',e)}
+})();
+</script>
+
+
+<script id="omnios-v27-functional-kernel">
+(function(){
+'use strict';
+// Keep all bidirectional references canonical after imports, saves and deletes.
+function syncLinksV27(){
+  state.goals=Array.isArray(state.goals)?state.goals:[];state.wishlist=Array.isArray(state.wishlist)?state.wishlist:[];
+  const goalById=new Map(state.goals.map(g=>[String(g.id),g])),wishById=new Map(state.wishlist.map(w=>[String(w.id),w]));
+  const pairs=[],usedGoals=new Set(),usedWishes=new Set();
+  const addPair=(g,w)=>{if(!g||!w)return false;const gi=String(g.id),wi=String(w.id);if(usedGoals.has(gi)||usedWishes.has(wi))return false;usedGoals.add(gi);usedWishes.add(wi);pairs.push([g,w]);return true};
+  // Reciprocal links are strongest, then Wishlist-declared links, then Goal-declared links.
+  state.goals.forEach(g=>{const w=wishById.get(String(g.linkedWishlistId??''));if(w&&String(w.linkedGoalId??'')===String(g.id))addPair(g,w)});
+  state.wishlist.forEach(w=>addPair(goalById.get(String(w.linkedGoalId??'')),w));
+  state.goals.forEach(g=>addPair(g,wishById.get(String(g.linkedWishlistId??''))));
+  state.goals.forEach(g=>g.linkedWishlistId=null);state.wishlist.forEach(w=>w.linkedGoalId=null);
+  pairs.forEach(([g,w])=>{g.linkedWishlistId=w.id;w.linkedGoalId=g.id});
+}
+const normalizeV27=window.normalizeState;window.normalizeState=function(){normalizeV27?.apply(this,arguments);syncLinksV27();};
+
+// One active workout invariant, including imported/legacy data.
+function normalizeWorkoutsV27(){
+  state.workouts=Array.isArray(state.workouts)?state.workouts:[];
+  const active=state.workouts.filter(w=>w.status==='active').sort((a,b)=>String(b.startedAt||'').localeCompare(String(a.startedAt||'')));
+  active.slice(1).forEach(w=>{w.status='abandoned';w.endedAt=w.endedAt||new Date().toISOString()});
+  if(activeWorkoutId!=null&&!state.workouts.some(w=>String(w.id)===String(activeWorkoutId)&&w.status==='active'))activeWorkoutId=active[0]?.id??null;
+}
+normalizeWorkoutsV27();syncLinksV27();
+
+// Navigation wrappers from older modules sometimes bypassed the title update (notably Help).
+const switchV27=window.switchView;window.switchView=function(target){const r=switchV27.apply(this,arguments);const nav=document.querySelector(`.nav-item[data-view="${CSS.escape(String(target))}"]`);const title=document.getElementById('view-title');if(title){const explicit={'master-calendar':'Calendar',help:'Help & Manuals'}[target];const clean=nav?.textContent?.replace(/[?⚙⌂▦✓⚡🏋️◷▤♡🛒🥗🎯🔔🥫↺]+/g,' ')?.replace(/\s+/g,' ').trim();title.textContent=explicit||clean||String(target).replace(/-/g,' ');}return r;};
+
+// Monthly budget semantics: category limits are explicitly monthly.
+window.omniBudgetMonthSummary=function(month=localDateString().slice(0,7)){
+  const tx=(state.transactions||[]).filter(t=>String(t.date||'').slice(0,7)===month);const income=tx.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount||0),0);const expense=tx.filter(t=>t.type!=='income').reduce((s,t)=>s+Number(t.amount||0),0);const limit=(state.budgetCategories||[]).filter(c=>(c.type||'expense')==='expense').reduce((s,c)=>s+Number(c.limit||0),0);return {month,income,expense,net:income-expense,budgetLeft:limit-expense};
+};
+
+// Keep groups/relations clean at persistence boundaries; empty groups are removed because they cannot be acted on meaningfully.
+const saveV27=window.saveState;window.saveState=function(){syncLinksV27();normalizeWorkoutsV27();const r=saveV27.apply(this,arguments);try{window.omniosV25RefreshGrouping?.();}catch(e){}return r;};
+
+// A compact integrity checker used internally and available from the console for diagnosis.
+window.omniIntegrityV27=function(){
+  const issues=[];const ids=(arr)=>new Set((arr||[]).map(x=>String(x.id)));
+  const taskIds=ids(state.entries),noteIds=ids(state.notes),groIds=ids(state.groceryLists);
+  (state.entries||[]).forEach(x=>{if(!['todo','in-progress','completed'].includes(x.status))issues.push(`task:${x.id}:status`);if(!['high','medium','low'].includes(x.importance))issues.push(`task:${x.id}:importance`)});
+  (state.core?.groups||[]).forEach(g=>(g.itemIds||[]).forEach(id=>{const ok=g.type==='task'?taskIds.has(String(id)):g.type==='note'?noteIds.has(String(id)):g.type==='grocery'?groIds.has(String(id)):false;if(!ok)issues.push(`group:${g.id}:missing:${id}`)}));
+  const active=(state.workouts||[]).filter(w=>w.status==='active');if(active.length>1)issues.push('workouts:multiple-active');
+  (state.calendarEvents||[]).forEach(e=>{for(const k of ['fullAction','action','meta','label','occurrence','sourceEventId'])if(Object.prototype.hasOwnProperty.call(e,k))issues.push(`event:${e.id}:runtime-field:${k}`)});
+  return issues;
+};
+try{window.saveState();}catch(e){console.error('v27 initialization failed',e)}
+})();
+</script>
+
+<script id="omnios-v28-integrity-kernel">
+(function(){
+'use strict';
+function cleanupV28(){
+  try{ window.normalizeState?.(); }catch(e){}
+  if(state.core&&Array.isArray(state.core.groups)){
+    state.core.groups=state.core.groups.filter(g=>Array.isArray(g.itemIds)&&g.itemIds.length>0);
+  }
+  // linked task IDs are only valid while the peer task exists.
+  const tids=new Set((state.entries||[]).map(x=>String(x.id)));
+  (state.entries||[]).forEach(t=>{t.linkedIds=[...new Set((t.linkedIds||[]).map(String).filter(id=>id!==String(t.id)&&tids.has(id)))];});
+}
+const save28=window.saveState;
+window.saveState=function(){cleanupV28();return save28.apply(this,arguments);};
+
+// Force group decoration back immediately after module-specific redraws.
+const rn28=window.renderNotes;
+if(typeof rn28==='function')window.renderNotes=function(){const r=rn28.apply(this,arguments);try{window.omniosV25RefreshGrouping?.();}catch(e){}return r;};
+const rg28=window.drawGroceryGrid;
+if(typeof rg28==='function')window.drawGroceryGrid=function(){const r=rg28.apply(this,arguments);try{window.omniosV25RefreshGrouping?.();}catch(e){}return r;};
+
+window.omniIntegrityV28=function(){
+  cleanupV28();
+  const issues=[];
+  const validDate=v=>!v||/^\d{4}-\d{2}-\d{2}$/.test(String(v));
+  const seen=(arr,label)=>{const s=new Set();(arr||[]).forEach(x=>{const k=String(x.id);if(s.has(k))issues.push(`${label}:duplicate-id:${k}`);s.add(k);});};
+  [['task',state.entries],['event',state.calendarEvents],['note',state.notes],['habit',state.habits],['transaction',state.transactions],['workout',state.workouts]].forEach(([l,a])=>seen(a,l));
+  (state.entries||[]).forEach(t=>{if(!String(t.title||'').trim())issues.push(`task:${t.id}:empty-title`);if(!['todo','in-progress','completed'].includes(t.status))issues.push(`task:${t.id}:status`);if(!['high','medium','low'].includes(t.importance))issues.push(`task:${t.id}:importance`);if(!validDate(t.date))issues.push(`task:${t.id}:date`);});
+  (state.transactions||[]).forEach(t=>{if(!Number.isFinite(Number(t.amount))||Number(t.amount)<0)issues.push(`transaction:${t.id}:amount`);if(!validDate(t.date))issues.push(`transaction:${t.id}:date`);});
+  (state.calendarEvents||[]).forEach(e=>{if(!validDate(e.date))issues.push(`event:${e.id}:date`);});
+  if((state.workouts||[]).filter(w=>w.status==='active').length>1)issues.push('workout:multiple-active');
+  (state.core?.groups||[]).forEach(g=>{if(!(g.itemIds||[]).length)issues.push(`group:${g.id}:empty`);});
+  return [...new Set(issues)];
+};
+cleanupV28();
+try{window.omniosV25RefreshGrouping?.();}catch(e){}
+})();
+</script>
+
+<script id="omnios-v29-functional-kernel">
+(function(){
+'use strict';
+function normalizeFinanceV29(){
+  state.transactions=(Array.isArray(state.transactions)?state.transactions:[]).map(t=>({...t,type:t.type==='income'?'income':'expense',amount:Math.max(0,Number(t.amount)||0),date:/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||''))?String(t.date):localDateString()}));
+  state.budgetCategories=(Array.isArray(state.budgetCategories)?state.budgetCategories:[]).map(c=>({...c,limit:Math.max(0,Number(c.limit)||0),type:c.type==='income'?'income':'expense'}));
+}
+const norm29=window.normalizeState;window.normalizeState=function(){norm29?.apply(this,arguments);normalizeFinanceV29();};
+normalizeFinanceV29();
+const int28=window.omniIntegrityV28;window.omniIntegrityV29=function(){const issues=[...(int28?.()||[])];(state.transactions||[]).forEach(t=>{if(!['income','expense'].includes(t.type))issues.push(`transaction:${t.id}:type`);});return [...new Set(issues)];};
+try{window.renderBudget?.();window.renderDashboard?.();}catch(e){}
+})();
+</script>
+
+<script id="omnios-v30-settings-logic">
+(function(){
+'use strict';
+const update30=window.updateSetting;
+window.updateSetting=function(path,value){
+  if(path==='workout.weightUnit'){
+    const old=String(getSetting('workout.weightUnit','kg')), next=String(value);
+    if(old!==next && (old==='kg'||old==='lb') && (next==='kg'||next==='lb')){
+      const factor=old==='kg'&&next==='lb'?2.2046226218:1/2.2046226218;
+      (state.workouts||[]).forEach(w=>(w.exercises||[]).forEach(ex=>(ex.sets||[]).forEach(set=>{
+        const n=Number(set.weight);if(Number.isFinite(n)&&n!==0)set.weight=Number((n*factor).toFixed(2));
+      })));
+    }
+  }
+  const r=update30.apply(this,arguments);
+  if(/^focus\.(focusMin|shortBreak|longBreak)$/.test(path) && typeof applyFocusDefaultsToTimer==='function' && !isRunning){
+    applyFocusDefaultsToTimer();
+  }
+  return r;
+};
+})();
+</script>
+
+
+
+
+<script id="omnios-v33-uiux-js">
+(function(){
+'use strict';
+const NAV_GROUPS=[
+  ['Plan',['dashboard','master-calendar','tasks','budget']],
+  ['Track',['habits','workout','focus','diet']],
+  ['Organize',['notes','wishlist','grocery','goals','reminders','pantry']],
+  ['System',['passwords','settings','activity','templates','help']]
+];
+function tidyDesktopNavV33(){
+  const nav=document.querySelector('.nav-menu');if(!nav)return;
+  const items=new Map([...nav.querySelectorAll('.nav-item[data-view]')].map(x=>[x.dataset.view,x]));
+  nav.querySelectorAll('.nav-section').forEach(x=>x.remove());
+  NAV_GROUPS.forEach(([label,views])=>{
+    const present=views.filter(v=>items.has(v));if(!present.length)return;
+    const h=document.createElement('div');h.className='nav-section';h.textContent=label;nav.appendChild(h);
+    present.forEach(v=>nav.appendChild(items.get(v)));
+  });
+  // Keep any future/extension destination reachable instead of accidentally dropping it.
+  [...items.entries()].filter(([v])=>!NAV_GROUPS.some(([,arr])=>arr.includes(v))).forEach(([,el])=>nav.appendChild(el));
+}
+function cleanMobileNavV33(){
+  const nav=document.querySelector('.mobile-nav');if(!nav)return;
+  nav.querySelectorAll('[data-mobile-view="help"]').forEach(x=>x.remove());
+  // Older modules occasionally append extra destinations after the More system is built.
+  [...nav.children].forEach(x=>{if(x.id==='mobile-more-v25')return;if(x.dataset?.mobileView&&!['dashboard','master-calendar','tasks','habits','workout'].includes(x.dataset.mobileView))x.remove();});
+}
+function decorateDatabaseV33(){
+  const panel=document.getElementById('database-panel');const dash=document.getElementById('view-dashboard');if(!panel||!dash)return;
+  if(panel.parentElement!==dash)dash.prepend(panel);
+  const inner=panel.firstElementChild;if(inner){inner.classList.add('db-panel-inner');const kids=inner.children;if(kids[0])kids[0].classList.add('db-panel-copy');if(kids[1])kids[1].classList.add('db-panel-actions');const desc=kids[0]?.querySelector('.text-muted.text-sm');if(desc)desc.classList.add('db-panel-description');}
+}
+function mobileSearchV33(){
+  const actions=document.querySelector('.topbar-actions');if(!actions||document.getElementById('mobile-search-v33'))return;
+  const b=document.createElement('button');b.type='button';b.className='btn';b.id='mobile-search-v33';b.title='Search everything';b.setAttribute('aria-label','Search everything');b.textContent='⌕';
+  const anchor=document.getElementById('omni-assistant-launcher')||document.getElementById('global-add-btn');actions.insertBefore(b,anchor||actions.firstChild);
+  b.onclick=()=>{const input=document.getElementById('power-search');if(input){input.focus();return;}document.dispatchEvent(new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true}));};
+}
+function saveStatusA11yV33(){
+  const el=document.getElementById('save-status');if(!el||el.__v33Observed)return;el.__v33Observed=true;
+  const sync=()=>{el.title=el.textContent.trim()||'Storage status';el.setAttribute('aria-label',el.title)};sync();el.setAttribute('role','status');el.tabIndex=0;el.onclick=()=>window.toast?.(el.textContent.trim()||'Storage status');el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click()}};new MutationObserver(sync).observe(el,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['class']});
+}
+function buttonA11yV33(root=document){
+  root.querySelectorAll('.nav-item[data-view]').forEach(item=>{
+    item.setAttribute('role','button');item.tabIndex=0;
+    if(!item.__v33Key){item.__v33Key=true;item.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();window.switchView?.(item.dataset.view)}})}
+  });
+  root.querySelectorAll('.icon-btn,.modal-close-btn').forEach(b=>{
+    if(!b.getAttribute('aria-label')){const label=b.title||({ '✕':'Close','×':'Close','⌃':'Collapse','⌄':'Expand' }[(b.textContent||'').trim()]);if(label)b.setAttribute('aria-label',label)}
+  });
+}
+function keepActiveTabVisibleV33(){
+  document.addEventListener('click',e=>{const b=e.target.closest('.view-btn,.tab-btn,#help-nav button');if(!b)return;requestAnimationFrame(()=>{try{b.scrollIntoView({block:'nearest',inline:'nearest',behavior:getSetting?.('appearance.reducedMotion',false)?'auto':'smooth'})}catch(_){}})},true);
+}
+function preventDeadLookingActionsV33(){
+  // Buttons that are unavailable should communicate why instead of appearing dead.
+  const update=()=>{
+    const bar=document.getElementById('omnios-v25-selection-bar');if(bar){const n=parseInt(bar.querySelector('.v25-selection-count')?.textContent)||0;bar.querySelectorAll('[data-v25-bar-create],[data-v25-bar-move],[data-v25-bar-ungroup]').forEach(b=>{b.disabled=n<1;b.title=n<1?'Select one or more items first':''});}
+    document.querySelectorAll('button').forEach(b=>{if(b.disabled)b.setAttribute('aria-disabled','true');else b.removeAttribute('aria-disabled')});
+  };update(); /* v53: selection actions update directly; avoid a full-document observer on every text mutation. */
+}
+function markTaskToolbarV33(){const gs=[...document.querySelectorAll('#view-tasks>.toolbar>.toolbar-group')];gs.forEach((g,i)=>{g.classList.remove('task-view-group-v33','task-filter-group-v33','task-action-group-v33');g.classList.add(i===0?'task-view-group-v33':i===1?'task-filter-group-v33':'task-action-group-v33')});}
+function polishV33(){tidyDesktopNavV33();cleanMobileNavV33();decorateDatabaseV33();mobileSearchV33();saveStatusA11yV33();markTaskToolbarV33();buttonA11yV33();}
+keepActiveTabVisibleV33();
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{setTimeout(polishV33,0);setTimeout(polishV33,250);preventDeadLookingActionsV33();});
+else{polishV33();setTimeout(polishV33,250);preventDeadLookingActionsV33();}
+// Dynamic modules can render after startup; re-apply semantics without rebuilding state.
+/* v53: v35+ owns dynamic navigation and v45 owns dynamic semantics; no full-document v33 observer required. */
+})();
+</script>
+
+<style id="omnios-v34-interaction-css">
+/* ===== OmniOS v34 — view customization, habit month repair, contextual menus ===== */
+#context-view-btn{min-width:72px;justify-content:center}
+#context-view-btn .v34-view-label{display:inline}
+
+/* View option state */
+.view.v34-compact .card,.view.v34-compact .stat-card,.view.v34-compact .kpi-card,.view.v34-compact .workout-kpi,
+.view.v34-compact .workout-item-card,.view.v34-compact .workout-session-card,.view.v34-compact .habit-week-card,
+.view.v34-compact .note-card,.view.v34-compact .power-card,.view.v34-compact .custom-item-card{padding:11px}
+.view.v34-compact .grid-2,.view.v34-compact .analytics-grid,.view.v34-compact .stats-row,.view.v34-compact .kpi-grid,
+.view.v34-compact .power-grid,.view.v34-compact .custom-list-grid,.view.v34-compact .notes-grid{gap:8px}
+.view.v34-hide-secondary .text-muted.text-sm:first-of-type{display:none}
+
+#view-dashboard.v34-dashboard-cols-2 .analytics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+#view-dashboard.v34-dashboard-cols-1 .analytics-grid{grid-template-columns:1fr}
+#view-dashboard.v34-hide-database #database-panel{display:none!important}
+#view-dashboard.v34-hide-dashboard-descriptions .dashboard-toolbar .text-muted{display:none}
+
+#view-master-calendar.v34-hide-calendar-legend .master-cal-legend{display:none!important}
+#view-master-calendar.v34-compact-events .master-cal-event{padding:2px 4px;margin:1px 0;font-size:.6rem}
+#view-master-calendar.v34-compact-events .master-cal-day{min-height:98px}
+
+#view-tasks.v34-hide-task-meta .kanban-card-meta,
+#view-tasks.v34-hide-task-meta .list-item-date,
+#view-tasks.v34-hide-task-meta .gallery-card-cat,
+#view-tasks.v34-hide-task-meta .gallery-card-footer{display:none!important}
+#view-tasks.v34-hide-task-filters .task-filter-group-v33{display:none!important}
+
+#view-budget.v34-hide-budget-stats #budget-stats{display:none!important}
+#view-budget.v34-hide-wallets .budget-wallet-card-v34{display:none!important}
+#view-budget.v34-compact-transactions .transaction-item{padding:6px 0}
+#view-budget.v34-compact-transactions .txn-icon{width:26px;height:26px}
+
+#view-habits.v34-hide-habit-summary #habit-summary{display:none!important}
+#view-habits.v34-hide-habit-streaks .v34-habit-streak{display:none!important}
+
+#view-workout.v34-hide-workout-kpis #workout-kpis{display:none!important}
+#view-workout.v34-hide-workout-images .workout-item-card img{display:none!important}
+#view-workout.v34-compact-workout .set-table th,#view-workout.v34-compact-workout .set-table td{padding:4px}
+
+#view-focus.v34-hide-focus-settings .form-row{display:none!important}
+
+#view-notes.v34-notes-list .notes-grid{grid-template-columns:1fr!important}
+#view-notes.v34-notes-list .note-card{min-height:0}
+#view-notes.v34-hide-note-preview .note-preview{display:none!important}
+
+#view-passwords.v34-password-list .notes-grid{grid-template-columns:1fr!important}
+
+#view-diet.v34-generic-list .diet-db-grid{grid-template-columns:1fr!important}
+#view-diet.v34-hide-diet-details .diet-food-meta{display:none!important}
+
+#view-wishlist.v34-generic-list .custom-list-grid,
+#view-grocery.v34-generic-list .custom-list-grid,
+#view-goals.v34-generic-list .power-grid,
+#view-templates.v34-generic-list .power-grid{grid-template-columns:1fr!important}
+#view-pantry.v34-generic-list .power-pantry-grid{grid-template-columns:1fr!important}
+
+/* Repaired Habits monthly card view */
+.v34-habit-month-shell{display:flex;flex-direction:column;gap:12px}
+.v34-habit-month-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--border-color);background:var(--bg-surface);border-radius:var(--radius-md)}
+.v34-habit-month-nav{display:flex;align-items:center;gap:6px}.v34-habit-month-title{font-weight:800;min-width:160px;text-align:center}
+.v34-habit-month-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.v34-habit-month-card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:14px;min-width:0}
+.v34-habit-month-card-head{display:flex;align-items:center;gap:9px;margin-bottom:10px}.v34-habit-month-name{font-weight:750;min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v34-habit-month-meta{font-size:.65rem;color:var(--text-muted);text-align:right}
+.v34-habit-mini-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.v34-habit-weekday{font-size:.58rem;text-align:center;color:var(--text-muted);font-weight:700;text-transform:uppercase;padding:2px}
+.v34-habit-blank{aspect-ratio:1;min-height:31px}
+.v34-habit-month-day{aspect-ratio:1;min-height:31px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-base);color:var(--text-secondary);font:inherit;font-size:.66rem;cursor:pointer;display:grid;place-items:center;position:relative}
+.v34-habit-month-day:hover{border-color:var(--accent-cyan);background:rgba(6,182,212,.06)}
+.v34-habit-month-day.is-done{background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.42);color:var(--accent-green);font-weight:800}
+.v34-habit-month-day.is-today{box-shadow:inset 0 0 0 2px rgba(6,182,212,.55)}
+.v34-habit-month-day .v34-dot{position:absolute;bottom:2px;font-size:.45rem;line-height:1}
+
+/* Alternate 31-day matrix */
+.v34-habit-matrix-wrap{overflow:auto;border:1px solid var(--border-color);border-radius:var(--radius-md);background:var(--bg-surface)}
+.v34-habit-matrix{display:grid;gap:2px;padding:8px;min-width:max-content}
+.v34-habit-matrix-cell{min-width:35px;min-height:38px;border:1px solid var(--border-color);background:var(--bg-base);border-radius:6px;display:grid;place-items:center;font-size:.62rem}
+.v34-habit-matrix-head{background:var(--bg-elevated);color:var(--text-muted);font-weight:700}
+.v34-habit-matrix-name{position:sticky;left:0;z-index:3;justify-content:flex-start;padding:0 9px;min-width:170px;background:var(--bg-surface);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button.v34-habit-matrix-cell{color:var(--text-secondary);cursor:pointer}button.v34-habit-matrix-cell:hover{border-color:var(--accent-cyan)}button.v34-habit-matrix-cell.is-done{background:rgba(16,185,129,.14);color:var(--accent-green);border-color:rgba(16,185,129,.4);font-weight:800}button.v34-habit-matrix-cell.is-today{box-shadow:inset 0 0 0 2px rgba(6,182,212,.55)}
+
+/* View customizer */
+.v34-view-options{display:flex;flex-direction:column;gap:0}.v34-option-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:11px 0;border-bottom:1px solid var(--border-color)}.v34-option-row:last-child{border-bottom:0}.v34-option-main{min-width:0;flex:1}.v34-option-title{font-size:.8rem;font-weight:700}.v34-option-desc{font-size:.66rem;color:var(--text-muted);margin-top:2px;line-height:1.35}.v34-option-control{min-width:150px}.v34-option-control select{width:100%}.v34-switch{width:44px;height:25px;border-radius:999px;border:1px solid var(--border-color);background:var(--bg-hover);position:relative;cursor:pointer}.v34-switch:after{content:'';position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:var(--text-secondary);transition:.15s}.v34-switch.on{background:rgba(6,182,212,.2);border-color:var(--accent-cyan)}.v34-switch.on:after{left:21px;background:var(--accent-cyan)}
+
+/* Context menu */
+#omni-context-menu-v34{position:fixed;z-index:1800;display:none;min-width:220px;max-width:min(300px,calc(100vw - 16px));padding:6px;background:var(--bg-surface);border:1px solid var(--border-light);border-radius:11px;box-shadow:0 18px 50px rgba(0,0,0,.4);color:var(--text-primary)}
+#omni-context-menu-v34.open{display:block}.v34-context-title{padding:7px 9px 5px;font-size:.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v34-context-item{width:100%;min-height:35px;border:0;background:transparent;color:inherit;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:9px;text-align:left;cursor:pointer;font:inherit;font-size:.75rem}.v34-context-item:hover,.v34-context-item:focus{outline:none;background:var(--bg-elevated)}.v34-context-item.danger{color:var(--accent-red)}.v34-context-item[disabled]{opacity:.42;cursor:not-allowed}.v34-context-icon{width:18px;text-align:center;flex:none}.v34-context-sep{height:1px;background:var(--border-color);margin:5px 4px}
+.v34-context-hint{margin-left:auto;color:var(--text-muted);font-size:.58rem}
+
+/* Context-target hint only on mouse devices */
+@media(hover:hover) and (pointer:fine){[data-entry-id],.note-card,[data-habit-day],[data-master-event],.transaction-item,[data-open-password],[data-open-template],[data-open-exercise],[data-food-id],[data-meal-id],[data-group-type="grocery"],[data-open-goal],[data-pantry-open]{cursor:context-menu}}
+
+@media(max-width:900px){.v34-habit-month-cards{grid-template-columns:1fr}}
+@media(max-width:760px){
+  #context-view-btn{width:40px;min-width:40px;padding:0}#context-view-btn .v34-view-label{display:none}
+  .v34-option-row{align-items:flex-start;flex-direction:column;gap:7px}.v34-option-control{width:100%;min-width:0}.v34-option-control .v34-switch{width:44px}
+  .v34-habit-month-card{padding:11px}.v34-habit-mini-calendar{gap:3px}.v34-habit-month-day,.v34-habit-blank{min-height:36px}
+  #omni-context-menu-v34{display:none!important} /* native long-press remains untouched on phones */
+}
+</style>
+<script id="omnios-v34-interaction-js">
+(function(){
+'use strict';
+const V34_VERSION='34';
+function ensureV34(){
+  state.core=state.core||{};state.core.ui=state.core.ui||{};state.core.ui.pageOptions=state.core.ui.pageOptions||{};
+}
+ensureV34();
+const DEFAULTS={
+  dashboard:{density:'comfortable',columns:'auto',showDatabase:true,showDescriptions:true},
+  'master-calendar':{density:'comfortable',mode:'month',showLegend:true,compactEvents:false},
+  tasks:{density:'comfortable',view:'kanban',showMetadata:true,showFilters:true},
+  budget:{density:'comfortable',showStats:true,showWallets:true,compactTransactions:false},
+  habits:{density:'comfortable',view:'week',monthLayout:'cards',showSummary:true,showStreaks:true},
+  workout:{density:'comfortable',tab:'session',showKpis:true,showImages:true,compactSession:false},
+  focus:{density:'comfortable',showSettings:true},
+  notes:{density:'comfortable',layout:'grid',showPreviews:true},
+  passwords:{density:'comfortable',layout:'grid'},
+  diet:{density:'comfortable',layout:'grid',showDetails:true},
+  wishlist:{density:'comfortable',layout:'grid'},grocery:{density:'comfortable',layout:'grid'},goals:{density:'comfortable',layout:'grid'},pantry:{density:'comfortable',layout:'grid'},templates:{density:'comfortable',layout:'grid'},reminders:{density:'comfortable'},activity:{density:'comfortable'},help:{density:'comfortable'},settings:{density:'comfortable'}
+};
+function activeViewV34(){return document.querySelector('.view.active')?.id?.replace(/^view-/,'')||'dashboard'}
+function optsV34(view){ensureV34();return {...(DEFAULTS[view]||{density:'comfortable'}),...(state.core.ui.pageOptions[view]||{})}}
+function saveOptsV34(view,next){ensureV34();state.core.ui.pageOptions[view]={...(state.core.ui.pageOptions[view]||{}),...next};try{window.omniOSUIPersistence?.persist?.()}catch(e){try{storage.setItem('omnios_v3_state',JSON.stringify(state))}catch(_){}}applyViewOptionsV34(view)}
+function clearV34Classes(sec){[...sec.classList].filter(x=>x.startsWith('v34-')).forEach(x=>sec.classList.remove(x))}
+function applyViewOptionsV34(view){
+  const sec=document.getElementById('view-'+view);if(!sec)return;const o=optsV34(view);clearV34Classes(sec);if(o.density==='compact')sec.classList.add('v34-compact');
+  if(view==='dashboard'){if(o.columns==='2')sec.classList.add('v34-dashboard-cols-2');if(o.columns==='1')sec.classList.add('v34-dashboard-cols-1');if(o.showDatabase===false)sec.classList.add('v34-hide-database');if(o.showDescriptions===false)sec.classList.add('v34-hide-dashboard-descriptions')}
+  if(view==='master-calendar'){if(o.showLegend===false)sec.classList.add('v34-hide-calendar-legend');if(o.compactEvents)sec.classList.add('v34-compact-events')}
+  if(view==='tasks'){if(o.showMetadata===false)sec.classList.add('v34-hide-task-meta');if(o.showFilters===false)sec.classList.add('v34-hide-task-filters')}
+  if(view==='budget'){if(o.showStats===false)sec.classList.add('v34-hide-budget-stats');if(o.showWallets===false)sec.classList.add('v34-hide-wallets');if(o.compactTransactions)sec.classList.add('v34-compact-transactions');document.getElementById('wallet-list')?.closest('.card')?.classList.add('budget-wallet-card-v34')}
+  if(view==='habits'){if(o.showSummary===false)sec.classList.add('v34-hide-habit-summary');if(o.showStreaks===false)sec.classList.add('v34-hide-habit-streaks')}
+  if(view==='workout'){if(o.showKpis===false)sec.classList.add('v34-hide-workout-kpis');if(o.showImages===false)sec.classList.add('v34-hide-workout-images');if(o.compactSession)sec.classList.add('v34-compact-workout')}
+  if(view==='focus'&&o.showSettings===false)sec.classList.add('v34-hide-focus-settings');
+  if(view==='notes'){if(o.layout==='list')sec.classList.add('v34-notes-list');if(o.showPreviews===false)sec.classList.add('v34-hide-note-preview')}
+  if(view==='passwords'&&o.layout==='list')sec.classList.add('v34-password-list');
+  if(view==='diet'){if(o.layout==='list')sec.classList.add('v34-generic-list');if(o.showDetails===false)sec.classList.add('v34-hide-diet-details')}
+  if(['wishlist','grocery','goals','pantry','templates'].includes(view)&&o.layout==='list')sec.classList.add('v34-generic-list');
+}
+function applyAllV34(){document.querySelectorAll('.view[id^="view-"]').forEach(sec=>applyViewOptionsV34(sec.id.replace(/^view-/,'')))}
+
+/* ---------- repaired Habit month renderer ---------- */
+function weekStartIndexV34(){return getSetting('calendar.weekStart','sunday')==='monday'?1:0}
+function weekdayLabelsV34(){return weekStartIndexV34()===1?['Mon','Tue','Wed','Thu','Fri','Sat','Sun']:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']}
+function monthOffsetV34(y,m){const dow=new Date(y,m,1,12).getDay();return weekStartIndexV34()===1?(dow+6)%7:dow}
+window.renderHabitSummary=function(){
+  const monthly=habitView==='calendar';const s=habitStats(monthly?'month':'week');const el=document.getElementById('habit-summary');if(!el)return;
+  el.innerHTML=`<div class="habit-summary"><div class="habit-summary-label">${monthly?'Monthly':'Weekly'} consistency</div><div class="habit-summary-value">${s.rate}%</div></div><div class="habit-summary"><div class="habit-summary-label">Today</div><div class="habit-summary-value">${s.todayDone}/${s.todayTotal}</div></div><div class="habit-summary"><div class="habit-summary-label">Best streak</div><div class="habit-summary-value">🔥 ${s.best}d</div></div><div class="habit-summary"><div class="habit-summary-label">Active streak</div><div class="habit-summary-value">⚡ ${s.current}d</div></div>`;
+};
+function habitMonthHeaderV34(){return `<div class="v34-habit-month-toolbar"><div class="v34-habit-month-nav"><button type="button" class="btn btn-sm" id="habit-prev" aria-label="Previous month">‹</button><button type="button" class="btn btn-sm" id="habit-today">Today</button><button type="button" class="btn btn-sm" id="habit-next" aria-label="Next month">›</button></div><div class="v34-habit-month-title">${new Date(habitYear,habitMonth,1).toLocaleDateString(undefined,{month:'long',year:'numeric'})}</div><div class="text-muted text-sm">Click a day to toggle completion · right-click for actions</div></div>`}
+function bindHabitMonthNavV34(){document.getElementById('habit-prev')?.addEventListener('click',()=>changeHabitMonth(-1));document.getElementById('habit-next')?.addEventListener('click',()=>changeHabitMonth(1));document.getElementById('habit-today')?.addEventListener('click',goToHabitToday);bindHabitDayClicks()}
+function renderHabitMonthCardsV34(container){
+  const days=new Date(habitYear,habitMonth+1,0).getDate(),offset=monthOffsetV34(habitYear,habitMonth),labels=weekdayLabelsV34(),today=localDateString();let html=`<div class="v34-habit-month-shell">${habitMonthHeaderV34()}<div class="v34-habit-month-cards">`;
+  state.habits.forEach(h=>{const completed=Array.from({length:days},(_,i)=>`${habitYear}-${String(habitMonth+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`).filter(k=>h.log?.[k]).length;const rate=Math.round(completed/days*100);html+=`<section class="v34-habit-month-card" data-habit-id="${escapeHtml(String(h.id))}"><div class="v34-habit-month-card-head"><span style="font-size:1.1rem">${escapeHtml(h.icon||'✨')}</span><div class="v34-habit-month-name">${escapeHtml(h.name||'Habit')}</div><div class="v34-habit-month-meta"><strong>${completed}/${days}</strong> · ${rate}%<div class="v34-habit-streak">🔥 ${getStreak(h)}d</div></div></div><div class="v34-habit-mini-calendar">${labels.map(x=>`<div class="v34-habit-weekday">${x}</div>`).join('')}${'<div class="v34-habit-blank"></div>'.repeat(offset)}`;for(let day=1;day<=days;day++){const k=`${habitYear}-${String(habitMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`,done=!!h.log?.[k];html+=`<button type="button" class="v34-habit-month-day ${done?'is-done':''} ${k===today?'is-today':''}" data-habit-day="${escapeHtml(String(h.id))}|${k}" title="${escapeHtml(h.name)} · ${k} · ${done?'Completed':'Not completed'}"><span>${day}</span>${done?'<span class="v34-dot">●</span>':''}</button>`}html+='</div></section>'});html+='</div></div>';container.innerHTML=html;bindHabitMonthNavV34()
+}
+function renderHabitMonthMatrixV34(container){
+  const days=new Date(habitYear,habitMonth+1,0).getDate(),today=localDateString();let html=`<div class="v34-habit-month-shell">${habitMonthHeaderV34()}<div class="v34-habit-matrix-wrap"><div class="v34-habit-matrix" style="grid-template-columns:180px repeat(${days},35px)"><div class="v34-habit-matrix-cell v34-habit-matrix-head v34-habit-matrix-name">Habit</div>`;for(let d=1;d<=days;d++){const dt=new Date(habitYear,habitMonth,d);html+=`<div class="v34-habit-matrix-cell v34-habit-matrix-head" title="${dt.toLocaleDateString()}">${d}<br><span style="font-size:.5rem">${dt.toLocaleDateString(undefined,{weekday:'narrow'})}</span></div>`}state.habits.forEach(h=>{html+=`<div class="v34-habit-matrix-cell v34-habit-matrix-name" data-habit-id="${escapeHtml(String(h.id))}">${escapeHtml(h.icon||'✨')} ${escapeHtml(h.name||'Habit')}</div>`;for(let d=1;d<=days;d++){const k=`${habitYear}-${String(habitMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,done=!!h.log?.[k];html+=`<button type="button" class="v34-habit-matrix-cell ${done?'is-done':''} ${k===today?'is-today':''}" data-habit-day="${escapeHtml(String(h.id))}|${k}" title="${escapeHtml(h.name)} · ${k}">${done?'✓':'·'}</button>`}});html+='</div></div></div>';container.innerHTML=html;bindHabitMonthNavV34()
+}
+window.renderHabitCalendar=function(container){const layout=optsV34('habits').monthLayout||'cards';layout==='matrix'?renderHabitMonthMatrixV34(container):renderHabitMonthCardsV34(container)};
+window.goToHabitToday=function(){const today=new Date();habitMonth=today.getMonth();habitYear=today.getFullYear();habitWeekStart=new Date(today);habitWeekStart.setHours(0,0,0,0);const dow=habitWeekStart.getDay();habitWeekStart.setDate(habitWeekStart.getDate()-(weekStartIndexV34()===1?(dow+6)%7:dow));renderHabits()};
+const habitBtn=document.querySelector('[data-habitview="calendar"]');if(habitBtn)habitBtn.innerHTML='▦ Monthly';
+
+/* ---------- View customization UI ---------- */
+const SCHEMAS={
+  dashboard:[['density','select','Density','Controls card spacing',['comfortable|Comfortable','compact|Compact']],['columns','select','Dashboard columns','Number of analytics columns',['auto|Automatic','2|Two columns','1|One column']],['showDatabase','toggle','Show Local Database','Show the database connection card on Dashboard'],['showDescriptions','toggle','Show descriptions','Keep secondary helper text visible']],
+  'master-calendar':[['density','select','Density','Calendar spacing',['comfortable|Comfortable','compact|Compact']],['mode','select','Calendar view','Default/current presentation',['month|Month','agenda|Agenda']],['showLegend','toggle','Show legend','Display calendar type colors'],['compactEvents','toggle','Compact events','Fit more events in each day']],
+  tasks:[['density','select','Density','Task card spacing',['comfortable|Comfortable','compact|Compact']],['view','select','Task presentation','Choose your working view',['kanban|Kanban','matrix|Eisenhower matrix','list|List','gallery|Gallery','calendar|Calendar','groups|Groups']],['showMetadata','toggle','Show task metadata','Priority, category and date details'],['showFilters','toggle','Show filters','Keep filtering controls visible']],
+  budget:[['density','select','Density','Finance spacing',['comfortable|Comfortable','compact|Compact']],['showStats','toggle','Show monthly totals','Income, expenses, net and budget remaining'],['showWallets','toggle','Show wallets','Display wallet/account section'],['compactTransactions','toggle','Compact transactions','Reduce transaction row height']],
+  habits:[['density','select','Density','Habit workspace spacing',['comfortable|Comfortable','compact|Compact']],['view','select','Habit presentation','Weekly execution or monthly review',['week|Weekly','calendar|Monthly']],['monthLayout','select','Monthly layout','Choose how the month is displayed',['cards|Calendar cards','matrix|31-day matrix']],['showSummary','toggle','Show summary','Display consistency and streak KPIs'],['showStreaks','toggle','Show streaks','Display per-habit streaks in monthly cards']],
+  workout:[['density','select','Density','Workout spacing',['comfortable|Comfortable','compact|Compact']],['tab','select','Workout section','Current workout view',['session|Current Session','templates|Templates','exercises|Exercises','analytics|Analytics','history|History']],['showKpis','toggle','Show workout KPIs','Display summary metrics above the tabs'],['showImages','toggle','Show exercise images','Display images in exercise cards'],['compactSession','toggle','Compact set tables','Reduce spacing while logging sets']],
+  focus:[['density','select','Density','Timer spacing',['comfortable|Comfortable','compact|Compact']],['showSettings','toggle','Show timer durations','Display Focus/Break duration inputs']],
+  notes:[['density','select','Density','Note card spacing',['comfortable|Comfortable','compact|Compact']],['layout','select','Notes layout','Grid or single-column list',['grid|Grid','list|List']],['showPreviews','toggle','Show note previews','Display note content excerpts']],
+  passwords:[['density','select','Density','Password card spacing',['comfortable|Comfortable','compact|Compact']],['layout','select','Password layout','Grid or single-column list',['grid|Grid','list|List']]],
+  diet:[['density','select','Density','Nutrition spacing',['comfortable|Comfortable','compact|Compact']],['layout','select','Database layout','Grid or single-column list',['grid|Grid','list|List']],['showDetails','toggle','Show nutrition details','Display nutrition metadata on cards']],
+  wishlist:[['density','select','Density','Wishlist spacing',['comfortable|Comfortable','compact|Compact']],['layout','select','Wishlist layout','Grid or list',['grid|Grid','list|List']]],
+  grocery:[['density','select','Density','Grocery spacing',['comfortable|Comfortable','compact|Compact']],['layout','select','Grocery layout','Grid or list',['grid|Grid','list|List']]],
+  goals:[['density','select','Density','Goals spacing',['comfortable|Comfortable','compact|Compact']],['layout','select','Goals layout','Grid or list',['grid|Grid','list|List']]],
+  pantry:[['density','select','Density','Pantry spacing',['comfortable|Comfortable','compact|Compact']],['layout','select','Pantry layout','Grid or list',['grid|Grid','list|List']]],
+  templates:[['density','select','Density','Template spacing',['comfortable|Comfortable','compact|Compact']],['layout','select','Template layout','Grid or list',['grid|Grid','list|List']]]
+};
+function schemaV34(view){return SCHEMAS[view]||[['density','select','Density','Workspace spacing',['comfortable|Comfortable','compact|Compact']]]}
+function ensureCustomizerV34(){let ov=document.getElementById('view-customizer-v34');if(ov)return ov;ov=document.createElement('div');ov.id='view-customizer-v34';ov.className='modal-overlay';ov.innerHTML='<div class="modal" style="max-width:560px"><div class="modal-header"><div><h3 class="modal-title" id="v34-custom-title">Customize view</h3><div class="text-muted text-sm" id="v34-custom-subtitle"></div></div><button type="button" class="icon-btn" id="v34-custom-close" aria-label="Close">✕</button></div><div class="v34-view-options" id="v34-custom-options"></div><div class="modal-footer"><button type="button" class="btn" id="v34-custom-reset" style="margin-right:auto">Reset this view</button><button type="button" class="btn btn-primary" id="v34-custom-done">Done</button></div></div>';document.body.appendChild(ov);ov.querySelector('#v34-custom-close').onclick=()=>ov.classList.remove('active');ov.querySelector('#v34-custom-done').onclick=()=>ov.classList.remove('active');ov.onclick=e=>{if(e.target===ov)ov.classList.remove('active')};return ov}
+function titleForViewV34(view){return document.querySelector(`.nav-item[data-view="${CSS.escape(view)}"]`)?.textContent.trim()||({'master-calendar':'Calendar'})[view]||view.replace(/-/g,' ').replace(/\b\w/g,x=>x.toUpperCase())}
+function renderCustomOptionV34(view,desc,o){const [key,type,title,help,values]=desc;const row=document.createElement('div');row.className='v34-option-row';row.innerHTML=`<div class="v34-option-main"><div class="v34-option-title">${escapeHtml(title)}</div><div class="v34-option-desc">${escapeHtml(help||'')}</div></div><div class="v34-option-control"></div>`;const host=row.querySelector('.v34-option-control');if(type==='select'){const s=document.createElement('select');s.className='form-select';(values||[]).forEach(spec=>{const [v,l]=spec.split('|');s.add(new Option(l,v))});s.value=String(o[key]??'');s.onchange=()=>{saveOptsV34(view,{[key]:s.value});applyImmediateOptionV34(view,key,s.value)};host.appendChild(s)}else{const b=document.createElement('button');b.type='button';b.className='v34-switch '+(o[key]!==false?'on':'');b.setAttribute('role','switch');b.setAttribute('aria-checked',o[key]!==false?'true':'false');b.onclick=()=>{const next=!b.classList.contains('on');b.classList.toggle('on',next);b.setAttribute('aria-checked',String(next));saveOptsV34(view,{[key]:next})};host.appendChild(b)}return row}
+function applyImmediateOptionV34(view,key,value){
+  if(view==='master-calendar'&&key==='mode'){masterCalendarMode=value;renderMasterCalendar()}
+  if(view==='tasks'&&key==='view'){currentTaskView=value;document.querySelectorAll('[data-taskview]').forEach(b=>b.classList.toggle('active',b.dataset.taskview===value));renderTasks()}
+  if(view==='habits'&&(key==='view'||key==='monthLayout')){if(key==='view'){habitView=value;document.querySelectorAll('[data-habitview]').forEach(b=>b.classList.toggle('active',b.dataset.habitview===value))}renderHabits()}
+  if(view==='workout'&&key==='tab'){workoutTab=value;document.querySelectorAll('[data-workout-tab]').forEach(b=>b.classList.toggle('active',b.dataset.workoutTab===value));renderWorkout()}
+}
+window.openViewCustomizerV34=function(view=activeViewV34()){const ov=ensureCustomizerV34(),o=optsV34(view),host=ov.querySelector('#v34-custom-options');ov.querySelector('#v34-custom-title').textContent='Customize '+titleForViewV34(view);ov.querySelector('#v34-custom-subtitle').textContent='These options are saved for this page only.';host.innerHTML='';schemaV34(view).forEach(d=>host.appendChild(renderCustomOptionV34(view,d,o)));ov.querySelector('#v34-custom-reset').onclick=()=>{delete state.core.ui.pageOptions[view];try{window.omniOSUIPersistence?.persist?.()}catch(e){}applyViewOptionsV34(view);if(view==='habits')renderHabits();openViewCustomizerV34(view)};ov.classList.add('active')};
+function installViewButtonV34(){const actions=document.querySelector('.topbar-actions');if(!actions||document.getElementById('context-view-btn'))return;const b=document.createElement('button');b.type='button';b.className='btn';b.id='context-view-btn';b.title='Customize this view';b.setAttribute('aria-label','Customize this view');b.innerHTML='<span aria-hidden="true">☷</span><span class="v34-view-label">View</span>';const settings=document.getElementById('settings-topbar-btn');actions.insertBefore(b,settings||actions.firstChild);b.onclick=()=>openViewCustomizerV34()}
+
+/* ---------- context menus ---------- */
+function ensureContextMenuV34(){let m=document.getElementById('omni-context-menu-v34');if(m)return m;m=document.createElement('div');m.id='omni-context-menu-v34';m.setAttribute('role','menu');document.body.appendChild(m);return m}
+function closeContextV34(){ensureContextMenuV34().classList.remove('open')}
+function showContextV34(x,y,title,items){const m=ensureContextMenuV34();m.innerHTML=`<div class="v34-context-title">${escapeHtml(title||'Actions')}</div>`;items.forEach(it=>{if(it.sep){const s=document.createElement('div');s.className='v34-context-sep';m.appendChild(s);return}const b=document.createElement('button');b.type='button';b.className='v34-context-item'+(it.danger?' danger':'');b.disabled=!!it.disabled;b.innerHTML=`<span class="v34-context-icon">${it.icon||''}</span><span>${escapeHtml(it.label)}</span>${it.hint?`<span class="v34-context-hint">${escapeHtml(it.hint)}</span>`:''}`;b.onclick=()=>{closeContextV34();if(!b.disabled)it.action?.()};m.appendChild(b)});m.classList.add('open');m.style.left='0px';m.style.top='0px';const r=m.getBoundingClientRect();m.style.left=Math.max(6,Math.min(x,innerWidth-r.width-6))+'px';m.style.top=Math.max(6,Math.min(y,innerHeight-r.height-6))+'px';m.querySelector('.v34-context-item:not([disabled])')?.focus({preventScroll:true})}
+function dupTaskV34(id){const x=state.entries.find(e=>String(e.id)===String(id));if(!x)return;const y=JSON.parse(JSON.stringify(x));y.id=Date.now()+Math.random();y.title=(x.title||'Task')+' copy';y.status='todo';y.createdAt=new Date().toISOString();state.entries.push(y);saveState();window.toast?.('Task duplicated')}
+function dupNoteV34(id){const x=state.notes.find(n=>String(n.id)===String(id));if(!x)return;const y=JSON.parse(JSON.stringify(x));y.id=Date.now()+Math.random();y.title=(x.title||'Untitled')+' copy';y.pinned=false;y.date=new Date().toISOString();y.updatedAt=y.date;state.notes.push(y);saveState();window.toast?.('Note duplicated')}
+function dupGroceryV34(id){const x=state.groceryLists?.find(n=>String(n.id)===String(id));if(!x)return;const y=JSON.parse(JSON.stringify(x));y.id=Date.now()+Math.random();y.title=(x.title||'Grocery List')+' copy';y.items=(y.items||[]).map(i=>({...i,id:Date.now()+Math.random(),done:false}));state.groceryLists.push(y);saveState();window.toast?.('Grocery list duplicated')}
+function deleteGroceryV34(id){const x=state.groceryLists?.find(n=>String(n.id)===String(id));if(!x||!confirm(`Delete "${x.title}"?`))return;state.groceryLists=state.groceryLists.filter(n=>String(n.id)!==String(id));(state.core?.groups||[]).forEach(g=>{if(g.type==='grocery')g.itemIds=(g.itemIds||[]).filter(i=>String(i)!==String(id))});saveState();window.toastUndo?.('Grocery list deleted')}
+function dupTransactionV34(id){const x=state.transactions.find(t=>String(t.id)===String(id));if(!x)return;state.transactions.push({...JSON.parse(JSON.stringify(x)),id:Date.now()+Math.random(),date:localDateString(),desc:(x.desc||'Transaction')+' copy'});saveState();window.toast?.('Transaction duplicated')}
+function duplicatePasswordV34(id){const x=state.passwords.find(p=>String(p.id)===String(id));if(!x)return;state.passwords.push({...JSON.parse(JSON.stringify(x)),id:Date.now()+Math.random(),site:(x.site||'Login')+' copy'});saveState();window.toast?.('Password entry duplicated')}
+function duplicateTemplateV34(id){const x=state.workoutTemplates.find(t=>String(t.id)===String(id));if(!x)return;state.workoutTemplates.push({...JSON.parse(JSON.stringify(x)),id:'tpl-'+Date.now()+'-'+Math.floor(Math.random()*999),name:(x.name||'Template')+' copy'});saveState();window.toast?.('Template duplicated')}
+function duplicateExerciseV34(id){const x=state.workoutExercises.find(t=>String(t.id)===String(id));if(!x)return;state.workoutExercises.push({...JSON.parse(JSON.stringify(x)),id:'ex-'+Date.now()+'-'+Math.floor(Math.random()*999),name:(x.name||'Exercise')+' copy'});saveState();window.toast?.('Exercise duplicated')}
+function contextItemsV34(target,view){
+  const task=target.closest('[data-entry-id]');if(task){const id=task.dataset.entryId,x=state.entries.find(e=>String(e.id)===String(id));if(x)return ['task',x.title,[{icon:'↗',label:'Open details',action:()=>openInspector(id)},{icon:'✎',label:'Edit task',action:()=>editTask(id)},{icon:x.status==='completed'?'○':'✓',label:x.status==='completed'?'Reopen task':'Mark completed',action:()=>{x.status=x.status==='completed'?'todo':'completed';saveState()}},{icon:'⧉',label:'Duplicate',action:()=>dupTaskV34(id)},{sep:true},{icon:'☷',label:'Select / group tasks',action:()=>document.querySelector('[data-v25-select="task"]')?.click()},{icon:'🗑',label:'Delete task',danger:true,action:()=>deleteTask(id)}]]}
+  const hday=target.closest('[data-habit-day]');if(hday){const [id,date]=hday.dataset.habitDay.split('|'),h=state.habits.find(x=>String(x.id)===String(id));if(h)return ['habit',h.name,[{icon:h.log?.[date]?'○':'✓',label:h.log?.[date]?'Mark not completed':'Mark completed',action:()=>toggleHabitDay(id,date)},{icon:'✎',label:'Edit habit',action:()=>openHabitModal(id)},{icon:'▦',label:'Open monthly view',action:()=>{habitView='calendar';document.querySelectorAll('[data-habitview]').forEach(b=>b.classList.toggle('active',b.dataset.habitview==='calendar'));renderHabits()}},{sep:true},{icon:'☷',label:'Customize Habits view',action:()=>openViewCustomizerV34('habits')}]]}
+  const hid=target.closest('[data-habit-id]');if(hid){const id=hid.dataset.habitId,h=state.habits.find(x=>String(x.id)===String(id));if(h)return ['habit',h.name,[{icon:'✎',label:'Edit habit',action:()=>openHabitModal(id)},{icon:'⧉',label:'Duplicate habit (empty history)',action:()=>{state.habits.push({...JSON.parse(JSON.stringify(h)),id:Date.now()+Math.random(),name:h.name+' copy',log:{}});saveState()}},{icon:'☷',label:'Customize Habits view',action:()=>openViewCustomizerV34('habits')}]]}
+  const note=target.closest('.note-card[data-group-item-id]');if(note){const id=note.dataset.groupItemId,n=state.notes.find(x=>String(x.id)===String(id));if(n)return ['note',n.title,[{icon:'↗',label:'Open note',action:()=>openNoteModal(id)},{icon:n.pinned?'☆':'★',label:n.pinned?'Unpin note':'Pin note',action:()=>toggleNotePin(n.id)},{icon:'⧉',label:'Duplicate',action:()=>dupNoteV34(id)},{sep:true},{icon:'☷',label:'Select / group notes',action:()=>document.querySelector('[data-v25-select="note"]')?.click()},{icon:'🗑',label:'Delete note',danger:true,action:()=>deleteNote(n.id)}]]}
+  const calEvent=target.closest('[data-master-event]');if(calEvent){const ev=masterCalendarEvents().find(x=>String(x.id)===String(calEvent.dataset.masterEvent));if(ev){const acts=[{icon:'↗',label:'Open',action:()=>openCalendarItemPreview(ev)}];if(ev.type==='event')acts.push({icon:'✎',label:'Edit event',action:()=>openCalendarEventModal(ev.sourceEventId||ev.id)});acts.push({icon:'☷',label:'Customize Calendar view',action:()=>openViewCustomizerV34('master-calendar')});return ['calendar',ev.title,acts]}}
+  const calDay=target.closest('[data-master-date]');if(calDay){const k=calDay.dataset.masterDate;return ['calendar',k,[{icon:'＋',label:'New event on this date',action:()=>{masterCalendarDate=dateAtNoon(k);openCalendarEventModal()}},{icon:'▤',label:'Show day in agenda',action:()=>{masterCalendarDate=dateAtNoon(k);masterCalendarMode='agenda';renderMasterCalendar()}},{icon:'☷',label:'Customize Calendar view',action:()=>openViewCustomizerV34('master-calendar')}]]}
+  const txn=target.closest('[data-txn-id]');if(txn){const id=txn.dataset.txnId,x=state.transactions.find(t=>String(t.id)===String(id));if(x)return ['finance',x.desc,[{icon:'✎',label:'Edit transaction',action:()=>editTransaction(id)},{icon:'⧉',label:'Duplicate for today',action:()=>dupTransactionV34(id)},{sep:true},{icon:'🗑',label:'Delete transaction',danger:true,action:()=>{if(!confirm('Delete this transaction?'))return;state.transactions=state.transactions.filter(t=>String(t.id)!==String(id));saveState();window.toastUndo?.('Transaction deleted')}}]]}
+  const wallet=target.closest('[data-open-wallet]');if(wallet)return ['wallet','Wallet',[{icon:'✎',label:'Edit wallet',action:()=>openWalletModal(wallet.dataset.openWallet)},{icon:'＋',label:'Add transaction',action:()=>openTxnModal()},{icon:'☷',label:'Customize Budget view',action:()=>openViewCustomizerV34('budget')}]];
+  const grocery=target.closest('[data-group-type="grocery"][data-group-item-id]');if(grocery){const id=grocery.dataset.groupItemId,x=state.groceryLists.find(n=>String(n.id)===String(id));if(x)return ['grocery',x.title,[{icon:'↗',label:'Open list',action:()=>openUniversalExtensionItem('grocery',id)},{icon:'✎',label:'Edit list',action:()=>openGroceryModal(id)},{icon:'＄',label:'Add total to budget',action:()=>addGroceryTotalToBudget(id)},{icon:'⧉',label:'Duplicate list',action:()=>dupGroceryV34(id)},{sep:true},{icon:'☷',label:'Select / group lists',action:()=>document.querySelector('[data-v25-select="grocery"]')?.click()},{icon:'🗑',label:'Delete list',danger:true,action:()=>deleteGroceryV34(id)}]]}
+  const pw=target.closest('[data-open-password]');if(pw){const id=pw.dataset.openPassword,x=state.passwords.find(p=>String(p.id)===String(id));if(x)return ['password',x.site,[{icon:'✎',label:'Edit login',action:()=>openPasswordModal(id)},{icon:'📋',label:'Copy password',action:()=>navigator.clipboard?.writeText(x.password||'').then(()=>window.toast?.('Password copied'))},{icon:'⧉',label:'Duplicate entry',action:()=>duplicatePasswordV34(id)},{icon:'🗑',label:'Delete login',danger:true,action:()=>{if(!confirm(`Delete ${x.site}?`))return;state.passwords=state.passwords.filter(p=>String(p.id)!==String(id));saveState()}}]]}
+  const tpl=target.closest('[data-open-template]');if(tpl){const id=tpl.dataset.openTemplate,x=state.workoutTemplates.find(t=>String(t.id)===String(id));if(x)return ['workout',x.name,[{icon:'✎',label:'Edit template',action:()=>openWorkoutTemplateModal(id)},{icon:'▶',label:'Use template',action:()=>quickStartTemplate(id)},{icon:'⧉',label:'Duplicate template',action:()=>duplicateTemplateV34(id)},{icon:'☷',label:'Customize Workout view',action:()=>openViewCustomizerV34('workout')}]]}
+  const ex=target.closest('[data-open-exercise]');if(ex){const id=ex.dataset.openExercise,x=state.workoutExercises.find(t=>String(t.id)===String(id));if(x)return ['workout',x.name,[{icon:'✎',label:'Edit exercise',action:()=>openExerciseLibraryModal(id)},{icon:'⧉',label:'Duplicate exercise',action:()=>duplicateExerciseV34(id)},{icon:'☷',label:'Customize Workout view',action:()=>openViewCustomizerV34('workout')}]]}
+  const food=target.closest('[data-food-id]');if(food)return ['diet','Food',[{icon:'↗',label:'Open details',action:()=>showPowerSidebarFor('food',food.dataset.foodId)},{icon:'＋',label:'Add food',action:()=>window.openFoodModal?.()},{icon:'☷',label:'Customize Diet view',action:()=>openViewCustomizerV34('diet')}]];
+  const meal=target.closest('[data-meal-id]');if(meal)return ['diet','Meal',[{icon:'↗',label:'Open details',action:()=>showPowerSidebarFor('meal',meal.dataset.mealId)},{icon:'＋',label:'Add meal',action:()=>window.openMealModal?.()},{icon:'☷',label:'Customize Diet view',action:()=>openViewCustomizerV34('diet')}]];
+  const goal=target.closest('[data-open-goal]');if(goal)return ['goal','Goal',[{icon:'↗',label:'Open details',action:()=>showPowerSidebarFor('goal',goal.dataset.openGoal)},{icon:'＋',label:'Contribute',action:()=>document.querySelector(`[data-goal-contrib="${CSS.escape(goal.dataset.openGoal)}"]`)?.click()},{icon:'☷',label:'Customize Goals view',action:()=>openViewCustomizerV34('goals')}]];
+  const pantry=target.closest('[data-pantry-open]');if(pantry)return ['pantry','Pantry item',[{icon:'↗',label:'Open details',action:()=>showPowerSidebarFor('pantry',pantry.dataset.pantryOpen)},{icon:'☷',label:'Customize Pantry view',action:()=>openViewCustomizerV34('pantry')}]];
+  return areaItemsV34(view)
+}
+function areaItemsV34(view){const custom={icon:'☷',label:'Customize this view',action:()=>openViewCustomizerV34(view)};const map={dashboard:[{icon:'↻',label:'Refresh dashboard',action:()=>renderDashboard()},{icon:'＋',label:'Quick Add',action:()=>openModal('quick-add-modal')},{sep:true},custom],'master-calendar':[{icon:'＋',label:'New calendar event',action:()=>openCalendarEventModal()},{icon:'◎',label:'Go to today',action:()=>{masterCalendarDate=new Date();renderMasterCalendar()}},{sep:true},custom],tasks:[{icon:'＋',label:'New task',action:()=>{resetTaskForm();openModal('task-modal')}},{icon:'☷',label:'Select / group tasks',action:()=>document.querySelector('[data-v25-select="task"]')?.click()},{sep:true},custom],habits:[{icon:'＋',label:'New habit',action:()=>openHabitModal()},{icon:'▦',label:'Weekly view',action:()=>{habitView='week';document.querySelectorAll('[data-habitview]').forEach(b=>b.classList.toggle('active',b.dataset.habitview==='week'));renderHabits()}},{icon:'▦',label:'Monthly view',action:()=>{habitView='calendar';document.querySelectorAll('[data-habitview]').forEach(b=>b.classList.toggle('active',b.dataset.habitview==='calendar'));renderHabits()}},{sep:true},custom],notes:[{icon:'＋',label:'New note',action:()=>openNoteModal()},{icon:'☷',label:'Select / group notes',action:()=>document.querySelector('[data-v25-select="note"]')?.click()},{sep:true},custom],budget:[{icon:'＋',label:'Add transaction',action:()=>openTxnModal()},{icon:'＋',label:'Add expense category',action:()=>openBudgetCatModal(null,'expense')},{sep:true},custom],workout:[{icon:'▶',label:'Start workout',action:()=>openWorkoutModal()},{icon:'▤',label:'Workout history',action:()=>renderWorkoutHistory()},{sep:true},custom],focus:[{icon:'▶',label:isRunning?'Pause timer':'Start timer',action:()=>document.getElementById('timer-start-btn')?.click()},{icon:'↻',label:'Reset timer',action:()=>document.getElementById('timer-reset-btn')?.click()},{sep:true},custom],grocery:[{icon:'＋',label:'New grocery list',action:()=>openGroceryModal()},{icon:'☷',label:'Select / group lists',action:()=>document.querySelector('[data-v25-select="grocery"]')?.click()},{sep:true},custom],wishlist:[{icon:'＋',label:'New wishlist item',action:()=>openWishlistModal()},{sep:true},custom],goals:[{icon:'＋',label:'New goal',action:()=>openGoalModal()},{sep:true},custom],passwords:[{icon:'＋',label:'Add password entry',action:()=>openPasswordModal()},{sep:true},custom],diet:[{icon:'＋',label:'Add food',action:()=>window.openFoodModal?.()},{icon:'＋',label:'Add meal',action:()=>window.openMealModal?.()},{sep:true},custom]};return ['view',titleForViewV34(view),map[view]||[custom]]}
+function decorateBudgetTxnsV34(){const els=[...document.querySelectorAll('#transaction-list .transaction-item')];let txns=[...state.transactions].sort((a,b)=>new Date(b.date)-new Date(a.date));if(typeof txnFilter!=='undefined'&&txnFilter!=='all')txns=txns.filter(t=>t.type===txnFilter);els.forEach((el,i)=>{if(txns[i])el.dataset.txnId=String(txns[i].id)})}
+const oldBudgetV34=window.renderBudget;if(typeof oldBudgetV34==='function')window.renderBudget=function(){const r=oldBudgetV34.apply(this,arguments);decorateBudgetTxnsV34();applyViewOptionsV34('budget');return r};
+
+document.addEventListener('contextmenu',e=>{if(innerWidth<=760)return;if(e.target.closest('input,textarea,[contenteditable="true"],select'))return;const view=e.target.closest('.view')?.id?.replace(/^view-/,'')||activeViewV34();const result=contextItemsV34(e.target,view);if(!result)return;e.preventDefault();const [,title,items]=result;showContextV34(e.clientX,e.clientY,title,items)},true);
+document.addEventListener('click',e=>{if(!e.target.closest('#omni-context-menu-v34'))closeContextV34()},true);window.addEventListener('blur',closeContextV34);window.addEventListener('resize',closeContextV34);document.addEventListener('scroll',closeContextV34,true);document.addEventListener('keydown',e=>{if(e.key==='Escape')closeContextV34()});
+
+/* Install and persist current presentations. */
+function restorePresentationsV34(){const t=optsV34('tasks');if(t.view&&typeof currentTaskView!=='undefined'){currentTaskView=t.view;document.querySelectorAll('[data-taskview]').forEach(b=>b.classList.toggle('active',b.dataset.taskview===currentTaskView))}const h=optsV34('habits');if(h.view&&typeof habitView!=='undefined'){habitView=h.view;document.querySelectorAll('[data-habitview]').forEach(b=>b.classList.toggle('active',b.dataset.habitview===habitView))}const w=optsV34('workout');if(w.tab&&typeof workoutTab!=='undefined'){workoutTab=w.tab;document.querySelectorAll('[data-workout-tab]').forEach(b=>b.classList.toggle('active',b.dataset.workoutTab===workoutTab))}const c=optsV34('master-calendar');if(c.mode&&typeof masterCalendarMode!=='undefined')masterCalendarMode=c.mode}
+const oldSwitchV34=window.switchView;if(typeof oldSwitchV34==='function')window.switchView=function(target){const r=oldSwitchV34.apply(this,arguments);setTimeout(()=>applyViewOptionsV34(target),0);return r};
+function initV34(){installViewButtonV34();restorePresentationsV34();try{renderHabits();renderBudget()}catch(e){console.warn('v34 render',e)}applyAllV34();decorateBudgetTxnsV34();document.documentElement.dataset.omniosVersion='34'}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initV34,{once:true});else queueMicrotask(initV34);
+let v34Timer;const v34Host=document.querySelector('.view-container');if(v34Host)new MutationObserver(()=>{clearTimeout(v34Timer);v34Timer=setTimeout(()=>{installViewButtonV34();const active=document.querySelector('.view.active')?.id?.replace(/^view-/,'');if(active)applyViewOptionsV34(active);if(active==='budget')decorateBudgetTxnsV34()},80)}).observe(v34Host,{childList:true,subtree:true});
+window.OmniV34={openViewCustomizer:openViewCustomizerV34,applyViewOptions:applyViewOptionsV34,showContext:showContextV34};
+})();
+</script>
+
+<style id="omnios-v35-lifeos-css">
+/* ============================================================
+   OmniOS v35 — Life OS architecture, history navigation,
+   multi-level undo/redo, local Data Center, coherent navigation.
+   ============================================================ */
+:root{
+  --v35-sidebar-section-gap:10px;
+  --v35-panel-shadow:0 22px 64px rgba(0,0,0,.34);
+}
+/* Fix native button styling leaking into sidebar (notably Help). */
+.sidebar button.nav-item,
+.sidebar .nav-item[type="button"]{
+  appearance:none;-webkit-appearance:none;width:100%;border:0;background:transparent;
+  color:var(--text-secondary);font:inherit;text-align:left;
+}
+.sidebar button.nav-item:hover{background:var(--bg-elevated);color:var(--text-primary)}
+.sidebar button.nav-item.active{background:rgba(6,182,212,.12);color:var(--accent-cyan)}
+.nav-section.v35-nav-section{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;margin-top:var(--v35-sidebar-section-gap)}
+.nav-section.v35-nav-section::after{content:'⌄';font-size:.65rem;opacity:.55;transition:transform .15s}
+.nav-section.v35-nav-section.is-collapsed::after{transform:rotate(-90deg)}
+.nav-item.v35-section-hidden{display:none!important}
+.v35-nav-emoji{width:16px;min-width:16px;text-align:center;font-size:.9rem;line-height:1}
+
+/* Topbar: browser-like workspace navigation. */
+.topbar{gap:10px}
+.v35-topbar-nav{display:flex;align-items:center;gap:4px;flex:none}
+.v35-topbar-icon{width:34px;min-width:34px;height:34px;padding:0;justify-content:center;font-size:.9rem}
+.v35-topbar-icon:disabled{opacity:.28;cursor:not-allowed;transform:none}
+.v35-topbar-divider{height:22px;width:1px;background:var(--border-color);margin:0 2px}
+.v35-history-indicator{position:relative}
+.v35-history-indicator[data-count]:after{content:attr(data-count);position:absolute;right:-4px;top:-5px;min-width:15px;height:15px;padding:0 3px;border-radius:999px;background:var(--accent-cyan);color:#001014;font-size:.52rem;font-weight:800;display:grid;place-items:center;border:2px solid var(--bg-surface)}
+#v35-db-status-btn{max-width:126px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Shared v35 page shell. */
+.v35-page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.v35-page-head h3{font-size:1.22rem;margin:2px 0 4px;letter-spacing:-.02em}
+.v35-kicker{font-size:.6rem;color:var(--accent-cyan);text-transform:uppercase;letter-spacing:.14em;font-weight:800}
+.v35-page-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.v35-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+.v35-span-12{grid-column:span 12}.v35-span-8{grid-column:span 8}.v35-span-7{grid-column:span 7}.v35-span-6{grid-column:span 6}.v35-span-5{grid-column:span 5}.v35-span-4{grid-column:span 4}.v35-span-3{grid-column:span 3}
+.v35-card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:14px;padding:15px;min-width:0}
+.v35-card-head{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:11px}
+.v35-card-title{font-size:.84rem;font-weight:750;min-width:0}
+.v35-card-sub{font-size:.64rem;color:var(--text-muted);line-height:1.45;margin-top:2px}
+.v35-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:12px}
+.v35-stat{padding:12px;border:1px solid var(--border-color);border-radius:11px;background:var(--bg-base)}
+.v35-stat-label{font-size:.58rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em}
+.v35-stat-value{font-size:1.35rem;font-weight:800;margin-top:5px}
+.v35-list{display:flex;flex-direction:column;gap:7px}
+.v35-row{display:flex;align-items:flex-start;gap:9px;padding:9px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base);min-width:0}
+.v35-row.clickable{cursor:pointer}.v35-row.clickable:hover{border-color:var(--accent-cyan);background:var(--bg-elevated)}
+.v35-row-icon{width:28px;height:28px;border-radius:8px;background:var(--bg-elevated);display:grid;place-items:center;flex:none}
+.v35-row-main{flex:1;min-width:0}.v35-row-title{font-size:.76rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v35-row-meta{font-size:.61rem;color:var(--text-muted);line-height:1.4;margin-top:2px}
+.v35-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;background:var(--bg-elevated);color:var(--text-secondary);font-size:.58rem;font-weight:650}
+.v35-empty{padding:25px 14px;text-align:center;border:1px dashed var(--border-light);border-radius:11px;color:var(--text-muted);font-size:.72rem;line-height:1.5}
+.v35-progress{height:7px;background:var(--bg-hover);border-radius:99px;overflow:hidden}.v35-progress>div{height:100%;border-radius:99px;background:var(--accent-cyan)}
+.v35-inline-capture{display:flex;gap:7px}.v35-inline-capture .form-input{flex:1}.v35-inline-capture .btn{flex:none}
+.v35-callout{padding:10px 12px;border:1px solid rgba(6,182,212,.2);background:rgba(6,182,212,.06);border-radius:10px;font-size:.7rem;color:var(--text-secondary);line-height:1.5}
+
+/* Project/Area workspace */
+.v35-segmented{display:inline-flex;gap:2px;padding:2px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);margin-bottom:12px;max-width:100%;overflow:auto}
+.v35-segmented button{border:0;background:transparent;color:var(--text-muted);padding:7px 11px;border-radius:7px;cursor:pointer;font:inherit;font-size:.7rem;font-weight:650;white-space:nowrap}
+.v35-segmented button.active{background:var(--bg-elevated);color:var(--text-primary)}
+.v35-project-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.v35-project-card{padding:14px;border:1px solid var(--border-color);border-radius:13px;background:var(--bg-surface);cursor:pointer;min-width:0}.v35-project-card:hover{border-color:var(--accent-cyan)}
+.v35-project-title{font-size:.9rem;font-weight:780;margin:7px 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v35-area-dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--accent-cyan)}
+.v35-milestone{display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--border-color);font-size:.72rem}.v35-milestone:last-child{border-bottom:0}
+
+/* Planner */
+.v35-planner-shell{overflow:auto;padding-bottom:4px}
+.v35-week-grid{min-width:880px;display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:8px}
+.v35-day-col{min-height:300px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-surface);padding:9px}.v35-day-col.is-today{box-shadow:inset 0 0 0 2px rgba(6,182,212,.45)}
+.v35-day-head{padding-bottom:7px;margin-bottom:7px;border-bottom:1px solid var(--border-color)}.v35-day-name{font-size:.6rem;color:var(--text-muted);text-transform:uppercase;font-weight:750}.v35-day-num{font-size:1rem;font-weight:800;margin-top:2px}
+.v35-block{padding:7px 8px;border-radius:8px;background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.22);margin:5px 0;cursor:pointer}.v35-block.event{background:rgba(236,72,153,.07);border-color:rgba(236,72,153,.2)}.v35-block-time{font-size:.56rem;color:var(--text-muted)}.v35-block-title{font-size:.67rem;font-weight:700;margin-top:2px}
+.v35-unscheduled{display:flex;gap:7px;overflow:auto;padding-bottom:5px}.v35-unscheduled-item{min-width:190px;max-width:240px;padding:9px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base);cursor:grab}.v35-unscheduled-item:active{cursor:grabbing}
+.v35-review-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v35-review-grid .full{grid-column:1/-1}
+
+/* Life Hub */
+.v35-life-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px}.v35-life-tabs{display:flex;gap:4px;overflow:auto;scrollbar-width:none;flex:1}.v35-life-tabs::-webkit-scrollbar{display:none}.v35-life-tabs button{flex:none;border:1px solid transparent;background:transparent;color:var(--text-muted);padding:7px 10px;border-radius:8px;font:inherit;font-size:.67rem;font-weight:650;cursor:pointer}.v35-life-tabs button.active{background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.25);color:var(--accent-cyan)}
+#v35-life-select{display:none}
+.v35-record-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.v35-record-card{border:1px solid var(--border-color);border-radius:12px;background:var(--bg-surface);padding:13px;cursor:pointer;min-width:0}.v35-record-card:hover{border-color:var(--accent-cyan)}.v35-record-title{font-size:.8rem;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v35-record-meta{font-size:.62rem;color:var(--text-muted);line-height:1.45;margin-top:5px}.v35-record-note{font-size:.68rem;color:var(--text-secondary);line-height:1.45;margin-top:8px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.v35-networth{font-size:2rem;font-weight:850;letter-spacing:-.04em}.v35-networth.negative{color:var(--accent-red)}
+
+/* Drawer / history / context */
+#v35-drawer-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:1700;display:none}#v35-drawer-backdrop.open{display:block}
+#v35-drawer{position:fixed;right:0;top:0;bottom:0;width:min(520px,100vw);z-index:1710;background:var(--bg-surface);border-left:1px solid var(--border-color);box-shadow:var(--v35-panel-shadow);transform:translateX(100%);transition:transform .2s;display:flex;flex-direction:column}#v35-drawer.open{transform:translateX(0)}
+.v35-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:16px;border-bottom:1px solid var(--border-color)}.v35-drawer-body{padding:15px;overflow:auto;flex:1}.v35-drawer-foot{padding:12px 15px;border-top:1px solid var(--border-color);display:flex;gap:7px;flex-wrap:wrap}
+.v35-history-item{display:grid;grid-template-columns:30px minmax(0,1fr);gap:9px;padding:9px 0;border-bottom:1px solid var(--border-color)}.v35-history-item:last-child{border-bottom:0}.v35-history-time{font-size:.56rem;color:var(--text-muted);margin-top:3px}
+#v35-context{position:fixed;z-index:1900;display:none;min-width:220px;max-width:min(300px,calc(100vw - 12px));padding:6px;background:var(--bg-surface);border:1px solid var(--border-light);border-radius:11px;box-shadow:0 20px 55px rgba(0,0,0,.4)}#v35-context.open{display:block}.v35-context-btn{width:100%;border:0;background:transparent;color:var(--text-primary);padding:8px 9px;border-radius:7px;text-align:left;font:inherit;font-size:.72rem;cursor:pointer;display:flex;gap:8px;align-items:center}.v35-context-btn:hover{background:var(--bg-elevated)}.v35-context-btn.danger{color:var(--accent-red)}
+
+/* Data Center */
+.v35-db-hero{padding:18px;border:1px solid rgba(6,182,212,.24);border-radius:15px;background:radial-gradient(circle at top right,rgba(6,182,212,.12),transparent 45%),var(--bg-surface)}
+.v35-db-state{display:flex;align-items:center;gap:8px;font-size:.72rem;margin-top:8px}.v35-db-led{width:9px;height:9px;border-radius:50%;background:var(--accent-green);box-shadow:0 0 0 4px rgba(16,185,129,.1)}
+.v35-snapshot-row{display:flex;gap:9px;align-items:center;padding:9px;border-bottom:1px solid var(--border-color)}.v35-snapshot-row:last-child{border-bottom:0}.v35-snapshot-main{flex:1;min-width:0}
+
+/* Task modal additions */
+.v35-task-advanced{margin-top:10px;padding:11px;border:1px solid var(--border-color);border-radius:11px;background:var(--bg-elevated)}.v35-task-advanced summary{cursor:pointer;font-size:.73rem;font-weight:700;color:var(--text-secondary)}.v35-task-advanced[open] summary{margin-bottom:10px}
+
+/* Mobile */
+@media(max-width:1100px){.v35-project-grid,.v35-record-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.v35-span-8,.v35-span-7{grid-column:span 12}.v35-span-5,.v35-span-4,.v35-span-3,.v35-span-6{grid-column:span 6}}
+@media(max-width:760px){
+  .v35-topbar-nav{gap:2px}.v35-topbar-icon{width:32px;min-width:32px;height:38px}.v35-topbar-divider{display:none}
+  #v35-redo-btn,#v35-history-btn,#v35-db-status-btn{display:none}
+  .topbar-title{max-width:30vw!important;font-size:.88rem!important}
+  .v35-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.v35-grid{gap:9px}.v35-span-12,.v35-span-8,.v35-span-7,.v35-span-6,.v35-span-5,.v35-span-4,.v35-span-3{grid-column:1/-1}
+  .v35-project-grid,.v35-record-grid{grid-template-columns:1fr}.v35-page-head{margin-bottom:13px}.v35-page-actions{width:100%}.v35-page-actions>.btn,.v35-page-actions>.form-select{flex:1;min-width:0}
+  .v35-inline-capture{flex-direction:column}.v35-inline-capture .btn{width:100%;justify-content:center}
+  .v35-review-grid{grid-template-columns:1fr}.v35-review-grid .full{grid-column:auto}
+  .v35-life-tabs{display:none}#v35-life-select{display:block;width:100%}.v35-life-toolbar{display:block}
+  #v35-drawer{width:100%;top:0}.v35-drawer-body{padding:13px}
+  .v35-context-btn{min-height:42px}
+  .v35-db-hero{padding:14px}
+}
+
+/* v35 mobile command hierarchy: keep navigation obvious, move secondary actions into one sheet. */
+#v35-mobile-add,#v35-mobile-actions{display:none}
+#save-status{display:none!important}
+@media(max-width:760px){
+  .topbar{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;grid-template-rows:auto auto;height:auto!important;min-height:0!important;padding:max(8px,env(safe-area-inset-top)) 10px 7px!important;column-gap:7px!important;row-gap:6px!important}
+  .v35-topbar-nav{grid-column:1;grid-row:1}.topbar-title{grid-column:2;grid-row:1;justify-self:start;align-self:center;max-width:100%!important;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis}
+  #v35-mobile-add{display:inline-flex;grid-column:3;grid-row:1;min-height:38px;padding:7px 11px;justify-content:center}
+  .topbar-actions{grid-column:1/-1;grid-row:2;width:100%;display:flex!important;justify-content:flex-end!important;gap:6px!important;min-height:38px}
+  #global-add-btn,#settings-topbar-btn,#context-view-btn,#v35-redo-btn,#v35-history-btn,#v35-db-status-btn,.power-topbar-search{display:none!important}
+  #v35-undo-btn,#mobile-search-v33,#omni-assistant-launcher,#v35-mobile-actions{display:inline-flex!important;min-width:40px;width:40px;height:38px;padding:0;justify-content:center}
+  #omni-assistant-launcher span{display:none!important}
+  #v35-mobile-actions{display:inline-flex}
+}
+</style>
+<script id="omnios-v35-lifeos-js">
+(function(){
+'use strict';
+const V='35';
+const clone=o=>{try{return JSON.parse(JSON.stringify(o));}catch(_){return null}};
+const esc=v=>window.escapeHtml?escapeHtml(v??''):String(v??'');
+const uid=(p='id')=>`${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+const todayKey=()=>window.localDateString?localDateString():new Date().toISOString().slice(0,10);
+const dateLabel=k=>{if(!k)return 'No date';const d=new Date(k+'T12:00:00');return isNaN(d)?String(k):d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:d.getFullYear()!==new Date().getFullYear()?'numeric':undefined})};
+const money=v=>window.currencyLocal?currencyLocal(v):'$'+Number(v||0).toFixed(2);
+const isDone=t=>t?.status==='completed'||t?.completed===true;
+const dayDiff=k=>{if(!k)return null;return Math.floor((new Date(k+'T12:00:00')-new Date(todayKey()+'T12:00:00'))/86400000)};
+
+function ensureV35State(){
+  state.core=state.core&&typeof state.core==='object'?state.core:{};
+  state.core.changeLog=Array.isArray(state.core.changeLog)?state.core.changeLog:[];
+  state.core.localDB=state.core.localDB&&typeof state.core.localDB==='object'?state.core.localDB:{};
+  state.life=state.life&&typeof state.life==='object'?state.life:{};
+  const arrays=['inbox','projects','timeBlocks','people','home','health','learning','travel','money','documents','journal','importantDates','vehicles','decisions','someday','reviews'];
+  arrays.forEach(k=>state.life[k]=Array.isArray(state.life[k])?state.life[k]:[]);
+  state.life.areas=Array.isArray(state.life.areas)&&state.life.areas.length?state.life.areas:[
+    {id:'area-work',name:'Work & Career',icon:'💼',color:'#3b82f6'},
+    {id:'area-learning',name:'Learning & Education',icon:'🎓',color:'#8b5cf6'},
+    {id:'area-health',name:'Health & Fitness',icon:'❤️',color:'#ef4444'},
+    {id:'area-finance',name:'Money',icon:'💰',color:'#10b981'},
+    {id:'area-home',name:'Home',icon:'🏠',color:'#f59e0b'},
+    {id:'area-relationships',name:'Relationships',icon:'👥',color:'#ec4899'},
+    {id:'area-personal',name:'Personal Growth',icon:'🌱',color:'#06b6d4'},
+    {id:'area-fun',name:'Fun & Recreation',icon:'🎨',color:'#a855f7'}
+  ];
+  state.life.automation=state.life.automation&&typeof state.life.automation==='object'?state.life.automation:{pantryRestock:false,workoutHabit:false};
+  state.life.todayPins=state.life.todayPins&&typeof state.life.todayPins==='object'?state.life.todayPins:{};
+  state.life.annualPlans=state.life.annualPlans&&typeof state.life.annualPlans==='object'?state.life.annualPlans:{};
+  state.settings.v35=state.settings.v35&&typeof state.settings.v35==='object'?state.settings.v35:{};

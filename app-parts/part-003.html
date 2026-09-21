@@ -1,0 +1,1000 @@
+  display:grid;grid-template-columns:1fr 1fr 68px 1fr 1fr;align-items:end;gap:0;
+  min-height:calc(var(--iphone-tab-h) + env(safe-area-inset-bottom));
+  padding:4px max(5px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left));
+  background:var(--iphone-bar);border-top:1px solid color-mix(in srgb,var(--border-color) 78%,transparent);
+  -webkit-backdrop-filter:blur(24px) saturate(155%);backdrop-filter:blur(24px) saturate(155%);z-index:900;
+}
+.ios-tab{
+  min-width:0;height:55px;border:0;border-radius:12px;background:transparent;color:var(--text-muted);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;padding:3px 1px;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.ios-tab svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.85;stroke-linecap:round;stroke-linejoin:round}
+.ios-tab span{font-size:9.5px;line-height:1;font-weight:680;letter-spacing:-.015em;white-space:nowrap}
+.ios-tab.active{color:var(--accent-cyan)}
+.ios-tab:active{background:color-mix(in srgb,var(--accent-cyan) 8%,transparent)}
+.ios-tab-add{align-self:center;width:54px;height:54px;min-width:54px;margin-bottom:8px;border:0;border-radius:18px;background:var(--accent-cyan);color:#001014;display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer}
+.ios-tab-add svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round}
+.ios-tab-add:active{transform:scale(.94)}
+
+/* ----- phone content canvas ----- */
+html.omni-iphone-pro .view-container{
+  grid-row:2!important;min-height:0!important;width:100%!important;max-width:none!important;margin:0!important;
+  padding:10px max(var(--iphone-page-x),env(safe-area-inset-right)) 18px max(var(--iphone-page-x),env(safe-area-inset-left))!important;
+  overflow-x:hidden!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;
+  scroll-padding-bottom:24px;background:var(--bg-base)!important;
+}
+html.omni-iphone-pro.omni-keyboard-open #ios-native-tabs{display:none!important;}
+html.omni-iphone-pro.omni-keyboard-open #ios-native-header{padding-top:6px!important;min-height:54px!important;}
+
+/* ----- page typography / remove desktop page chrome ----- */
+html.omni-iphone-pro .view>.flex-between.mb-6,
+html.omni-iphone-pro .view>.dashboard-toolbar,
+html.omni-iphone-pro .view>.habit-toolbar,
+html.omni-iphone-pro .v35-page-head,
+html.omni-iphone-pro .v43-hero,
+html.omni-iphone-pro .org-hero,
+html.omni-iphone-pro .workout-hero{
+  border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;
+  padding:0!important;margin:0 0 10px!important;min-height:0!important;
+}
+html.omni-iphone-pro .v35-page-head>div:first-child .v35-kicker,
+html.omni-iphone-pro .v35-page-head>div:first-child>h3,
+html.omni-iphone-pro .v35-page-head>div:first-child>.text-muted,
+html.omni-iphone-pro .dashboard-toolbar>div:first-child,
+html.omni-iphone-pro .habit-toolbar>div:first-child,
+html.omni-iphone-pro .flex-between.mb-6>div:first-child,
+html.omni-iphone-pro .workout-hero>div:first-child,
+html.omni-iphone-pro .org-hero>div:first-child,
+html.omni-iphone-pro .v43-hero>div:first-child{display:none!important;}
+html.omni-iphone-pro .v35-page-head>.v35-page-actions,
+html.omni-iphone-pro .dashboard-toolbar>.toolbar-group,
+html.omni-iphone-pro .habit-toolbar>.toolbar-group{margin-left:auto!important;}
+
+/* ----- compact grouped surfaces ----- */
+html.omni-iphone-pro .card,
+html.omni-iphone-pro .stat-card,
+html.omni-iphone-pro .kpi-card,
+html.omni-iphone-pro .workout-kpi,
+html.omni-iphone-pro .workout-session-card,
+html.omni-iphone-pro .workout-item-card,
+html.omni-iphone-pro .habit-week-card,
+html.omni-iphone-pro .note-card,
+html.omni-iphone-pro .org-card,
+html.omni-iphone-pro .v35-card,
+html.omni-iphone-pro .v43-card,
+html.omni-iphone-pro .nut-surface,
+html.omni-iphone-pro .finance-card,
+html.omni-iphone-pro .v38-card,
+html.omni-iphone-pro .eq-box,
+html.omni-iphone-pro .calendar-container,
+html.omni-iphone-pro .diet-card,
+html.omni-iphone-pro .v55-card,
+html.omni-iphone-pro .v60-card{
+  padding:12px!important;border-radius:var(--iphone-card-r)!important;
+  border:1px solid color-mix(in srgb,var(--border-color) 88%,transparent)!important;
+  background:var(--bg-surface)!important;box-shadow:none!important;
+}
+html.omni-iphone-pro .card-header,
+html.omni-iphone-pro .v35-card-head,
+html.omni-iphone-pro .v43-card-head,
+html.omni-iphone-pro .org-card-head,
+html.omni-iphone-pro .v55-card-head{margin-bottom:9px!important;min-height:0!important;align-items:center!important;}
+html.omni-iphone-pro .card-title,
+html.omni-iphone-pro .v35-card-title,
+html.omni-iphone-pro .v43-card-title,
+html.omni-iphone-pro .org-card-title,
+html.omni-iphone-pro .v55-card-title{font-size:13px!important;line-height:1.2!important;font-weight:760!important;letter-spacing:-.01em!important;}
+html.omni-iphone-pro .text-muted.text-sm,
+html.omni-iphone-pro .v35-card-sub,
+html.omni-iphone-pro .v43-card-sub,
+html.omni-iphone-pro .org-card-sub{font-size:10.5px!important;line-height:1.4!important;}
+
+/* tighter grids: mobile app density without microscopic controls */
+html.omni-iphone-pro .grid-2,
+html.omni-iphone-pro .analytics-grid,
+html.omni-iphone-pro .org-grid,
+html.omni-iphone-pro .v43-grid,
+html.omni-iphone-pro .v35-grid,
+html.omni-iphone-pro .workout-analytics-grid,
+html.omni-iphone-pro .nut-today-grid{gap:8px!important;}
+html.omni-iphone-pro .stats-row,
+html.omni-iphone-pro .kpi-grid,
+html.omni-iphone-pro .org-kpis,
+html.omni-iphone-pro .v43-kpis,
+html.omni-iphone-pro .v35-stat-grid,
+html.omni-iphone-pro .workout-kpi-grid,
+html.omni-iphone-pro .habit-summary-grid,
+html.omni-iphone-pro .nut-kpis,
+html.omni-iphone-pro .goal586-kpis{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important;margin-bottom:10px!important;}
+html.omni-iphone-pro .stat-card,
+html.omni-iphone-pro .kpi-card,
+html.omni-iphone-pro .workout-kpi,
+html.omni-iphone-pro .habit-summary,
+html.omni-iphone-pro .nut-kpi{padding:9px 7px!important;min-height:64px!important;border-radius:13px!important;}
+html.omni-iphone-pro .stat-label,
+html.omni-iphone-pro .kpi-label,
+html.omni-iphone-pro .workout-kpi-label,
+html.omni-iphone-pro .habit-summary-label{font-size:8px!important;letter-spacing:.025em!important;}
+html.omni-iphone-pro .stat-value,
+html.omni-iphone-pro .kpi-value,
+html.omni-iphone-pro .workout-kpi-value,
+html.omni-iphone-pro .habit-summary-value{font-size:17px!important;margin-top:4px!important;}
+
+/* ----- Today home: quick action strip ----- */
+#ios-home-actions{display:none;}
+html.omni-iphone-pro #ios-home-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:10px;}
+.ios-home-action{min-height:62px;border:1px solid var(--border-color);border-radius:15px;background:var(--bg-surface);color:var(--text-primary);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font:inherit;cursor:pointer;padding:6px 3px}
+.ios-home-action svg{width:20px;height:20px;fill:none;stroke:var(--accent-cyan);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ios-home-action span{font-size:9.5px;font-weight:680}
+.ios-home-action:active{transform:scale(.97);background:var(--bg-elevated)}
+
+/* ----- task workspace becomes a phone app, not a toolbar wall ----- */
+#ios-task-bar{display:none;}
+html.omni-iphone-pro #view-tasks>.toolbar{display:none!important;}
+html.omni-iphone-pro #ios-task-bar{display:flex;align-items:center;gap:7px;margin-bottom:9px;}
+.ios-segment{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:3px;border-radius:12px;background:var(--bg-surface);border:1px solid var(--border-color)}
+.ios-segment button{min-height:34px;border:0;border-radius:9px;background:transparent;color:var(--text-muted);font:inherit;font-size:10px;font-weight:700;cursor:pointer;padding:4px}
+.ios-segment button.active{background:var(--bg-elevated);color:var(--text-primary);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.ios-filter-btn{width:40px;height:40px;min-width:40px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-surface);color:var(--text-secondary);display:grid;place-items:center}
+.ios-filter-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+html.omni-iphone-pro .kanban-col{min-width:calc(100vw - 38px)!important;max-width:calc(100vw - 38px)!important;padding:10px!important;border-radius:15px!important;}
+html.omni-iphone-pro .kanban-card{padding:10px!important;border-radius:12px!important;}
+html.omni-iphone-pro .list-item{padding:10px 11px!important;border-radius:12px!important;gap:8px!important;}
+html.omni-iphone-pro .gallery-card{padding:12px!important;border-radius:14px!important;}
+
+/* ----- finance/list rows resemble native grouped lists ----- */
+html.omni-iphone-pro .transaction-item,
+html.omni-iphone-pro .finance-item,
+html.omni-iphone-pro .org-row,
+html.omni-iphone-pro .v35-row,
+html.omni-iphone-pro .v43-row,
+html.omni-iphone-pro .v55-row,
+html.omni-iphone-pro .master-agenda-item{
+  min-height:48px!important;padding:9px 2px!important;border-radius:0!important;border-left:0!important;border-right:0!important;background:transparent!important;
+}
+html.omni-iphone-pro .transaction-item:first-child,
+html.omni-iphone-pro .finance-item:first-child,
+html.omni-iphone-pro .v35-row:first-child{border-top:0!important;}
+
+/* ----- compact controls ----- */
+html.omni-iphone-pro .btn{min-height:38px!important;border-radius:11px!important;padding:7px 10px!important;font-size:11px!important;}
+html.omni-iphone-pro .btn-sm{min-height:34px!important;padding:6px 9px!important;font-size:10px!important;}
+html.omni-iphone-pro .form-input,
+html.omni-iphone-pro .form-select,
+html.omni-iphone-pro .form-textarea,
+html.omni-iphone-pro .filter-select,
+html.omni-iphone-pro .search-input{min-height:42px!important;border-radius:11px!important;font-size:16px!important;padding:8px 10px!important;}
+html.omni-iphone-pro .form-group{margin-bottom:9px!important;}
+html.omni-iphone-pro .form-label,
+html.omni-iphone-pro .form-group label{font-size:10px!important;margin-bottom:4px!important;}
+
+/* ----- master calendar compact professional layout ----- */
+html.omni-iphone-pro #view-master-calendar>.flex-between{display:none!important;}
+html.omni-iphone-pro .master-calendar-shell{border-radius:16px!important;overflow:hidden!important;padding:0!important;}
+html.omni-iphone-pro .master-cal-toolbar{padding:8px!important;border-bottom:1px solid var(--border-color)!important;}
+html.omni-iphone-pro .master-cal-filter-panel,
+html.omni-iphone-pro .master-filter-panel{padding:7px!important;overflow-x:auto!important;flex-wrap:nowrap!important;scrollbar-width:none}
+html.omni-iphone-pro .master-filter-chip{flex:0 0 auto;padding:5px 7px!important;font-size:9px!important;}
+html.omni-iphone-pro .master-cal-day{min-height:61px!important;padding:3px!important;}
+html.omni-iphone-pro .master-cal-weekday{font-size:8px!important;padding:6px 1px!important;}
+html.omni-iphone-pro .master-cal-day-num{font-size:9px!important;}
+
+/* ----- notes use list-like cards ----- */
+html.omni-iphone-pro .notes-grid{display:flex!important;flex-direction:column!important;gap:7px!important;}
+html.omni-iphone-pro .note-card{min-height:0!important;padding:11px!important;border-left-width:3px!important;}
+html.omni-iphone-pro .note-title{font-size:13px!important;}
+html.omni-iphone-pro .note-preview{max-height:42px!important;font-size:10.5px!important;line-height:1.4!important;}
+
+/* ----- full-screen native More / filter sheets ----- */
+#ios-native-more,#ios-task-filter-sheet{display:none;}
+html.omni-iphone-pro #ios-native-more.open,
+html.omni-iphone-pro #ios-task-filter-sheet.open{
+  display:grid;position:fixed;inset:0;z-index:1800;grid-template-rows:auto minmax(0,1fr);background:var(--bg-base);
+  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);
+}
+.ios-sheet-head{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:4px;padding:7px 9px;border-bottom:1px solid var(--border-color);background:var(--iphone-bar);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+.ios-sheet-head h3{font-size:16px;text-align:center;margin:0;letter-spacing:-.02em}
+.ios-sheet-close{width:40px;height:40px;border:0;border-radius:12px;background:transparent;color:var(--text-primary);font-size:22px;display:grid;place-items:center}
+.ios-sheet-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px max(12px,env(safe-area-inset-right)) 18px max(12px,env(safe-area-inset-left))}
+.ios-library-section{margin-bottom:18px}
+.ios-library-title{font-size:10px;color:var(--text-muted);font-weight:760;text-transform:uppercase;letter-spacing:.08em;margin:0 4px 7px}
+.ios-library-list{overflow:hidden;border:1px solid var(--border-color);border-radius:16px;background:var(--bg-surface)}
+.ios-library-row{width:100%;min-height:50px;border:0;border-bottom:1px solid var(--border-color);background:transparent;color:var(--text-primary);display:grid;grid-template-columns:34px minmax(0,1fr) 18px;gap:8px;align-items:center;text-align:left;padding:8px 11px;font:inherit;cursor:pointer}
+.ios-library-row:last-child{border-bottom:0}
+.ios-library-icon{width:32px;height:32px;border-radius:10px;background:var(--bg-elevated);display:grid;place-items:center;color:var(--accent-cyan);font-size:15px}
+.ios-library-main strong{display:block;font-size:12px;line-height:1.2}.ios-library-main span{display:block;font-size:9.5px;color:var(--text-muted);margin-top:2px}
+.ios-library-chevron{color:var(--text-muted);font-size:18px}
+.ios-filter-grid{display:grid;grid-template-columns:1fr;gap:10px}
+.ios-filter-field label{display:block;font-size:10px;font-weight:700;color:var(--text-muted);margin:0 0 4px 2px}
+.ios-filter-field select,.ios-filter-field input{width:100%}
+.ios-filter-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
+
+/* no hover-oriented visual noise on iPhone */
+html.omni-iphone-pro .card:hover,
+html.omni-iphone-pro .note-card:hover,
+html.omni-iphone-pro .gallery-card:hover,
+html.omni-iphone-pro .habit-week-day:hover,
+html.omni-iphone-pro .kanban-card:hover{transform:none!important;box-shadow:none!important;}
+
+@media(max-width:370px){
+  html.omni-iphone-pro{--iphone-page-x:9px;}
+  html.omni-iphone-pro .stats-row,
+  html.omni-iphone-pro .kpi-grid,
+  html.omni-iphone-pro .org-kpis,
+  html.omni-iphone-pro .v43-kpis,
+  html.omni-iphone-pro .v35-stat-grid,
+  html.omni-iphone-pro .workout-kpi-grid,
+  html.omni-iphone-pro .habit-summary-grid,
+  html.omni-iphone-pro .nut-kpis,
+  html.omni-iphone-pro .goal586-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  html.omni-iphone-pro #ios-home-actions{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+  .ios-home-action{min-height:57px}.ios-home-action span{font-size:8.5px}
+  #ios-native-tabs{grid-template-columns:1fr 1fr 62px 1fr 1fr!important}.ios-tab-add{width:50px;height:50px;min-width:50px}
+}
+</style>
+
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="logo">
+        <img class="nav-icon-img logo-icon-img" data-icon-file="Logo.png" alt="" style="width:28px;height:28px;border-radius:7px;margin-bottom:4px">
+        <h1>Omni<span>OS</span></h1>
+        <p>Ultimate Life Planner</p>
+    </div>
+    <nav class="nav-menu">
+        <div class="nav-section">Plan</div>
+        <div class="nav-item active" data-view="dashboard">
+            <img class="nav-icon-img" data-icon-file="Dashboard.png" alt="">
+            <svg class="icon-fallback" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Dashboard
+        </div>
+        <div class="nav-item" data-view="master-calendar">
+            <img class="nav-icon-img" data-icon-file="Calendar.png" alt="">
+            <svg class="icon-fallback" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h2M14 14h2M8 18h2M14 18h2"/></svg>
+            Calendar
+        </div>
+        <div class="nav-item" data-view="tasks">
+            <img class="nav-icon-img" data-icon-file="Tasks.png" alt="">
+            <svg class="icon-fallback" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            Tasks
+        </div>
+        <div class="nav-item" data-view="budget">
+            <img class="nav-icon-img" data-icon-file="Budget.png" alt="">
+            <svg class="icon-fallback" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            Finance
+        </div>
+        <div class="nav-section">Track</div>
+        <div class="nav-item" data-view="habits">
+            <img class="nav-icon-img" data-icon-file="Habits.png" alt="">
+            <svg class="icon-fallback" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Habits
+        </div>
+        <div class="nav-item" data-view="workout">
+            <img class="nav-icon-img" data-icon-file="Workout.png" alt="">
+            <svg class="icon-fallback" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12"/></svg>
+            Workout
+        </div>
+        <div class="nav-item" data-view="focus">
+            <img class="nav-icon-img" data-icon-file="Focus.png" alt="">
+            <svg class="icon-fallback" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Focus
+        </div>
+        <div class="nav-item" data-view="notes">
+            <img class="nav-icon-img" data-icon-file="Notes.png" alt="">
+            <svg class="icon-fallback" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Notes
+        </div>
+        <div class="nav-section">System</div>
+        <div class="nav-item" data-view="passwords">
+            <img class="nav-icon-img" data-icon-file="Passwords.png" alt="">
+            <svg class="icon-fallback" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            Passwords
+        </div>
+        <div class="nav-item" data-view="settings">
+            <img class="nav-icon-img" data-icon-file="Settings.png" alt="">
+            <svg class="icon-fallback" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.14.31.22.65.22 1H21a2 2 0 010 4h-.09c-.34.02-.68.1-1 .22z"/></svg>
+            Settings
+        </div>
+    </nav>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+</aside>
+
+<div class="shortcuts-overlay" id="shortcuts-overlay" aria-hidden="true">
+    <div class="shortcuts-box">
+        <h3>Keyboard shortcuts</h3>
+        <p class="text-muted text-sm">These work anywhere in OmniOS, even while a form is focused (except where noted).</p>
+        <div class="shortcuts-row"><span>Search everything</span><span class="shortcuts-keys"><kbd>Ctrl/⌘</kbd><kbd>K</kbd></span></div>
+        <div class="shortcuts-row"><span>Open the Assistant</span><span class="shortcuts-keys"><kbd>Ctrl/⌘</kbd><kbd>J</kbd></span></div>
+        <div class="shortcuts-row"><span>Undo the last saved change</span><span class="shortcuts-keys"><kbd>Ctrl/⌘</kbd><kbd>Z</kbd></span></div>
+        <div class="shortcuts-row"><span>Close a modal, panel, or the sidebar</span><span class="shortcuts-keys"><kbd>Esc</kbd></span></div>
+        <div class="shortcuts-row"><span>Show this panel</span><span class="shortcuts-keys"><kbd>?</kbd></span></div>
+        <div class="modal-footer"><button type="button" class="btn btn-primary" id="shortcuts-close-btn">Got it</button></div>
+    </div>
+</div>
+
+<nav class="mobile-nav" aria-label="Primary navigation">
+    <button type="button" class="active" data-mobile-view="dashboard"><span class="nav-icon">⌂</span><span class="nav-label">Home</span></button>
+    <button type="button" data-mobile-view="master-calendar"><span class="nav-icon">▦</span><span class="nav-label">Calendar</span></button>
+    <button type="button" data-mobile-view="tasks"><span class="nav-icon">✓</span><span class="nav-label">Tasks</span></button>
+    <button type="button" data-mobile-view="habits"><span class="nav-icon">⚡</span><span class="nav-label">Habits</span></button>
+    <button type="button" data-mobile-view="workout"><span class="nav-icon">🏋️</span><span class="nav-label">Workout</span></button>
+    <button type="button" data-mobile-view="focus"><span class="nav-icon">◷</span><span class="nav-label">Focus</span></button>
+    <button type="button" data-mobile-view="notes"><span class="nav-icon">▤</span><span class="nav-label">Notes</span></button>
+</nav>
+
+<main class="main-content">
+    <header class="topbar">
+        <h2 class="topbar-title" id="view-title">Dashboard</h2>
+        <div class="topbar-actions">
+            <button type="button" class="btn" id="settings-topbar-btn" title="Settings" aria-label="Settings">⚙️</button>
+            <span id="save-status" class="save-status" aria-live="polite">Ready</span><button type="button" class="btn btn-primary" id="global-add-btn">+ Quick Add</button>
+        </div>
+    </header>
+
+    <div class="view-container">
+
+        <!-- DASHBOARD -->
+        <section id="view-dashboard" class="view active">
+            <div class="dashboard-toolbar">
+                <div>
+                    <h3 style="margin:0 0 3px;">Command Center</h3>
+                    <div class="text-muted text-sm">One view for tasks, habits, focus and finances.</div>
+                </div>
+                <div class="toolbar-group">
+                    <select class="filter-select" id="dash-period">
+                        <option value="today">Today</option><option value="week" selected>This Week</option><option value="month">This Month</option><option value="all">All Time</option>
+                    </select>
+                    <select class="filter-select" id="dash-domain">
+                        <option value="all">All Areas</option><option value="tasks">Tasks</option><option value="habits">Habits</option><option value="focus">Focus</option><option value="finance">Finance</option>
+                    </select>
+                    <button type="button" class="btn btn-sm" id="dash-refresh">↻ Refresh</button>
+                </div>
+            </div>
+            <div id="dash-kpis" class="kpi-grid"></div>
+            <div id="dash-attention"></div>
+            <div class="analytics-grid">
+                <div class="card" data-widget="progress"><div class="card-header"><h3 class="card-title">📈 Progress Overview</h3></div><div id="dash-progress"></div></div>
+                <div class="card" data-widget="priorities"><div class="card-header"><h3 class="card-title">🎯 Today's Priorities</h3></div><div id="dash-priorities" class="mini-list"></div></div>
+                <div class="card" data-widget="insights"><div class="card-header"><h3 class="card-title">💡 Insights</h3></div><div id="dash-insights"></div></div>
+            </div>
+            <div class="analytics-grid">
+                <div class="card" data-widget="habits"><div class="card-header"><h3 class="card-title">⚡ Habit Performance</h3><button type="button" class="btn btn-sm" onclick="document.querySelector('[data-view=habits]').click()">Open Habits</button></div><div id="dash-habits"></div></div>
+                <div class="card" data-widget="focus"><div class="card-header"><h3 class="card-title">⏱ Focus</h3><button type="button" class="btn btn-sm" onclick="document.querySelector('[data-view=focus]').click()">Focus</button></div><div id="dash-focus"></div></div>
+                <div class="card" data-widget="finance"><div class="card-header"><h3 class="card-title">💰 Finance Snapshot</h3><button type="button" class="btn btn-sm" onclick="document.querySelector('[data-view=budget]').click()">Open Budget</button></div><div id="dash-finance"></div></div>
+            </div>
+            <div class="grid-2">
+                <div class="card"><div class="card-header"><h3 class="card-title">🔥 Q1: Do First</h3></div><div id="dash-q1" class="eq-box-content"></div></div>
+                <div class="card"><div class="card-header"><h3 class="card-title">📅 Q2: Schedule</h3></div><div id="dash-q2" class="eq-box-content"></div></div>
+                <div class="card"><div class="card-header"><h3 class="card-title">⚡ Q3: Delegate</h3></div><div id="dash-q3" class="eq-box-content"></div></div>
+                <div class="card"><div class="card-header"><h3 class="card-title">📥 Q4: Eliminate</h3></div><div id="dash-q4" class="eq-box-content"></div></div>
+            </div>
+        </section>
+
+        <!-- MASTER CALENDAR -->
+        <section id="view-master-calendar" class="view">
+            <div class="flex-between mb-6">
+                <div><h3 style="margin-bottom:4px;">Calendar</h3><div class="text-muted text-sm">Everything in your planner, organized by date. Tap any item to jump straight to it.</div></div>
+                <button type="button" class="btn btn-primary" id="master-calendar-quick-add">+ Add</button>
+            </div>
+            <div id="master-calendar-content"></div>
+        </section>
+
+        <!-- TASKS -->
+        <section id="view-tasks" class="view">
+            <div class="toolbar">
+                <div class="toolbar-group">
+                    <button type="button" class="view-btn active" data-taskview="kanban">📋 Kanban</button>
+                    <button type="button" class="view-btn" data-taskview="matrix">⚡ Matrix</button>
+                    <button type="button" class="view-btn" data-taskview="list">📝 List</button>
+                    <button type="button" class="view-btn" data-taskview="gallery">🖼️ Gallery</button>
+                    <button type="button" class="view-btn" data-taskview="calendar">📅 Calendar View</button>
+                    <button type="button" class="view-btn" data-taskview="groups">🗂 Groups</button>
+                </div>
+                <div class="toolbar-divider"></div>
+                <div class="toolbar-group">
+                    <select class="filter-select" id="filter-importance">
+                        <option value="all">All Importance</option>
+                        <option value="high">Important (High)</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Not Important (Low)</option>
+                    </select>
+                    <select class="filter-select" id="filter-urgency">
+                        <option value="all">All Urgency</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="not-urgent">Not Urgent</option>
+                    </select>
+                    <select class="filter-select" id="filter-status">
+                        <option value="all">All Statuses</option>
+                        <option value="todo">To Do</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                    <select class="filter-select" id="filter-category">
+                        <option value="all">All Categories</option>
+                        <option value="work">💼 Work</option>
+                        <option value="hobby">🎨 Hobbies</option>
+                        <option value="routine">🔄 Routine</option>
+                        <option value="gym">🏋️ Gym</option>
+                        <option value="meal">🥗 Meals</option>
+                    </select>
+                </div>
+                <div class="toolbar-divider"></div>
+                <div class="toolbar-group">
+                    <select class="filter-select" id="sort-by">
+                        <option value="date-asc">Date (Earliest)</option>
+                        <option value="date-desc">Date (Latest)</option>
+                        <option value="importance">Importance</option>
+                        <option value="title">Title</option>
+                    </select>
+                    <input type="text" class="search-input" id="search-input" placeholder="🔍 Search..."><button type="button" class="btn btn-sm" data-v25-select="task">☑ Select</button>
+                </div>
+            </div>
+            <div id="tasks-content"></div>
+        </section>
+
+        <!-- BUDGET -->
+        <section id="view-budget" class="view">
+            <div class="stats-row" id="budget-stats"></div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Budget Categories</h3>
+                        <div style="display:flex;gap:6px">
+                            <button type="button" class="btn btn-sm" onclick="openBudgetCatModal(null,'expense')">+ Expense</button>
+                            <button type="button" class="btn btn-sm" onclick="openBudgetCatModal(null,'income')">+ Income</button>
+                        </div>
+                    </div>
+                    <div id="budget-limits-list"></div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Transactions</h3>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="openTxnModal()">+ Add Transaction</button>
+                    </div>
+                    <div class="tab-btns">
+                        <button type="button" class="tab-btn active" data-txnfilter="all">All</button>
+                        <button type="button" class="tab-btn" data-txnfilter="expense">Expenses</button>
+                        <button type="button" class="tab-btn" data-txnfilter="income">Income</button>
+                    </div>
+                    <div class="transaction-list" id="transaction-list"></div>
+                </div>
+            </div>
+            <div class="card" style="margin-top:16px">
+                <div class="card-header">
+                    <h3 class="card-title">Wallets</h3>
+                    <button type="button" class="btn btn-sm" onclick="openWalletModal()">+ Add Wallet</button>
+                </div>
+                <div class="text-muted text-sm" style="margin-bottom:8px">Where your money lives — pick one when logging a transaction. Click a wallet to rename or remove it.</div>
+                <div id="wallet-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+            </div>
+        </section>
+
+        <!-- HABITS -->
+        <section id="view-habits" class="view">
+            <div class="habit-toolbar">
+                <div><h3 style="margin:0 0 3px;">Habits</h3><div class="text-muted text-sm">Weekly execution first. Switch to calendar for long-term consistency.</div></div>
+                <div class="toolbar-group">
+                    <button type="button" class="view-btn active" data-habitview="week">▦ Weekly</button>
+                    <button type="button" class="view-btn" data-habitview="calendar">▦ Monthly</button>
+                    <button type="button" class="btn btn-primary" onclick="openHabitModal()">+ New Habit</button>
+                </div>
+            </div>
+            <div id="habit-summary" class="habit-summary-grid"></div>
+            <div id="habits-container"></div>
+        </section>
+
+        <!-- WORKOUT -->
+        <section id="view-workout" class="view">
+            <div class="workout-hero">
+                <div>
+                    <div class="eyebrow">TRAINING HQ</div>
+                    <h3>Workout Command Center</h3>
+                    <p>Build sessions, log every set, chase performance, and keep your entire training history in one place.</p>
+                </div>
+                <div class="workout-hero-actions">
+                    <button type="button" class="btn" id="workout-open-history-btn">History</button>
+                    <button type="button" class="btn btn-primary" id="workout-start-btn">Start Workout</button>
+                </div>
+            </div>
+            <div id="gym-membership-card" style="cursor:pointer;margin-bottom:14px"></div>
+            <div id="workout-kpis" class="workout-kpi-grid"></div>
+            <div class="workout-tabs">
+                <button type="button" class="view-btn active" data-workout-tab="session">Current Session</button>
+                <button type="button" class="view-btn" data-workout-tab="templates">Templates</button>
+                <button type="button" class="view-btn" data-workout-tab="exercises">Exercises</button>
+                <button type="button" class="view-btn" data-workout-tab="analytics">Analytics</button>
+                <button type="button" class="view-btn" data-workout-tab="history">History</button>
+            </div>
+            <div id="workout-content"></div>
+        </section>
+
+        <!-- FOCUS -->
+        <section id="view-focus" class="view">
+            <div class="card" style="max-width: 520px; margin: 0 auto; text-align: center;">
+                <h3 class="card-title mb-4">Pomodoro Focus</h3>
+                <div class="timer-mode-btns">
+                    <button type="button" class="tab-btn active" data-timermode="focus">Focus</button>
+                    <button type="button" class="tab-btn" data-timermode="short">Short Break</button>
+                    <button type="button" class="tab-btn" data-timermode="long">Long Break</button>
+                </div>
+                <div class="timer-display" id="timer-display">25:00</div>
+                <div class="timer-controls mb-6">
+                    <button type="button" class="btn btn-primary" id="timer-start-btn">Start</button>
+                    <button type="button" class="btn" id="timer-reset-btn">Reset</button>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Focus (mins)</label>
+                        <input type="number" class="form-input" id="timer-focus" value="25" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Short Break</label>
+                        <input type="number" class="form-input" id="timer-short-break" value="5" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Long Break</label>
+                        <input type="number" class="form-input" id="timer-long-break" value="15" min="1">
+                    </div>
+                </div>
+                <p class="text-muted text-sm" style="margin-top:10px;">Total focused today: <strong id="total-focus-time">0 min</strong> &nbsp;|&nbsp; Sessions: <strong id="total-sessions">0</strong></p>
+            </div>
+        </section>
+
+        <!-- NOTES -->
+        <section id="view-notes" class="view">
+            <div class="flex-between mb-6">
+                <div><h3 style="margin-bottom:4px;">Notes</h3><div class="text-muted text-sm">Capture ideas, write freely, and organize everything in cards.</div></div>
+                <button type="button" class="btn btn-primary" onclick="openNoteModal()">+ New Note</button>
+            </div>
+            <div class="notes-toolbar">
+                <button type="button" class="btn btn-sm" data-v25-select="note">☑ Select</button>
+                <button type="button" class="btn btn-sm" data-v25-manage="note">🗂 Groups</button>
+                <input id="notes-search" class="search-input" type="search" placeholder="Search notes…" aria-label="Search notes">
+                <select id="notes-sort" class="filter-select" aria-label="Sort notes">
+                    <option value="updated">Recently updated</option><option value="created">Recently created</option><option value="title">Title A–Z</option><option value="pinned">Pinned first</option>
+                </select>
+            </div>
+            <div class="notes-grid" id="notes-grid"></div>
+        </section>
+
+        <!-- PASSWORDS -->
+        <section id="view-passwords" class="view">
+            <div class="flex-between mb-4">
+                <div><h3 style="margin-bottom:4px;">Password Manager</h3><div class="text-muted text-sm">Stored locally on this device only — not encrypted, same as the rest of OmniOS's data. Don't sync this file anywhere you don't fully trust.</div></div>
+                <button type="button" class="btn btn-primary" onclick="openPasswordModal()">+ Add Password</button>
+            </div>
+            <input id="password-search" class="search-input" type="search" placeholder="Search by site or username…" aria-label="Search passwords" style="margin-bottom:14px;max-width:360px">
+            <div id="password-list" class="notes-grid"></div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="view-settings" class="view">
+            <div class="workout-tabs" id="settings-tabs">
+                <button type="button" class="view-btn active" data-settings-tab="appearance">Appearance</button>
+                <button type="button" class="view-btn" data-settings-tab="calendar">Calendar</button>
+                <button type="button" class="view-btn" data-settings-tab="tasks">Tasks</button>
+                <button type="button" class="view-btn" data-settings-tab="habits">Habits</button>
+                <button type="button" class="view-btn" data-settings-tab="workout">Workout</button>
+                <button type="button" class="view-btn" data-settings-tab="focus">Focus</button>
+                <button type="button" class="view-btn" data-settings-tab="notifications">Notifications</button>
+                <button type="button" class="view-btn" data-settings-tab="data">Data</button>
+            </div>
+            <div id="settings-content"></div>
+        </section>
+
+    </div>
+</main>
+
+<!-- INSPECTOR -->
+<div class="inspector-backdrop" id="inspector-backdrop"></div>
+<div class="inspector-panel" id="inspector-panel">
+    <button type="button" class="inspector-close" id="inspector-close-btn">✕</button>
+    <div id="inspector-content"></div>
+</div>
+
+<!-- QUICK ADD MENU -->
+<div class="modal-overlay" id="quick-add-modal" aria-hidden="true">
+  <div class="modal quick-add-modal" role="dialog" aria-modal="true" aria-labelledby="quick-add-title">
+    <div class="modal-header"><h3 class="modal-title" id="quick-add-title">Quick Add</h3><button type="button" class="modal-close-btn" aria-label="Close">✕</button></div>
+    <div class="quick-add-grid">
+      <button type="button" class="btn quick-add-choice" data-quick-type="task"><span>✓</span><span><strong>Task</strong><small>Plan an action or reminder</small></span></button>
+      <button type="button" class="btn quick-add-choice" data-quick-type="event"><span>●</span><span><strong>Event</strong><small>Add a dated calendar item</small></span></button>
+      <button type="button" class="btn quick-add-choice" data-quick-type="habit"><span>⚡</span><span><strong>Habit</strong><small>Track a recurring habit</small></span></button>
+      <button type="button" class="btn quick-add-choice" data-quick-type="workout"><span>🏋️</span><span><strong>Workout</strong><small>Start a workout session</small></span></button>
+      <button type="button" class="btn quick-add-choice" data-quick-type="note"><span>▤</span><span><strong>Note</strong><small>Capture a note or idea</small></span></button>
+      <button type="button" class="btn quick-add-choice" data-quick-type="transaction"><span>↗</span><span><strong>Transaction</strong><small>Log income or expense</small></span></button>
+      <button type="button" class="btn quick-add-choice" data-quick-type="expense"><span>↘</span><span><strong>Expense</strong><small>Log a purchase in one tap</small></span></button>
+      <button type="button" class="btn quick-add-choice" data-quick-type="income"><span>↗</span><span><strong>Income</strong><small>Log money received quickly</small></span></button>
+    </div>
+  </div>
+</div>
+<!-- MODALS -->
+<div class="modal-overlay" id="task-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="task-modal-title">Add New Entry</h3>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Title</label>
+            <input type="text" class="form-input" id="task-title" placeholder="What needs to be done?">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <select class="form-select" id="task-category">
+                    <option value="work">💼 Work</option>
+                    <option value="hobby">🎨 Hobbies</option>
+                    <option value="routine">🔄 Routine / Habit</option>
+                    <option value="gym">🏋️ Gym / Fitness</option>
+                    <option value="meal">🥗 Meal / Grocery</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-select" id="task-status">
+                    <option value="todo">To Do</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Importance</label>
+                <select class="form-select" id="task-importance">
+                    <option value="high">High (Important)</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low (Not Important)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Urgency</label>
+                <select class="form-select" id="task-urgency">
+                    <option value="urgent">Urgent</option>
+                    <option value="not-urgent">Not Urgent</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Scheduled Date</label>
+            <input type="date" class="form-input" id="task-date">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Notes / Details</label>
+            <textarea class="form-textarea" id="task-notes" placeholder="Additional details..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="task-save-btn">Save Entry</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="txn-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Add Transaction</h3>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="txn-type">
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Amount ($)</label>
+                <input type="number" class="form-input" id="txn-amount" placeholder="0.00" step="0.01">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="form-select" id="txn-category"></select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Wallet</label>
+            <select class="form-select" id="txn-wallet"></select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            <input type="text" class="form-input" id="txn-desc" placeholder="e.g., Grocery shopping">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="txn-date">
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="txn-save-btn">Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="budget-cat-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="bcat-modal-title">Add Budget Category</h3>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Category Name</label>
+            <input type="text" class="form-input" id="bcat-name" placeholder="e.g., Groceries, Rent">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="bcat-type">
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Icon (Emoji)</label>
+                <input type="text" class="form-input" id="bcat-icon" placeholder="e.g., 🛒" maxlength="2">
+            </div>
+        </div>
+        <div class="form-group" id="bcat-limit-group">
+            <label class="form-label">Monthly Limit ($)</label>
+            <input type="number" class="form-input" id="bcat-limit" placeholder="0.00" step="0.01">
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger btn-sm" id="bcat-delete-btn" style="margin-right:auto; display:none;">Delete</button>
+            <button type="button" class="btn modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="bcat-save-btn">Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="habit-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="habit-modal-title">New Habit</h3>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Habit Name</label>
+            <input type="text" class="form-input" id="habit-name" placeholder="e.g., Read 20 pages">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Icon (Emoji)</label>
+            <input type="text" class="form-input" id="habit-icon" placeholder="e.g., 📚" maxlength="2">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Goal (optional)</label>
+            <input type="text" class="form-input" id="habit-goal" placeholder="e.g., 30 days streak">
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger btn-sm" id="habit-delete-btn" style="margin-right:auto; display:none;">Delete</button>
+            <button type="button" class="btn modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="habit-save-btn">Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="workout-modal">
+    <div class="modal workout-modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Start Workout</h3>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Workout name</label>
+            <input type="text" class="form-input" id="workout-name" placeholder="e.g., Upper Body A">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Choose template</label>
+            <select class="form-select" id="workout-template-select"></select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea class="form-textarea" id="workout-notes" placeholder="Session goal, technique notes, anything worth remembering..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="workout-create-btn">Create Session</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="exercise-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Add Exercise</h3>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Exercise</label>
+            <select class="form-select" id="exercise-select"></select>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Sets</label><input type="number" class="form-input" id="exercise-sets" value="3" min="1" max="20"></div>
+            <div class="form-group"><label class="form-label">Rest (sec)</label><input type="number" class="form-input" id="exercise-rest" value="90" min="0"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="exercise-add-btn">Add Exercise</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="note-modal">
+    <div class="modal note-modal">
+        <div class="modal-header">
+            <div><h3 class="modal-title" id="note-modal-title">New Note</h3><div class="text-muted text-sm" id="note-updated-label"></div></div>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Title</label>
+            <input type="text" class="form-input" id="note-title" placeholder="Untitled">
+        </div>
+        <div class="note-editor-wrap">
+            <div class="note-editor-toolbar" role="toolbar" aria-label="Note formatting">
+                <select id="note-block-format" class="filter-select" style="min-height:36px;" aria-label="Text style">
+                    <option value="p">Text</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option>
+                </select>
+                <button type="button" class="note-tool" data-note-cmd="bold"><b>B</b></button>
+                <button type="button" class="note-tool" data-note-cmd="italic"><i>I</i></button>
+                <button type="button" class="note-tool" data-note-cmd="underline"><u>U</u></button>
+                <button type="button" class="note-tool" data-note-cmd="strikeThrough"><s>S</s></button>
+                <button type="button" class="note-tool" data-note-cmd="insertUnorderedList">•</button>
+                <button type="button" class="note-tool" data-note-cmd="insertOrderedList">1.</button>
+                <button type="button" class="note-tool" data-note-cmd="formatBlock" data-note-value="blockquote">❝</button>
+                <button type="button" class="note-tool" data-note-action="todo">☑</button>
+                <button type="button" class="note-tool" data-note-action="link">↗</button>
+                <button type="button" class="note-tool" data-note-cmd="removeFormat">Tx</button>
+            </div>
+            <div id="note-content" class="note-editor" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" data-placeholder="Start writing…"></div>
+        </div>
+        <div class="note-meta-row">
+            <button type="button" class="btn note-pin-toggle" id="note-pin-btn">☆ Pin note</button>
+            <span class="text-muted text-sm" id="note-save-status">Saved automatically</span>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger btn-sm" id="note-delete-btn" style="margin-right:auto;display:none;">Delete</button>
+            <button type="button" class="btn modal-close-btn">Done</button>
+            <button type="button" class="btn btn-primary" id="note-save-btn">Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="edit-txn-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Edit Transaction</h3>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="edit-txn-type">
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Amount ($)</label>
+                <input type="number" class="form-input" id="edit-txn-amount" step="0.01">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="form-select" id="edit-txn-category"></select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Wallet</label>
+            <select class="form-select" id="edit-txn-wallet"></select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            <input type="text" class="form-input" id="edit-txn-desc">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="edit-txn-date">
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger" id="edit-txn-delete-btn">Delete</button>
+            <button type="button" class="btn modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="edit-txn-save-btn">Update</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="calendar-event-modal">
+  <div class="modal" style="max-width:680px;width:100%;max-height:92vh;overflow:auto">
+    <div class="modal-header"><h2 id="calendar-event-modal-title">New Calendar Event</h2><button type="button" class="modal-close-btn">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label>Event title</label><input id="calendar-event-title" class="form-input" placeholder="e.g. Team meeting, study block, appointment"></div>
+        <div class="form-group"><label>Date</label><input id="calendar-event-date" type="date" class="form-input"></div>
+        <div class="form-group"><label>Start time</label><input id="calendar-event-start-time" type="time" class="form-input"></div>
+        <div class="form-group"><label>Duration (min)</label><input id="calendar-event-duration" type="number" min="0" max="1440" class="form-input"></div>
+        <div class="form-group"><label>Reminder (min before)</label><input id="calendar-event-reminder" type="number" min="0" max="1440" class="form-input"></div>
+        <div class="form-group"><label>Icon</label><input id="calendar-event-icon" class="form-input" value="●" maxlength="3"></div>
+        <div class="form-group full"><label>Description</label><textarea id="calendar-event-description" class="form-input" rows="3" placeholder="Optional details..."></textarea></div>
+        <div class="form-group full"><label>Repeat</label><select id="calendar-event-recurrence" class="form-select"><option value="none">Does not repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></div>
+      </div>
+      <div id="calendar-event-recurrence-fields" class="recurrence-box" style="display:none">
+        <div class="recurrence-row"><label>Every</label><input id="calendar-event-interval" type="number" min="1" max="365" value="1" class="form-input recurrence-number"><span id="calendar-event-interval-label">period</span></div>
+        <div id="calendar-event-weekdays-wrap" class="recurrence-subsection" style="display:none"><div class="inspector-section-title">Repeat on</div><div class="event-weekdays"><label><input type="checkbox" data-event-weekday="0"><span>Sun</span></label><label><input type="checkbox" data-event-weekday="1"><span>Mon</span></label><label><input type="checkbox" data-event-weekday="2"><span>Tue</span></label><label><input type="checkbox" data-event-weekday="3"><span>Wed</span></label><label><input type="checkbox" data-event-weekday="4"><span>Thu</span></label><label><input type="checkbox" data-event-weekday="5"><span>Fri</span></label><label><input type="checkbox" data-event-weekday="6"><span>Sat</span></label></div></div>
+        <div id="calendar-event-monthly-wrap" class="recurrence-subsection" style="display:none"><div class="inspector-section-title">Monthly pattern</div><select id="calendar-event-monthly-mode" class="form-select"><option value="day">Specific day of month</option><option value="weekday">Nth weekday of the month</option></select><div id="calendar-event-month-day-wrap" style="margin-top:8px"><input id="calendar-event-month-day" type="number" min="1" max="31" class="form-input" placeholder="Day of month"></div><div id="calendar-event-nth-wrap" class="form-grid" style="margin-top:8px"><select id="calendar-event-nth" class="form-select"><option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">5th</option></select><select id="calendar-event-weekday-month" class="form-select"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></div></div>
+        <div class="recurrence-subsection"><div class="inspector-section-title">Ends</div><div class="form-grid"><select id="calendar-event-end" class="form-select"><option value="never">Never</option><option value="count">After a number of occurrences</option><option value="until">On a date</option></select><div id="calendar-event-count-wrap"><input id="calendar-event-count" type="number" min="1" max="9999" value="10" class="form-input" placeholder="Occurrences"></div><div id="calendar-event-until-wrap"><input id="calendar-event-until" type="date" class="form-input"></div></div></div>
+        <div class="recurrence-preview" id="calendar-event-recurrence-preview">One-time event</div>
+      </div>
+      <div class="modal-actions"><button type="button" class="btn btn-danger" id="calendar-event-delete">Delete</button><span style="flex:1"></span><button type="button" class="btn modal-close-btn">Cancel</button><button type="button" class="btn btn-primary" id="calendar-event-save">Save Event</button></div>
+    </div>
+  </div>
+</div>
+<script>
+// ================= STATE =================
+let state = {
+    entries: [],
+    transactions: [],
+    budgetCategories: [
+        { id: 1, name: 'Groceries', icon: '🛒', limit: 400, type: 'expense' },
+        { id: 2, name: 'Entertainment', icon: '🎬', limit: 150, type: 'expense' },
+        { id: 3, name: 'Transport', icon: '🚗', limit: 100, type: 'expense' },
+        { id: 4, name: 'Bills & Utilities', icon: '🏠', limit: 800, type: 'expense' },
+        { id: 5, name: 'Rent / Housing', icon: '🏡', limit: 1000, type: 'expense' },
+        { id: 6, name: 'Health & Fitness', icon: '💊', limit: 100, type: 'expense' },
+        { id: 7, name: 'Dining Out', icon: '🍽️', limit: 150, type: 'expense' },
+        { id: 8, name: 'Shopping', icon: '🛍️', limit: 150, type: 'expense' },
+        { id: 9, name: 'Subscriptions', icon: '📱', limit: 60, type: 'expense' },
+        { id: 10, name: 'Education', icon: '🎓', limit: 100, type: 'expense' },
+        { id: 11, name: 'Travel', icon: '✈️', limit: 200, type: 'expense' },
+        { id: 12, name: 'Insurance', icon: '🛡️', limit: 150, type: 'expense' },
+        { id: 13, name: 'Personal Care', icon: '💆', limit: 60, type: 'expense' },
+        { id: 14, name: 'Kids & Family', icon: '👨‍👩‍👧', limit: 150, type: 'expense' },
+        { id: 15, name: 'Pets', icon: '🐾', limit: 60, type: 'expense' },
+        { id: 16, name: 'Gifts & Donations', icon: '🎁', limit: 60, type: 'expense' },
+        { id: 17, name: 'Savings & Investments', icon: '💹', limit: 200, type: 'expense' },
+        { id: 18, name: 'Other Expense', icon: '📁', limit: 100, type: 'expense' },
+        { id: 19, name: 'Salary', icon: '💼', limit: 0, type: 'income' },
+        { id: 20, name: 'Freelance / Business', icon: '🧾', limit: 0, type: 'income' },
+        { id: 21, name: 'Investments', icon: '📈', limit: 0, type: 'income' },
+        { id: 22, name: 'Gifts Received', icon: '🎉', limit: 0, type: 'income' },
+        { id: 23, name: 'Refunds', icon: '↩️', limit: 0, type: 'income' },
+        { id: 24, name: 'Other Income', icon: '💰', limit: 0, type: 'income' }
+    ],
+    wallets: [
+        { id: 1, name: 'Cash', icon: '💵' },
+        { id: 2, name: 'Bank Account', icon: '🏦' },
+        { id: 3, name: 'Credit Card', icon: '💳' },
+        { id: 4, name: 'Savings', icon: '🏛️' }
+    ],
+    passwords: [],
+    gymMembership: { name: '', startDate: '', durationDays: 0 },
+    habits: [
+        { id: 1, name: 'Drink Water', icon: '💧', goal: '8 glasses/day', log: {} },
+        { id: 2, name: 'Read', icon: '📚', goal: '20 pages', log: {} },
+        { id: 3, name: 'Exercise', icon: '🏋️', goal: '30 min', log: {} }
+    ],
+    notes: [],
+    focusTime: 0,
+    focusSessions: 0,
+    workouts: [],
+    workoutTemplates: [],
+    workoutExercises: [],
+    calendarEvents: [],
+    settings: {
+        groups: { enabled: true, defaultCollapsed: false },
+    appearance: { theme:'dark', accent:'#06b6d4', density:'comfortable', radius:'rounded',
+            widgets: { progress:true, priorities:true, insights:true, habits:true, focus:true, finance:true } },
+        calendar: { defaultView:'month', weekStart:'sunday', workStart:'09:00', workEnd:'17:00', defaultDuration:60, defaultReminder:15 },
+        tasks: { defaultPriority:'medium', defaultUrgency:'not-urgent', defaultCategory:'work', autoArchive:false, overdueBehavior:'keep' },
+        habits: { defaultTarget:7, scoring:'percent', reminderTime:'08:00' },
+        workout: { defaultRest:90, weightUnit:'kg', distanceUnit:'km', autoStartRest:true },
+        focus: { focusMin:25, shortBreak:5, longBreak:15, autoStartBreaks:false, dailyGoal:120 },
+        notifications: { taskReminders:true, habitReminders:true, workoutReminders:true, eventReminders:true, dailySummary:true, weeklyReview:true }
+    }
+};
+
+// Safe storage: iOS/Safari may restrict localStorage for local HTML files.
+let storageIsPersistent = true;
+const storage = (() => {
+    try {
+        const testKey = '__omnios_storage_test__';

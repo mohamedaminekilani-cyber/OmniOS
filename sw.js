@@ -1,0 +1,6 @@
+const CACHE='omnios-v62.0-static-pwa';
+const CORE=['./','./index.html','./manifest.webmanifest','./icons/icon-192.png'];
+self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)))});
+self.addEventListener('activate',e=>{e.waitUntil((async()=>{for(const k of await caches.keys())if(k!==CACHE)await caches.delete(k);await self.clients.claim()})())});
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const u=new URL(e.request.url);if(u.origin!==self.location.origin)return;e.respondWith((async()=>{try{const fresh=await fetch(e.request);const c=await caches.open(CACHE);c.put(e.request,fresh.clone());return fresh}catch(_){return(await caches.match(e.request))||(e.request.mode==='navigate'?await caches.match('./index.html'):Response.error())}})())});
+self.addEventListener('notificationclick',e=>{e.notification.close();const view=e.notification.data?.view||'';e.waitUntil((async()=>{const list=await clients.matchAll({type:'window',includeUncontrolled:true});for(const client of list){if('focus'in client){await client.focus();if(view)client.postMessage({type:'OMNIOS_OPEN_VIEW',view});return}}await clients.openWindow('./index.html'+(view?'#'+encodeURIComponent(view):''))})())});

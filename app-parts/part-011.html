@@ -1,0 +1,1000 @@
+function history45(){
+  const logs=[...(state.core?.changeLog||[])].reverse();
+  const body=logs.length?`<div class="v35-list">${logs.slice(0,80).map(x=>`<div class="v35-history-item"><div class="v35-row-icon">↺</div><div><div class="v35-row-title">${escapeHtml45(x.label||'Change')}</div><div class="v35-history-time">${new Date(x.at).toLocaleString()}</div></div></div>`).join('')}</div>`:'<div class="empty-state">No changes logged yet.</div>';
+  const ov=modal45('Change history',body,{subtitle:'Recent saved-state changes. Undo/Redo remains session-based.',footer:`<button type="button" class="btn" data-v45-undo ${typeof window.omniUndo==='function'?'':'disabled'}>↶ Undo</button><button type="button" class="btn" data-v45-redo ${typeof window.omniRedo==='function'?'':'disabled'}>↷ Redo</button><button type="button" class="btn btn-primary" data-v45-close>Done</button>`,maxWidth:700});ov.querySelector('[data-v45-undo]')?.addEventListener('click',()=>{undo45();closeModal45()});ov.querySelector('[data-v45-redo]')?.addEventListener('click',()=>{redo45();closeModal45()})
+}
+window.OmniUI={customize:customize45,search:search45,assistant:assistant45,settings:settings45,dataCenter:data45,undo:undo45,redo:redo45,history:history45,modal:modal45};
+
+/* ---------- remove stale hidden-trigger dependencies ---------- */
+function bindHeader45(){
+  const more=document.getElementById('v432-header-menu');if(more){
+    const map={search:search45,redo:redo45,history:history45,view:()=>customize45(),settings:settings45,data:data45,shortcuts:()=>document.getElementById('shortcuts-open-btn')?.click()};
+    more.querySelectorAll('[data-v432-action]').forEach(old=>{const b=old.cloneNode(true);old.replaceWith(b);b.addEventListener('click',()=>{more.classList.remove('open');document.getElementById('v432-header-more')?.setAttribute('aria-expanded','false');map[b.dataset.v432Action]?.()})});
+  }
+  const search=document.getElementById('mobile-search-v33');if(search){const b=search.cloneNode(true);search.replaceWith(b);b.onclick=search45}
+  // Hidden legacy controls are compatibility shims only, never routing targets.
+  ['context-view-btn','settings-topbar-btn','omni-assistant-launcher'].forEach(id=>{const e=document.getElementById(id);if(e){e.tabIndex=-1;e.setAttribute('aria-hidden','true')}})
+}
+
+/* ---------- Direct interaction guards: no render-timing races ---------- */
+document.addEventListener('click',e=>{
+  const dash=e.target.closest?.('#v43-dash-custom');if(dash){e.preventDefault();e.stopImmediatePropagation();openDashboardCustomizer45();return}
+  const legacyView=e.target.closest?.('#context-view-btn');if(legacyView){e.preventDefault();e.stopImmediatePropagation();customize45();return}
+},true);
+
+/* ---------- Dashboard direct button is rebound after every rerender ---------- */
+function decorateDashboard45(){const b=document.getElementById('v43-dash-custom');if(b&&!b.dataset.v45Bound){const n=b.cloneNode(true);b.replaceWith(n);n.dataset.v45Bound='1';n.onclick=e=>{e.preventDefault();e.stopPropagation();openDashboardCustomizer45()}}}
+
+/* ---------- Safe manual snapshot action (never leaks an IDB rejection) ---------- */
+async function createSnapshot45(label='Manual snapshot'){
+  try{
+    const db=await new Promise((res,rej)=>{const q=indexedDB.open('OmniOS_Local_v35',1);q.onupgradeneeded=()=>{const d=q.result;if(!d.objectStoreNames.contains('state'))d.createObjectStore('state');if(!d.objectStoreNames.contains('snapshots'))d.createObjectStore('snapshots',{keyPath:'id'})};q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error||new Error('IndexedDB unavailable'));q.onblocked=()=>rej(new Error('IndexedDB blocked'))});
+    const snap={id:'snap-v45-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),at:new Date().toISOString(),label,state:JSON.parse(JSON.stringify(state))};
+    await new Promise((res,rej)=>{const tx=db.transaction('snapshots','readwrite');const q=tx.objectStore('snapshots').put(snap);q.onsuccess=()=>res();q.onerror=()=>rej(q.error)});db.close();window.toast?.('Snapshot created');setTimeout(()=>window.switchView?.('data-center'),0);return true
+  }catch(e){idbState45='blocked';window.OmniDiagnostics.warnings.push({at:new Date().toISOString(),message:'Snapshot unavailable: '+String(e?.message||e)});window.toast?.('Snapshots are unavailable here. Use Export backup instead.');setTimeout(decorateDataCenter45,0);return false}
+}
+document.addEventListener('click',e=>{const b=e.target.closest?.('#v35-db-snapshot');if(!b)return;e.preventDefault();e.stopImmediatePropagation();createSnapshot45('Manual snapshot')},true);
+
+/* ---------- optional local-database capability ---------- */
+let idbState45='unknown';
+async function testIDB45(){if(idbState45!=='unknown')return idbState45==='ok';try{if(!('indexedDB'in window))throw new Error('IndexedDB unavailable');await new Promise((res,rej)=>{const q=indexedDB.open('__omnios_v45_probe__',1);q.onupgradeneeded=()=>{};q.onsuccess=()=>{q.result.close();try{indexedDB.deleteDatabase('__omnios_v45_probe__')}catch(_){}res()};q.onerror=()=>rej(q.error);q.onblocked=()=>rej(new Error('IndexedDB blocked'))});idbState45='ok';return true}catch(e){idbState45='blocked';return false}}
+async function decorateDataCenter45(){const sec=document.getElementById('view-data-center');if(!sec)return;const ok=await testIDB45();const snap=sec.querySelector('#v35-db-snapshot');if(!ok&&snap){snap.disabled=true;snap.textContent='Snapshots unavailable';snap.title='IndexedDB snapshots are unavailable in this browser context. Use Export backup instead.';const hero=sec.querySelector('.v35-db-hero');if(hero&&!hero.querySelector('.v45-status-banner')){const d=document.createElement('div');d.className='v45-status-banner';d.innerHTML='<span>⚠</span><div><strong>Recovery snapshots are unavailable in this browser context.</strong><br>Your normal OmniOS local save still works. Use <b>Export backup</b> for a portable recovery copy.</div>';hero.appendChild(d)}}}
+
+/* ---------- semantic/accessibility repair for dynamic clickables ---------- */
+const clickSel45='[data-note-open],[data-org-type],[data-v43-row],[data-v35-project],[data-v35-area],[data-v37-history],[data-v37-plan],[data-v38-account],[data-v41-food],[data-v41-meal]';
+function decorateSemantics45(root=document){root.querySelectorAll?.(clickSel45).forEach(el=>{if(/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(el.tagName))return;if(!el.hasAttribute('role'))el.setAttribute('role','button');if(!el.hasAttribute('tabindex'))el.tabIndex=0})}
+document.addEventListener('keydown',e=>{if(!['Enter',' '].includes(e.key))return;const el=e.target.closest?.(clickSel45);if(!el||/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(el.tagName))return;e.preventDefault();el.click()},true);
+
+/* ---------- consistent escape behavior ---------- */
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const v45=document.getElementById('v45-modal');if(v45){e.stopImmediatePropagation();closeModal45();return}},true);
+
+/* ---------- install after every relevant DOM refresh ---------- */
+let raf45=0;function refresh45(){cancelAnimationFrame(raf45);raf45=requestAnimationFrame(()=>{bindHeader45();decorateDashboard45();decorateSemantics45();if(activeView()==='data-center')decorateDataCenter45()})}
+const host45=document.querySelector('.view-container');if(host45){const obs45=new MutationObserver(m=>{if(m.some(x=>x.addedNodes.length||x.removedNodes.length))refresh45()});obs45.observe(host45,{childList:true,subtree:true})}
+const oldSwitch45=window.switchView;if(typeof oldSwitch45==='function'){window.switchView=function(target){const r=oldSwitch45.apply(this,arguments);setTimeout(refresh45,0);return r}}
+
+/* Force document/app version coherence. */
+document.title='OmniOS v51 — QA Rebuild';
+refresh45();
+})();
+</script>
+
+
+<script id="omnios-connections-js">
+(() => {
+'use strict';
+const V47='47.0';
+const clone47=o=>{try{return structuredClone(o)}catch(_){try{return JSON.parse(JSON.stringify(o))}catch(__){return {}}}};
+const arr47=x=>Array.isArray(x)?x:[];
+const norm47=s=>String(s||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const n47=v=>Number(v)||0;
+const uid47=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+const now47=()=>new Date().toISOString();
+const today47=()=>typeof localDateString==='function'?localDateString():new Date().toISOString().slice(0,10);
+function esc47(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+
+function ensure47(){
+  state.core=state.core&&typeof state.core==='object'?state.core:{};
+  state.core.connectionLog=arr47(state.core.connectionLog);
+  state.settings=state.settings&&typeof state.settings==='object'?state.settings:{};
+  state.settings.connections={groceryPantry:true,nutritionPantry:true,pantryRestock:true,...(state.settings.connections||{})};
+}
+function migrateLogic52(){
+  ensure47();if(state.core.logicV52Migrated)return false;let changed=false;
+  // Retire the old v35 restock switch; the Connections engine is now authoritative.
+  if(state.life?.automation?.pantryRestock){state.life.automation.pantryRestock=false;changed=true}
+  // Keep reversible Nutrition inventory bookkeeping well-formed.
+  arr47(state.pantry).forEach(p=>{const d=n47(p._nutritionDebt);if(!(d>=0)){p._nutritionDebt=0;changed=true}else if(p._nutritionDebt==null){p._nutritionDebt=0;changed=true}});
+  // Repair old Nutrition-generated grocery lists that stored a line total where Grocery expects a unit cost.
+  arr47(state.groceryLists).forEach(l=>{if(!(/^Nutrition groceries/i.test(String(l.title||''))||/^Diet groceries/i.test(String(l.title||''))||/Generated from Nutrition Studio meal plan/i.test(String(l.notes||''))))return;arr47(l.items).forEach(i=>{const f=arr47(state.dietFoods).find(x=>norm47(x.name)===norm47(i.name));if(f&&n47(f.costPerServing)>=0&&Math.abs(n47(i.estimatedCost)-n47(f.costPerServing))>1e-9){i.estimatedCost=n47(f.costPerServing);changed=true}})});
+  // Merge any legacy v35 auto-restock list into the single v47 list.
+  const lists=arr47(state.groceryLists),legacy=lists.filter(l=>l.v35AutoRestock&&!l.archived),modern=lists.find(l=>l.v47AutoRestock&&!l.archived&&l.status!=='completed');let target=modern||null;legacy.forEach(l=>{if(!target){delete l.v35AutoRestock;l.v47AutoRestock=true;l.title='Auto Restock';l.status=l.status||'active';target=l;changed=true;return}if(l===target)return;arr47(l.items).filter(i=>!i.done).forEach(i=>{const key=String(i.pantryItemId||i.pantryId||'');const exists=arr47(target.items).some(x=>!x.done&&((key&&String(x.pantryItemId||x.pantryId||'')===key)||norm47(x.name)===norm47(i.name)));if(!exists){(target.items??=[]).push({...i,id:i.id||uid47('gi')});changed=true}});l.archived=true;l.status='completed';delete l.v35AutoRestock;changed=true});
+  // Old "Add total to budget" estimates were stored as expenses on still-active lists. Convert them back to list budgets.
+  state.transactions=arr47(state.transactions).filter(t=>{if(!t.groceryListId||t.autoSource==='grocery-purchase')return true;const l=lists.find(x=>String(x.id)===String(t.groceryListId));if(l&&l.status!=='completed'&&!t.walletId&&/^Grocery:/i.test(String(t.desc||''))){l.budget=Math.max(n47(l.budget),n47(t.amount));changed=true;return false}return true});
+  state.core.logicV52Migrated=true;return changed
+}
+function logConnection47(type,title,detail=''){
+  ensure47();state.core.connectionLog.unshift({id:uid47('link'),type,title,detail,at:now47()});
+  state.core.connectionLog=state.core.connectionLog.slice(0,120);
+}
+function pantry47(id){return arr47(state.pantry).find(x=>String(x.id)===String(id))}
+function findPantryByName47(name,unit=''){
+  const key=norm47(name),u=norm47(unit);return arr47(state.pantry).find(p=>!p.archived&&norm47(p.name)===key&&(!u||!p.unit||norm47(p.unit)===u))||null;
+}
+function previousById47(list,id){return arr47(list).find(x=>String(x.id)===String(id))}
+function ensurePantryForGrocery47(item,list,prevState){
+  let pid=item.pantryItemId||item.pantryId||'';
+  let p=pid?pantry47(pid):null;
+  if(!p)p=findPantryByName47(item.name,item.unit);
+  const rawQty=Number(item.qty),qty=Number.isFinite(rawQty)?Math.max(0,rawQty):1;
+  const oldPantry=p?previousById47(prevState.pantry,p.id):null;
+  if(!p){
+    const cat=arr47(state.groceryCategories).find(c=>String(c.id)===String(list.categoryId));
+    p={id:uid47('pantry'),name:item.name||'Pantry item',category:cat?.name||'Groceries',qty:0,unit:item.unit||'unit',minQty:0,cost:n47(item.actualCost??item.estimatedCost),expires:'',images:[],createdAt:now47(),updatedAt:now47(),source:'grocery',_nutritionDebt:0};
+    state.pantry.push(p);
+  }
+  const missing=qty;
+  let addToStock=missing,debt=Math.max(0,n47(p._nutritionDebt));
+  if(addToStock>0&&debt>0){const offset=Math.min(debt,addToStock);debt-=offset;addToStock-=offset;p._nutritionDebt=debt}
+  if(addToStock>0)p.qty=n47(p.qty)+addToStock;
+  p.cost=n47(item.actualCost??item.estimatedCost)||n47(p.cost);
+  p.updatedAt=now47();p.lastRestockedAt=p.updatedAt;p.lastGroceryListId=list.id;
+  item.pantryItemId=p.id;item.pantryId=p.id;item.pantrySyncedAt=list.completedAt||now47();
+  // Link the matching Nutrition food if it is not linked yet.
+  const f=arr47(state.dietFoods).find(x=>norm47(x.name)===norm47(item.name));
+  if(f&&!f.pantryId){f.pantryId=p.id;/* v52: do not invent a serving-to-stock conversion; user must define pantryPerServing. */}
+  return {p,added:missing};
+}
+function syncCompletedGroceries47(prev){
+  if(state.settings.connections.groceryPantry===false)return;
+  arr47(state.groceryLists).forEach(list=>{
+    const before=previousById47(prev.groceryLists,list.id);
+    if(list.status!=='completed'||before?.status==='completed'||list.checkout?.pantryManaged===true)return;
+    let count=0,total=0;
+    arr47(list.items).filter(i=>i.done).forEach(item=>{const r=ensurePantryForGrocery47(item,list,prev);if(r.added>0){count++;total+=r.added}});
+    if(count)logConnection47('grocery-pantry','Shopping validated → Pantry updated',`${list.title||'Grocery list'} · ${count} item${count===1?'':'s'} synchronized`);
+  });
+}
+function entryConsumption47(entry){
+  const out={};if(!entry)return out;
+  const add=(foodId,servings)=>{const f=arr47(state.dietFoods).find(x=>String(x.id)===String(foodId));if(!f||!f.pantryId||!(n47(f.pantryPerServing)>0))return;out[String(f.pantryId)]=(out[String(f.pantryId)]||0)+n47(servings)*n47(f.pantryPerServing)};
+  if(entry.type==='food')add(entry.refId,n47(entry.qty)||1);
+  else if(entry.type==='meal'){
+    const m=arr47(state.dietMeals).find(x=>String(x.id)===String(entry.refId));if(!m)return out;
+    const servings=Math.max(1,n47(m.servings)||1),used=n47(entry.qty)||1;
+    arr47(m.items).forEach(i=>add(i.foodId,(n47(i.qty)||1)/servings*used));
+  }
+  return out;
+}
+function flattenDiet47(store){
+  const m=new Map();Object.entries(store||{}).forEach(([date,day])=>Object.entries(day||{}).forEach(([slot,items])=>arr47(items).forEach((it,i)=>{const key=String(it.id||`${date}|${slot}|${i}`);m.set(key,{date,slot,it,vec:entryConsumption47(it)})})));return m;
+}
+function syncNutritionPantry47(prev){
+  if(state.settings.connections.nutritionPantry===false)return;
+  const a=flattenDiet47(prev.dietLog),b=flattenDiet47(state.dietLog),delta={};
+  new Set([...a.keys(),...b.keys()]).forEach(k=>{const av=a.get(k)?.vec||{},bv=b.get(k)?.vec||{};new Set([...Object.keys(av),...Object.keys(bv)]).forEach(pid=>delta[pid]=(delta[pid]||0)+(bv[pid]||0)-(av[pid]||0))});
+  let changed=0;
+  Object.entries(delta).forEach(([pid,d])=>{if(Math.abs(d)<1e-9)return;const p=pantry47(pid);if(!p)return;let qty=Math.max(0,n47(p.qty)),debt=Math.max(0,n47(p._nutritionDebt));if(d>0){const fromStock=Math.min(qty,d);qty-=fromStock;debt+=d-fromStock}else{let restore=-d;const clearDebt=Math.min(debt,restore);debt-=clearDebt;restore-=clearDebt;qty+=restore}p.qty=Math.max(0,qty);p._nutritionDebt=Math.max(0,debt);p.updatedAt=now47();changed++});
+  if(changed)logConnection47('nutrition-pantry','Nutrition log → Pantry adjusted',`${changed} linked inventory item${changed===1?'':'s'} updated`);
+}
+function autoRestock47(prev){
+  if(state.settings.connections.pantryRestock===false)return;
+  const old=arr47(prev.pantry),cur=arr47(state.pantry);let list=arr47(state.groceryLists).find(x=>x.v47AutoRestock&&x.status!=='completed'&&!x.archived);
+  cur.forEach(p=>{
+    if(!(n47(p.minQty)>0))return;const before=previousById47(old,p.id),lowNow=n47(p.qty)<=n47(p.minQty),replenished=before&&n47(before.qty)<=n47(before.minQty)&&n47(p.qty)>n47(p.minQty);
+    if(lowNow){
+      if(!list){list={id:uid47('grocery'),title:'Auto Restock',categoryId:'',status:'active',store:'',plannedDate:today47(),budget:0,notes:'Automatically created from validated Pantry usage.',images:[],items:[],v47AutoRestock:true,createdAt:now47(),updatedAt:now47()};state.groceryLists.push(list)}
+      const exists=arr47(list.items).find(i=>(String(i.pantryItemId||i.pantryId)===String(p.id)||norm47(i.name)===norm47(p.name))&&!i.done);
+      if(!exists){list.items.push({id:uid47('gi'),name:p.name,qty:Math.max(1,n47(p.minQty)-n47(p.qty)+1),unit:p.unit||'unit',estimatedCost:n47(p.cost),actualCost:null,done:false,pantryItemId:p.id,pantryId:p.id});list.updatedAt=now47();logConnection47('pantry-grocery','Low Pantry stock → Grocery restock',p.name||'Pantry item')}
+    }
+    if(replenished&&list){arr47(list.items).forEach(i=>{if(String(i.pantryItemId||i.pantryId)===String(p.id)||norm47(i.name)===norm47(p.name))i.done=true});list.updatedAt=now47()}
+  });
+}
+function syncWishlist47(prev){
+  arr47(state.wishlist).forEach(w=>{const before=previousById47(prev.wishlist,w.id),becameBought=w.status==='bought'&&before?.status!=='bought',reverted=before?.status==='bought'&&w.status!=='bought';const g=arr47(state.goals).find(x=>String(x.linkedWishlistId)===String(w.id));if(becameBought){if(g&&g.status!=='completed'){g._wishlistRestore={wishlistId:w.id,status:g.status||'active',currentAmount:n47(g.currentAmount)};g.status='completed';if(n47(g.targetAmount)>0)g.currentAmount=Math.max(n47(g.currentAmount),n47(g.targetAmount));g.updatedAt=now47();logConnection47('wishlist-goal','Purchase validated → Goal completed',w.title||'Wishlist item')}if(!arr47(state.transactions).some(t=>String(t.wishlistId)===String(w.id))&&n47(w.purchasePrice||w.price)>0){const onlyWallet=arr47(state.wallets).length===1?state.wallets[0].id:null;state.transactions.push({id:Date.now()+Math.random(),type:'expense',amount:n47(w.purchasePrice)>0?n47(w.purchasePrice):n47(w.price)*(Math.max(1,n47(w.quantity)||1)),categoryId:null,walletId:onlyWallet,desc:`Wishlist: ${w.title||'Purchase'}`,date:w.purchasedAt?String(w.purchasedAt).slice(0,10):today47(),status:onlyWallet?'cleared':'pending',tags:['wishlist'],wishlistId:w.id,isTransfer:false,autoSource:'wishlist-purchase'});logConnection47('wishlist-finance','Purchase validated → Finance recorded',w.title||'Wishlist item')}}if(reverted){state.transactions=arr47(state.transactions).filter(t=>!(String(t.wishlistId)===String(w.id)&&t.autoSource==='wishlist-purchase'));if(g&&g._wishlistRestore&&String(g._wishlistRestore.wishlistId)===String(w.id)){g.status=g._wishlistRestore.status||'active';g.currentAmount=n47(g._wishlistRestore.currentAmount);delete g._wishlistRestore;g.updatedAt=now47();logConnection47('wishlist-goal','Purchase reverted → Goal restored',w.title||'Wishlist item')}logConnection47('wishlist-finance','Purchase reverted → Linked purchase entry removed',w.title||'Wishlist item')}})
+}
+function process47(prev){ensure47();migrateLogic52();syncNutritionPantry47(prev);syncCompletedGroceries47(prev);autoRestock47(prev);syncWishlist47(prev)}
+
+let last47=null,guard47=false;
+function installSave47(){
+  if(window.saveState?.__v47Connections)return;
+  const base=window.saveState;if(typeof base!=='function')return;
+  last47=clone47(state);
+  const wrapped=function(){if(guard47)return base.apply(this,arguments);guard47=true;try{process47(last47||{});const r=base.apply(this,arguments);last47=clone47(state);return r}finally{guard47=false}};
+  wrapped.__v47Connections=true;wrapped.__base=base;window.saveState=wrapped;
+}
+
+/* Keep labels coherent without adding cross-page chrome. */
+function setNavText47(view,label){const el=document.querySelector(`.nav-item[data-view="${view}"]`);if(!el)return;[...el.childNodes].forEach(n=>{if(n.nodeType===3&&n.textContent.trim())n.remove()});el.querySelectorAll(':scope > span:not(.v35-nav-emoji):not(.nav-icon-img):not(.icon-fallback):not(.v47-nav-label)').forEach(n=>n.remove());let span=el.querySelector(':scope > .v47-nav-label');if(!span){span=document.createElement('span');span.className='v47-nav-label';el.appendChild(span)}span.textContent=label}
+function labels47(){const labels={dashboard:'Dashboard','master-calendar':'Calendar',tasks:'Tasks',budget:'Finance',habits:'Habits',workout:'Workout',focus:'Focus',notes:'Notes',diet:'Nutrition',grocery:'Grocery',wishlist:'Wishlist',goals:'Goals',pantry:'Pantry',reminders:'Reminders','life-hub':'Life Hub'};Object.entries(labels).forEach(([v,l])=>setNavText47(v,l));const active=document.querySelector('.view.active')?.id?.replace(/^view-/,'');if(labels[active]&&document.getElementById('view-title'))document.getElementById('view-title').textContent=labels[active]}
+
+function init47(){ensure47();const migrated=migrateLogic52();installSave47();if(migrated){try{window.saveState()}catch(e){console.warn('v52 migration save',e)}}labels47();document.documentElement.dataset.omniosVersion='52';document.title='OmniOS v52 — Logic Stabilized'}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init47,{once:true});else init47();
+/* v53: navigation labels are normalized by the final QA layer; no body-wide label observer. */
+window.OmniConnections={process:()=>{const p=clone47(last47||state);process47(p);last47=clone47(state)},log:()=>arr47(state.core?.connectionLog)};
+})();
+</script>
+
+
+<script id="omnios-ui-refinements-js">
+(function(){
+'use strict';
+const NAV_ICONS48={
+ dashboard:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+ today:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M9.5 20v-6h5v6"/>',
+ inbox:'<path d="M4 5h16l1 11H15l-2 3h-2l-2-3H3L4 5Z"/><path d="M8 10h8"/>',
+ planner:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18M8 13h3M13 13h3M8 17h3"/>',
+ projects:'<path d="M3 7h7l2 2h9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h5"/>',
+ 'master-calendar':'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h2M14 14h2M8 18h2M14 18h2"/>',
+ tasks:'<path d="m5 12 3 3 5-6"/><path d="M13 6h7M13 12h7M5 20h15"/><path d="M5 6h3"/>',
+ habits:'<path d="M13 2 4 14h8l-1 8 9-12h-8l1-8Z"/>',
+ workout:'<path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12"/>',
+ focus:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/>',
+ diet:'<path d="M20 4c-7 0-12 4-12 10 0 3 2 5 5 5 6 0 8-8 7-15Z"/><path d="M5 21c1-6 5-10 12-13"/>',
+ budget:'<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+ 'life-hub':'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/><path d="M12 4V2M12 22v-2M4 12H2M22 12h-2"/>',
+ notes:'<path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h5M8 12h7M8 16h7"/>',
+ grocery:'<path d="M4 7h16l-2 10H6L4 7Z"/><path d="m8 7 4-4 4 4M8 21h.01M16 21h.01"/>',
+ wishlist:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',
+ goals:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+ pantry:'<path d="M4 5h16v16H4V5Z"/><path d="M4 10h16M9 5v5M15 10v11"/>',
+ reminders:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
+ 'data-center':'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+ activity:'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v6h6M12 7v5l3 2"/>',
+ templates:'<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><path d="M13 17h8M17 13v8"/>',
+ passwords:'<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/>',
+ settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1-2.9 2.9-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.6v.1h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.8.3l-.1.1-2.9-2.9.1-.1a1.7 1.7 0 0 0 .3-1.8A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1 2.9-2.9.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.5V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1 2.9 2.9-.1.1a1.7 1.7 0 0 0-.3 1.8 1.7 1.7 0 0 0 1.6 1h.1v4H21a1.7 1.7 0 0 0-1.6 1Z"/>',
+ help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.7 2.7 0 1 1 4.3 2.2c-1.1.8-1.8 1.2-1.8 2.8M12 18h.01"/>'
+};
+function decorateNavIcons(){document.querySelectorAll('.nav-menu .nav-item[data-view]').forEach(item=>{const p=NAV_ICONS48[item.dataset.view];if(!p)return;let icon=item.querySelector(':scope > .v48-nav-icon');if(!icon){icon=document.createElement('span');icon.className='v48-nav-icon';icon.setAttribute('aria-hidden','true');icon.innerHTML=`<svg viewBox="0 0 24 24">${p}</svg>`;item.insertBefore(icon,item.firstChild)}});document.querySelectorAll('.mobile-nav button[data-v35-mobile-view]').forEach(item=>{const p=NAV_ICONS48[item.dataset.v35MobileView];if(!p)return;let icon=item.querySelector(':scope > .v48-mobile-icon');if(!icon){icon=document.createElement('span');icon.className='v48-mobile-icon';icon.setAttribute('aria-hidden','true');icon.innerHTML=`<svg viewBox="0 0 24 24">${p}</svg>`;item.insertBefore(icon,item.firstChild)}})}
+let queued=false;function refresh(){if(queued)return;queued=true;queueMicrotask(()=>{queued=false;decorateNavIcons()})}const navObs48=new MutationObserver(refresh);const side48=document.querySelector('.nav-menu'),mob48=document.querySelector('.mobile-nav');if(side48)navObs48.observe(side48,{childList:true,subtree:true});if(mob48)navObs48.observe(mob48,{childList:true,subtree:true});decorateNavIcons();window.OmniIcons={refresh};
+})();
+</script>
+
+
+<style id="omnios-item-images-css">
+
+/* ===== OmniOS v49 — Native item images (Nutrition Library pattern) ===== */
+.v49-photo-field{margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color)}
+.v49-photo-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:7px}
+.v49-photo-title{font-size:.68rem;font-weight:800;color:var(--text-secondary)}
+.v49-photo-help{font-size:.57rem;color:var(--text-muted);margin-top:2px;line-height:1.4}
+.v49-photo-input{width:100%;font-size:.65rem}
+.v49-photo-strip{display:flex;gap:8px;overflow-x:auto;padding:8px 1px 2px;scrollbar-width:thin}
+.v49-photo-tile{position:relative;width:84px;height:64px;min-width:84px;border-radius:9px;overflow:hidden;border:1px solid var(--border-color);background:var(--bg-elevated);padding:0;cursor:pointer}
+.v49-photo-tile img{width:100%;height:100%;display:block;object-fit:cover}
+.v49-photo-tile.is-primary{outline:2px solid var(--accent-cyan);outline-offset:1px}
+.v49-photo-primary{position:absolute;left:4px;bottom:4px;padding:2px 5px;border-radius:5px;background:rgba(0,0,0,.68);color:white;font-size:.49rem;font-weight:800;pointer-events:none}
+.v49-photo-remove{position:absolute;right:4px;top:4px;width:20px;height:20px;border:0;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.72);color:#fff;font-size:.65rem;line-height:1;cursor:pointer}
+.v49-photo-empty{font-size:.58rem;color:var(--text-muted);padding:3px 0 0}
+.v49-native-media{height:128px!important;margin:0 0 10px!important;border-radius:10px;overflow:hidden;background:var(--bg-elevated)}
+.v49-native-media img{width:100%;height:100%;display:block;object-fit:cover}
+.v49-project-image{height:120px;margin:-2px -2px 10px;border-radius:9px;overflow:hidden;background:var(--bg-elevated)}
+.v49-project-image img{width:100%;height:100%;object-fit:cover;display:block}
+.v49-task-image{height:92px;margin:-1px -1px 9px;border-radius:8px;overflow:hidden;background:var(--bg-elevated)}
+.v49-task-image img{width:100%;height:100%;object-fit:cover;display:block}
+.v49-row-image{width:34px;height:34px;min-width:34px;border-radius:8px;object-fit:cover;border:1px solid var(--border-color);margin-right:8px}
+.v49-note-reader-image{width:100%;max-height:300px;object-fit:cover;border-radius:12px;margin:14px 0 4px;border:1px solid var(--border-color)}
+.v49-primary-note{font-size:.54rem;color:var(--text-muted);margin-top:5px}
+@media(max-width:760px){
+ .v49-photo-tile{width:76px;height:58px;min-width:76px}
+ .v49-native-media{height:108px!important}
+ .v49-project-image{height:105px}
+ .v49-task-image{height:82px}
+}
+</style>
+
+<script id="omnios-item-images-js">
+
+(function(){
+'use strict';
+const q=(s,r=document)=>r.querySelector(s),qa=(s,r=document)=>[...r.querySelectorAll(s)];
+const arr=x=>Array.isArray(x)?x:[];
+const eq=(a,b)=>String(a)===String(b);
+function esc49(s){return String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}
+function ensureImages49(x){if(x&&!Array.isArray(x.images))x.images=[];return x}
+function entity49(type,id){
+  if(id===null||id===undefined||id==='')return null;
+  const maps={note:state.notes,task:state.entries,goal:state.goals,grocery:state.groceryLists,wishlist:state.wishlist,pantry:state.pantry,food:state.dietFoods,meal:state.dietMeals};
+  if(type==='project')return arr(state.life?.projects).find(x=>eq(x.id,id))||null;
+  const a=maps[type];return arr(a).find(x=>eq(x.id,id))||null;
+}
+function normalizeNative49(){
+  [state.notes,state.entries,state.goals,state.groceryLists,state.wishlist,state.pantry,state.dietFoods,state.dietMeals,state.life?.projects].forEach(a=>arr(a).forEach(ensureImages49));
+}
+function keyMap49(){return [
+ ['note',/^notes:org:note:(.+)$/],['task',/^tasks:entryId:(.+)$/],['goal',/^goals:org:goal:(.+)$/],['grocery',/^grocery:org:grocery:(.+)$/],['wishlist',/^wishlist:org:wishlist:(.+)$/],['pantry',/^pantry:org:pantry:(.+)$/],['food',/^diet:v41Food:(.+)$/],['meal',/^diet:v41Meal:(.+)$/],['project',/^projects:v35Project:(.+)$/]
+ ]}
+function migrateLegacyItemCovers49(){
+  const blocks=state.ui?.covers?.blocks;if(!blocks||typeof blocks!=='object')return false;let changed=false;
+  for(const [k,c] of Object.entries(blocks)){
+    if(!c?.src)continue;
+    for(const[type,re] of keyMap49()){
+      const m=k.match(re);if(!m)continue;const x=entity49(type,m[1]);if(x){ensureImages49(x);if(!x.images.includes(c.src)){x.images.unshift(c.src);changed=true}delete blocks[k];changed=true}break;
+    }
+  }
+  return changed;
+}
+function persist49(){try{typeof saveState==='function'?saveState():localStorage.setItem('omnios_v3_state',JSON.stringify(state))}catch(e){console.warn('v49 save',e)}}
+function fileData49(file){return new Promise((resolve,reject)=>{if(!file?.type?.startsWith('image/'))return resolve(null);const fr=new FileReader();fr.onerror=reject;fr.onload=()=>{const im=new Image();im.onerror=()=>resolve(String(fr.result));im.onload=()=>{const max=1400,s=Math.min(1,max/im.width,max/im.height),w=Math.max(1,Math.round(im.width*s)),h=Math.max(1,Math.round(im.height*s)),cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(im,0,0,w,h);try{resolve(cv.toDataURL('image/jpeg',.80))}catch(_){resolve(String(fr.result))}};im.src=String(fr.result)};fr.readAsDataURL(file)})}
+async function readFiles49(files){const out=[];for(const f of [...(files||[])].filter(x=>x.type?.startsWith('image/')).slice(0,6)){const d=await fileData49(f);if(d)out.push(d)}return out}
+const drafts49=new WeakMap();
+function renderPhotos49(field,draft){
+  const strip=field.querySelector('.v49-photo-strip'),empty=field.querySelector('.v49-photo-empty');const imgs=arr(draft.images);
+  empty.style.display=imgs.length?'none':'block';
+  strip.innerHTML=imgs.map((src,i)=>`<div class="v49-photo-tile ${i===0?'is-primary':''}" data-v49-photo="${i}" title="${i===0?'Primary card image':'Click to make primary'}"><img src="${esc49(src)}" alt=""><span class="v49-photo-primary">${i===0?'Primary':'Set primary'}</span><button type="button" class="v49-photo-remove" data-v49-remove="${i}" aria-label="Remove photo">×</button></div>`).join('');
+  strip.querySelectorAll('[data-v49-photo]').forEach(t=>t.onclick=e=>{if(e.target.closest('[data-v49-remove]'))return;const i=+t.dataset.v49Photo;if(i>0){const [x]=draft.images.splice(i,1);draft.images.unshift(x);renderPhotos49(field,draft)}});
+  strip.querySelectorAll('[data-v49-remove]').forEach(b=>b.onclick=e=>{e.stopPropagation();draft.images.splice(+b.dataset.v49Remove,1);renderPhotos49(field,draft)});
+}
+function photoField49(modal,type,id,saveSel,label='Photos'){
+  if(!modal||modal.querySelector('.v49-photo-field'))return;
+  // Nutrition, Grocery, Wishlist and Pantry already have their correct native image editor.
+  if(modal.querySelector('#nf-files,#nm-files,#og-img-files,#ow-img-files,#op-img-files,#ext-gr-files,#ext-goal-files'))return;
+  const existing=entity49(type,id);const draft={images:[...arr(existing?.images)]};drafts49.set(modal,{type,id,draft});
+  const field=document.createElement('div');field.className='form-group full v49-photo-field';field.innerHTML=`<div class="v49-photo-head"><div><div class="v49-photo-title">${esc49(label)}</div><div class="v49-photo-help">Same behavior as Nutrition Library. The first photo is the image shown on the item card.</div></div></div><input class="form-input v49-photo-input" data-v49-file type="file" accept="image/*" multiple><div class="v49-photo-strip"></div><div class="v49-photo-empty">No photos yet.</div>`;
+  const footer=modal.querySelector('.modal-footer');if(!footer)return;footer.parentNode.insertBefore(field,footer);renderPhotos49(field,draft);
+  field.querySelector('[data-v49-file]').onchange=async e=>{const a=await readFiles49(e.target.files);draft.images.push(...a);draft.images=draft.images.slice(0,6);renderPhotos49(field,draft);e.target.value=''};
+  const before=(()=>{if(type==='project')return arr(state.life?.projects).map(x=>String(x.id));const map={note:state.notes,task:state.entries,goal:state.goals};return arr(map[type]).map(x=>String(x.id))})();
+  const save=modal.querySelector(saveSel);if(save&&!save.dataset.v49PhotoSave){save.dataset.v49PhotoSave='1';save.addEventListener('click',()=>setTimeout(()=>{
+    let finalId=id;
+    if(type==='note'&&typeof editingNoteId!=='undefined'&&editingNoteId)finalId=editingNoteId;
+    if(type==='task'&&!finalId){const newer=arr(state.entries).find(x=>!before.includes(String(x.id)));if(newer)finalId=newer.id}
+    if(type==='goal'&&!finalId){const newer=arr(state.goals).find(x=>!before.includes(String(x.id)));if(newer)finalId=newer.id}
+    if(type==='project'&&!finalId){const newer=arr(state.life?.projects).find(x=>!before.includes(String(x.id)));if(newer)finalId=newer.id}
+    const x=entity49(type,finalId);if(x){x.images=[...draft.images];persist49()}
+  },0))}
+}
+function inferGoal49(modal){if(!/edit/i.test(modal.querySelector('.modal-title')?.textContent||''))return null;const n=modal.querySelector('#gg-name')?.value?.trim();const hits=arr(state.goals).filter(x=>x.name===n);return hits.length===1?hits[0].id:null}
+function inferProject49(modal){if(!/edit/i.test(modal.querySelector('.modal-title')?.textContent||''))return null;const n=modal.querySelector('#v35-proj-name')?.value?.trim();const hits=arr(state.life?.projects).filter(x=>x.name===n);return hits.length===1?hits[0].id:null}
+function decorateModals49(){
+  const note=q('#note-modal.active .modal');if(note)photoField49(note,'note',typeof editingNoteId!=='undefined'?editingNoteId:null,'#note-save-btn','Photos');
+  const task=q('#task-modal.active .modal');if(task)photoField49(task,'task',typeof editingTaskId!=='undefined'?editingTaskId:null,'#task-save-btn','Photos');
+  const goal=q('#org-goal-modal .modal');if(goal)photoField49(goal,'goal',inferGoal49(goal),'#gg-save','Photos');
+  qa('.modal-overlay.active .modal').forEach(m=>{if(m.querySelector('#v35-proj-name'))photoField49(m,'project',inferProject49(m),'#v35-proj-save','Photos')});
+}
+function media49(src,cls='v49-native-media'){return src?`<div class="${cls}"><img src="${esc49(src)}" alt=""></div>`:''}
+let lastNote49=null;
+document.addEventListener('click',e=>{const n=e.target.closest('[data-note-open]');if(n)lastNote49=n.dataset.noteOpen},true);
+function decorateCards49(){
+  qa('#view-notes article.org-card[data-note-open]').forEach(c=>{const n=entity49('note',c.dataset.noteOpen),src=n?.images?.[0];c.querySelector(':scope > .v49-native-media')?.remove();if(src)c.insertAdjacentHTML('afterbegin',media49(src))});
+  qa('#view-notes .org-row[data-note-open]').forEach(r=>{const n=entity49('note',r.dataset.noteOpen),src=n?.images?.[0];r.querySelector(':scope > .v49-row-image')?.remove();if(src)r.insertAdjacentHTML('afterbegin',`<img class="v49-row-image" src="${esc49(src)}" alt="">`)});
+  qa('#view-goals article.org-card[data-org-type="goal"]').forEach(c=>{const x=entity49('goal',c.dataset.orgId),src=x?.images?.[0];c.querySelector(':scope > .v49-native-media')?.remove();if(src)c.insertAdjacentHTML('afterbegin',media49(src))});
+  qa('#view-projects [data-v35-project]').forEach(c=>{const x=entity49('project',c.dataset.v35Project),src=x?.images?.[0];c.querySelector(':scope > .v49-project-image')?.remove();if(src)c.insertAdjacentHTML('afterbegin',media49(src,'v49-project-image'))});
+  qa('#view-tasks .kanban-card[data-entry-id],#view-tasks .gallery-card[data-entry-id]').forEach(c=>{const x=entity49('task',c.dataset.entryId),src=x?.images?.[0];c.querySelector(':scope > .v49-task-image')?.remove();if(src)c.insertAdjacentHTML('afterbegin',media49(src,'v49-task-image'))});
+  qa('#view-tasks .list-item[data-entry-id]').forEach(r=>{const x=entity49('task',r.dataset.entryId),src=x?.images?.[0];r.querySelector(':scope > .v49-row-image')?.remove();if(src)r.insertAdjacentHTML('afterbegin',`<img class="v49-row-image" src="${esc49(src)}" alt="">`)});
+  const reader=q('.v43-note-reader');if(reader&&lastNote49){const x=entity49('note',lastNote49),src=x?.images?.[0];reader.querySelector('.v49-note-reader-image')?.remove();if(src){const meta=reader.querySelector('.v43-note-meta')||reader.querySelector('h1');meta?.insertAdjacentHTML('afterend',`<img class="v49-note-reader-image" src="${esc49(src)}" alt="">`)}}
+}
+// Note autosave should carry the native photo draft too, just like text changes.
+try{const basePersist49=persistCurrentNote;if(typeof basePersist49==='function'){persistCurrentNote=function(){const ok=basePersist49.apply(this,arguments);if(ok){const m=q('#note-modal .modal'),d=m&&drafts49.get(m);if(d&&typeof editingNoteId!=='undefined'&&editingNoteId){const n=entity49('note',editingNoteId);if(n)n.images=[...d.draft.images]}}return ok}}}catch(e){console.warn('v49 note autosave hook',e)}
+let queued49=false;function refresh49(){if(queued49)return;queued49=true;requestAnimationFrame(()=>{queued49=false;try{normalizeNative49();decorateModals49();decorateCards49()}catch(e){console.warn('v49 refresh',e)}})}
+const mo49=new MutationObserver(ms=>{if(ms.some(m=>m.addedNodes.length||m.removedNodes.length))refresh49()});mo49.observe(document.body,{childList:true,subtree:true});
+normalizeNative49();if(migrateLegacyItemCovers49())persist49();
+window.OmniItemImages={refresh:refresh49,entity:entity49,migrate:migrateLegacyItemCovers49};
+refresh49();setTimeout(refresh49,250);
+})();
+
+</script>
+
+
+
+
+<script id="omnios-clean-baseline-stamp">
+(function(){document.documentElement.dataset.omniosVersion='53';document.title='OmniOS v53 — Interaction & Performance Fixed';window.OmniBuild={version:'53',name:'Interaction & Performance Fixed'};})();
+</script>
+
+<style id="omnios-v51-qa-css">
+/* ===== OmniOS v51 — authoritative UI QA layer ===== */
+:root{--v51-page-x:30px;--v51-page-y:22px;--v51-section:16px;--v51-card:14px;--v51-control:8px}
+.sidebar{overflow:hidden}.nav-menu{padding-bottom:18px}.sidebar-footer{display:none!important}
+.nav-section.v35-nav-section{margin-top:18px!important;margin-bottom:5px!important;padding:0 10px!important;font-size:.58rem!important;letter-spacing:.13em!important}
+.nav-menu .nav-item{min-height:36px!important;padding:8px 10px!important;border-radius:10px!important;font-size:.78rem!important}
+.nav-menu .nav-item .v51-nav-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.view-container{min-width:0}.view{min-width:0}.view.active{padding-left:var(--v51-page-x)!important;padding-right:var(--v51-page-x)!important;padding-bottom:36px!important}
+.v44-page-cover-slot:not(.has-cover){min-height:20px!important;margin:0 0 8px!important}.v44-add-page-cover{font-size:.58rem!important;opacity:.58;padding:2px 5px!important}
+.v35-page-head,.v43-hero,.org-hero,.nut-hero,.workout-hero,.v38-finance-head{margin-bottom:var(--v51-section)!important}
+.v35-card,.v43-card,.org-card,.nut-surface,.v38-fin-card,.workout-session-card{min-width:0}
+/* Organize pages use one SVG icon family instead of mixed emoji/glyphs. */
+.org-hero-icon.v51-svg-icon{display:grid!important;place-items:center!important;font-size:0!important}
+.org-hero-icon.v51-svg-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* Task presentation controls: clean labels, no emoji noise. */
+#view-tasks [data-taskview]{min-height:32px;padding:6px 10px!important;font-size:.68rem!important;white-space:nowrap}
+/* Prevent decorative workout art from being counted as real layout width. */
+#view-workout .workout-hero{contain:paint;max-width:100%}
+#view-workout .workout-hero>*{min-width:0}
+/* Form/editor rhythm */
+.modal .form-group{margin-bottom:12px}.modal .form-label{margin-bottom:5px}.modal-footer{gap:8px!important}
+.v49-photo-field{margin-top:14px!important;padding-top:14px!important}.v49-photo-strip{padding-top:9px!important}
+/* Empty states should read as intentional surfaces rather than broken gaps. */
+.v35-empty,.v43-empty,.org-empty,.nut-empty,.v38-empty,.workout-session-empty{min-height:64px;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px!important}
+@media(max-width:760px){
+ :root{--v51-page-x:14px;--v51-page-y:12px;--v51-section:12px;--v51-card:11px;--v51-control:6px}
+ .view.active{padding-left:var(--v51-page-x)!important;padding-right:var(--v51-page-x)!important;padding-bottom:calc(92px + env(safe-area-inset-bottom))!important}
+ .v44-page-cover-slot:not(.has-cover){margin-bottom:5px!important}
+ .nav-section.v35-nav-section{margin-top:14px!important}
+ .modal{max-height:calc(100dvh - 24px)!important}.modal-footer{position:sticky;bottom:0;background:var(--bg-surface);z-index:2}
+}
+</style>
+<script id="omnios-v51-qa-js">
+(function(){'use strict';
+const LABELS={today:'Today',dashboard:'Dashboard',inbox:'Inbox',planner:'Planner',projects:'Projects','master-calendar':'Calendar',tasks:'Tasks',habits:'Habits',workout:'Workout',diet:'Nutrition',focus:'Focus',budget:'Finance','life-hub':'Life Hub',notes:'Notes',grocery:'Grocery',wishlist:'Wishlist',goals:'Goals',pantry:'Pantry',reminders:'Reminders','data-center':'Data Center',activity:'Activity',templates:'Templates',passwords:'Passwords',settings:'Settings',help:'Help'};
+const HERO={
+ notes:'<path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h5M8 12h7M8 16h7"/>',
+ grocery:'<path d="M4 7h16l-2 10H6L4 7Z"/><path d="m8 7 4-4 4 4M8 21h.01M16 21h.01"/>',
+ wishlist:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',
+ goals:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+ pantry:'<path d="M4 5h16v16H4V5Z"/><path d="M4 10h16M9 5v5M15 10v11"/>',
+ reminders:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>'
+};
+function ensureFocusNav(){
+ const nav=document.querySelector('.nav-menu'); if(!nav||nav.querySelector('[data-view="focus"]'))return;
+ const workout=nav.querySelector('[data-view="workout"]'), nutrition=nav.querySelector('[data-view="diet"]');
+ const b=document.createElement('button');b.type='button';b.className='nav-item';b.dataset.view='focus';b.innerHTML='<span class="v51-nav-label">Focus</span>';b.onclick=()=>window.switchView?.('focus');
+ (nutrition||workout)?.insertAdjacentElement('afterend',b); window.OmniIcons?.refresh?.();
+}
+function normalizeNav(){
+ ensureFocusNav();
+ document.querySelectorAll('.nav-menu .nav-item[data-view]').forEach(el=>{const label=LABELS[el.dataset.view];if(!label)return;[...el.childNodes].forEach(x=>{if(x.nodeType===3&&x.textContent.trim())x.remove();else if(x.nodeType===1&&x.matches('span:not(.v48-nav-icon):not(.v35-nav-emoji), .v47-nav-label'))x.remove()});let n=el.querySelector(':scope > .v51-nav-label');if(!n){n=document.createElement('span');n.className='v51-nav-label';el.appendChild(n)}n.textContent=label;});
+ const active=document.querySelector('.view.active')?.id?.replace(/^view-/,'');const title=document.getElementById('view-title');if(title&&LABELS[active])title.textContent=LABELS[active];
+}
+function normalizeOrganizeIcons(){
+ Object.entries(HERO).forEach(([view,path])=>{const el=document.querySelector(`#view-${view} .org-hero-icon`);if(!el)return;el.classList.add('v51-svg-icon');el.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`});
+}
+function cleanTaskTabs(){const names={kanban:'Kanban',matrix:'Matrix',list:'List',gallery:'Gallery',calendar:'Calendar',groups:'Groups'};document.querySelectorAll('#view-tasks [data-taskview]').forEach(b=>{if(names[b.dataset.taskview])b.textContent=names[b.dataset.taskview]})}
+function normalizeHelpCopy(){const h=document.getElementById('view-help');if(!h)return;const walker=document.createTreeWalker(h,NodeFilter.SHOW_TEXT);let n;while(n=walker.nextNode()){n.nodeValue=n.nodeValue.replace(/Budget & Finance/g,'Finance').replace(/Diet & Meals/g,'Nutrition').replace(/Master Calendar/g,'Calendar').replace(/Brain Dump/g,'Notes')}}
+let queued=false;function refresh(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;normalizeNav();normalizeOrganizeIcons();cleanTaskTabs();normalizeHelpCopy()})}
+new MutationObserver(ms=>{const relevant=ms.some(m=>[...m.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('.nav-item,.org-hero-icon,[data-taskview],#help-content,#help-nav')||n.querySelector?.('.nav-item,.org-hero-icon,[data-taskview],#help-content,#help-nav'))));if(relevant)refresh()}).observe(document.body,{childList:true,subtree:true});refresh();
+const old=window.switchView;if(typeof old==='function'&&!old.__v51){const f=function(v){const r=old.apply(this,arguments);queueMicrotask(refresh);return r};f.__v51=true;window.switchView=f}
+window.OmniQA51={refresh,labels:LABELS};document.documentElement.dataset.omniosVersion='53';document.title='OmniOS v53 — Interaction & Performance Fixed';
+})();
+</script>
+
+
+<script id="omnios-v52-integrity-js">
+(function(){'use strict';
+const stamp52=()=>{};
+stamp52();new MutationObserver(stamp52).observe(document.documentElement,{attributes:true,attributeFilter:['data-omnios-version']});
+window.omniIntegrityV52=function(){
+  const issues=[],arr=x=>Array.isArray(x)?x:[],eq=(a,b)=>String(a)===String(b),finite=x=>Number.isFinite(Number(x));
+  const goalUse=new Map(),wishUse=new Map();
+  arr(state.goals).forEach(g=>{if(g.linkedWishlistId!=null){const k=String(g.linkedWishlistId);goalUse.set(k,(goalUse.get(k)||0)+1);if(!arr(state.wishlist).some(w=>eq(w.id,g.linkedWishlistId)))issues.push(`goal:${g.id}:missing-wishlist`)}});
+  arr(state.wishlist).forEach(w=>{if(w.linkedGoalId!=null){const k=String(w.linkedGoalId);wishUse.set(k,(wishUse.get(k)||0)+1);if(!arr(state.goals).some(g=>eq(g.id,w.linkedGoalId)))issues.push(`wishlist:${w.id}:missing-goal`)}});
+  for(const [id,n] of goalUse)if(n>1)issues.push(`wishlist:${id}:linked-by-${n}-goals`);for(const [id,n] of wishUse)if(n>1)issues.push(`goal:${id}:linked-by-${n}-wishlist-items`);
+  arr(state.groceryLists).forEach(l=>arr(l.items).forEach(i=>{if(!finite(i.qty)||Number(i.qty)<0)issues.push(`grocery:${l.id}:item:${i.id}:qty`);if(!finite(i.estimatedCost)||Number(i.estimatedCost)<0)issues.push(`grocery:${l.id}:item:${i.id}:estimatedCost`)}));
+  arr(state.pantry).forEach(p=>{if(!finite(p.qty)||Number(p.qty)<0)issues.push(`pantry:${p.id}:qty`);if(!finite(p._nutritionDebt)||Number(p._nutritionDebt)<0)issues.push(`pantry:${p.id}:nutritionDebt`)});
+  const activeRestocks=arr(state.groceryLists).filter(l=>l.v47AutoRestock&&!l.archived&&l.status!=='completed');if(activeRestocks.length>1)issues.push(`restock:multiple-active:${activeRestocks.length}`);
+  const groups=new Map();arr(state.transactions).filter(t=>t.isTransfer&&t.transferGroupId).forEach(t=>{const k=String(t.transferGroupId);(groups.get(k)||groups.set(k,[]).get(k)).push(t)});for(const [k,a] of groups){const out=a.filter(t=>t.transferDirection==='out'),inn=a.filter(t=>t.transferDirection==='in');if(out.length!==1||inn.length!==1||Math.abs(Number(out[0]?.amount||0)-Number(inn[0]?.amount||0))>1e-9)issues.push(`transfer:${k}:pair`)}
+  arr(state.dietFoods).forEach(f=>{if(f.pantryId&&!arr(state.pantry).some(p=>eq(p.id,f.pantryId)))issues.push(`food:${f.id}:missing-pantry`)});
+  return issues;
+};
+})();
+</script>
+
+<style id="omnios-v53-interaction-css">
+/* ===== OmniOS v53 — form-control + responsiveness repair ===== */
+:root{--v53-control-h:38px}
+/* The older global -webkit-appearance:none removed arrows/check marks without replacing them. */
+select,.form-select,.filter-select{
+  appearance:none!important;-webkit-appearance:none!important;
+  min-height:var(--v53-control-h);padding-right:32px!important;
+  background-color:var(--bg-base)!important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2371787f' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E")!important;
+  background-repeat:no-repeat!important;background-position:right 10px center!important;background-size:14px 14px!important;
+  cursor:pointer;line-height:1.2;
+}
+select:hover,.form-select:hover,.filter-select:hover{border-color:var(--border-light)!important;background-color:var(--bg-elevated)!important}
+select:focus-visible,.form-select:focus-visible,.filter-select:focus-visible{outline:2px solid color-mix(in srgb,var(--accent-cyan) 42%,transparent)!important;outline-offset:1px;border-color:var(--accent-cyan)!important}
+select:disabled,.form-select:disabled,.filter-select:disabled{opacity:.5;cursor:not-allowed}
+select option{background:var(--bg-surface);color:var(--text-primary)}
+/* Real, visible selection boxes. Weekday pills remain intentionally visually hidden. */
+input[type="checkbox"]:not([data-event-weekday]),input[type="radio"]{
+  appearance:none!important;-webkit-appearance:none!important;box-sizing:border-box;
+  width:18px;height:18px;min-width:18px;min-height:18px;margin:0 6px 0 0;vertical-align:-3px;
+  border:1.5px solid var(--border-light);background:var(--bg-base);box-shadow:inset 0 0 0 1px rgba(255,255,255,.015);cursor:pointer;
+}
+input[type="checkbox"]:not([data-event-weekday]){border-radius:5px}
+input[type="checkbox"]:not([data-event-weekday]):checked{
+  border-color:var(--accent-cyan);background-color:var(--accent-cyan);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23091014' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 4 4L19 6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center;background-size:13px 13px;
+}
+input[type="radio"]{border-radius:50%}
+input[type="radio"]:checked{border:5px solid var(--accent-cyan);background:var(--bg-base)}
+input[type="checkbox"]:not([data-event-weekday]):focus-visible,input[type="radio"]:focus-visible{outline:2px solid color-mix(in srgb,var(--accent-cyan) 42%,transparent);outline-offset:2px}
+.v25-group-check{background-color:var(--bg-surface)!important;border:1.5px solid var(--border-light)!important;margin:0!important}
+.v25-group-check:checked{background-color:var(--accent-cyan)!important;border-color:var(--accent-cyan)!important}
+/* Navigation must feel immediate; the old 250 ms page transition amplified perceived latency. */
+.view.active{animation:v53-view-in .10s ease-out!important}
+@keyframes v53-view-in{from{opacity:.82}to{opacity:1}}
+.nav-menu .nav-item,.mobile-nav button{touch-action:manipulation;user-select:none}
+.nav-menu .nav-item:active,.mobile-nav button:active{transform:none!important}
+@media(max-width:760px){:root{--v53-control-h:44px}select,.form-select,.filter-select{background-position:right 12px center!important;padding-right:36px!important}}
+</style>
+<script id="omnios-v53-interaction-js">
+(function(){'use strict';
+const BUILD={version:'53',name:'Interaction & Performance Fixed'};
+function stamp(){document.documentElement.dataset.omniosVersion='53';document.title='OmniOS v53 — Interaction & Performance Fixed';window.OmniBuild=BUILD}
+stamp();
+// One authoritative delegated navigation click prevents duplicate/stacked item handlers from requiring a second click.
+document.addEventListener('click',e=>{
+  const desktop=e.target.closest?.('.nav-menu .nav-item[data-view]');
+  const mobile=e.target.closest?.('.mobile-nav [data-v35-mobile-view],.mobile-nav [data-mobile-view]');
+  const el=desktop||mobile;if(!el)return;
+  const target=desktop?.dataset.view||mobile?.dataset.v35MobileView||mobile?.dataset.mobileView;if(!target)return;
+  e.preventDefault();e.stopImmediatePropagation();
+  window.__omniLastUserNav53={target,at:performance.now()};
+  window.switchView?.(target);
+},true);
+// Keyboard parity for legacy DIV nav items.
+document.addEventListener('keydown',e=>{if(!['Enter',' '].includes(e.key))return;const el=e.target.closest?.('.nav-menu .nav-item[data-view]');if(!el||/^(BUTTON|A)$/.test(el.tagName))return;e.preventDefault();window.switchView?.(el.dataset.view)},true);
+// Incremental hygiene only for nodes that are actually added, never a full-document rescan.
+const hygienize=root=>{if(root?.nodeType!==1)return;const nodes=[...(root.matches?.('button')?[root]:[]),...(root.querySelectorAll?.('button')||[])];nodes.forEach(b=>{if(!b.hasAttribute('type'))b.type='button';if(!b.getAttribute('aria-label')&&!(b.textContent||'').trim()&&b.title)b.setAttribute('aria-label',b.title)})};
+new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(hygienize))).observe(document.body,{childList:true,subtree:true});
+// Keep item-photo decoration responsive when a static modal becomes visible, without watching every class mutation.
+document.addEventListener('click',e=>{if(e.target.closest?.('[data-quick-type],#global-add-btn,[data-open-note],[data-open-goal],[data-org-type],[data-v35-project]'))requestAnimationFrame(()=>window.OmniItemImages?.refresh?.())},true);
+// Small diagnostic used by QA.
+window.omniInteractionDiagnostics53=()=>({version:document.documentElement.dataset.omniosVersion,active:document.querySelector('.view.active')?.id?.replace(/^view-/,''),selects:[...document.querySelectorAll('select')].length,observersNote:'legacy global observers reduced/narrowed',lastNav:window.__omniLastUserNav53||null});
+})();
+</script>
+
+<style id="omnios-v53-icon-authority-css">
+/* ===== OmniOS v53 — custom icon authority hotfix =====
+   The v48 consistency pass intentionally hid legacy icon images with !important.
+   These rules restore custom images only when they have actually loaded, while
+   keeping the v48 SVG as the reliable fallback. */
+.nav-menu .nav-item > .nav-icon-img.omni-custom-icon-active{
+  display:block!important;
+  width:18px!important;height:18px!important;min-width:18px!important;
+  object-fit:contain!important;border-radius:4px!important;flex:0 0 18px!important;
+}
+.nav-menu .nav-item.omni-has-custom-icon > .v48-nav-icon,
+.nav-menu .nav-item.omni-has-custom-icon > .icon-fallback,
+.nav-menu .nav-item.omni-has-custom-icon > .v35-nav-emoji,
+.nav-menu .nav-item.omni-has-custom-icon > .nav-icon{
+  display:none!important;
+}
+.logo .logo-icon-img.omni-custom-icon-active{
+  display:block!important;
+  width:28px!important;height:28px!important;object-fit:contain!important;
+}
+.mobile-nav button > .omni-mobile-custom-icon{
+  display:none!important;
+  width:20px!important;height:20px!important;object-fit:contain!important;
+  border-radius:4px!important;margin:auto!important;flex:0 0 20px!important;
+}
+.mobile-nav button.omni-has-custom-icon > .omni-mobile-custom-icon.omni-custom-icon-active{display:block!important}
+.mobile-nav button.omni-has-custom-icon > .v48-mobile-icon,
+.mobile-nav button.omni-has-custom-icon > .nav-icon{display:none!important}
+[data-v35-more] > .omni-more-custom-icon{
+  display:none!important;width:24px!important;height:24px!important;object-fit:contain!important;
+  border-radius:5px!important;flex:0 0 24px!important;
+}
+[data-v35-more].omni-has-custom-icon > .omni-more-custom-icon.omni-custom-icon-active{display:block!important}
+[data-v35-more].omni-has-custom-icon > span:first-of-type{display:none!important}
+</style>
+
+<script id="omnios-v53-icon-authority-js">
+(function(){
+'use strict';
+
+/* Extend the original custom-icon manifest to every current sidebar destination.
+   Existing filenames are preserved for backward compatibility. */
+const EXTRA_ICON_MANIFEST_53 = [
+  {key:'today',file:'Today.png',label:'Today'},
+  {key:'inbox',file:'Inbox.png',label:'Inbox'},
+  {key:'planner',file:'Planner.png',label:'Planner'},
+  {key:'projects',file:'Projects.png',label:'Projects'},
+  {key:'diet',file:'Nutrition.png',label:'Nutrition'},
+  {key:'life-hub',file:'LifeHub.png',label:'Life Hub'},
+  {key:'grocery',file:'Grocery.png',label:'Grocery'},
+  {key:'wishlist',file:'Wishlist.png',label:'Wishlist'},
+  {key:'goals',file:'Goals.png',label:'Goals'},
+  {key:'pantry',file:'Pantry.png',label:'Pantry'},
+  {key:'reminders',file:'Reminders.png',label:'Reminders'},
+  {key:'data-center',file:'DataCenter.png',label:'Data Center'},
+  {key:'activity',file:'Activity.png',label:'Activity'},
+  {key:'templates',file:'Templates.png',label:'Templates'},
+  {key:'help',file:'Help.png',label:'Help'}
+];
+
+try{
+  if(typeof ICON_MANIFEST!=='undefined' && Array.isArray(ICON_MANIFEST)){
+    EXTRA_ICON_MANIFEST_53.forEach(entry=>{
+      if(!ICON_MANIFEST.some(x=>x && x.key===entry.key)) ICON_MANIFEST.push(entry);
+    });
+  }
+}catch(e){ console.warn('OmniOS icon manifest extension failed',e); }
+
+function manifest53(){
+  try{
+    if(typeof ICON_MANIFEST!=='undefined' && Array.isArray(ICON_MANIFEST)) return ICON_MANIFEST;
+  }catch(e){}
+  return EXTRA_ICON_MANIFEST_53;
+}
+function entryFor53(key){
+  return manifest53().find(x=>x && x.key===key) || null;
+}
+function folderEnabled53(){
+  try{return !!getSetting('appearance.customIconsEnabled',false)}catch(e){return false}
+}
+function uploaded53(key){
+  try{return state?.customIcons?.[key] || ''}catch(e){return ''}
+}
+function source53(key,file){
+  const up=uploaded53(key);
+  if(up) return up;
+  return folderEnabled53() && file ? ('icons/'+file) : '';
+}
+function clearImage53(img,host){
+  if(!img)return;
+  img.onload=null;img.onerror=null;
+  img.removeAttribute('src');
+  img.classList.remove('omni-custom-icon-active');
+  img.style.removeProperty('display');
+  host?.classList.remove('omni-has-custom-icon');
+}
+function loadImage53(img,host,src){
+  if(!img)return;
+  if(!src){clearImage53(img,host);return}
+  const request=src;
+  img.dataset.omniIconRequest=request;
+  const activate=()=>{
+    if(img.dataset.omniIconRequest!==request)return;
+    img.classList.add('omni-custom-icon-active');
+    host?.classList.add('omni-has-custom-icon');
+  };
+  const fail=()=>{
+    if(img.dataset.omniIconRequest!==request)return;
+    img.classList.remove('omni-custom-icon-active');
+    host?.classList.remove('omni-has-custom-icon');
+  };
+  img.onload=activate;img.onerror=fail;
+  if(img.getAttribute('src')!==src) img.src=src;
+  if(img.complete){
+    if(img.naturalWidth>0) activate();
+    else if(img.getAttribute('src')===src) fail();
+  }
+}
+function ensureDesktopSlot53(item){
+  const key=item?.dataset?.view;if(!key)return;
+  const entry=entryFor53(key);if(!entry)return;
+  let img=item.querySelector(':scope > .nav-icon-img');
+  if(!img){
+    img=document.createElement('img');
+    img.className='nav-icon-img';
+    img.alt='';
+    item.insertBefore(img,item.firstChild);
+  }
+  img.dataset.iconKey=key;
+  img.dataset.iconFile=entry.file;
+  loadImage53(img,item,source53(key,entry.file));
+}
+function ensureLogo53(){
+  const logo=document.querySelector('.logo'); if(!logo)return;
+  const entry=entryFor53('logo'); if(!entry)return;
+  let img=logo.querySelector(':scope > .logo-icon-img');
+  if(!img){
+    img=document.createElement('img');
+    img.className='nav-icon-img logo-icon-img';
+    img.alt='';
+    logo.insertBefore(img,logo.firstChild);
+  }
+  img.dataset.iconKey='logo'; img.dataset.iconFile=entry.file;
+  /* Never mark .logo as omni-has-custom-icon: doing so must not hide the app title. */
+  const src=source53('logo',entry.file);
+  if(!src){clearImage53(img,null);return}
+  const request=src;img.dataset.omniIconRequest=request;
+  const ok=()=>{if(img.dataset.omniIconRequest===request)img.classList.add('omni-custom-icon-active')};
+  const no=()=>{if(img.dataset.omniIconRequest===request)img.classList.remove('omni-custom-icon-active')};
+  img.onload=ok;img.onerror=no;
+  if(img.getAttribute('src')!==src)img.src=src;
+  if(img.complete){if(img.naturalWidth>0)ok();else no()}
+}
+function ensureMobileSlot53(button){
+  const key=button?.dataset?.v35MobileView || button?.dataset?.mobileView;if(!key)return;
+  const entry=entryFor53(key);if(!entry)return;
+  let img=button.querySelector(':scope > .omni-mobile-custom-icon');
+  if(!img){
+    img=document.createElement('img');img.className='omni-mobile-custom-icon';img.alt='';
+    button.insertBefore(img,button.firstChild);
+  }
+  img.dataset.iconKey=key;img.dataset.iconFile=entry.file;
+  loadImage53(img,button,source53(key,entry.file));
+}
+function ensureMoreSlot53(button){
+  const key=button?.dataset?.v35More;if(!key)return;
+  const entry=entryFor53(key);if(!entry)return;
+  let img=button.querySelector(':scope > .omni-more-custom-icon');
+  if(!img){
+    img=document.createElement('img');img.className='omni-more-custom-icon';img.alt='';
+    button.insertBefore(img,button.firstChild);
+  }
+  img.dataset.iconKey=key;img.dataset.iconFile=entry.file;
+  loadImage53(img,button,source53(key,entry.file));
+}
+function applyCustomIcons53(){
+  ensureLogo53();
+  document.querySelectorAll('.nav-menu .nav-item[data-view]').forEach(ensureDesktopSlot53);
+  document.querySelectorAll('.mobile-nav button[data-v35-mobile-view],.mobile-nav button[data-mobile-view]').forEach(ensureMobileSlot53);
+  document.querySelectorAll('[data-v35-more]').forEach(ensureMoreSlot53);
+}
+
+/* Replace the conflicting legacy implementation so uploads, resets and saveState()
+   all call the fixed renderer. */
+try{ applyCustomIcons = applyCustomIcons53; }catch(e){}
+window.applyCustomIcons=applyCustomIcons53;
+
+/* Keep custom icons correct after later navigation renderers rebuild the sidebar/mobile bar. */
+let iconRefreshQueued53=false;
+function scheduleIconRefresh53(){
+  if(iconRefreshQueued53)return;iconRefreshQueued53=true;
+  requestAnimationFrame(()=>{iconRefreshQueued53=false;applyCustomIcons53()});
+}
+const iconObserver53=new MutationObserver(ms=>{
+  if(ms.some(m=>[...m.addedNodes].some(n=>n.nodeType===1))) scheduleIconRefresh53();
+});
+iconObserver53.observe(document.body,{childList:true,subtree:true});
+
+/* Make settings rerenders immediately reflect the enlarged manifest. */
+try{
+  const baseRenderSettings53=window.renderSettings;
+  if(typeof baseRenderSettings53==='function' && !baseRenderSettings53.__icon53){
+    const wrapped=function(){const r=baseRenderSettings53.apply(this,arguments);scheduleIconRefresh53();return r};
+    wrapped.__icon53=true;window.renderSettings=wrapped;
+    try{renderSettings=wrapped}catch(e){}
+  }
+}catch(e){}
+
+try{if(typeof renderSettings==='function')renderSettings()}catch(e){}
+applyCustomIcons53();
+window.OmniCustomIcons53={
+  refresh:applyCustomIcons53,
+  manifest:()=>manifest53().map(x=>({...x})),
+  status:()=>({
+    folderEnabled:folderEnabled53(),
+    uploaded:Object.keys((window.state||{}).customIcons||{}),
+    desktop:[...document.querySelectorAll('.nav-menu .nav-item[data-view]')].map(x=>({view:x.dataset.view,custom:x.classList.contains('omni-has-custom-icon')}))
+  })
+};
+})();
+</script>
+
+
+
+<style id="omnios-v54-branding-css">
+/* ===== OmniOS v54 — editable app branding ===== */
+.logo.omni-branding-ready{display:flex;flex-direction:column;align-items:stretch;gap:0}
+.logo.omni-branding-ready>.logo-icon-img{display:none!important}
+.omni-brand-text-wrap{min-width:0;display:flex;flex-direction:column;gap:2px}
+.omni-brand-title,.omni-brand-tagline{margin:0;min-width:0;overflow-wrap:anywhere}
+.omni-brand-title{line-height:1.08}
+.omni-brand-tagline{line-height:1.25}
+.omni-brand-logo-wrap{display:none;width:100%;min-width:0}
+.omni-brand-logo-img{display:block;max-width:100%;width:auto;object-fit:contain}
+.logo[data-brand-mode="logo"] .omni-brand-text-wrap{display:none!important}
+.logo[data-brand-mode="logo"] .omni-brand-logo-wrap{display:flex}
+.logo[data-brand-mode="text"] .omni-brand-logo-wrap{display:none!important}
+.brand54-preview{padding:14px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-base);margin:10px 0 14px;min-height:74px;display:flex;align-items:center}
+.brand54-preview-inner{width:100%}
+.brand54-preview-logo{display:block;max-width:100%;object-fit:contain}
+.brand54-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.brand54-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.brand54-inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.brand54-color{width:48px!important;min-width:48px!important;height:38px!important;padding:3px!important;cursor:pointer}
+.brand54-mode{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 12px}
+.brand54-mode button{justify-content:center}
+.brand54-mode button.active{background:rgba(6,182,212,.12);border-color:var(--accent-cyan);color:var(--accent-cyan)}
+.brand54-upload-preview{width:72px;height:48px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);display:grid;place-items:center;overflow:hidden;flex:none}
+.brand54-upload-preview img{max-width:100%;max-height:100%;object-fit:contain}
+.brand54-help{font-size:.69rem;color:var(--text-muted);line-height:1.45;margin-top:5px}
+@media(max-width:760px){.brand54-grid,.brand54-grid-3{grid-template-columns:1fr}.brand54-mode{grid-template-columns:1fr 1fr}}
+</style>
+
+<script id="omnios-v54-branding-js">
+(function(){
+'use strict';
+const BRAND54_DEFAULTS={
+  mode:'text',
+  title:'OmniOS',
+  tagline:'Ultimate Life Planner',
+  font:'system',
+  titleSize:20,
+  titleWeight:800,
+  titleItalic:false,
+  titleLetterSpacing:-0.5,
+  taglineSize:11,
+  taglineWeight:400,
+  taglineItalic:false,
+  taglineLetterSpacing:0,
+  alignment:'left',
+  useThemeColors:true,
+  titleColor:'#f4f4f5',
+  taglineColor:'#71717a',
+  logoHeight:44
+};
+function brand54(){
+  state.settings=state.settings||{};
+  state.settings.appearance=state.settings.appearance||{};
+  const cur=state.settings.appearance.branding;
+  state.settings.appearance.branding=(cur&&typeof cur==='object')?{...BRAND54_DEFAULTS,...cur}:{...BRAND54_DEFAULTS};
+  return state.settings.appearance.branding;
+}
+function clamp54(v,min,max,fallback){v=Number(v);return Number.isFinite(v)?Math.min(max,Math.max(min,v)):fallback}
+function escAttr54(v){return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function font54(v){
+  return ({system:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif",serif:"Georgia,'Times New Roman',serif",mono:"'SFMono-Regular',Consolas,'Liberation Mono',monospace",humanist:"'Trebuchet MS','Segoe UI',sans-serif"})[v]||"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
+}
+function currentLogo54(){
+  return state.brandingLogo || state.customIcons?.logo || '';
+}
+function ensureBrandDom54(){
+  const host=document.querySelector('.logo');if(!host)return null;
+  host.classList.add('omni-branding-ready');
+  let textWrap=host.querySelector(':scope > .omni-brand-text-wrap');
+  if(!textWrap){
+    textWrap=document.createElement('div');textWrap.className='omni-brand-text-wrap';
+    const oldH=host.querySelector(':scope > h1');
+    const oldP=host.querySelector(':scope > p');
+    const title=document.createElement('div');title.className='omni-brand-title';
+    const tag=document.createElement('div');tag.className='omni-brand-tagline';
+    textWrap.append(title,tag);
+    if(oldH)oldH.replaceWith(textWrap);else host.appendChild(textWrap);
+    if(oldP)oldP.remove();
+  }
+  let logoWrap=host.querySelector(':scope > .omni-brand-logo-wrap');
+  if(!logoWrap){
+    logoWrap=document.createElement('div');logoWrap.className='omni-brand-logo-wrap';
+    const img=document.createElement('img');img.className='omni-brand-logo-img';img.alt='';
+    logoWrap.appendChild(img);host.insertBefore(logoWrap,textWrap);
+  }
+  return host;
+}
+function applyBranding54(){
+  const b=brand54(),host=ensureBrandDom54();if(!host)return;
+  host.dataset.brandMode=b.mode==='logo'?'logo':'text';
+  const tw=host.querySelector('.omni-brand-text-wrap');
+  const title=host.querySelector('.omni-brand-title');
+  const tag=host.querySelector('.omni-brand-tagline');
+  const lw=host.querySelector('.omni-brand-logo-wrap');
+  const img=host.querySelector('.omni-brand-logo-img');
+  const align=b.alignment==='center'?'center':'left';
+  host.style.textAlign=align;
+  if(tw){tw.style.alignItems=align==='center'?'center':'flex-start'}
+  if(title){
+    title.textContent=b.title||'OmniOS';
+    title.style.fontFamily=font54(b.font);
+    title.style.fontSize=clamp54(b.titleSize,14,36,20)+'px';
+    title.style.fontWeight=String(clamp54(b.titleWeight,300,900,800));
+    title.style.fontStyle=b.titleItalic?'italic':'normal';
+    title.style.letterSpacing=clamp54(b.titleLetterSpacing,-2,4,-.5)+'px';
+    title.style.color=b.useThemeColors?'var(--text-primary)':(b.titleColor||'var(--text-primary)');
+  }
+  if(tag){
+    tag.textContent=b.tagline||'';
+    tag.style.display=b.tagline?'block':'none';
+    tag.style.fontFamily=font54(b.font);
+    tag.style.fontSize=clamp54(b.taglineSize,8,18,11)+'px';
+    tag.style.fontWeight=String(clamp54(b.taglineWeight,300,800,400));
+    tag.style.fontStyle=b.taglineItalic?'italic':'normal';
+    tag.style.letterSpacing=clamp54(b.taglineLetterSpacing,-1,4,0)+'px';
+    tag.style.color=b.useThemeColors?'var(--text-muted)':(b.taglineColor||'var(--text-muted)');
+  }
+  if(lw){lw.style.justifyContent=align==='center'?'center':'flex-start'}
+  if(img){
+    const src=currentLogo54();
+    img.style.height=clamp54(b.logoHeight,24,88,44)+'px';
+    img.style.maxHeight=clamp54(b.logoHeight,24,88,44)+'px';
+    if(src){if(img.getAttribute('src')!==src)img.src=src;img.style.display='block'}
+    else{img.removeAttribute('src');img.style.display='none'}
+  }
+  const name=(b.title||'OmniOS').trim();
+  document.title=(name||'OmniOS')+' — Personal OS';
+}
+function previewBrand54(){
+  const box=document.getElementById('brand54-preview');if(!box)return;
+  const b=brand54(),src=currentLogo54(),align=b.alignment==='center'?'center':'left';
+  box.style.textAlign=align;
+  if(b.mode==='logo'){
+    box.innerHTML=src?`<div class="brand54-preview-inner" style="display:flex;justify-content:${align==='center'?'center':'flex-start'}"><img class="brand54-preview-logo" src="${src}" alt="Logo preview" style="height:${clamp54(b.logoHeight,24,88,44)}px"></div>`:`<div class="text-muted text-sm">Upload a logo to preview logo mode.</div>`;
+  }else{
+    box.innerHTML=`<div class="brand54-preview-inner"><div style="font-family:${font54(b.font)};font-size:${clamp54(b.titleSize,14,36,20)}px;font-weight:${clamp54(b.titleWeight,300,900,800)};font-style:${b.titleItalic?'italic':'normal'};letter-spacing:${clamp54(b.titleLetterSpacing,-2,4,-.5)}px;color:${b.useThemeColors?'var(--text-primary)':b.titleColor};line-height:1.08">${escapeHtml(b.title||'OmniOS')}</div>${b.tagline?`<div style="margin-top:3px;font-family:${font54(b.font)};font-size:${clamp54(b.taglineSize,8,18,11)}px;font-weight:${clamp54(b.taglineWeight,300,800,400)};font-style:${b.taglineItalic?'italic':'normal'};letter-spacing:${clamp54(b.taglineLetterSpacing,-1,4,0)}px;color:${b.useThemeColors?'var(--text-muted)':b.taglineColor};line-height:1.25">${escapeHtml(b.tagline)}</div>`:''}</div>`;
+  }
+}
+function saveBrand54(){saveState();applyBranding54();previewBrand54()}
+window.brand54Set=function(key,value){const b=brand54();b[key]=value;saveBrand54();renderBrandControls54()};
+window.brand54Input=function(key,value,type){const b=brand54();b[key]=type==='number'?Number(value):value;saveBrand54()};
+window.brand54Toggle=function(key,checked){const b=brand54();b[key]=!!checked;saveBrand54();renderBrandControls54()};
+window.brand54Upload=function(input){
+  const f=input.files?.[0];if(!f)return;
+  if(!/^image\//.test(f.type)){window.toast?.('Choose an image file');input.value='';return}
+  const reader=new FileReader();reader.onload=e=>{state.brandingLogo=e.target.result;brand54().mode='logo';saveState();applyBranding54();renderBrandControls54();window.toast?.('Brand logo saved')};reader.readAsDataURL(f);input.value='';
+};
+window.brand54RemoveLogo=function(){delete state.brandingLogo;if(state.customIcons?.logo)delete state.customIcons.logo;brand54().mode='text';saveState();applyBranding54();renderBrandControls54();try{window.applyCustomIcons?.()}catch(e){}window.toast?.('Brand logo removed')};
+window.brand54Reset=function(){state.settings.appearance.branding={...BRAND54_DEFAULTS};delete state.brandingLogo;saveState();applyBranding54();renderBrandControls54();window.toast?.('Branding reset')};
+function renderBrandSettings54(){
+  const b=brand54(),logo=currentLogo54();
+  return `<div class="card settings-section" id="brand54-settings-card">
+    <div class="card-header"><div><h3 class="card-title">Branding</h3><div class="settings-row-desc">Replace the OmniOS name and tagline with your own formatted text, or use a logo instead.</div></div><button type="button" class="btn btn-sm" onclick="brand54Reset()">Reset</button></div>
+    <div class="brand54-mode">
+      <button type="button" class="btn ${b.mode==='text'?'active':''}" onclick="brand54Set('mode','text')">Text branding</button>
+      <button type="button" class="btn ${b.mode==='logo'?'active':''}" onclick="brand54Set('mode','logo')">Logo branding</button>
+    </div>
+    <div class="brand54-preview" id="brand54-preview"></div>
+    ${b.mode==='text'?`
+      <div class="brand54-grid">
+        <div class="form-group"><label class="form-label">App name</label><input class="form-input" value="${escAttr54(b.title)}" oninput="brand54Input('title',this.value)"></div>
+        <div class="form-group"><label class="form-label">Tagline</label><input class="form-input" value="${escAttr54(b.tagline)}" placeholder="Optional" oninput="brand54Input('tagline',this.value)"></div>
+      </div>
+      <div class="brand54-grid-3">
+        <div class="form-group"><label class="form-label">Font</label><select class="form-select" onchange="brand54Set('font',this.value)"><option value="system" ${b.font==='system'?'selected':''}>System / Inter</option><option value="humanist" ${b.font==='humanist'?'selected':''}>Humanist</option><option value="serif" ${b.font==='serif'?'selected':''}>Serif</option><option value="mono" ${b.font==='mono'?'selected':''}>Monospace</option></select></div>
+        <div class="form-group"><label class="form-label">Alignment</label><select class="form-select" onchange="brand54Set('alignment',this.value)"><option value="left" ${b.alignment==='left'?'selected':''}>Left</option><option value="center" ${b.alignment==='center'?'selected':''}>Center</option></select></div>
+        <div class="form-group"><label class="form-label">Colors</label><label class="brand54-inline" style="min-height:40px"><input type="checkbox" ${b.useThemeColors?'checked':''} onchange="brand54Toggle('useThemeColors',this.checked)"> <span class="text-sm">Follow theme</span></label></div>
+      </div>
+      <div class="settings-row-desc" style="margin:4px 0 8px">Title formatting</div>
+      <div class="brand54-grid-3">
+        <div class="form-group"><label class="form-label">Size (px)</label><input type="number" min="14" max="36" class="form-input" value="${b.titleSize}" oninput="brand54Input('titleSize',this.value,'number')"></div>
+        <div class="form-group"><label class="form-label">Weight</label><select class="form-select" onchange="brand54Set('titleWeight',Number(this.value))">${[400,500,600,700,800,900].map(v=>`<option value="${v}" ${Number(b.titleWeight)===v?'selected':''}>${v}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Letter spacing</label><input type="number" step="0.1" min="-2" max="4" class="form-input" value="${b.titleLetterSpacing}" oninput="brand54Input('titleLetterSpacing',this.value,'number')"></div>
+      </div>
+      <div class="brand54-grid">
+        <div class="form-group"><label class="brand54-inline"><input type="checkbox" ${b.titleItalic?'checked':''} onchange="brand54Toggle('titleItalic',this.checked)"> <span class="form-label" style="margin:0">Italic title</span></label></div>
+        <div class="form-group"><label class="form-label">Title color</label><input type="color" class="form-input brand54-color" value="${escAttr54(b.titleColor)}" ${b.useThemeColors?'disabled':''} oninput="brand54Input('titleColor',this.value)"></div>
+      </div>
+      <div class="settings-row-desc" style="margin:4px 0 8px">Tagline formatting</div>
+      <div class="brand54-grid-3">
+        <div class="form-group"><label class="form-label">Size (px)</label><input type="number" min="8" max="18" class="form-input" value="${b.taglineSize}" oninput="brand54Input('taglineSize',this.value,'number')"></div>
+        <div class="form-group"><label class="form-label">Weight</label><select class="form-select" onchange="brand54Set('taglineWeight',Number(this.value))">${[300,400,500,600,700,800].map(v=>`<option value="${v}" ${Number(b.taglineWeight)===v?'selected':''}>${v}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Letter spacing</label><input type="number" step="0.1" min="-1" max="4" class="form-input" value="${b.taglineLetterSpacing}" oninput="brand54Input('taglineLetterSpacing',this.value,'number')"></div>
+      </div>
+      <div class="brand54-grid">
+        <div class="form-group"><label class="brand54-inline"><input type="checkbox" ${b.taglineItalic?'checked':''} onchange="brand54Toggle('taglineItalic',this.checked)"> <span class="form-label" style="margin:0">Italic tagline</span></label></div>
+        <div class="form-group"><label class="form-label">Tagline color</label><input type="color" class="form-input brand54-color" value="${escAttr54(b.taglineColor)}" ${b.useThemeColors?'disabled':''} oninput="brand54Input('taglineColor',this.value)"></div>
+      </div>`:`
+      <div class="settings-row" style="align-items:center">
+        <div class="brand54-inline" style="min-width:0"><div class="brand54-upload-preview">${logo?`<img src="${logo}" alt="Current logo">`:'<span class="text-muted text-sm">No logo</span>'}</div><div><div class="settings-row-label">Brand logo</div><div class="settings-row-desc">PNG, JPG, WebP, SVG, or another browser-supported image.</div></div></div>
+        <div class="brand54-inline"><input id="brand54-logo-upload" type="file" accept="image/*" style="display:none" onchange="brand54Upload(this)"><button class="btn btn-sm" type="button" onclick="document.getElementById('brand54-logo-upload').click()">${logo?'Replace':'Upload'}</button>${logo?'<button class="btn btn-sm btn-danger" type="button" onclick="brand54RemoveLogo()">Remove</button>':''}</div>
+      </div>
+      <div class="brand54-grid">
+        <div class="form-group"><label class="form-label">Logo height (px)</label><input type="number" min="24" max="88" class="form-input" value="${b.logoHeight}" oninput="brand54Input('logoHeight',this.value,'number')"></div>
+        <div class="form-group"><label class="form-label">Alignment</label><select class="form-select" onchange="brand54Set('alignment',this.value)"><option value="left" ${b.alignment==='left'?'selected':''}>Left</option><option value="center" ${b.alignment==='center'?'selected':''}>Center</option></select></div>
+      </div><div class="brand54-help">Logo mode replaces both the app name and tagline in the sidebar. Switch back to Text branding at any time without losing your text formatting.</div>`}
+  </div>`;
+}
+function renderBrandControls54(){
+  const settings=document.getElementById('settings-content');
+  if(!settings)return;
+  const isAppearance=typeof currentSettingsTab!=='undefined' && currentSettingsTab==='appearance';
+  if(!isAppearance)return;
+  const old=document.getElementById('brand54-settings-card');
+  const wrap=document.createElement('div');wrap.innerHTML=renderBrandSettings54();const fresh=wrap.firstElementChild;
+  if(old)old.replaceWith(fresh);else settings.insertBefore(fresh,settings.firstChild);
+  /* The logo is now managed in Branding, not in the navigation-icon list. */
+  settings.querySelectorAll('.icon-list-row').forEach(row=>{if(row.textContent.includes('App logo (sidebar top)'))row.remove()});
+  previewBrand54();
+}
+const baseRender54=window.renderSettings || (typeof renderSettings==='function'?renderSettings:null);
+if(typeof baseRender54==='function' && !baseRender54.__brand54){
+  const wrapped=function(){const r=baseRender54.apply(this,arguments);renderBrandControls54();return r};
+  wrapped.__brand54=true;window.renderSettings=wrapped;try{renderSettings=wrapped}catch(e){}
+}
+/* Existing backups can carry a previous custom logo; reuse it as a brand logo automatically only in logo mode. */
+brand54();
+applyBranding54();
+try{if(typeof currentSettingsTab!=='undefined'&&currentSettingsTab==='appearance')renderBrandControls54()}catch(e){}
+let brandQueued54=false;
+const brandObs54=new MutationObserver(ms=>{
+  if(brandQueued54)return;
+  if(!ms.some(m=>[...m.addedNodes].some(n=>n.nodeType===1)))return;
+  brandQueued54=true;requestAnimationFrame(()=>{brandQueued54=false;applyBranding54()});
+});
+brandObs54.observe(document.body,{childList:true,subtree:true});
+window.OmniBranding54={apply:applyBranding54,settings:()=>({...brand54()}),renderSettings:renderBrandControls54};
+})();
+</script>
+
+
+<!-- ===== OmniOS v55 — Everything Expansion ===== -->
+<style id="omnios-v55-css">
+:root{--v55-sidebar-w:240px;--v55-font-scale:1;--v55-wallpaper:none}
+html[data-v55-font-scale="small"]{--v55-font-scale:.93}html[data-v55-font-scale="large"]{--v55-font-scale:1.08}
+body{font-size:calc(16px * var(--v55-font-scale));background-image:var(--v55-wallpaper);background-size:cover;background-attachment:fixed}
+html[data-sidebar-mode="custom"] .sidebar{width:var(--v55-sidebar-w)!important}
+.v55-nav-icon{width:18px;height:18px;display:grid;place-items:center;flex:none}.v55-nav-icon svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.v55-studio-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}.v55-studio-head h3{font-size:1.4rem;margin:3px 0}.v55-kicker{font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;color:var(--accent-cyan);font-weight:800}.v55-studio-actions{display:flex;gap:7px;flex-wrap:wrap}
+.v55-tabs{display:flex;gap:4px;overflow:auto;padding:3px;margin-bottom:14px;border:1px solid var(--border-color);background:var(--bg-base);border-radius:10px;scrollbar-width:thin}.v55-tab{border:0;background:transparent;color:var(--text-muted);padding:8px 11px;border-radius:7px;cursor:pointer;white-space:nowrap;font:inherit;font-size:.72rem;font-weight:650}.v55-tab.active{background:var(--accent-cyan);color:#001014}.v55-tab:hover:not(.active){background:var(--bg-elevated);color:var(--text-primary)}
+.v55-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.v55-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.v55-grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}.v55-card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:15px;min-width:0}.v55-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}.v55-card-title{font-size:.88rem;font-weight:750}.v55-card-sub{font-size:.66rem;color:var(--text-muted);line-height:1.45;margin-top:2px}.v55-stat{padding:12px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base)}.v55-stat-v{font-size:1.35rem;font-weight:800}.v55-stat-l{font-size:.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}.v55-list{display:flex;flex-direction:column;gap:7px}.v55-row{display:flex;align-items:flex-start;gap:9px;padding:9px 10px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);min-width:0}.v55-row.clickable{cursor:pointer}.v55-row.clickable:hover{border-color:var(--accent-cyan);background:var(--bg-elevated)}.v55-row-ico{width:28px;height:28px;display:grid;place-items:center;border-radius:8px;background:var(--bg-elevated);flex:none}.v55-row-main{min-width:0;flex:1}.v55-row-title{font-size:.76rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.v55-row-meta{font-size:.62rem;color:var(--text-muted);line-height:1.4;margin-top:2px}.v55-pill{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border-color);border-radius:999px;padding:3px 7px;font-size:.58rem;color:var(--text-secondary);background:var(--bg-elevated)}.v55-pill.warn{color:var(--accent-yellow);border-color:color-mix(in srgb,var(--accent-yellow) 35%,var(--border-color))}.v55-pill.danger{color:var(--accent-red);border-color:color-mix(in srgb,var(--accent-red) 35%,var(--border-color))}.v55-pill.good{color:var(--accent-green);border-color:color-mix(in srgb,var(--accent-green) 35%,var(--border-color))}
+.v55-progress{height:7px;border-radius:99px;background:var(--bg-hover);overflow:hidden}.v55-progress>i{display:block;height:100%;background:var(--accent-cyan);border-radius:99px}.v55-empty{padding:24px 12px;border:1px dashed var(--border-light);border-radius:10px;text-align:center;color:var(--text-muted);font-size:.72rem}
+.v55-topbell{position:relative;width:38px;min-width:38px;height:38px;padding:0;justify-content:center}.v55-badge{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;display:grid;place-items:center;border-radius:999px;background:var(--accent-red);color:#fff;font-size:.55rem;font-weight:800;border:2px solid var(--bg-surface)}
+.v55-drawer-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1700;display:none}.v55-drawer-backdrop.open{display:block}.v55-drawer{position:fixed;right:0;top:0;bottom:0;width:min(460px,100vw);background:var(--bg-surface);border-left:1px solid var(--border-color);z-index:1710;transform:translateX(100%);transition:.2s transform;display:flex;flex-direction:column}.v55-drawer.open{transform:none}.v55-drawer-head{padding:14px 16px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center}.v55-drawer-body{padding:12px;overflow:auto;flex:1}.v55-drawer-foot{padding:10px 12px;border-top:1px solid var(--border-color);display:flex;gap:7px;flex-wrap:wrap}
+.v55-overlay{position:fixed;inset:0;z-index:1800;background:rgba(0,0,0,.68);display:none;align-items:flex-start;justify-content:center;padding:10vh 14px}.v55-overlay.open{display:flex}.v55-palette{width:min(820px,100%);border:1px solid var(--border-light);border-radius:16px;background:var(--bg-surface);box-shadow:0 24px 80px rgba(0,0,0,.45);overflow:hidden}.v55-palette-head{padding:12px;border-bottom:1px solid var(--border-color)}.v55-palette-input{width:100%;padding:12px 14px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base);color:var(--text-primary);font:inherit;font-size:.95rem;outline:none}.v55-palette-input:focus{border-color:var(--accent-cyan)}.v55-palette-help{font-size:.6rem;color:var(--text-muted);margin-top:7px;display:flex;gap:6px;flex-wrap:wrap}.v55-palette-results{max-height:58vh;overflow:auto;padding:8px}.v55-palette-row{display:flex;gap:10px;align-items:center;padding:10px;border-radius:9px;cursor:pointer}.v55-palette-row:hover,.v55-palette-row.active{background:var(--bg-elevated)}
+.v55-context{position:fixed;z-index:1900;min-width:210px;background:var(--bg-surface);border:1px solid var(--border-light);border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.4);padding:6px;display:none}.v55-context.open{display:block}.v55-context button{width:100%;display:flex;align-items:center;gap:8px;background:transparent;border:0;color:var(--text-primary);padding:8px 9px;border-radius:7px;text-align:left;cursor:pointer;font:inherit;font-size:.72rem}.v55-context button:hover{background:var(--bg-elevated)}
+.v55-checkin{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:12px}.v55-checkin .v55-stat{cursor:pointer}.v55-checkin .v55-stat:hover{border-color:var(--accent-cyan)}
+.v55-dashboard-widgets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}.v55-widget{min-height:120px}.v55-widget[draggable="true"]{cursor:grab}.v55-widget.v55-dragging{opacity:.45}.v55-widget.v55-drop{outline:2px dashed var(--accent-cyan);outline-offset:2px}
+.v55-split{position:fixed;right:0;top:54px;bottom:0;width:min(520px,48vw);background:var(--bg-surface);border-left:1px solid var(--border-color);z-index:1250;display:none;flex-direction:column;box-shadow:-14px 0 40px rgba(0,0,0,.2)}.v55-split.open{display:flex}.v55-split-head{padding:10px 12px;border-bottom:1px solid var(--border-color);display:flex;gap:7px;align-items:center}.v55-split-body{padding:12px;overflow:auto;flex:1}.v55-split-select{flex:1}
+.v55-routine-runner{display:flex;flex-direction:column;gap:8px}.v55-step{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid var(--border-color);border-radius:9px}.v55-step.done{opacity:.55;text-decoration:line-through}.v55-step-index{width:26px;height:26px;border-radius:8px;background:var(--bg-elevated);display:grid;place-items:center;font-size:.65rem;font-weight:800}
+.v55-automation-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:8px}.v55-flow-box{padding:10px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);font-size:.69rem}.v55-flow-arrow{color:var(--text-muted)}
+.v55-vault-lock{padding:28px;text-align:center}.v55-vault-item{padding:10px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base)}
+.v55-table{width:100%;border-collapse:collapse}.v55-table th,.v55-table td{padding:8px;border-bottom:1px solid var(--border-color);font-size:.68rem;text-align:left;vertical-align:top}.v55-table th{font-size:.58rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em}.v55-grade-good{color:var(--accent-green)}.v55-grade-warn{color:var(--accent-yellow)}
+.v55-lockscreen{position:fixed;inset:0;z-index:99999;background:var(--bg-base);display:none;place-items:center;padding:20px}.v55-lockscreen.open{display:grid}.v55-lockbox{width:min(420px,100%);padding:24px;border:1px solid var(--border-light);border-radius:18px;background:var(--bg-surface);box-shadow:0 20px 70px rgba(0,0,0,.4);text-align:center}.v55-lockbox h2{margin:8px 0 4px}.v55-lock-logo{font-size:2rem}.v55-lockbox .form-input{margin:14px 0 8px;text-align:center;letter-spacing:.15em}
+.v55-preview-frame{width:100%;height:62vh;border:1px solid var(--border-color);border-radius:10px;background:#fff}.v55-receipt-thumb{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border-color)}
+.v55-capture-fab{position:fixed;right:18px;bottom:76px;z-index:900;width:46px;height:46px;border-radius:14px;border:1px solid color-mix(in srgb,var(--accent-cyan) 55%,var(--border-color));background:var(--accent-cyan);color:#001014;font-size:1.15rem;font-weight:900;display:none;place-items:center;box-shadow:0 12px 32px rgba(0,0,0,.28);cursor:pointer}
+@media(max-width:1100px){.v55-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.v55-grid.four{grid-template-columns:repeat(2,minmax(0,1fr))}.v55-dashboard-widgets{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.v55-studio-head{flex-direction:column}.v55-studio-actions{width:100%}.v55-studio-actions .btn{flex:1}.v55-grid,.v55-grid.two,.v55-grid.four,.v55-dashboard-widgets{grid-template-columns:1fr}.v55-checkin{grid-template-columns:repeat(2,minmax(0,1fr))}.v55-overlay{padding:7vh 8px 12px}.v55-split{top:0;width:100vw;z-index:1750}.v55-capture-fab{display:grid;bottom:calc(var(--mobile-nav-h,72px) + env(safe-area-inset-bottom) + 12px)}.v55-automation-flow{grid-template-columns:1fr}.v55-flow-arrow{transform:rotate(90deg);text-align:center}}

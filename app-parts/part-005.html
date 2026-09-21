@@ -1,0 +1,1000 @@
+            saveState(); openInspector(id);
+        });
+    });
+
+    const linkBtn = document.getElementById('link-btn');
+    if (linkBtn) {
+        linkBtn.addEventListener('click', () => {
+            const select = document.getElementById('link-select');
+            const linkId = select.value;
+            if (!linkId) return;
+            if (!entry.linkedIds) entry.linkedIds = [];
+            if (!entry.linkedIds.some(i => String(i) === String(linkId))) entry.linkedIds.push(linkId);
+            saveState(); openInspector(id);
+        });
+    }
+
+    document.querySelectorAll('[data-open-linked]').forEach(el => {
+        el.addEventListener('click', () => openInspector(el.dataset.openLinked));
+    });
+
+    document.querySelectorAll('[data-unlink]').forEach(el => {
+        el.addEventListener('click', () => {
+            const linkId = el.dataset.unlink;
+            entry.linkedIds = (entry.linkedIds || []).filter(i => String(i) !== String(linkId));
+            saveState(); openInspector(id);
+        });
+    });
+}
+
+
+document.getElementById('inspector-close-btn').addEventListener('click', closeInspector);
+document.getElementById('inspector-backdrop').addEventListener('click', closeInspector);
+
+function calculateStreak(entry) {
+    const completed = state.entries.filter(e => e.category === entry.category && e.status === 'completed' && e.date)
+        .map(e => e.date).sort().reverse();
+    if (completed.length === 0) return 0;
+
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    let checkDate = new Date(today);
+
+    for (let i = 0; i < 365; i++) {
+        const dateStr = localDateString(checkDate);
+        if (completed.includes(dateStr)) {
+            streak++; checkDate.setDate(checkDate.getDate() - 1);
+        } else if (i > 0) {
+            break;
+        } else {
+            checkDate.setDate(checkDate.getDate() - 1);
+        }
+    }
+    return streak;
+}
+
+
+
+// ================= DASHBOARD =================
+let dashPeriod='week', dashDomain='all';
+document.getElementById('dash-period').addEventListener('change',e=>{dashPeriod=e.target.value;renderDashboard()});
+document.getElementById('dash-domain').addEventListener('change',e=>{dashDomain=e.target.value;renderDashboard()});
+function applyDashboardDomain(){ const d=dashDomain; const map={tasks:['dash-progress','dash-priorities'],habits:['dash-habits'],focus:['dash-focus'],finance:['dash-finance']}; document.querySelectorAll('#view-dashboard .analytics-grid').forEach(g=>g.style.display=''); if(d==='all') return; document.querySelectorAll('#view-dashboard .analytics-grid').forEach(g=>{const has=map[d]?.some(id=>g.querySelector('#'+id)); if(!has) g.style.display='none';}); }
+document.getElementById('dash-refresh').addEventListener('click',renderDashboard);
+function periodDates(period){const now=new Date();now.setHours(0,0,0,0);if(period==='today')return {start:new Date(now),end:new Date(now)};if(period==='month')return {start:new Date(now.getFullYear(),now.getMonth(),1),end:new Date(now.getFullYear(),now.getMonth()+1,0)};if(period==='week'){const s=new Date(now);const offset=getSetting('calendar.weekStart','sunday')==='monday'?((now.getDay()+6)%7):now.getDay();s.setDate(now.getDate()-offset);const e=new Date(s);e.setDate(s.getDate()+6);return {start:s,end:e};}return {start:null,end:null};}
+function renderDashboard(){
+    const range=periodDates(dashPeriod), start=range.start?dateKeyLocal(range.start):'', end=range.end?dateKeyLocal(range.end):''; const inRange=e=>dashPeriod==='all'?true:(!!e.date&&e.date>=start&&e.date<=end);
+    const entries=state.entries.filter(inRange); const total=entries.length, completed=entries.filter(e=>e.status==='completed').length, progress=total?Math.round(completed/total*100):0;
+    const overdue=state.entries.filter(e=>e.date&&e.date<localDateString()&&e.status!=='completed').length; const showOverdueFlag=getSetting('tasks.overdueBehavior','keep')==='flag';
+    const todayEntries=state.entries.filter(e=>e.date===localDateString()&&e.status!=='completed').sort((a,b)=>{const w={high:0,medium:1,low:2};return (w[a.importance]??3)-(w[b.importance]??3)});
+    const currentHabitWeek=new Date();currentHabitWeek.setHours(0,0,0,0);const habitOffset=getSetting('calendar.weekStart','sunday')==='monday'?((currentHabitWeek.getDay()+6)%7):currentHabitWeek.getDay();currentHabitWeek.setDate(currentHabitWeek.getDate()-habitOffset);const hs=habitStats('week',currentHabitWeek); const focus=state.focusDaily?.[localDateString()]||0; const tx=state.transactions.filter(t=>inRange(t)&&!t.isTransfer); const income=tx.filter(t=>t.type==='income').reduce((a,t)=>a+Number(t.amount||0),0),expense=tx.filter(t=>t.type==='expense').reduce((a,t)=>a+Number(t.amount||0),0);
+    const kpis=[['Tasks',total,'Tracked items'],['Completed',completed,`${progress}% completion`],['Habits',`${hs.rate}%`,'Weekly consistency'],['Focus',`${focus}m`,'Today'],['Income',currencyLocal(income).replace(/\.00$/,''),'Selected period'],['Spent',currencyLocal(expense).replace(/\.00$/,''),'Selected period']];
+    document.getElementById('dash-kpis').innerHTML=kpis.map((x,i)=>`<div class="kpi-card"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-meta">${x[2]}</div></div>`).join('');
+    const p=document.getElementById('dash-progress'); const totalBudget=state.budgetCategories.filter(c=>(c.type||'expense')==='expense').reduce((a,c)=>a+(Number(c.limit)||0),0); const monthKey=localDateString().slice(0,7); const monthlyExpense=state.transactions.filter(t=>t.type==='expense'&&t.status!=='pending'&&!t.isTransfer&&String(t.date||'').slice(0,7)===monthKey).reduce((a,t)=>a+Number(t.amount||0),0); const sections=[['Tasks',progress],['Habits',hs.rate],['Budget used',totalBudget?Math.min(100,Math.round(monthlyExpense/totalBudget*100)):0],['Focus goal',Math.min(100,Math.round(focus/getSetting('focus.dailyGoal',120)*100))]];
+    p.innerHTML=sections.map(([n,v])=>`<div class="progress-row"><div class="progress-head"><span>${n}</span><strong>${v}%</strong></div><div class="progress-track"><div class="progress-fill" style="width:${Math.min(100,v)}%"></div></div></div>`).join('');
+    document.getElementById('dash-priorities').innerHTML=todayEntries.slice(0,6).map(e=>`<div class="mini-item" data-entry-id="${e.id}"><span>${e.status==='in-progress'?'◐':'○'}</span><div class="mini-item-main"><div class="mini-item-title">${escapeHtml(e.title)}</div><div class="mini-item-meta">${escapeHtml(catLabels[e.category]||e.category)} · ${escapeHtml(impLabels[e.importance]||'')}</div></div></div>`).join('')||'<div class="empty-state">No priorities for today.</div>';
+    const habitTop=state.habits.slice().sort((a,b)=>getStreak(b)-getStreak(a)).slice(0,5); document.getElementById('dash-habits').innerHTML=habitTop.map(h=>`<div class="progress-row"><div class="progress-head"><span>${escapeHtml(h.icon)} ${escapeHtml(h.name)}</span><strong>${getStreak(h)}d</strong></div><div class="progress-track"><div class="progress-fill" style="width:${Math.min(100,Math.round((Object.keys(h.log||{}).filter(k=>{const d=dateAtNoon(k);const r=periodDates('month');return d>=r.start&&d<=r.end}).length/Math.max(1,new Date().getDate()))*100))}%"></div></div></div>`).join('')||'<div class="empty-state">No habits yet.</div>';
+    document.getElementById('dash-focus').innerHTML=`<div class="insight-box"><strong>${focus} min</strong> focused today across <strong>${state.focusSessions||0}</strong> lifetime sessions.<br><span class="text-muted">${focus>=60?'Great deep-work day.':'Aim for one uninterrupted 25-minute session next.'}</span></div>`;
+    const balance=income-expense; document.getElementById('dash-finance').innerHTML=`<div class="mini-list"><div class="mini-item"><div class="mini-item-main"><div class="mini-item-title">Net balance</div><div class="mini-item-meta">Income minus expenses</div></div><strong>${balance>=0?'+':''}${currencyLocal(balance)}</strong></div><div class="mini-item"><div class="mini-item-main"><div class="mini-item-title">Transactions</div><div class="mini-item-meta">Selected period</div></div><strong>${tx.length}</strong></div></div>`;
+    const overdueLabel=overdue?`${overdue} overdue item${overdue>1?'s':''}`:'No overdue tasks'; document.getElementById('dash-insights').innerHTML=`<div class="insight-box"><strong>${overdueLabel}</strong><br>${progress>=75?'You are maintaining a strong completion rate.':progress>=40?'Good momentum — protect time for the highest-impact tasks.':'Start by clearing one high-priority task.'}</div><div style="height:8px"></div><div class="insight-box">${hs.rate>=80?'Habit consistency is excellent.':hs.rate>=50?'Habit rhythm is developing.':'Focus on making the daily check-in effortless.'}</div>`;
+    const attnEl=document.getElementById('dash-attention');
+    if (attnEl) {
+        if (!getSetting('notifications.dailySummary', true)) { attnEl.innerHTML=''; }
+        else {
+            const items=[];
+            if (showOverdueFlag && overdue && getSetting('notifications.taskReminders',true)) items.push(`⚠️ ${overdue} overdue task${overdue>1?'s':''}`);
+            const atRiskHabit=state.habits.find(h=>{ const y=new Date(); y.setDate(y.getDate()-1); const yKey=localDateString(y); const t=localDateString(); return h.log?.[yKey] && !h.log?.[t]; });
+            if (atRiskHabit) items.push(`🔥 "${escapeHtml(atRiskHabit.name)}" streak needs today's check-in`);
+            const totalLimit=state.budgetCategories.filter(c=>(c.type||'expense')==='expense').reduce((a,c)=>a+(Number(c.limit)||0),0);
+            const monthRange=periodDates('month'); const monthExpense=state.transactions.filter(t=>t.type==='expense'&&!t.isTransfer&&t.date>=dateKeyLocal(monthRange.start)&&t.date<=dateKeyLocal(monthRange.end)).reduce((a,t)=>a+Number(t.amount||0),0);
+            const budgetPct=totalLimit?Math.round(monthExpense/totalLimit*100):0;
+            if (budgetPct>=80) items.push(`💰 Budget ${budgetPct}% used this month`);
+            attnEl.innerHTML = items.length ? `<div class="card" style="margin-bottom:16px;"><div class="card-header"><h3 class="card-title">🔔 Attention needed</h3></div><div class="mini-list">${items.map(i=>`<div class="insight-box" style="margin-bottom:6px;">${i}</div>`).join('')}</div></div>` : '';
+        }
+    }
+    applyDashboardDomain();
+    const boxes={q1:[],q2:[],q3:[],q4:[]}; state.entries.filter(e=>e.status!=='completed').forEach(e=>boxes[getQuadrant(e)].push(e)); ['q1','q2','q3','q4'].forEach(q=>{const el=document.getElementById(`dash-${q}`);el.innerHTML=boxes[q].length?boxes[q].slice(0,5).map(e=>renderTaskCard(e,true)).join(''):'<div class="empty-state" style="padding:15px;">No items</div>';}); attachCardClicks();
+}
+
+// ================= BUDGET =================
+let editingBudgetCatId = null;
+let txnFilter = 'all';
+let editingTxnId = null;
+
+document.querySelectorAll('[data-txnfilter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-txnfilter]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        txnFilter = btn.dataset.txnfilter;
+        renderBudget();
+    });
+});
+
+function updateTxnCategories() {
+    const type = document.getElementById('txn-type').value || 'expense';
+    const select = document.getElementById('txn-category');
+    const cats = state.budgetCategories.filter(c => (c.type || 'expense') === type);
+    select.innerHTML = cats.map(c => `<option value="${c.id}">${c.icon || '📁'} ${escapeHtml(c.name)}</option>`).join('');
+    select.innerHTML += `<option value="other">📁 Other / Uncategorized</option>`;
+    const walletSelect = document.getElementById('txn-wallet');
+    if (walletSelect) walletSelect.innerHTML = (state.wallets || []).map(w => `<option value="${w.id}">${w.icon || '💳'} ${escapeHtml(w.name)}</option>`).join('') || '<option value="">No wallets — add one in Budget → Wallets</option>';
+}
+document.getElementById('txn-type').addEventListener('change', updateTxnCategories);
+
+function updateEditTxnCategories() {
+    const type = document.getElementById('edit-txn-type').value || 'expense';
+    const select = document.getElementById('edit-txn-category');
+    const cats = state.budgetCategories.filter(c => (c.type || 'expense') === type);
+    select.innerHTML = cats.map(c => `<option value="${c.id}">${c.icon || '📁'} ${escapeHtml(c.name)}</option>`).join('');
+    select.innerHTML += `<option value="other">📁 Other / Uncategorized</option>`;
+    const walletSelect = document.getElementById('edit-txn-wallet');
+    if (walletSelect) walletSelect.innerHTML = (state.wallets || []).map(w => `<option value="${w.id}">${w.icon || '💳'} ${escapeHtml(w.name)}</option>`).join('') || '<option value="">No wallets — add one in Budget → Wallets</option>';
+}
+document.getElementById('edit-txn-type').addEventListener('change', updateEditTxnCategories);
+
+function openTxnModal() {
+    document.getElementById('txn-amount').value = '';
+    document.getElementById('txn-desc').value = '';
+    document.getElementById('txn-date').value = localDateString();
+    document.getElementById('txn-type').value = 'expense';
+    updateTxnCategories();
+    openModal('txn-modal');
+}
+
+document.getElementById('txn-save-btn').addEventListener('click', () => {
+    const type = document.getElementById('txn-type').value;
+    const amount = parseFloat(document.getElementById('txn-amount').value);
+    const categoryId = document.getElementById('txn-category').value;
+    const walletId = document.getElementById('txn-wallet')?.value || null;
+    const desc = document.getElementById('txn-desc').value.trim();
+    const date = document.getElementById('txn-date').value;
+    if (isNaN(amount) || amount <= 0) { window.toast('Enter a valid amount'); return; }
+
+    state.transactions.push({
+        id: Date.now(), type, amount,
+        categoryId: categoryId === 'other' ? null : categoryId,
+        walletId: walletId || null,
+        desc: desc || 'Transaction', date: date || localDateString()
+    });
+
+    closeModal('txn-modal');
+    saveState();
+    window.toast && window.toast(type === 'income' ? 'Income logged' : 'Expense logged');
+});
+
+function updateBcatLimitVisibility() {
+    const isIncome = document.getElementById('bcat-type').value === 'income';
+    const group = document.getElementById('bcat-limit-group');
+    if (group) group.style.display = isIncome ? 'none' : '';
+}
+document.getElementById('bcat-type').addEventListener('change', updateBcatLimitVisibility);
+
+function openBudgetCatModal(id = null, defaultType = 'expense') {
+    editingBudgetCatId = id;
+    if (id) {
+        const cat = state.budgetCategories.find(c => String(c.id) === String(id));
+        if (!cat) return;
+        document.getElementById('bcat-modal-title').textContent = 'Edit Budget Category';
+        document.getElementById('bcat-name').value = cat.name;
+        document.getElementById('bcat-type').value = cat.type || 'expense';
+        document.getElementById('bcat-icon').value = cat.icon || '';
+        document.getElementById('bcat-limit').value = cat.limit;
+        document.getElementById('bcat-delete-btn').style.display = 'inline-flex';
+    } else {
+        document.getElementById('bcat-modal-title').textContent = 'Add Budget Category';
+        document.getElementById('bcat-name').value = '';
+        document.getElementById('bcat-type').value = defaultType;
+        document.getElementById('bcat-icon').value = '';
+        document.getElementById('bcat-limit').value = '';
+        document.getElementById('bcat-delete-btn').style.display = 'none';
+    }
+    updateBcatLimitVisibility();
+    openModal('budget-cat-modal');
+}
+
+document.getElementById('bcat-save-btn').addEventListener('click', () => {
+    const name = document.getElementById('bcat-name').value.trim();
+    const type = document.getElementById('bcat-type').value === 'income' ? 'income' : 'expense';
+    const icon = document.getElementById('bcat-icon').value.trim() || '📁';
+    const limit = type === 'income' ? 0 : (parseFloat(document.getElementById('bcat-limit').value) || 0);
+    if (!name) { window.toast('Please enter a category name'); return; }
+
+    if (editingBudgetCatId) {
+        const cat = state.budgetCategories.find(c => String(c.id) === String(editingBudgetCatId));
+        if (cat) { cat.name = name; cat.icon = icon; cat.limit = limit; cat.type = type; }
+    } else {
+        state.budgetCategories.push({ id: Date.now(), name, icon, limit, type });
+    }
+
+    closeModal('budget-cat-modal');
+    saveState();
+    window.toast && window.toast(editingBudgetCatId ? 'Category updated' : 'Category added');
+    updateTxnCategories(); updateEditTxnCategories();
+});
+
+document.getElementById('bcat-delete-btn').addEventListener('click', () => {
+    if (!editingBudgetCatId) return;
+    if (!confirm('Delete this category?')) return;
+    state.budgetCategories = state.budgetCategories.filter(c => String(c.id) !== String(editingBudgetCatId));
+    closeModal('budget-cat-modal');
+    saveState();
+    window.toastUndo && window.toastUndo('Category deleted');
+});
+
+
+function editTransaction(id) {
+    const txn = state.transactions.find(t => String(t.id) === String(id));
+    if (!txn) return;
+    editingTxnId = id;
+    document.getElementById('edit-txn-type').value = txn.type;
+    updateEditTxnCategories();
+    document.getElementById('edit-txn-amount').value = txn.amount;
+    document.getElementById('edit-txn-category').value = txn.categoryId || 'other';
+    if (document.getElementById('edit-txn-wallet')) document.getElementById('edit-txn-wallet').value = txn.walletId || '';
+    document.getElementById('edit-txn-desc').value = txn.desc;
+    document.getElementById('edit-txn-date').value = txn.date;
+    openModal('edit-txn-modal');
+}
+
+document.getElementById('edit-txn-save-btn').addEventListener('click', () => {
+    const txn = state.transactions.find(t => String(t.id) === String(editingTxnId));
+    if (!txn) return;
+    txn.type = document.getElementById('edit-txn-type').value;
+    const newAmount = parseFloat(document.getElementById('edit-txn-amount').value);
+    if (!Number.isFinite(newAmount) || newAmount <= 0) { window.toast('Enter a valid amount'); return; }
+    txn.amount = newAmount;
+    const catVal = document.getElementById('edit-txn-category').value;
+    txn.categoryId = catVal === 'other' ? null : catVal;
+    const walletVal = document.getElementById('edit-txn-wallet')?.value;
+    txn.walletId = walletVal || null;
+    txn.desc = document.getElementById('edit-txn-desc').value.trim();
+    txn.date = document.getElementById('edit-txn-date').value;
+    closeModal('edit-txn-modal');
+    saveState();
+    window.toast && window.toast('Transaction updated');
+});
+
+document.getElementById('edit-txn-delete-btn').addEventListener('click', () => {
+    if (!confirm('Delete this transaction?')) return;
+    state.transactions = state.transactions.filter(t => String(t.id) !== String(editingTxnId));
+    closeModal('edit-txn-modal');
+    saveState();
+    window.toastUndo && window.toastUndo('Transaction deleted');
+});
+
+function budgetModalShell(title, bodyHtml){
+    const old = document.getElementById('budget-crud-modal');
+    if (old) old.remove();
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay active';
+    ov.id = 'budget-crud-modal';
+    ov.innerHTML = `<div class="modal"><div class="modal-header"><h3 class="modal-title">${escapeHtml(title)}</h3><button type="button" class="icon-btn" data-close>✕</button></div>${bodyHtml}</div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('[data-close]').onclick = () => ov.remove();
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    return ov;
+}
+
+function openWalletModal(walletId = null) {
+    const w = walletId ? state.wallets.find(x => String(x.id) === String(walletId)) : null;
+    const ov = budgetModalShell(w ? 'Edit Wallet' : 'Add Wallet', `
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Wallet name</label><input class="form-input" id="wallet-name" value="${escapeHtml(w?.name || '')}" placeholder="e.g. Cash, Chase Checking"></div>
+            <div class="form-group"><label class="form-label">Icon</label><input class="form-input" id="wallet-icon" maxlength="2" value="${escapeHtml(w?.icon || '💳')}"></div>
+        </div>
+        ${window.attachmentFields ? window.attachmentFields('wallet-img', w?.images || []) : ''}
+        <div class="text-muted text-sm">Optional: add a photo of the card so you recognize it at a glance.</div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger" id="wallet-delete" style="display:${w ? 'inline-flex' : 'none'}">Delete</button>
+            <span style="flex:1"></span>
+            <button type="button" class="btn" data-close>Cancel</button>
+            <button type="button" class="btn btn-primary" id="wallet-save">Save</button>
+        </div>
+    `);
+    const temp = { images: [...(w?.images || [])] };
+    const filesInput = ov.querySelector('#wallet-img-files');
+    if (filesInput) filesInput.onchange = async e => { await window.handleImageFiles(e.target, temp); ov.querySelector('#wallet-img-images').innerHTML = window.imgTags(temp.images); };
+    ov.querySelector('#wallet-save').onclick = () => {
+        const name = ov.querySelector('#wallet-name').value.trim();
+        if (!name) { window.toast('Enter a wallet name'); return; }
+        const icon = ov.querySelector('#wallet-icon').value.trim() || '💳';
+        if (w) { w.name = name; w.icon = icon; w.images = temp.images; }
+        else { state.wallets.push({ id: Date.now(), name, icon, images: temp.images }); }
+        ov.remove(); saveState();
+        window.toast && window.toast(w ? 'Wallet updated' : 'Wallet added');
+        renderBudget();
+    };
+    if (w) {
+        ov.querySelector('#wallet-delete').onclick = () => {
+            if (!confirm(`Delete the "${w.name}" wallet? Transactions logged against it keep their history, they just won't show a wallet tag anymore.`)) return;
+            state.wallets = state.wallets.filter(x => String(x.id) !== String(w.id));
+            ov.remove(); saveState();
+            window.toastUndo && window.toastUndo('Wallet deleted');
+            renderBudget();
+        };
+    }
+}
+
+function renderBudget() {
+    let totalIncome = 0, totalExpense = 0;
+    const catSpending = {}, catIncome = {};
+    const currentMonth = localDateString().slice(0, 7);
+    const monthlyTransactions = state.transactions.filter(t => String(t.date || '').slice(0, 7) === currentMonth && !t.isTransfer);
+
+    monthlyTransactions.forEach(t => {
+        if (t.type === 'income') { const amount=Number(t.amount||0); totalIncome += amount; if (t.categoryId) catIncome[t.categoryId] = (catIncome[t.categoryId] || 0) + amount; }
+        else {
+            const amount=Number(t.amount||0); totalExpense += amount;
+            if (t.categoryId) catSpending[t.categoryId] = (catSpending[t.categoryId] || 0) + amount;
+        }
+    });
+
+    const expenseCats = state.budgetCategories.filter(c => (c.type || 'expense') === 'expense');
+    const incomeCats = state.budgetCategories.filter(c => c.type === 'income');
+    const totalLimit = expenseCats.reduce((s, c) => s + (Number(c.limit) || 0), 0);
+
+    document.getElementById('budget-stats').innerHTML = `
+        <div class="stat-card"><span class="stat-label">Income This Month</span><span class="stat-value green">${currencyLocal(totalIncome)}</span></div>
+        <div class="stat-card"><span class="stat-label">Expenses This Month</span><span class="stat-value red">${currencyLocal(totalExpense)}</span></div>
+        <div class="stat-card"><span class="stat-label">Net This Month</span><span class="stat-value cyan">${currencyLocal(totalIncome-totalExpense)}</span></div>
+        <div class="stat-card"><span class="stat-label">Budget Left This Month</span><span class="stat-value ${totalLimit - totalExpense < 0 ? 'red' : 'purple'}">${currencyLocal(totalLimit-totalExpense)}</span></div>
+    `;
+
+    const limitsList = document.getElementById('budget-limits-list');
+    limitsList.innerHTML = '';
+    if (!expenseCats.length && !incomeCats.length) {
+        limitsList.innerHTML = '<div class="empty-state">No categories yet. Add an expense or income category to get started.</div>';
+    }
+    expenseCats.forEach(cat => {
+        const spent = catSpending[cat.id] || 0;
+        const pct = cat.limit > 0 ? Math.min((spent / cat.limit) * 100, 100) : 0;
+        const color = pct > 90 ? 'var(--accent-red)' : pct > 70 ? 'var(--accent-yellow)' : 'var(--accent-green)';
+
+        const div = document.createElement('div');
+        div.className = 'budget-progress';
+        div.style.cursor = 'pointer';
+        div.innerHTML = `
+            <div class="budget-progress-header">
+                <span>${cat.icon || '📁'} ${escapeHtml(cat.name)}</span>
+                <span style="color:${color};">${currencyLocal(spent)} / ${currencyLocal(cat.limit)}</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: ${pct}%; background: ${color};"></div>
+            </div>
+        `;
+        div.addEventListener('click', () => openBudgetCatModal(cat.id));
+        limitsList.appendChild(div);
+    });
+    if (incomeCats.length) {
+        const header = document.createElement('div');
+        header.className = 'text-muted text-sm';
+        header.style.cssText = 'margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em;font-size:.65rem';
+        header.textContent = 'Income sources';
+        limitsList.appendChild(header);
+        incomeCats.forEach(cat => {
+            const received = catIncome[cat.id] || 0;
+            const div = document.createElement('div');
+            div.className = 'budget-progress';
+            div.style.cursor = 'pointer';
+            div.innerHTML = `
+                <div class="budget-progress-header">
+                    <span>${cat.icon || '💰'} ${escapeHtml(cat.name)}</span>
+                    <span style="color:var(--accent-green);">+${currencyLocal(received)}</span>
+                </div>
+            `;
+            div.addEventListener('click', () => openBudgetCatModal(cat.id));
+            limitsList.appendChild(div);
+        });
+    }
+
+    const walletList = document.getElementById('wallet-list');
+    if (walletList) {
+        walletList.innerHTML = (state.wallets || []).length ? state.wallets.map(w => {
+            const bal = state.transactions.filter(t => String(t.walletId) === String(w.id)).reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0);
+            return `<div class="exercise-chip" data-open-wallet="${w.id}" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:8px 12px">${w.images?.[0]?`<img src="${w.images[0]}" alt="" style="width:20px;height:20px;object-fit:cover;border-radius:4px">`:(w.icon || '💳')} ${escapeHtml(w.name)} <span class="text-muted text-sm">${bal >= 0 ? '+' : ''}${currencyLocal(bal)}</span></div>`;
+        }).join('') : '<div class="empty-state">No wallets yet — add Cash, a bank account, or a card.</div>';
+        walletList.querySelectorAll('[data-open-wallet]').forEach(el => el.addEventListener('click', () => openWalletModal(el.dataset.openWallet)));
+    }
+
+    let txns = [...state.transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (txnFilter !== 'all') txns = txns.filter(t => t.type === txnFilter);
+
+    const txnList = document.getElementById('transaction-list');
+    txnList.innerHTML = '';
+    if (txns.length === 0) {
+        txnList.innerHTML = '<div class="empty-state">No transactions yet.</div>';
+    } else {
+        txns.forEach(t => {
+            const catName = t.categoryId ? (state.budgetCategories.find(c => String(c.id) === String(t.categoryId))?.name || 'Other') : 'Other / Uncategorized';
+            const catIcon = t.categoryId ? (state.budgetCategories.find(c => String(c.id) === String(t.categoryId))?.icon || '📁') : '💰';
+            const walletName = t.walletId ? (state.wallets || []).find(w => String(w.id) === String(t.walletId))?.name : null;
+            const div = document.createElement('div');
+            div.className = 'transaction-item';
+            div.innerHTML = `
+                <div class="txn-left">
+                    <div class="txn-icon ${t.type}">${t.type === 'income' ? '↗' : '↘'}</div>
+                    <div>
+                        <div style="font-size:0.83rem; font-weight:500;">${escapeHtml(t.desc)}</div>
+                        <div style="font-size:0.68rem; color:var(--text-muted);">${catIcon} ${catName} • ${formatDateKeyLocal(t.date)}${walletName ? ' • ' + escapeHtml(walletName) : ''}</div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:7px;">
+                    <span class="txn-amount ${t.type}">${t.type === 'income' ? '+' : '-'}${currencyLocal(t.amount)}</span>
+                </div>
+            `;
+            div.addEventListener('click', () => editTransaction(t.id));
+            txnList.appendChild(div);
+        });
+    }
+}
+
+// ================= HABITS =================
+let habitMonth = new Date().getMonth();
+let habitYear = new Date().getFullYear();
+let habitWeekStart = new Date();
+habitWeekStart.setDate(habitWeekStart.getDate() - habitWeekStart.getDay());
+let habitView = 'week';
+let editingHabitId = null;
+
+document.querySelectorAll('[data-habitview]').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-habitview]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active'); habitView = btn.dataset.habitview; renderHabits();
+}));
+
+function openHabitModal(id = null) {
+    editingHabitId = id;
+    if (id) {
+        const habit = state.habits.find(h => String(h.id) === String(id));
+        if (!habit) return;
+        document.getElementById('habit-modal-title').textContent = 'Edit Habit';
+        document.getElementById('habit-name').value = habit.name;
+        document.getElementById('habit-icon').value = habit.icon;
+        document.getElementById('habit-goal').value = habit.goal || '';
+        document.getElementById('habit-delete-btn').style.display = 'inline-flex';
+    } else {
+        document.getElementById('habit-modal-title').textContent = 'New Habit';
+        document.getElementById('habit-name').value = '';
+        document.getElementById('habit-icon').value = '';
+        document.getElementById('habit-goal').value = `${getSetting('habits.defaultTarget',7)}x per week`;
+        document.getElementById('habit-delete-btn').style.display = 'none';
+    }
+    openModal('habit-modal');
+}
+
+document.getElementById('habit-save-btn').addEventListener('click', () => {
+    const name = document.getElementById('habit-name').value.trim();
+    const icon = document.getElementById('habit-icon').value.trim() || '✨';
+    const goal = document.getElementById('habit-goal').value.trim();
+    if (!name) { window.toast('Enter a habit name'); return; }
+
+    if (editingHabitId) {
+        const habit = state.habits.find(h => String(h.id) === String(editingHabitId));
+        if (habit) { habit.name = name; habit.icon = icon; habit.goal = goal; }
+    } else {
+        state.habits.push({ id: Date.now(), name, icon, goal, log: {} });
+    }
+
+    closeModal('habit-modal');
+    saveState();
+});
+
+document.getElementById('habit-delete-btn').addEventListener('click', () => {
+    if (!editingHabitId) return;
+    if (!confirm('Delete this habit?')) return;
+    state.habits = state.habits.filter(h => String(h.id) !== String(editingHabitId));
+    closeModal('habit-modal');
+    saveState();
+    window.toastUndo && window.toastUndo('Habit deleted');
+});
+
+function toggleHabitDay(habitId, dateStr) {
+    const habit = state.habits.find(h => String(h.id) === String(habitId));
+    if (!habit) return;
+    if (!habit.log) habit.log = {};
+    if (habit.log[dateStr]) delete habit.log[dateStr];
+    else habit.log[dateStr] = true;
+    saveState();
+}
+
+function dateKeyLocal(d) { return localDateString(d); }
+function getStreak(habit) {
+    if (!habit.log) return 0;
+    let streak = 0, check = new Date(); check.setHours(0,0,0,0);
+    if (!habit.log[dateKeyLocal(check)]) check.setDate(check.getDate()-1);
+    for (let i=0;i<730;i++) { const k=dateKeyLocal(check); if(!habit.log[k]) break; streak++; check.setDate(check.getDate()-1); }
+    return streak;
+}
+function getBestStreak(habit) {
+    const days = Object.keys(habit.log||{}).filter(k=>habit.log[k]).sort(); let best=0,run=0,last=null;
+    days.forEach(k=>{ const d=new Date(k+'T00:00:00'); if(last){const diff=Math.round((d-last)/86400000); run=diff===1?run+1:1;} else run=1; best=Math.max(best,run); last=d; }); return best;
+}
+function getWeekDates(start) { return Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);d.setHours(0,0,0,0);return d;}); }
+function habitStats(period='week', anchor=null) {
+    const dates = period==='month' ? Array.from({length:new Date(habitYear,habitMonth+1,0).getDate()},(_,i)=>new Date(habitYear,habitMonth,i+1)) : getWeekDates(anchor||habitWeekStart);
+    const todayKey=localDateString();
+    // Future days are not opportunities yet and must not lower consistency.
+    const eligibleDates=dates.filter(d=>dateKeyLocal(d)<=todayKey);
+    const total = state.habits.length * eligibleDates.length;
+    const done = state.habits.reduce((n,h)=>n+eligibleDates.filter(d=>h.log&&h.log[dateKeyLocal(d)]).length,0);
+    const todayDone=state.habits.filter(h=>h.log&&h.log[todayKey]).length;
+    const best=Math.max(0,...state.habits.map(getBestStreak)); const current=Math.max(0,...state.habits.map(getStreak));
+    return {total,done,rate:total?Math.round(done/total*100):0,todayDone,todayTotal:state.habits.length,best,current};
+}
+function renderHabitSummary() {
+    const s=habitStats('week'); const el=document.getElementById('habit-summary'); if(!el)return;
+    el.innerHTML=`<div class="habit-summary"><div class="habit-summary-label">Weekly consistency</div><div class="habit-summary-value">${s.rate}%</div></div><div class="habit-summary"><div class="habit-summary-label">Today</div><div class="habit-summary-value">${s.todayDone}/${s.todayTotal}</div></div><div class="habit-summary"><div class="habit-summary-label">Best streak</div><div class="habit-summary-value">🔥 ${s.best}d</div></div><div class="habit-summary"><div class="habit-summary-label">Active streak</div><div class="habit-summary-value">⚡ ${s.current}d</div></div>`;
+}
+function renderHabits() {
+    const container=document.getElementById('habits-container'); if(!container)return; renderHabitSummary();
+    if(state.habits.length===0){container.innerHTML='<div class="empty-state">No habits yet. Click "+ New Habit" to start tracking.</div>';return;}
+    if(habitView==='week') renderHabitWeek(container); else renderHabitCalendar(container);
+}
+function renderHabitWeek(container){
+    const dates=getWeekDates(habitWeekStart);
+    const today=localDateString();
+    const range=`${dates[0].toLocaleDateString(undefined,{month:'short',day:'numeric'})} – ${dates[6].toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}`;
+    let html=`<div class="habit-week-card">
+      <div class="habit-month-header" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;gap:6px;align-items:center">
+          <button type="button" class="btn btn-sm" id="habit-week-prev" aria-label="Previous week">‹</button>
+          <button type="button" class="btn btn-sm" id="habit-week-today">Today</button>
+          <button type="button" class="btn btn-sm" id="habit-week-next" aria-label="Next week">›</button>
+        </div>
+        <strong style="flex:1;text-align:center">${range}</strong>
+        <span class="text-muted text-sm">Click a day to mark it complete</span>
+      </div>
+      <div class="v24-habit-week-wrap"><div class="v24-habit-week">
+        <div class="v24-habit-cell v24-habit-head" style="text-align:left">Habit</div>`;
+    dates.forEach(d=>{
+        const k=dateKeyLocal(d), todayCls=k===today?' is-today':'';
+        html+=`<div class="v24-habit-cell v24-habit-head${todayCls}">
+          <div>${d.toLocaleDateString(undefined,{weekday:'short'})}</div>
+          <div style="opacity:.58">${d.getDate()}/${d.getMonth()+1}</div>
+        </div>`;
+    });
+    state.habits.forEach(h=>{
+        const weekDone=dates.filter(d=>!!(h.log&&h.log[dateKeyLocal(d)])).length;
+        html+=`<div class="v24-habit-cell v24-habit-name">
+          <span style="font-size:1.05rem">${escapeHtml(h.icon||'✨')}</span>
+          <span style="min-width:0;flex:1">${escapeHtml(h.name||'Habit')}</span>
+          <span class="v24-habit-progress">${weekDone}/7</span>
+        </div>`;
+        dates.forEach(d=>{
+            const k=dateKeyLocal(d), done=!!(h.log&&h.log[k]), isToday=k===today;
+            html+=`<div class="v24-habit-cell">
+              <button type="button" class="v24-habit-day ${done?'is-done':''} ${isToday?'is-today':''}"
+                data-habit-day="${h.id}|${k}"
+                aria-label="${escapeHtml(h.name||'Habit')} — ${k} — ${done?'Completed':'Not completed'}">
+                <span class="v24-habit-mark">${done?'✓':'○'}</span>
+              </button>
+            </div>`;
+        });
+    });
+    html+=`</div></div></div>`;
+    container.innerHTML=html;
+
+    document.getElementById('habit-week-prev').onclick=()=>{
+        habitWeekStart=new Date(habitWeekStart);
+        habitWeekStart.setDate(habitWeekStart.getDate()-7);
+        renderHabits();
+    };
+    document.getElementById('habit-week-next').onclick=()=>{
+        habitWeekStart=new Date(habitWeekStart);
+        habitWeekStart.setDate(habitWeekStart.getDate()+7);
+        renderHabits();
+    };
+    document.getElementById('habit-week-today').onclick=()=>{
+        const d=new Date(); d.setHours(0,0,0,0);
+        d.setDate(d.getDate()-d.getDay());
+        habitWeekStart=d;
+        renderHabits();
+    };
+    bindHabitDayClicks();
+}
+function renderHabitCalendar(container){
+    const dates=getWeekDates(new Date(habitYear,habitMonth,1)); const first=new Date(habitYear,habitMonth,1); first.setDate(first.getDate()-first.getDay()); const monthEnd=new Date(habitYear,habitMonth+1,0); const last=new Date(monthEnd); last.setDate(last.getDate()+(6-last.getDay()));
+    const all=[]; for(let d=new Date(first);d<=last;d.setDate(d.getDate()+1)) all.push(new Date(d));
+    let html=`<div class="habit-week-card"><div class="habit-month-header"><div style="display:flex;gap:6px;align-items:center"><button type="button" class="btn btn-sm" id="habit-prev">◀</button><strong>${first.toLocaleDateString(undefined,{month:'long',year:'numeric'})}</strong><button type="button" class="btn btn-sm" id="habit-next">▶</button><button type="button" class="btn btn-sm" id="habit-today">Today</button></div><span class="text-muted text-sm">Monthly consistency map</span></div><div class="habit-calendar-wrap"><div class="habit-calendar-grid"><div class="habit-calendar-head">Habit</div>${all.map(d=>`<div class="habit-calendar-head">${d.toLocaleDateString(undefined,{weekday:'short',day:'numeric'})}</div>`).join('')}`;
+    state.habits.forEach(h=>{html+=`<div class="habit-calendar-name">${escapeHtml(h.icon)} ${escapeHtml(h.name)}</div>`+all.map(d=>{const k=dateKeyLocal(d),done=h.log&&h.log[k],today=k===localDateString();return `<div class="habit-calendar-cell ${done?'done':''} ${today?'today':''}" data-habit-day="${h.id}|${k}">${done?'✓':'·'}</div>`}).join('')}); html+='</div></div></div>'; container.innerHTML=html;
+    document.getElementById('habit-prev').onclick=()=>changeHabitMonth(-1);document.getElementById('habit-next').onclick=()=>changeHabitMonth(1);document.getElementById('habit-today').onclick=goToHabitToday;bindHabitDayClicks();
+}
+function bindHabitDayClicks(){document.querySelectorAll('[data-habit-day]').forEach(el=>el.addEventListener('click',()=>{const [hid,date]=el.dataset.habitDay.split('|');toggleHabitDay(hid,date)}));document.querySelectorAll('[data-edit-habit]').forEach(el=>el.addEventListener('click',()=>openHabitModal(el.dataset.editHabit)));}
+
+function changeHabitMonth(delta) {
+    habitMonth += delta;
+    if (habitMonth > 11) { habitMonth = 0; habitYear++; }
+    if (habitMonth < 0) { habitMonth = 11; habitYear--; }
+    renderHabits();
+}
+
+function goToHabitToday() { const today=new Date(); habitMonth=today.getMonth(); habitYear=today.getFullYear(); habitWeekStart=new Date(today); habitWeekStart.setDate(today.getDate()-today.getDay()); renderHabits(); }
+
+
+// ================= WORKOUT HQ =================
+let workoutTab = 'session';
+let activeWorkoutId = null;
+let workoutHistorySearch = '';
+let workoutRestInterval = null;
+let workoutRestSeconds = 0;
+
+const defaultWorkoutExercises = [
+    {id:'bench-press',name:'Bench Press',muscle:'Chest',equipment:'Barbell',rest:120},
+    {id:'incline-db-press',name:'Incline Dumbbell Press',muscle:'Chest',equipment:'Dumbbells',rest:90},
+    {id:'overhead-press',name:'Overhead Press',muscle:'Shoulders',equipment:'Barbell',rest:120},
+    {id:'lateral-raise',name:'Lateral Raise',muscle:'Shoulders',equipment:'Dumbbells',rest:60},
+    {id:'pull-up',name:'Pull Up',muscle:'Back',equipment:'Bodyweight',rest:120},
+    {id:'barbell-row',name:'Barbell Row',muscle:'Back',equipment:'Barbell',rest:120},
+    {id:'lat-pulldown',name:'Lat Pulldown',muscle:'Back',equipment:'Cable',rest:90},
+    {id:'biceps-curl',name:'Biceps Curl',muscle:'Arms',equipment:'Dumbbells',rest:60},
+    {id:'triceps-pushdown',name:'Triceps Pushdown',muscle:'Arms',equipment:'Cable',rest:60},
+    {id:'squat',name:'Back Squat',muscle:'Legs',equipment:'Barbell',rest:150},
+    {id:'leg-press',name:'Leg Press',muscle:'Legs',equipment:'Machine',rest:120},
+    {id:'romanian-deadlift',name:'Romanian Deadlift',muscle:'Hamstrings',equipment:'Barbell',rest:120},
+    {id:'leg-curl',name:'Leg Curl',muscle:'Hamstrings',equipment:'Machine',rest:90},
+    {id:'calf-raise',name:'Calf Raise',muscle:'Calves',equipment:'Machine',rest:60},
+    {id:'cable-row',name:'Seated Cable Row',muscle:'Back',equipment:'Cable',rest:90},
+    {id:'face-pull',name:'Face Pull',muscle:'Shoulders',equipment:'Cable',rest:60},
+    {id:'dips',name:'Dips',muscle:'Chest / Triceps',equipment:'Bodyweight',rest:90}
+];
+const defaultWorkoutTemplates = [
+    {id:'push',name:'Push',description:'Chest, shoulders and triceps',exercises:['bench-press','overhead-press','incline-db-press','lateral-raise','triceps-pushdown']},
+    {id:'pull',name:'Pull',description:'Back, rear delts and biceps',exercises:['pull-up','barbell-row','lat-pulldown','face-pull','biceps-curl']},
+    {id:'legs',name:'Legs',description:'Quads, hamstrings and calves',exercises:['squat','leg-press','romanian-deadlift','leg-curl','calf-raise']},
+    {id:'upper',name:'Upper Body',description:'Balanced upper-body session',exercises:['bench-press','barbell-row','overhead-press','lat-pulldown','biceps-curl','triceps-pushdown']},
+    {id:'full',name:'Full Body',description:'Efficient full-body session',exercises:['squat','bench-press','barbell-row','overhead-press','romanian-deadlift']}
+];
+if(!state.workoutExercises.length) state.workoutExercises = defaultWorkoutExercises;
+if(!state.workoutTemplates.length) state.workoutTemplates = defaultWorkoutTemplates;
+if (!activeWorkoutId) { const open = state.workouts.find(w => w.status === 'active'); if (open) activeWorkoutId = open.id; }
+
+function workoutExercise(id){ return state.workoutExercises.find(e=>e.id===id) || defaultWorkoutExercises.find(e=>e.id===id); }
+function workoutTemplate(id){ return state.workoutTemplates.find(t=>t.id===id); }
+function workoutDate(){ return localDateString(); }
+function workoutWeekStart(){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-d.getDay()); return d; }
+function workoutWeekKey(d){ const ws=new Date(d); ws.setHours(0,0,0,0); ws.setDate(ws.getDate()-ws.getDay()); return localDateString(ws); }
+function workoutVolume(session){ return (session.exercises||[]).reduce((sum,e)=>(sum+(e.sets||[]).reduce((x,set)=>x+(Number(set.weight)||0)*(Number(set.reps)||0),0)),0); }
+function workoutCompletedSets(session){ return (session.exercises||[]).reduce((sum,e)=>sum+(e.sets||[]).filter(s=>s.done).length,0); }
+function workoutTotalSets(session){ return (session.exercises||[]).reduce((sum,e)=>sum+(e.sets||[]).length,0); }
+function workoutDuration(session){ return Math.max(0, Math.round(((new Date(session.endedAt||Date.now()))-new Date(session.startedAt||Date.now()))/60000)); }
+function workoutAllSets(exerciseId){ const arr=[]; state.workouts.forEach(w => { (w.exercises||[]).forEach(e => { if(e.exerciseId===exerciseId){ (e.sets||[]).forEach(set => { if(Number(set.weight)>0&&Number(set.reps)>0) arr.push({...set,date:w.date,workoutId:w.id}); }); } }); }); return arr; }
+function workoutBest(exerciseId){ const sets=workoutAllSets(exerciseId); if(!sets.length)return null; return sets.reduce((best,s)=>!best||Number(s.weight)>Number(best.weight)?s:best,null); }
+function workoutPRs(){ const prs=[]; (state.workoutExercises||[]).forEach(ex=>{const best=workoutBest(ex.id); if(best)prs.push({exercise:ex,best})}); return prs.sort((a,b)=>Number(b.best.weight)-Number(a.best.weight)); }
+function workoutWeeklySessions(){ const wk=workoutWeekKey(new Date()); return state.workouts.filter(w=>workoutWeekKey(new Date(w.date+'T12:00:00'))===wk && w.status==='completed'); }
+function workoutMuscleVolume(){ const totals={}; workoutWeeklySessions().forEach(w=>(w.exercises||[]).forEach(e=>{const ex=workoutExercise(e.exerciseId); const muscle=ex?.muscle||'Other'; totals[muscle]=(totals[muscle]||0)+(e.sets||[]).reduce((n,s)=>n+(Number(s.weight)||0)*(Number(s.reps)||0),0)})); return totals; }
+
+function openWorkoutModal(){
+    document.getElementById('workout-name').value=''; document.getElementById('workout-notes').value='';
+    const sel=document.getElementById('workout-template-select'); sel.innerHTML='<option value="blank">Blank workout</option>'+state.workoutTemplates.map(t=>`<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)} — ${escapeHtml(t.description||'')}</option>`).join('');
+    openModal('workout-modal');
+}
+function createWorkoutSession(){
+    const existing=state.workouts.find(w=>w.status==='active');
+    if(existing){activeWorkoutId=existing.id;closeModal('workout-modal');workoutTab='session';renderWorkout();window.toast('You already have an active workout. Finish or discard it before starting another.');return;}
+    const templateId=document.getElementById('workout-template-select').value; const template=templateId==='blank'?null:workoutTemplate(templateId);
+    const name=document.getElementById('workout-name').value.trim() || (template?.name || 'Workout');
+    const session={id:Date.now(),name,date:workoutDate(),startedAt:new Date().toISOString(),endedAt:null,status:'active',notes:document.getElementById('workout-notes').value.trim(),exercises:[]};
+    const ids=template?.exercises||[]; ids.forEach(exId=>addWorkoutExerciseToSession(session,exId,3));
+    state.workouts.unshift(session); activeWorkoutId=session.id; closeModal('workout-modal'); saveState();
+}
+function addWorkoutExerciseToSession(session, exerciseId, setCount=3, rest=null){ const ex=workoutExercise(exerciseId); if(!ex)return; const prev=workoutBest(exerciseId); const sets=[]; for(let i=0;i<setCount;i++)sets.push({weight:prev?.weight||'',reps:'',rpe:'',done:false}); session.exercises.push({exerciseId,rest:(rest ?? (ex.rest || getSetting('workout.defaultRest',90))),sets}); }
+function activeWorkout(){ if(!activeWorkoutId){ const open=state.workouts.find(w=>w.status==='active'); if(open) activeWorkoutId=open.id; } return state.workouts.find(w=>String(w.id)===String(activeWorkoutId) && w.status==='active'); }
+function addExerciseToActive(){ if(!activeWorkout()){window.toast('Start a workout first.');return;} const sel=document.getElementById('exercise-select'); sel.innerHTML=(state.workoutExercises||[]).map(e=>`<option value="${escapeHtml(e.id)}">${escapeHtml(e.name)} · ${escapeHtml(e.muscle)}</option>`).join(''); document.getElementById('exercise-sets').value=3; const ex=workoutExercise(sel.value); document.getElementById('exercise-rest').value=Number.isFinite(Number(ex?.rest))?Number(ex.rest):getSetting('workout.defaultRest',90); openModal('exercise-modal'); }
+function confirmAddExercise(){ const w=activeWorkout(); if(!w)return; const id=document.getElementById('exercise-select').value; if(!id||!workoutExercise(id)){window.toast('Add an exercise to your library first.');return;} const sets=Math.max(1,Math.min(20,parseInt(document.getElementById('exercise-sets').value)||3)); const rawRest=Number(document.getElementById('exercise-rest').value); const rest=Math.max(0,Number.isFinite(rawRest)?rawRest:Number(getSetting('workout.defaultRest',90))||90); addWorkoutExerciseToSession(w,id,sets,rest); closeModal('exercise-modal'); saveState(); }
+function updateWorkoutSet(workoutId,exIndex,setIndex,key,value){ const w=state.workouts.find(x=>String(x.id)===String(workoutId)); if(!w)return; const set=w.exercises?.[exIndex]?.sets?.[setIndex]; if(!set)return; set[key]=key==='done'?!!value:(key==='rpe'?value:(value===''?'':Math.max(0,Number(value)||0))); if(key==='done' && value===true && getSetting('workout.autoStartRest',true))startWorkoutRest(w.exercises[exIndex].rest||getSetting('workout.defaultRest',90)); saveState(); }
+function clearWorkoutRest(){clearInterval(workoutRestInterval);workoutRestInterval=null;workoutRestSeconds=0;renderRestTimer();}
+function finishWorkout(){ const w=activeWorkout(); if(!w)return; const completed=workoutCompletedSets(w); if(!completed){window.toast('Log at least one completed set before finishing.');return;} clearWorkoutRest(); w.status='completed'; w.endedAt=new Date().toISOString(); activeWorkoutId=null; saveState(); }
+function abandonWorkout(){ const w=activeWorkout(); if(!w)return; if(!confirm('Discard this active workout?'))return; clearWorkoutRest(); state.workouts=state.workouts.filter(x=>x.id!==w.id); activeWorkoutId=null; saveState(); }
+function removeExerciseFromWorkout(exIndex){ const w=activeWorkout(); if(!w)return; w.exercises.splice(exIndex,1); saveState(); }
+function addSetToWorkout(exIndex){ const w=activeWorkout(); if(!w)return; const e=w.exercises[exIndex]; const last=e.sets[e.sets.length-1]||{}; e.sets.push({weight:last.weight||'',reps:'',rpe:'',done:false}); saveState(); }
+function startWorkoutRest(seconds){ workoutRestSeconds=Math.max(0,Number(seconds)||0); clearInterval(workoutRestInterval); workoutRestInterval=null; renderRestTimer(); if(workoutRestSeconds<=0)return; workoutRestInterval=setInterval(()=>{workoutRestSeconds=Math.max(0,workoutRestSeconds-1); renderRestTimer(); if(workoutRestSeconds<=0){clearInterval(workoutRestInterval);workoutRestInterval=null;renderRestTimer(); try{navigator.vibrate&&navigator.vibrate([120,80,120]);}catch(e){}}},1000); }
+function renderRestTimer(){ let el=document.getElementById('rest-timer'); if(!el){el=document.createElement('div');el.id='rest-timer';el.className='rest-timer';document.body.appendChild(el);} if(workoutRestSeconds<=0){el.classList.remove('active');el.innerHTML='';return;} el.classList.add('active'); el.innerHTML=`<div class="text-muted text-sm">REST TIMER</div><div class="rest-timer-time">${String(Math.floor(workoutRestSeconds/60)).padStart(2,'0')}:${String(workoutRestSeconds%60).padStart(2,'0')}</div><div style="display:flex;gap:6px"><button type="button" class="btn btn-sm" onclick="startWorkoutRest(30)">+30s</button><button type="button" class="btn btn-sm" onclick="clearWorkoutRest()">Skip</button></div>`; }
+
+function gymMembershipStatus(){
+    const m = state.gymMembership || {};
+    if (!m.name && !m.startDate) return null;
+    if (!m.startDate || !m.durationDays) return { name: m.name, daysLeft: null, expiry: null };
+    const start = new Date(m.startDate + 'T00:00:00');
+    const expiry = new Date(start.getTime() + Number(m.durationDays) * 86400000);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const daysLeft = Math.ceil((expiry - today) / 86400000);
+    return { name: m.name, daysLeft, expiry: localDateString(expiry) };
+}
+function renderGymMembershipCard(){
+    const el = document.getElementById('gym-membership-card'); if (!el) return;
+    const status = gymMembershipStatus();
+    if (!status) { el.innerHTML = `<div class="card" style="border-style:dashed"><div class="flex-between"><div><strong>🏋️ Gym membership</strong><div class="text-muted text-sm">Add your gym and membership length to track when it's time to renew.</div></div><button type="button" class="btn btn-sm" onclick="event.stopPropagation();openGymMembershipModal()">+ Add</button></div></div>`; el.onclick = () => openGymMembershipModal(); return; }
+    let color = 'var(--accent-green)', label = 'Active';
+    if (status.daysLeft === null) { color = 'var(--text-muted)'; label = 'No expiry set'; }
+    else if (status.daysLeft <= 7) { color = 'var(--accent-red)'; label = status.daysLeft < 0 ? 'Expired' : `${status.daysLeft} day${status.daysLeft===1?'':'s'} left`; }
+    else if (status.daysLeft <= 14) { color = 'var(--accent-yellow)'; label = `${status.daysLeft} days left`; }
+    else { label = `${status.daysLeft} days left`; }
+    el.innerHTML = `<div class="card" style="border-left:4px solid ${color}"><div class="flex-between"><div><strong>🏋️ ${escapeHtml(status.name || 'Gym membership')}</strong><div class="text-muted text-sm">${status.expiry ? 'Valid through ' + status.expiry : 'Tap to set a validity duration'}</div></div><span style="color:${color};font-weight:600;font-size:0.8rem;white-space:nowrap">● ${label}</span></div></div>`;
+    el.onclick = () => openGymMembershipModal();
+}
+function openGymMembershipModal(){
+    const m = state.gymMembership || {};
+    const ov = workoutModalShell('Gym Membership', `
+        <div class="form-group"><label class="form-label">Gym name</label><input class="form-input" id="gym-name" value="${escapeHtml(m.name || '')}" placeholder="e.g. Gold's Gym Downtown"></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Membership start date</label><input type="date" class="form-input" id="gym-start" value="${escapeHtml(m.startDate || localDateString())}"></div>
+            <div class="form-group"><label class="form-label">Validity duration</label>
+                <select class="form-select" id="gym-duration">
+                    <option value="7">1 week</option>
+                    <option value="14">2 weeks</option>
+                    <option value="30">1 month</option>
+                    <option value="90">3 months</option>
+                    <option value="180">6 months</option>
+                    <option value="365">1 year</option>
+                    <option value="custom">Custom (days)</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group" id="gym-custom-days-group" style="display:none"><label class="form-label">Custom duration (days)</label><input type="number" min="1" class="form-input" id="gym-custom-days" value="${m.durationDays || ''}"></div>
+        <div class="text-muted text-sm">Status turns yellow inside 2 weeks of expiry, and red inside 1 week — a nudge to renew before your membership lapses.</div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger" id="gym-clear" style="display:${m.name ? 'inline-flex' : 'none'}">Clear</button>
+            <span style="flex:1"></span>
+            <button type="button" class="btn" data-close>Cancel</button>
+            <button type="button" class="btn btn-primary" id="gym-save">Save</button>
+        </div>
+    `);
+    const presets = [7,14,30,90,180,365];
+    const durSel = ov.querySelector('#gym-duration');
+    durSel.value = presets.includes(Number(m.durationDays)) ? String(m.durationDays) : (m.durationDays ? 'custom' : '30');
+    const toggleCustom = () => { ov.querySelector('#gym-custom-days-group').style.display = durSel.value === 'custom' ? '' : 'none'; };
+    durSel.addEventListener('change', toggleCustom); toggleCustom();
+    ov.querySelector('#gym-save').onclick = () => {
+        const name = ov.querySelector('#gym-name').value.trim();
+        if (!name) { window.toast('Enter a gym name'); return; }
+        const startDate = ov.querySelector('#gym-start').value || localDateString();
+        const durationDays = durSel.value === 'custom' ? (parseInt(ov.querySelector('#gym-custom-days').value) || 30) : parseInt(durSel.value);
+        state.gymMembership = { name, startDate, durationDays };
+        ov.remove(); saveState();
+        window.toast && window.toast('Gym membership saved');
+        renderGymMembershipCard();
+    };
+    ov.querySelector('#gym-clear').onclick = () => {
+        if (!confirm('Clear your saved gym membership?')) return;
+        state.gymMembership = { name: '', startDate: '', durationDays: 0 };
+        ov.remove(); saveState();
+        renderGymMembershipCard();
+    };
+}
+function renderWorkout(){
+    renderWorkoutKpis();
+    renderGymMembershipCard();
+    const content=document.getElementById('workout-content'); if(!content)return;
+    if(workoutTab==='session') renderWorkoutSession(content);
+    if(workoutTab==='templates') renderWorkoutTemplates(content);
+    if(workoutTab==='exercises') renderWorkoutExercises(content);
+    if(workoutTab==='analytics') renderWorkoutAnalytics(content);
+    if(workoutTab==='history') renderWorkoutHistoryPage(content);
+}
+function renderWorkoutKpis(){
+    const el=document.getElementById('workout-kpis'); if(!el)return;
+    const week=workoutWeeklySessions(); const volume=week.reduce((n,w)=>n+workoutVolume(w),0); const sets=week.reduce((n,w)=>n+workoutCompletedSets(w),0); const prs=workoutPRs().length; const last=state.workouts.find(w=>w.status==='completed');
+    el.innerHTML=`<div class="workout-kpi"><div class="workout-kpi-label">Sessions this week</div><div class="workout-kpi-value">${week.length}</div><div class="workout-kpi-meta">completed</div></div><div class="workout-kpi"><div class="workout-kpi-label">Weekly volume</div><div class="workout-kpi-value">${Math.round(volume).toLocaleString()}</div><div class="workout-kpi-meta">load × reps</div></div><div class="workout-kpi"><div class="workout-kpi-label">Completed sets</div><div class="workout-kpi-value">${sets}</div><div class="workout-kpi-meta">this week</div></div><div class="workout-kpi"><div class="workout-kpi-label">Tracked PRs</div><div class="workout-kpi-value workout-pr">${prs}</div><div class="workout-kpi-meta">best loaded sets</div></div><div class="workout-kpi"><div class="workout-kpi-label">Last session</div><div class="workout-kpi-value">${last?workoutDuration(last)+'m':'—'}</div><div class="workout-kpi-meta">${last?escapeHtml(last.name):'No session yet'}</div></div>`;
+}
+function renderWorkoutSession(el){
+    const w=activeWorkout();
+    if(!w){ el.innerHTML=`<div class="workout-session-empty"><div style="font-size:2rem;margin-bottom:8px">🏋️</div><strong>No active workout</strong><p style="margin:6px 0 14px">Start a session from a template or build one exercise by exercise.</p><button type="button" class="btn btn-primary" onclick="openWorkoutModal()">Start a Workout</button>${state.workouts.length?`<div style="margin-top:18px;text-align:left"><div class="text-muted text-sm" style="margin-bottom:7px">Recent sessions</div><div class="mini-list">${state.workouts.filter(x=>x.status==='completed').slice(0,4).map(w=>`<div class="mini-item"><div class="mini-item-main"><div class="mini-item-title">${escapeHtml(w.name)}</div><div class="mini-item-meta">${escapeHtml(w.date)} · ${workoutCompletedSets(w)} sets · ${Math.round(workoutVolume(w)).toLocaleString()} volume</div></div></div>`).join('')}</div></div>`:''}</div>`;return;}
+    const progress=Math.round((workoutCompletedSets(w)/Math.max(1,workoutTotalSets(w)))*100);
+    el.innerHTML=`<div class="workout-session-head"><div><h3 style="margin-bottom:3px">${escapeHtml(w.name)}</h3><div class="text-muted text-sm">${escapeHtml(w.date)} · ${workoutDuration(w)} min · ${progress}% sets complete</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="btn" onclick="addExerciseToActive()">+ Exercise</button><button type="button" class="btn btn-primary" onclick="finishWorkout()">Finish Workout</button><button type="button" class="btn btn-danger btn-sm" onclick="abandonWorkout()">Discard</button></div></div><div class="workout-progress-track" style="margin-bottom:11px"><div class="workout-progress-fill" style="width:${progress}%"></div></div>${(w.exercises||[]).map((e,i)=>renderWorkoutExerciseCard(w,e,i)).join('')}`;
+}
+function renderWorkoutExerciseCard(w,e,i){ const ex=workoutExercise(e.exerciseId)||{name:'Exercise',muscle:'',equipment:''}; const best=workoutBest(e.exerciseId); return `<div class="workout-session-card"><div class="exercise-head"><div><div class="exercise-name">${escapeHtml(ex.name)}</div><div class="exercise-meta">${escapeHtml(ex.muscle)} · ${escapeHtml(ex.equipment)}${best?` · Best ${Number(best.weight)} × ${Number(best.reps)}`:''}</div></div><div style="display:flex;gap:5px"><button type="button" class="icon-btn" onclick="startWorkoutRest(${Number.isFinite(Number(e.rest))?Number(e.rest):Number(getSetting('workout.defaultRest',90))})">⏱ ${Number.isFinite(Number(e.rest))?Number(e.rest):Number(getSetting('workout.defaultRest',90))}s</button><button type="button" class="icon-btn" onclick="removeExerciseFromWorkout(${i})">✕</button></div></div><table class="set-table"><thead><tr><th>Set</th><th>Weight (${escapeHtml(getSetting('workout.weightUnit','kg'))})</th><th>Reps</th><th>RPE</th><th>Done</th></tr></thead><tbody>${(e.sets||[]).map((s,j)=>`<tr><td>${j+1}</td><td><input class="set-input" inputmode="decimal" type="number" value="${escapeHtml(s.weight)}" onchange="updateWorkoutSet(${w.id},${i},${j},'weight',this.value)"></td><td><input class="set-input" inputmode="numeric" type="number" value="${escapeHtml(s.reps)}" onchange="updateWorkoutSet(${w.id},${i},${j},'reps',this.value)"></td><td><input class="set-input" inputmode="decimal" type="number" step="0.5" value="${escapeHtml(s.rpe||'')}" placeholder="—" onchange="updateWorkoutSet(${w.id},${i},${j},'rpe',this.value)"></td><td><button type="button" class="set-complete ${s.done?'done':''}" onclick="updateWorkoutSet(${w.id},${i},${j},'done',${!s.done})">${s.done?'✓':'○'}</button></td></tr>`).join('')}</tbody></table><div class="exercise-actions"><button type="button" class="btn btn-sm" onclick="addSetToWorkout(${i})">+ Set</button><button type="button" class="btn btn-sm" onclick="startWorkoutRest(${Number.isFinite(Number(e.rest))?Number(e.rest):Number(getSetting('workout.defaultRest',90))})">Start Rest</button></div></div>`; }
+function workoutModalShell(title, bodyHtml){
+    const old = document.getElementById('workout-crud-modal');
+    if (old) old.remove();
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay active';
+    ov.id = 'workout-crud-modal';
+    ov.innerHTML = `<div class="modal"><div class="modal-header"><h3 class="modal-title">${escapeHtml(title)}</h3><button type="button" class="icon-btn" data-close>✕</button></div>${bodyHtml}</div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('[data-close]').onclick = () => ov.remove();
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    return ov;
+}
+
+function openExerciseLibraryModal(exId = null) {
+    const ex = exId ? state.workoutExercises.find(e => String(e.id) === String(exId)) : null;
+    const ov = workoutModalShell(ex ? 'Edit Exercise' : 'New Exercise', `
+        <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="ex-lib-name" value="${escapeHtml(ex?.name || '')}" placeholder="e.g. Cable Fly"></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Muscle group</label><input class="form-input" id="ex-lib-muscle" value="${escapeHtml(ex?.muscle || '')}" placeholder="Chest"></div>
+            <div class="form-group"><label class="form-label">Equipment</label><input class="form-input" id="ex-lib-equipment" value="${escapeHtml(ex?.equipment || '')}" placeholder="Dumbbells"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Default rest (seconds)</label><input type="number" min="0" step="5" class="form-input" id="ex-lib-rest" value="${ex?.rest ?? 90}"></div>
+        ${window.attachmentFields ? window.attachmentFields('ex-lib', ex?.images || []) : ''}
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger" id="ex-lib-delete" style="display:${ex ? 'inline-flex' : 'none'}">Delete</button>
+            <span style="flex:1"></span>
+            <button type="button" class="btn" data-close>Cancel</button>
+            <button type="button" class="btn btn-primary" id="ex-lib-save">Save</button>
+        </div>
+    `);
+    const refresh = () => { const c = document.getElementById('workout-content'); if (c) renderWorkoutExercises(c); };
+    const temp = { images: [...(ex?.images || [])] };
+    const filesInput = ov.querySelector('#ex-lib-files');
+    if (filesInput) filesInput.onchange = async e => { await window.handleImageFiles(e.target, temp); ov.querySelector('#ex-lib-images').innerHTML = window.imgTags(temp.images); };
+    ov.querySelector('#ex-lib-save').onclick = () => {
+        const name = ov.querySelector('#ex-lib-name').value.trim();
+        if (!name) { window.toast('Enter an exercise name'); return; }
+        const data = {
+            name,
+            muscle: ov.querySelector('#ex-lib-muscle').value.trim() || 'Other',
+            equipment: ov.querySelector('#ex-lib-equipment').value.trim() || 'Bodyweight',
+            rest: Math.max(0, parseInt(ov.querySelector('#ex-lib-rest').value) || 90),
+            images: temp.images
+        };
+        if (ex) { Object.assign(ex, data); }
+        else { state.workoutExercises.push({ id: 'ex-' + Date.now() + '-' + Math.floor(Math.random() * 1000), ...data }); }
+        ov.remove(); saveState();
+        window.toast && window.toast(ex ? 'Exercise updated' : 'Exercise added');
+        refresh();
+    };
+    if (ex) {
+        ov.querySelector('#ex-lib-delete').onclick = () => {
+            if (!confirm(`Delete "${ex.name}"? Past workout history that references it will still show its name.`)) return;
+            state.workoutExercises = state.workoutExercises.filter(e => String(e.id) !== String(ex.id));
+            ov.remove(); saveState();
+            window.toastUndo && window.toastUndo('Exercise deleted');
+            refresh();
+        };
+    }
+}
+
+function openWorkoutTemplateModal(tplId = null) {
+    const tpl = tplId ? state.workoutTemplates.find(t => String(t.id) === String(tplId)) : null;
+    const selectedIds = new Set((tpl?.exercises || []).map(String));
+    const ov = workoutModalShell(tpl ? 'Edit Template' : 'New Template', `
+        <div class="form-group"><label class="form-label">Template name</label><input class="form-input" id="tpl-name" value="${escapeHtml(tpl?.name || '')}" placeholder="e.g. Push Day"></div>
+        <div class="form-group"><label class="form-label">Description</label><input class="form-input" id="tpl-desc" value="${escapeHtml(tpl?.description || '')}" placeholder="What this split trains"></div>
+        <div class="form-group">
+            <label class="form-label">Exercises in this template</label>
+            <div id="tpl-exercise-picker" style="max-height:240px;overflow:auto;border:1px solid var(--border-color);border-radius:10px;padding:8px">
+                ${state.workoutExercises.length ? state.workoutExercises.map(e => `
+                    <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;font-size:0.8rem;cursor:pointer">
+                        <input type="checkbox" class="tpl-ex-check" value="${escapeHtml(String(e.id))}" ${selectedIds.has(String(e.id)) ? 'checked' : ''}>
+                        <span>${escapeHtml(e.name)}</span>
+                        <span class="text-muted text-sm" style="margin-left:auto">${escapeHtml(e.muscle)}</span>
+                    </label>
+                `).join('') : '<div class="empty-state">No exercises in your library yet — add some in the Exercise Library tab first.</div>'}
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger" id="tpl-delete" style="display:${tpl ? 'inline-flex' : 'none'}">Delete</button>
+            <span style="flex:1"></span>
+            <button type="button" class="btn" data-close>Cancel</button>
+            <button type="button" class="btn btn-primary" id="tpl-save">Save</button>
+        </div>
+    `);
+    const refresh = () => { const c = document.getElementById('workout-content'); if (c) renderWorkoutTemplates(c); };
+    ov.querySelector('#tpl-save').onclick = () => {
+        const name = ov.querySelector('#tpl-name').value.trim();
+        if (!name) { window.toast('Enter a template name'); return; }
+        const exercises = [...ov.querySelectorAll('.tpl-ex-check:checked')].map(c => c.value);
+        const data = { name, description: ov.querySelector('#tpl-desc').value.trim(), exercises };
+        if (tpl) { Object.assign(tpl, data); }
+        else { state.workoutTemplates.push({ id: 'tpl-' + Date.now() + '-' + Math.floor(Math.random() * 1000), ...data }); }
+        ov.remove(); saveState();
+        window.toast && window.toast(tpl ? 'Template updated' : 'Template created');
+        refresh();
+    };
+    if (tpl) {
+        ov.querySelector('#tpl-delete').onclick = () => {
+            if (!confirm(`Delete the "${tpl.name}" template?`)) return;
+            state.workoutTemplates = state.workoutTemplates.filter(t => String(t.id) !== String(tpl.id));
+            ov.remove(); saveState();
+            window.toastUndo && window.toastUndo('Template deleted');
+            refresh();
+        };
+    }
+}
+
+function renderWorkoutTemplates(el){ el.innerHTML=`<div class="flex-between mb-4"><div><h3>Templates</h3><div class="text-muted text-sm">Start fast with a split you already know, or build your own.</div></div><button type="button" class="btn btn-primary" onclick="openWorkoutTemplateModal()">+ New Template</button></div><div class="template-grid">${state.workoutTemplates.length?state.workoutTemplates.map(t=>`<div class="workout-item-card" data-open-template="${escapeHtml(String(t.id))}" style="cursor:pointer"><h4>${escapeHtml(t.name)}</h4><p>${escapeHtml(t.description||'')}</p><div style="margin:6px 0">${(t.exercises||[]).map(id=>`<span class="exercise-chip">${escapeHtml(workoutExercise(id)?.name||id)}</span>`).join('')||'<span class="text-muted text-sm">No exercises added yet</span>'}</div><button type="button" class="btn btn-sm btn-primary" data-no-open onclick='event.stopPropagation();quickStartTemplate(${JSON.stringify(String(t.id))})'>Use Template</button></div>`).join(''):'<div class="empty-state">No templates yet. Create one to reuse your favorite splits.</div>'}</div>`;
+    el.querySelectorAll('[data-open-template]').forEach(card=>card.addEventListener('click',()=>openWorkoutTemplateModal(card.dataset.openTemplate)));
+}
+function quickStartTemplate(id){ const t=workoutTemplate(id); if(!t)return; document.getElementById('workout-name').value=t.name; document.getElementById('workout-notes').value=''; document.getElementById('workout-template-select').innerHTML='<option value="'+escapeHtml(id)+'">'+escapeHtml(t.name)+'</option>'; document.getElementById('workout-template-select').value=id; openModal('workout-modal'); }
+function renderWorkoutExercises(el){ el.innerHTML=`<div class="flex-between mb-4"><div><h3>Exercise Library</h3><div class="text-muted text-sm">Your training vocabulary, all in one place. Click any exercise to edit it.</div></div><div style="display:flex;gap:8px"><input class="search-input" id="workout-exercise-search" placeholder="Search exercises…"><button type="button" class="btn btn-primary" onclick="openExerciseLibraryModal()">+ Add Exercise</button></div></div><div class="exercise-library-grid" id="workout-exercise-grid">${state.workoutExercises.length?state.workoutExercises.map(e=>`<div class="workout-item-card" data-open-exercise="${escapeHtml(String(e.id))}" style="cursor:pointer">${e.images?.[0]?`<img src="${e.images[0]}" alt="" style="width:100%;height:110px;object-fit:cover;border-radius:8px;margin-bottom:8px">`:''}<h4>${escapeHtml(e.name)}</h4><div class="exercise-chip">${escapeHtml(e.muscle)}</div><div class="exercise-chip">${escapeHtml(e.equipment)}</div><p style="margin-top:7px">Default rest: ${Number.isFinite(Number(e.rest))?Number(e.rest):Number(getSetting('workout.defaultRest',90))}s</p>${workoutBest(e.id)?`<div class="workout-pr" style="margin-top:6px">Best: ${Number(workoutBest(e.id).weight)} × ${Number(workoutBest(e.id).reps)}</div>`:''}</div>`).join(''):'<div class="empty-state">No exercises yet. Add your first one to start building templates and sessions.</div>'}</div>`; document.getElementById('workout-exercise-search').addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#workout-exercise-grid .workout-item-card').forEach(card=>card.style.display=card.textContent.toLowerCase().includes(q)?'':'none')});
+    el.querySelectorAll('[data-open-exercise]').forEach(card=>card.addEventListener('click',()=>openExerciseLibraryModal(card.dataset.openExercise)));
+}
+function renderWorkoutAnalytics(el){ const totals=workoutMuscleVolume(); const entries=Object.entries(totals).sort((a,b)=>b[1]-a[1]); const max=entries[0]?.[1]||1; const prs=workoutPRs().slice(0,8); el.innerHTML=`<div class="workout-analytics-grid"><div class="card"><div class="card-header"><h3 class="card-title">Weekly volume by muscle</h3></div>${entries.length?entries.map(([m,v])=>`<div class="muscle-row"><div class="muscle-row-label">${escapeHtml(m)}</div><div class="workout-progress-track"><div class="workout-progress-fill" style="width:${Math.max(4,Math.round(v/max*100))}%"></div></div><div class="text-muted" style="font-size:.62rem;text-align:right">${Math.round(v).toLocaleString()}</div></div>`).join(''):'<div class="empty-state">Complete some sets to see your weekly training distribution.</div>'}</div><div class="card"><div class="card-header"><h3 class="card-title">Performance board</h3></div><div class="mini-list">${prs.length?prs.map(p=>`<div class="mini-item"><div style="font-size:1.05rem">🏆</div><div class="mini-item-main"><div class="mini-item-title">${escapeHtml(p.exercise.name)}</div><div class="mini-item-meta">Best logged set · ${Number(p.best.weight)} × ${Number(p.best.reps)}${p.best.rpe?` · RPE ${escapeHtml(p.best.rpe)}`:''}</div></div></div>`).join(''):'<div class="empty-state">Your best logged sets will appear here.</div>'}</div></div></div><div class="card" style="margin-top:10px"><div class="card-header"><h3 class="card-title">Training history</h3></div>${state.workouts.filter(w=>w.status==='completed').slice(0,10).map(w=>`<div class="mini-item" style="margin-bottom:6px"><div style="font-size:1.1rem">🏋️</div><div class="mini-item-main"><div class="mini-item-title">${escapeHtml(w.name)}</div><div class="mini-item-meta">${escapeHtml(w.date)} · ${workoutCompletedSets(w)} sets · ${Math.round(workoutVolume(w)).toLocaleString()} volume · ${workoutDuration(w)} min</div></div></div>`).join('')||'<div class="empty-state">No completed workouts yet.</div>'}</div>`; }
+function renderWorkoutHistoryPage(el){
+    const q=(workoutHistorySearch||'').toLowerCase();
+    const completed=state.workouts.filter(w=>w.status==='completed' && (!q || (w.name+' '+w.date+' '+(w.notes||'')).toLowerCase().includes(q))).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    el.innerHTML=`<div class="flex-between mb-4"><div><h3>Training history</h3><div class="text-muted text-sm">Every completed session, set and performance marker.</div></div><input class="search-input" id="workout-history-search" placeholder="Search history…" value="${escapeHtml(workoutHistorySearch)}"></div>${completed.length?completed.map(w=>{const prs=(w.exercises||[]).filter(e=>{const best=workoutBest(e.exerciseId);return best && (e.sets||[]).some(s=>s.done&&Number(s.weight)===Number(best.weight));});return `<div class="workout-item-card" style="margin-bottom:8px"><div class="flex-between"><div><h4>🏋️ ${escapeHtml(w.name)}</h4><p>${escapeHtml(w.date)} · ${workoutCompletedSets(w)} sets · ${Math.round(workoutVolume(w)).toLocaleString()} volume · ${workoutDuration(w)} min</p></div>${prs.length?'<span class="workout-pr">🏆 PR</span>':''}</div><div style="margin-top:7px">${(w.exercises||[]).map(e=>`<span class="exercise-chip">${escapeHtml(workoutExercise(e.exerciseId)?.name||e.exerciseId)} · ${(e.sets||[]).filter(s=>s.done).length} sets</span>`).join('')}</div>${w.notes?`<div class="text-muted text-sm" style="margin-top:7px">${escapeHtml(w.notes)}</div>`:''}</div>`}).join(''):'<div class="empty-state">No completed workouts yet.</div>'}`;
+    document.getElementById('workout-history-search')?.addEventListener('input',e=>{workoutHistorySearch=e.target.value;renderWorkoutHistoryPage(el)});
+}
+function renderWorkoutHistory(){ document.querySelector('[data-workout-tab=history]')?.click(); }
+
+document.querySelectorAll('[data-workout-tab]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-workout-tab]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');workoutTab=btn.dataset.workoutTab;renderWorkout();}));
+document.getElementById('workout-start-btn').addEventListener('click',openWorkoutModal);
+document.getElementById('workout-open-history-btn').addEventListener('click',renderWorkoutHistory);
+document.getElementById('workout-create-btn').addEventListener('click',createWorkoutSession);
+document.getElementById('exercise-add-btn').addEventListener('click',confirmAddExercise);
+document.getElementById('exercise-select').addEventListener('change',()=>{const ex=workoutExercise(document.getElementById('exercise-select').value);document.getElementById('exercise-rest').value=Number.isFinite(Number(ex?.rest))?Number(ex.rest):getSetting('workout.defaultRest',90);});
+
+// ================= FOCUS TIMER =================
+let timerInterval = null;
+let timerSeconds = 25 * 60;
+let isRunning = false;
+let currentTimerMode = 'focus';
+let timerSessionMinutes = null;
+
+document.querySelectorAll('[data-timermode]').forEach(btn => {
+    btn.addEventListener('click', () => { setTimerMode(btn.dataset.timermode); });
+});
+
+function setTimerMode(mode) {
+    currentTimerMode = mode;
+    document.querySelectorAll('[data-timermode]').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-timermode="${mode}"]`).classList.add('active');
+    resetTimer();
+}
+
+function updateTimerDisplay() {
+    const mins = Math.floor(timerSeconds / 60);
+    const secs = timerSeconds % 60;
+    document.getElementById('timer-display').textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+}
+
+document.getElementById('timer-start-btn').addEventListener('click', toggleTimer);
+document.getElementById('timer-reset-btn').addEventListener('click', resetTimer);
+
+function toggleTimer() {
+    if (isRunning) {
+        clearInterval(timerInterval);
+        isRunning = false;
+        document.getElementById('timer-start-btn').textContent = 'Resume';
+    } else {
+        isRunning = true;
+        if(timerSessionMinutes===null){timerSessionMinutes=Math.max(1,Math.round(timerSeconds/60));}
+        document.getElementById('timer-start-btn').textContent = 'Pause';
+        timerInterval = setInterval(() => {
+            if (timerSeconds > 1) {
+                timerSeconds--;
+                updateTimerDisplay();
+                return;
+            }
+            timerSeconds = 0;
+            updateTimerDisplay();
+            {
+                clearInterval(timerInterval);
+                isRunning = false;
+                if (currentTimerMode === 'focus') {
+                    const focusMins = timerSessionMinutes || (parseInt(document.getElementById('timer-focus').value) || getSetting('focus.focusMin',25));
+                    const todayKey = localDateString();
+                    state.focusTime += focusMins;
+                    state.focusSessions++;
+                    state.focusDaily = state.focusDaily || {};
+                    state.focusDaily[todayKey] = (state.focusDaily[todayKey] || 0) + focusMins;
+                    saveState();
+                    window.toast('🎉 Focus session complete! Time for a break.');
+                    setTimerMode('short');
+                    if (getSetting('focus.autoStartBreaks', false)) toggleTimer();
+                } else {
+                    window.toast('⏰ Break is over! Ready to focus?');
+                    setTimerMode('focus');
+                }
+                document.getElementById('timer-start-btn').textContent = isRunning ? 'Pause' : 'Start';
+            }
+        }, 1000);
+    }
+}
+
+function resetTimer() {
+    clearInterval(timerInterval);
+    isRunning = false;
+    timerSessionMinutes = null;
+    let mins = getSetting('focus.focusMin',25);
+    if (currentTimerMode === 'focus') mins = parseInt(document.getElementById('timer-focus').value) || getSetting('focus.focusMin',25);
+    else if (currentTimerMode === 'short') mins = parseInt(document.getElementById('timer-short-break').value) || getSetting('focus.shortBreak',5);
+    else mins = parseInt(document.getElementById('timer-long-break').value) || getSetting('focus.longBreak',15);
+    timerSeconds = mins * 60;
+    updateTimerDisplay();
+    document.getElementById('timer-start-btn').textContent = 'Start';
+}
+
+['timer-focus','timer-short-break','timer-long-break'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => { if(!isRunning) resetTimer(); });

@@ -1,0 +1,1000 @@
+        localStorage.setItem(testKey, '1');
+        localStorage.removeItem(testKey);
+        return localStorage;
+    } catch (e) {
+        storageIsPersistent = false;
+        const memory = {};
+        return {
+            getItem: key => Object.prototype.hasOwnProperty.call(memory, key) ? memory[key] : null,
+            setItem: (key, value) => { memory[key] = String(value); },
+            removeItem: key => { delete memory[key]; }
+        };
+    }
+})();
+
+const saved = storage.getItem('omnios_v3_state');
+if (saved) { try { state = { ...state, ...JSON.parse(saved) }; } catch(e){} }
+
+// Normalize persisted data so an old/corrupt backup cannot break the UI.
+state.entries = Array.isArray(state.entries) ? state.entries : [];
+state.transactions = Array.isArray(state.transactions) ? state.transactions : [];
+state.budgetCategories = Array.isArray(state.budgetCategories) ? state.budgetCategories : [];
+state.habits = Array.isArray(state.habits) ? state.habits : [];
+state.notes = Array.isArray(state.notes) ? state.notes : [];
+state.notes = state.notes.map(n => ({ ...n, title: n.title || 'Untitled', contentHtml: n.contentHtml || (n.content ? '<p>' + escapeHtml(n.content).replace(/\n/g,'<br>') + '</p>' : ''), updatedAt: n.updatedAt || n.date || new Date().toISOString(), pinned: !!n.pinned }));
+state.focusTime = Number.isFinite(Number(state.focusTime)) ? Number(state.focusTime) : 0;
+state.focusSessions = Number.isFinite(Number(state.focusSessions)) ? Number(state.focusSessions) : 0;
+state.workouts = Array.isArray(state.workouts) ? state.workouts : [];
+state.workoutTemplates = Array.isArray(state.workoutTemplates) ? state.workoutTemplates : [];
+state.workoutExercises = Array.isArray(state.workoutExercises) ? state.workoutExercises : [];
+state.calendarEvents = Array.isArray(state.calendarEvents) ? state.calendarEvents : [];
+state.calendarEvents = state.calendarEvents.map(e => ({ ...e, id: e.id || Date.now()+Math.random(), title: e.title || 'Untitled Event', date: e.date || localDateString(), recurrence: e.recurrence && typeof e.recurrence === 'object' ? e.recurrence : null }));
+state.focusDaily = state.focusDaily && typeof state.focusDaily === 'object' ? state.focusDaily : {};
+
+// Deep-merge saved settings over defaults so old backups / partial saves never break the UI.
+function deepMergeDefaults(defaults, saved) {
+    if (typeof defaults !== 'object' || defaults === null || Array.isArray(defaults)) return saved !== undefined ? saved : defaults;
+    const out = { ...defaults };
+    if (saved && typeof saved === 'object') {
+        Object.keys(saved).forEach(k => { out[k] = deepMergeDefaults(defaults[k], saved[k]); });
+    }
+    return out;
+}
+const defaultSettings = {
+    groups: { enabled:true, defaultCollapsed:false },
+    appearance: { theme:'dark', accent:'#06b6d4', density:'comfortable', spacing:'comfortable', radius:'rounded',
+        contentWidth:'wide', sidebarMode:'standard', reducedMotion:false, hoverLift:true, stickyTopbar:true, confirmDestructive:true,
+        startView:'dashboard', autoFocusSearch:false,
+        customIconsEnabled:false, widgets: { progress:true, priorities:true, insights:true, habits:true, focus:true, finance:true } },
+    calendar: { defaultView:'month', weekStart:'sunday', workStart:'09:00', workEnd:'17:00', defaultDuration:60, defaultReminder:15 },
+    tasks: { defaultPriority:'medium', defaultUrgency:'not-urgent', defaultCategory:'work', autoArchive:false, overdueBehavior:'keep' },
+    habits: { defaultTarget:7, scoring:'percent', reminderTime:'08:00' },
+    workout: { defaultRest:90, weightUnit:'kg', distanceUnit:'km', autoStartRest:true },
+    focus: { focusMin:25, shortBreak:5, longBreak:15, autoStartBreaks:false, dailyGoal:120 },
+    notifications: { taskReminders:true, habitReminders:true, workoutReminders:true, eventReminders:true, dailySummary:true, weeklyReview:true }
+};
+state.settings = deepMergeDefaults(defaultSettings, state.settings);
+
+function normalizeState(){
+    state.entries = Array.isArray(state.entries) ? state.entries : [];
+    state.transactions = Array.isArray(state.transactions) ? state.transactions : [];
+    state.budgetCategories = Array.isArray(state.budgetCategories) ? state.budgetCategories : [];
+    state.habits = Array.isArray(state.habits) ? state.habits : [];
+    state.notes = Array.isArray(state.notes) ? state.notes : [];
+    state.workouts = Array.isArray(state.workouts) ? state.workouts : [];
+    state.workoutTemplates = Array.isArray(state.workoutTemplates) ? state.workoutTemplates : [];
+    state.workoutExercises = Array.isArray(state.workoutExercises) ? state.workoutExercises : [];
+    state.calendarEvents = Array.isArray(state.calendarEvents) ? state.calendarEvents : [];
+    state.focusDaily = state.focusDaily && typeof state.focusDaily === 'object' ? state.focusDaily : {};
+    state.settings = deepMergeDefaults(defaultSettings, state.settings);
+    state.calendarEvents = state.calendarEvents.map(e=>({ ...e, id:e.id||Date.now()+Math.random(), title:e.title||'Untitled Event', date:e.date||localDateString(), recurrence:e.recurrence&&typeof e.recurrence==='object'?e.recurrence:null }));
+    migrateV19Additions();
+}
+
+// Budget categories gained income/expense types; wallets and a password manager were added; the
+// workout page gained a gym-membership tracker. This backfills anyone's existing saved data so
+// nothing has to be re-entered, and is safe to run repeatedly (it only adds what's missing).
+function migrateV19Additions(){
+    const defaultCats = [
+        { id: 1, name: 'Groceries', icon: '🛒', limit: 400, type: 'expense' },
+        { id: 2, name: 'Entertainment', icon: '🎬', limit: 150, type: 'expense' },
+        { id: 3, name: 'Transport', icon: '🚗', limit: 100, type: 'expense' },
+        { id: 4, name: 'Bills & Utilities', icon: '🏠', limit: 800, type: 'expense' },
+        { id: 5, name: 'Rent / Housing', icon: '🏡', limit: 1000, type: 'expense' },
+        { id: 6, name: 'Health & Fitness', icon: '💊', limit: 100, type: 'expense' },
+        { id: 7, name: 'Dining Out', icon: '🍽️', limit: 150, type: 'expense' },
+        { id: 8, name: 'Shopping', icon: '🛍️', limit: 150, type: 'expense' },
+        { id: 9, name: 'Subscriptions', icon: '📱', limit: 60, type: 'expense' },
+        { id: 10, name: 'Education', icon: '🎓', limit: 100, type: 'expense' },
+        { id: 11, name: 'Travel', icon: '✈️', limit: 200, type: 'expense' },
+        { id: 12, name: 'Insurance', icon: '🛡️', limit: 150, type: 'expense' },
+        { id: 13, name: 'Personal Care', icon: '💆', limit: 60, type: 'expense' },
+        { id: 14, name: 'Kids & Family', icon: '👨‍👩‍👧', limit: 150, type: 'expense' },
+        { id: 15, name: 'Pets', icon: '🐾', limit: 60, type: 'expense' },
+        { id: 16, name: 'Gifts & Donations', icon: '🎁', limit: 60, type: 'expense' },
+        { id: 17, name: 'Savings & Investments', icon: '💹', limit: 200, type: 'expense' },
+        { id: 18, name: 'Other Expense', icon: '📁', limit: 100, type: 'expense' },
+        { id: 19, name: 'Salary', icon: '💼', limit: 0, type: 'income' },
+        { id: 20, name: 'Freelance / Business', icon: '🧾', limit: 0, type: 'income' },
+        { id: 21, name: 'Investments', icon: '📈', limit: 0, type: 'income' },
+        { id: 22, name: 'Gifts Received', icon: '🎉', limit: 0, type: 'income' },
+        { id: 23, name: 'Refunds', icon: '↩️', limit: 0, type: 'income' },
+        { id: 24, name: 'Other Income', icon: '💰', limit: 0, type: 'income' }
+    ];
+    state.budgetCategories.forEach(c => { if (!c.type) c.type = 'expense'; });
+    const existingNames = new Set(state.budgetCategories.map(c => String(c.name).toLowerCase().trim()));
+    let nextId = state.budgetCategories.reduce((m, c) => Math.max(m, Number(c.id) || 0), 0) + 1;
+    defaultCats.forEach(dc => {
+        if (!existingNames.has(dc.name.toLowerCase())) {
+            state.budgetCategories.push({ ...dc, id: nextId++ });
+            existingNames.add(dc.name.toLowerCase());
+        }
+    });
+    state.wallets = Array.isArray(state.wallets) && state.wallets.length ? state.wallets : [
+        { id: 1, name: 'Cash', icon: '💵' },
+        { id: 2, name: 'Bank Account', icon: '🏦' },
+        { id: 3, name: 'Credit Card', icon: '💳' },
+        { id: 4, name: 'Savings', icon: '🏛️' }
+    ];
+    state.passwords = Array.isArray(state.passwords) ? state.passwords : [];
+    state.gymMembership = state.gymMembership && typeof state.gymMembership === 'object' ? state.gymMembership : { name: '', startDate: '', durationDays: 0 };
+    state.customIcons = state.customIcons && typeof state.customIcons === 'object' ? state.customIcons : {};
+}
+
+function getSetting(path, fallback) {
+    const parts = path.split('.');
+    let cur = state.settings;
+    for (const p of parts) { if (cur == null) return fallback; cur = cur[p]; }
+    return cur === undefined ? fallback : cur;
+}
+function setSetting(path, value) {
+    const parts = path.split('.');
+    let cur = state.settings;
+    for (let i = 0; i < parts.length - 1; i++) { cur[parts[i]] = cur[parts[i]] || {}; cur = cur[parts[i]]; }
+    cur[parts[parts.length - 1]] = value;
+}
+
+function localDateString(date = new Date()) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+function formatDateKeyLocal(key, options) {
+    if (!key) return '';
+    const d = new Date(String(key).slice(0,10) + 'T12:00:00');
+    return Number.isNaN(d.getTime()) ? String(key) : d.toLocaleDateString(undefined, options);
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// Global currency formatter shared by core finance renderers and extensions.
+function currencyLocal(value) {
+    const currency = state?.settings?.finance?.currency || '$';
+    const amount = Number(value);
+    return `${currency}${Number.isFinite(amount) ? amount.toFixed(2) : '0.00'}`;
+}
+
+function setSaveStatus(text, type='') { const el=document.getElementById('save-status'); if(!el)return; el.textContent=text; el.classList.remove('saved','error'); if(type)el.classList.add(type); }
+function saveState() {
+    const active = document.activeElement;
+    const activeId = active?.id || '';
+    const selectionStart = typeof active?.selectionStart === 'number' ? active.selectionStart : null;
+    const selectionEnd = typeof active?.selectionEnd === 'number' ? active.selectionEnd : null;
+    try {
+        normalizeState();
+        storage.setItem('omnios_v3_state', JSON.stringify(state));
+        storage.setItem('omnios_v3_backup', JSON.stringify({ version:3, savedAt: new Date().toISOString(), state }));
+        setSaveStatus(storageIsPersistent ? 'Saved locally' : 'Session only', storageIsPersistent ? 'saved' : 'error');
+    } catch (e) { console.error('OmniOS save failed:', e); setSaveStatus('Storage issue','error'); }
+    applyAppearance();
+    renderAll();
+    // Full renders used to steal focus from the control being edited. Restore it
+    // when the same control survives the render, including text caret position.
+    if (activeId) {
+        const restored = document.getElementById(activeId);
+        if (restored && typeof restored.focus === 'function') {
+            restored.focus();
+            if (selectionStart !== null && typeof restored.setSelectionRange === 'function') {
+                try { restored.setSelectionRange(selectionStart, selectionEnd ?? selectionStart); } catch (e) {}
+            }
+        }
+    }
+}
+
+// ================= APPEARANCE =================
+let systemThemeQuery = null;
+function applyAppearance() {
+    const a = state.settings.appearance;
+    let theme = a.theme;
+    if (theme === 'system') {
+        if (!systemThemeQuery) {
+            systemThemeQuery = window.matchMedia('(prefers-color-scheme: light)');
+            systemThemeQuery.addEventListener?.('change', () => { if (state.settings.appearance.theme === 'system') applyAppearance(); });
+        }
+        theme = systemThemeQuery.matches ? 'light' : 'dark';
+    }
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-density', a.density || 'comfortable');
+    document.documentElement.setAttribute('data-spacing', a.spacing || 'comfortable');
+    document.documentElement.setAttribute('data-radius', a.radius || 'rounded');
+    document.documentElement.setAttribute('data-content-width', a.contentWidth || 'wide');
+    document.documentElement.setAttribute('data-sidebar-mode', a.sidebarMode || 'standard');
+    document.documentElement.setAttribute('data-reduced-motion', a.reducedMotion ? 'true' : 'false');
+    document.documentElement.setAttribute('data-hover-lift', a.hoverLift === false ? 'false' : 'true');
+    document.documentElement.setAttribute('data-sticky-topbar', a.stickyTopbar === false ? 'false' : 'true');
+    document.documentElement.style.setProperty('--accent-cyan', a.accent || '#06b6d4');
+    applyDashboardWidgets();
+}
+function applyDashboardWidgets() {
+    const widgets = state.settings.appearance.widgets || {};
+    document.querySelectorAll('#view-dashboard [data-widget]').forEach(card => {
+        const key = card.dataset.widget;
+        card.style.display = widgets[key] === false ? 'none' : '';
+    });
+}
+function applyFocusDefaultsToTimer() {
+    if (isRunning) return;
+    document.getElementById('timer-focus').value = getSetting('focus.focusMin',25);
+    document.getElementById('timer-short-break').value = getSetting('focus.shortBreak',5);
+    document.getElementById('timer-long-break').value = getSetting('focus.longBreak',15);
+    resetTimer();
+}
+
+// ================= NAVIGATION =================
+function switchView(target) {
+    const desktopItem = document.querySelector(`.nav-item[data-view="${target}"]`);
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.view === target));
+    document.querySelectorAll('.mobile-nav button').forEach(i => i.classList.toggle('active', i.dataset.mobileView === target));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    const view = document.getElementById(`view-${target}`);
+    if (view) view.classList.add('active');
+    document.getElementById('view-title').textContent = desktopItem ? desktopItem.textContent.trim() : ({'master-calendar':'Calendar'}[target] || target);
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => switchView(item.dataset.view));
+});
+
+document.querySelectorAll('.mobile-nav button').forEach(item => {
+    item.addEventListener('click', () => switchView(item.dataset.mobileView));
+});
+
+document.getElementById('global-add-btn').addEventListener('click',()=>openModal('quick-add-modal'));
+document.querySelectorAll('[data-quick-type]').forEach(btn=>btn.addEventListener('click',()=>{
+    closeModal('quick-add-modal');
+    const t=btn.dataset.quickType;
+    if(t==='task') resetTaskForm(),openModal('task-modal');
+    else if(t==='event') openCalendarEventModal();
+    else if(t==='habit') openHabitModal();
+    else if(t==='workout') openWorkoutModal();
+    else if(t==='note') openNoteModal();
+    else if(t==='transaction') openTxnModal();
+    else if(t==='expense') { openTxnModal(); setTimeout(()=>{ const x=document.getElementById('txn-type'); if(x)x.value='expense'; x?.dispatchEvent(new Event('change')); },0); }
+    else if(t==='income') { openTxnModal(); setTimeout(()=>{ const x=document.getElementById('txn-type'); if(x)x.value='income'; x?.dispatchEvent(new Event('change')); },0); }
+}));
+
+// ================= MODALS =================
+function openModal(id) { const el=document.getElementById(id);if(!el)return;el.classList.add('active');requestAnimationFrame(()=>window.OmniItemImages?.refresh?.()); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+document.querySelectorAll('.modal-close-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const overlay = e.target.closest('.modal-overlay');
+        if (overlay) overlay.classList.remove('active');
+    });
+});
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('active');
+    });
+});
+
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const m=document.querySelector('.modal-overlay.active');if(m){m.classList.remove('active');return;}const p=document.getElementById('inspector-panel');if(p?.classList.contains('open'))closeInspector();});
+
+// ================= MASTER CALENDAR =================
+let masterCalendarDate = new Date();
+let masterCalendarMode = getSetting('calendar.defaultView','month');
+let masterCalendarFilters = {task:true, habit:true, workout:true, note:true, focus:true, finance:true, event:true};
+let editingCalendarEventId = null;
+
+const MASTER_CAL_TYPES = [
+    ['task','Tasks','✓'],['habit','Habits','⚡'],['workout','Workouts','🏋️'],['note','Notes','▤'],['focus','Focus','◷'],['finance','Finance','↗'],['event','Events','●']
+];
+
+function dateAtNoon(key){ return new Date(key+'T12:00:00'); }
+function daysInMonth(year, month){ return new Date(year, month+1, 0).getDate(); }
+function addDaysKey(key,n){ const d=dateAtNoon(key); d.setDate(d.getDate()+n); return localDateString(d); }
+function isoWeekday(key){ const d=dateAtNoon(key); return d.getDay(); }
+function nthWeekdayOfMonth(year,month,weekday,n){
+    const first=new Date(year,month,1,12); const offset=(weekday-first.getDay()+7)%7; const day=1+offset+(n-1)*7;
+    return day<=daysInMonth(year,month)?localDateString(new Date(year,month,day,12)):null;
+}
+function recurrenceLabel(r){
+    if(!r) return 'One-time';
+    if(r.freq==='daily') return `Every ${r.interval||1} day${(r.interval||1)>1?'s':''}`;
+    if(r.freq==='weekly'){
+        const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; const ds=(r.weekdays||[]).map(Number).sort((a,b)=>a-b).map(i=>names[i]).join(', ');
+        return `Every ${r.interval||1} week${(r.interval||1)>1?'s':''}${ds?' · '+ds:''}`;
+    }
+    if(r.freq==='monthly') return r.monthlyMode==='weekday'
+        ? `Every ${r.interval||1} month${(r.interval||1)>1?'s':''} · ${['1st','2nd','3rd','4th','5th'][((r.nth||1)-1)]||'1st'} ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][Number(r.weekday||0)]}`
+        : `Every ${r.interval||1} month${(r.interval||1)>1?'s':''} · day ${r.day||1}`;
+    if(r.freq==='yearly') return `Every ${r.interval||1} year${(r.interval||1)>1?'s':''}`;
+    return 'Recurring';
+}
+function recurrenceOccursOn(r,startKey,key){
+    if(!r) return key===startKey;
+    if(key<startKey) return false;
+    const start=dateAtNoon(startKey), d=dateAtNoon(key);
+    const endMode=r.endMode||'never';
+    if(endMode==='until' && key>(r.until||'9999-12-31')) return false;
+    if(!recurrenceOccursRaw(r,start,d)) return false;
+    if(endMode!=='count') return true;
+    const target=Math.max(1,Number(r.count)||1);
+    let occurrences=0, guard=0;
+    for(let cur=new Date(start);cur<=d&&guard<5000;cur.setDate(cur.getDate()+1),guard++){
+        if(recurrenceOccursRaw(r,start,cur)) occurrences++;
+        if(occurrences>target) return false;
+    }
+    return occurrences<=target;
+}
+function monthsBetween(a,b){ return (b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth()); }
+function recurrenceOccursRaw(r,start,d){
+    const interval=Math.max(1,Number(r.interval||1));
+    // Compare civil calendar days through UTC serials so DST changes cannot skip/repeat recurrences.
+    const daySerial=x=>Math.floor(Date.UTC(x.getFullYear(),x.getMonth(),x.getDate())/86400000);
+    if(r.freq==='daily') return (daySerial(d)-daySerial(start))%interval===0;
+    if(r.freq==='weekly'){
+        const diffDays=daySerial(d)-daySerial(start); if(diffDays<0) return false;
+        const weeks=Math.floor(diffDays/7); if(weeks%interval!==0) return false;
+        const days=(r.weekdays&&r.weekdays.length)?r.weekdays.map(Number):[start.getDay()]; return days.includes(d.getDay());
+    }
+    if(r.freq==='monthly'){
+        const diff=monthsBetween(start,d); if(diff<0||diff%interval!==0) return false;
+        if(r.monthlyMode==='weekday') return d.getDay()===Number(r.weekday||0) && Math.ceil(d.getDate()/7)===Number(r.nth||1);
+        return d.getDate()===Math.min(Number(r.day||start.getDate()),daysInMonth(d.getFullYear(),d.getMonth()));
+    }
+    if(r.freq==='yearly'){
+        const years=d.getFullYear()-start.getFullYear(); if(years<0||years%interval!==0) return false;
+        return d.getMonth()===start.getMonth() && d.getDate()===Math.min(start.getDate(),daysInMonth(d.getFullYear(),d.getMonth()));
+    }
+    return false;
+}
+function expandCalendarEvent(e,rangeStart,rangeEnd){
+    const out=[]; const startKey=e.date; if(!startKey) return out;
+    if(!e.recurrence){ if(startKey>=rangeStart&&startKey<=rangeEnd) out.push({...e}); return out; }
+    const r=e.recurrence, start=dateAtNoon(startKey), end=dateAtNoon(rangeEnd);
+    // Count-based recurrences must be scanned from the series start, otherwise a later
+    // calendar window incorrectly resets the occurrence counter.
+    const cursor=(r.endMode==='count')?new Date(start):dateAtNoon(rangeStart<startKey?startKey:rangeStart);
+    const target=Math.max(1,Number(r.count)||1); let seen=0, guard=0;
+    for(;cursor<=end && guard<5000;cursor.setDate(cursor.getDate()+1),guard++){
+        const key=localDateString(cursor);
+        if(r.endMode==='until'&&key>(r.until||'9999-12-31')) break;
+        if(!recurrenceOccursRaw(r,start,cursor)) continue;
+        if(r.endMode==='count' && ++seen>target) break;
+        if(key>=rangeStart && key<=rangeEnd) out.push({...e,id:`event-${e.id}-${key}`,date:key,occurrence:true,sourceEventId:e.id});
+    }
+    return out;
+}
+function masterCalendarEvents(){
+    const events=[]; const rangeStart=localDateString(new Date(masterCalendarDate.getFullYear(),masterCalendarDate.getMonth()-1,1,12)); const rangeEnd=localDateString(new Date(masterCalendarDate.getFullYear(),masterCalendarDate.getMonth()+2,0,12));
+    state.entries.forEach(e=>{ if(e.date) events.push({id:`task-${e.id}`,date:e.date,type:'task',icon:'✓',label:'Task',title:e.title||'Untitled',meta:`${statusLabels[e.status]||e.status} · ${catLabels[e.category]||e.category}`,fullAction:()=>{switchView('tasks');openInspector(e.id)}}); });
+    state.habits.forEach(h=>Object.keys(h.log||{}).forEach(date=>{ if(h.log[date]) events.push({id:`habit-${h.id}-${date}`,date,type:'habit',icon:h.icon||'⚡',label:'Habit',title:h.name||'Habit',meta:`Completed · ${h.goal||'Daily'}`,fullAction:()=>{switchView('habits');habitWeekStart=dateAtNoon(date);{const dow=habitWeekStart.getDay(),mon=getSetting('calendar.weekStart','sunday')==='monday',off=mon?(dow+6)%7:dow;habitWeekStart.setDate(habitWeekStart.getDate()-off)}renderHabits();}}); }));
+    state.workouts.forEach(w=>{if(w.date)events.push({id:`workout-${w.id}`,date:w.date,type:'workout',icon:'🏋️',label:'Workout',title:w.name||'Workout',meta:`${w.status==='completed'?'Completed':'Active'} · ${workoutCompletedSets(w)} sets`,fullAction:()=>{switchView('workout');workoutTab=w.status==='completed'?'history':'session';renderWorkout();}})});
+    state.notes.forEach(n=>{const d=new Date(n.updatedAt||n.date||Date.now());events.push({id:`note-${n.id}`,date:localDateString(d),type:'note',icon:'▤',label:'Note',title:n.title||'Untitled',meta:'Updated note',fullAction:()=>{switchView('notes');openNoteModal(n.id);}})});
+    state.transactions.forEach(t=>{if(t.date)events.push({id:`txn-${t.id}`,date:t.date,type:'finance',icon:t.type==='income'?'↗':'↘',label:t.type==='income'?'Income':'Expense',title:t.desc||'Transaction',meta:`${t.type==='income'?'+':'-'}${Number(t.amount||0).toFixed(2)}`,fullAction:()=>{switchView('budget');editTransaction(t.id);}})});
+    Object.keys(state.focusDaily||{}).forEach(date=>{const mins=Number(state.focusDaily[date]||0);if(mins>0)events.push({id:`focus-${date}`,date,type:'focus',icon:'◷',label:'Focus',title:`${mins} min focused`,meta:`${state.focusSessions||0} total sessions`,fullAction:()=>switchView('focus')})});
+    state.calendarEvents.forEach(e=>expandCalendarEvent(e,rangeStart,rangeEnd).forEach(o=>{o.type='event';o.label='Event';o.icon=e.icon||'●';o.meta=(e.startTime?e.startTime+(e.duration?` · ${e.duration} min`:''):'')+(e.reminder?` · ⏰ ${e.reminder}m`:'')+(recurrenceLabel(e.recurrence)!=='One-time'?` · ${recurrenceLabel(e.recurrence)}`:'')+(e.description?' · '+e.description:'');o.fullAction=()=>openCalendarEventModal(e.id);o.action=()=>openCalendarItemPreview({...o,fullAction:o.fullAction});events.push(o);}));
+    return events;
+}
+function masterCalendarFilteredEvents(){return masterCalendarEvents().filter(e=>!!masterCalendarFilters[e.type]);}
+function masterMonthTitle(){return masterCalendarDate.toLocaleDateString(undefined,{month:'long',year:'numeric'});}
+function masterDateKey(d){return localDateString(d);}
+function masterEventColor(type){return ({task:'var(--accent-blue)',habit:'var(--accent-green)',workout:'var(--accent-red)',note:'var(--accent-purple)',finance:'var(--accent-yellow)',focus:'var(--accent-cyan)',event:'var(--accent-pink)'})[type]||'var(--text-secondary)';}
+function calWeekdayIndex(date){ const dow=date.getDay(); return getSetting('calendar.weekStart','sunday')==='monday' ? (dow+6)%7 : dow; }
+function renderMasterCalendar(){
+    const c=document.getElementById('master-calendar-content');if(!c)return; const all=masterCalendarFilteredEvents(); const y=masterCalendarDate.getFullYear(),m=masterCalendarDate.getMonth();
+    const first=new Date(y,m,1);first.setDate(first.getDate()-calWeekdayIndex(first));const last=new Date(y,m+1,0);last.setDate(last.getDate()+(6-calWeekdayIndex(last)));const days=[];for(let d=new Date(first);d<=last;d.setDate(d.getDate()+1))days.push(new Date(d));
+    const activeCount=Object.values(masterCalendarFilters).filter(Boolean).length;
+    const eventMap={};all.forEach(e=>(eventMap[e.date]??=[]).push(e)); const weekdays=getSetting('calendar.weekStart','sunday')==='monday'?['Mon','Tue','Wed','Thu','Fri','Sat','Sun']:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    c.innerHTML=`<div class="master-cal-shell-wrap"><div class="master-calendar-shell"><div class="master-cal-toolbar"><div class="master-cal-nav"><button type="button" class="btn btn-sm" id="master-cal-prev">◀</button><button type="button" class="btn btn-sm" id="master-cal-today">Today</button><button type="button" class="btn btn-sm" id="master-cal-next">▶</button><div class="master-cal-title">${masterMonthTitle()}</div></div><div class="master-cal-filters"><button type="button" class="btn btn-sm" id="master-cal-filter-toggle">Filters <span class="master-filter-count">${activeCount}/${MASTER_CAL_TYPES.length}</span></button><select class="filter-select" id="master-cal-mode"><option value="month">Month</option><option value="agenda">Agenda</option></select><button type="button" class="btn btn-primary btn-sm" id="master-cal-add-event">+ Event</button></div></div><div class="master-filter-panel" id="master-filter-panel">${MASTER_CAL_TYPES.map(([v,l,ic])=>`<label class="master-filter-chip"><input type="checkbox" data-master-filter="${v}" ${masterCalendarFilters[v]?'checked':''}><span class="master-filter-dot" style="background:${masterEventColor(v)}"></span><span>${ic} ${l}</span></label>`).join('')}<button type="button" class="btn btn-sm" id="master-filter-all">All</button><button type="button" class="btn btn-sm" id="master-filter-none">None</button></div><div class="master-cal-legend">${MASTER_CAL_TYPES.filter(x=>masterCalendarFilters[x[0]]).map(([v,l])=>`<span class="master-cal-dot" style="color:${masterEventColor(v)}"><i></i>${l}</span>`).join('')||'<span class="text-muted">No calendar types selected.</span>'}</div><div id="master-cal-body"></div></div></div>`;
+    document.getElementById('master-filter-panel').style.display='none'; const body=document.getElementById('master-cal-body');
+    if(masterCalendarMode==='agenda') renderMasterAgenda(body,all); else body.innerHTML=`<div class="master-cal-grid">${weekdays.map(d=>`<div class="master-cal-weekday">${d}</div>`).join('')}${days.map(d=>{const k=masterDateKey(d),events=(eventMap[k]||[]).slice(0,7),more=(eventMap[k]||[]).length-events.length;return `<div class="master-cal-day ${d.getMonth()!==m?'other-month':''} ${k===localDateString()?'today':''}" data-master-date="${k}"><div class="master-cal-day-num">${d.getDate()}</div>${events.map(e=>`<button type="button" class="master-cal-event" data-master-event="${escapeHtml(e.id)}" style="color:${masterEventColor(e.type)}"><span class="master-cal-event-dot"></span><span>${escapeHtml(e.title)}</span></button>`).join('')}${more>0?`<button type="button" class="master-more-btn" data-master-more="${k}">+${more} more</button>`:''}</div>`}).join('')}</div>`;
+    bindMasterCalendar();
+}
+function renderMasterAgenda(body,events){const dates=[];const base=new Date(masterCalendarDate.getFullYear(),masterCalendarDate.getMonth(),1);const end=new Date(masterCalendarDate.getFullYear(),masterCalendarDate.getMonth()+1,0);for(let d=new Date(base);d<=end;d.setDate(d.getDate()+1)){const k=localDateString(d),dayEvents=events.filter(e=>e.date===k);if(dayEvents.length)dates.push({d:new Date(d),events:dayEvents});}body.innerHTML=dates.length?`<div class="master-cal-agenda">${dates.map(x=>`<div class="card master-agenda-day"><div class="card-header"><h4 class="card-title">${x.d.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}</h4><span class="text-muted" style="font-size:.65rem">${x.events.length} item${x.events.length===1?'':'s'}</span></div><div class="master-agenda-list">${x.events.map(e=>`<div class="master-agenda-item" data-master-event="${escapeHtml(e.id)}"><div class="master-agenda-icon" style="color:${masterEventColor(e.type)}">${escapeHtml(e.icon)}</div><div class="master-agenda-main"><div class="master-agenda-title">${escapeHtml(e.title)}</div><div class="master-agenda-meta">${escapeHtml(e.label)} · ${escapeHtml(e.meta)}</div></div></div>`).join('')}</div></div>`).join('')}</div>`:'<div class="master-empty">Nothing scheduled in this month with the current filters.</div>';}
+function bindMasterCalendar(){
+    document.getElementById('master-cal-prev').onclick=()=>{masterCalendarDate.setMonth(masterCalendarDate.getMonth()-1);renderMasterCalendar()};
+    document.getElementById('master-cal-next').onclick=()=>{masterCalendarDate.setMonth(masterCalendarDate.getMonth()+1);renderMasterCalendar()};
+    document.getElementById('master-cal-today').onclick=()=>{masterCalendarDate=new Date();renderMasterCalendar()};
+    document.getElementById('master-cal-mode').value=masterCalendarMode;
+    document.getElementById('master-cal-mode').onchange=e=>{masterCalendarMode=e.target.value;renderMasterCalendar()};
+    document.getElementById('master-cal-filter-toggle').onclick=()=>{const p=document.getElementById('master-filter-panel');p.style.display=p.style.display==='none'?'flex':'none'};
+    document.querySelectorAll('[data-master-filter]').forEach(el=>el.onchange=()=>{masterCalendarFilters[el.dataset.masterFilter]=el.checked;renderMasterCalendar()});
+    document.getElementById('master-filter-all').onclick=()=>{MASTER_CAL_TYPES.forEach(x=>masterCalendarFilters[x[0]]=true);renderMasterCalendar()};
+    document.getElementById('master-filter-none').onclick=()=>{MASTER_CAL_TYPES.forEach(x=>masterCalendarFilters[x[0]]=false);renderMasterCalendar()};
+    document.getElementById('master-cal-add-event').onclick=()=>openCalendarEventModal();
+    document.querySelectorAll('[data-master-event]').forEach(el=>el.addEventListener('click',ev=>{ev.stopPropagation();const event=masterCalendarEvents().find(x=>String(x.id)===String(el.dataset.masterEvent));if(event)openCalendarItemPreview(event)}));
+    document.querySelectorAll('[data-master-more]').forEach(el=>el.addEventListener('click',ev=>{ev.stopPropagation();masterCalendarDate=dateAtNoon(el.dataset.masterMore);masterCalendarMode='agenda';renderMasterCalendar()}));
+    document.querySelectorAll('[data-master-date]').forEach(el=>el.addEventListener('click',e=>{if(e.target.closest('[data-master-event]')||e.target.closest('[data-master-more]'))return;masterCalendarDate=dateAtNoon(el.dataset.masterDate);masterCalendarMode='agenda';renderMasterCalendar()}));
+}
+document.getElementById('master-calendar-quick-add')?.addEventListener('click',()=>openCalendarEventModal());
+
+function calendarEventDefault(date){return {title:'',date:date||localDateString(masterCalendarDate),startTime:'',duration:Number(getSetting('calendar.defaultDuration',60))||60,reminder:Number(getSetting('calendar.defaultReminder',15))||0,description:'',icon:'●',recurrence:null};}
+function openCalendarEventModal(id){
+    editingCalendarEventId=id||null; const ev=id?state.calendarEvents.find(x=>String(x.id)===String(id)):calendarEventDefault(localDateString(masterCalendarDate)); if(!ev)return;
+    document.getElementById('calendar-event-modal-title').textContent=id?'Edit Event':'New Calendar Event';
+    document.getElementById('calendar-event-title').value=ev.title||'';document.getElementById('calendar-event-date').value=ev.date||localDateString();document.getElementById('calendar-event-start-time').value=ev.startTime||'';document.getElementById('calendar-event-duration').value=Number(ev.duration ?? getSetting('calendar.defaultDuration',60));document.getElementById('calendar-event-reminder').value=Number(ev.reminder ?? getSetting('calendar.defaultReminder',15));document.getElementById('calendar-event-icon').value=ev.icon||'●';document.getElementById('calendar-event-description').value=ev.description||'';
+    const r=ev.recurrence||{freq:'none',interval:1,weekdays:[new Date((ev.date||localDateString())+'T12:00:00').getDay()],monthlyMode:'day',day:Number((ev.date||localDateString()).slice(8,10)),nth:1,weekday:new Date((ev.date||localDateString())+'T12:00:00').getDay(),endMode:'never',count:10,until:''};
+    document.getElementById('calendar-event-recurrence').value=r.freq||'none';document.getElementById('calendar-event-interval').value=r.interval||1;document.getElementById('calendar-event-monthly-mode').value=r.monthlyMode||'day';document.getElementById('calendar-event-month-day').value=r.day||Number((ev.date||localDateString()).slice(8,10));document.getElementById('calendar-event-nth').value=r.nth||1;document.getElementById('calendar-event-weekday-month').value=r.weekday??0;document.getElementById('calendar-event-end').value=r.endMode||'never';document.getElementById('calendar-event-count').value=r.count||10;document.getElementById('calendar-event-until').value=r.until||'';
+    document.querySelectorAll('[data-event-weekday]').forEach(cb=>cb.checked=(r.weekdays||[]).map(Number).includes(Number(cb.dataset.eventWeekday)));
+    toggleCalendarRecurrenceFields(); openModal('calendar-event-modal');
+}
+function toggleCalendarRecurrenceFields(){const freq=document.getElementById('calendar-event-recurrence').value;document.getElementById('calendar-event-recurrence-fields').style.display=freq==='none'?'none':'block';document.getElementById('calendar-event-weekdays-wrap').style.display=freq==='weekly'?'block':'none';document.getElementById('calendar-event-monthly-wrap').style.display=freq==='monthly'?'block':'none';document.getElementById('calendar-event-until-wrap').style.display=document.getElementById('calendar-event-end').value==='until'?'block':'none';document.getElementById('calendar-event-count-wrap').style.display=document.getElementById('calendar-event-end').value==='count'?'block':'none';if(freq==='monthly')toggleCalendarMonthlyMode();}
+function toggleCalendarMonthlyMode(){const m=document.getElementById('calendar-event-monthly-mode').value;document.getElementById('calendar-event-month-day-wrap').style.display=m==='day'?'block':'none';document.getElementById('calendar-event-nth-wrap').style.display=m==='weekday'?'grid':'none';}
+function collectCalendarRecurrence(){const freq=document.getElementById('calendar-event-recurrence').value;if(freq==='none')return null;return {freq,interval:Math.max(1,Number(document.getElementById('calendar-event-interval').value)||1),weekdays:[...document.querySelectorAll('[data-event-weekday]:checked')].map(x=>Number(x.dataset.eventWeekday)),monthlyMode:document.getElementById('calendar-event-monthly-mode').value,day:Math.max(1,Math.min(31,Number(document.getElementById('calendar-event-month-day').value)||1)),nth:Number(document.getElementById('calendar-event-nth').value)||1,weekday:Number(document.getElementById('calendar-event-weekday-month').value)||0,endMode:document.getElementById('calendar-event-end').value,count:Math.max(1,Number(document.getElementById('calendar-event-count').value)||1),until:document.getElementById('calendar-event-until').value||''};}
+document.getElementById('calendar-event-recurrence').addEventListener('change',toggleCalendarRecurrenceFields);document.getElementById('calendar-event-end').addEventListener('change',toggleCalendarRecurrenceFields);document.getElementById('calendar-event-monthly-mode').addEventListener('change',toggleCalendarMonthlyMode);
+document.getElementById('calendar-event-save').addEventListener('click',()=>{const title=document.getElementById('calendar-event-title').value.trim();if(!title){window.toast('Please enter an event title');return;}const data={title,date:document.getElementById('calendar-event-date').value||localDateString(),startTime:document.getElementById('calendar-event-start-time').value||'',duration:Math.max(0,Number(document.getElementById('calendar-event-duration').value)||0),reminder:Math.max(0,Number(document.getElementById('calendar-event-reminder').value)||0),description:document.getElementById('calendar-event-description').value.trim(),icon:document.getElementById('calendar-event-icon').value.trim()||'●',recurrence:collectCalendarRecurrence(),updatedAt:new Date().toISOString()};if(editingCalendarEventId){const i=state.calendarEvents.findIndex(x=>String(x.id)===String(editingCalendarEventId));if(i>=0)state.calendarEvents[i]={...state.calendarEvents[i],...data};}else state.calendarEvents.push({id:Date.now(),createdAt:new Date().toISOString(),...data});closeModal('calendar-event-modal');saveState();});
+document.getElementById('calendar-event-delete').addEventListener('click',()=>{if(!editingCalendarEventId)return;if(!confirm('Delete this event and its recurrence?'))return;state.calendarEvents=state.calendarEvents.filter(x=>String(x.id)!==String(editingCalendarEventId));editingCalendarEventId=null;closeModal('calendar-event-modal');saveState();});
+
+function openCalendarItemPreview(event){
+    if(!event)return;
+    const panel=document.getElementById('inspector-panel'),backdrop=document.getElementById('inspector-backdrop'),content=document.getElementById('inspector-content');
+    const colors={task:'var(--accent-blue)',habit:'var(--accent-green)',workout:'var(--accent-red)',note:'var(--accent-purple)',finance:'var(--accent-yellow)',focus:'var(--accent-cyan)',event:'var(--accent-pink)'};
+    const detailLabel=event.type==='finance'?'Amount':event.type==='focus'?'Summary':event.type==='event'?'Schedule':'Details';
+    const eventExtra=event.type==='event'?`<div style="margin-top:8px;color:var(--accent-pink);font-weight:700">${escapeHtml(event.occurrence?'Recurring occurrence':'Calendar event')}</div>`:'';
+    const schedule=event.startTime?`${escapeHtml(event.startTime)}${event.duration?` · ${escapeHtml(event.duration)} min`:''}${event.reminder?` · ⏰ ${escapeHtml(event.reminder)}m`:''}`:'';
+    content.innerHTML=`<div class="calendar-item-preview"><div class="calendar-preview-icon" style="color:${colors[event.type]||'var(--text-primary)'}">${escapeHtml(event.icon||'•')}</div><div class="calendar-preview-type" style="color:${colors[event.type]||'var(--text-secondary)'}">${escapeHtml(event.label||event.type)}</div><h2 class="calendar-preview-title">${escapeHtml(event.title||'Untitled')}</h2><div class="calendar-preview-meta"><span>📅</span>${event.date?dateAtNoon(event.date).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}):'No date'}${schedule?' · '+schedule:''}</div><div class="calendar-preview-card"><div class="inspector-section-title">${detailLabel}</div><div class="calendar-preview-detail">${escapeHtml(event.meta||'No additional details')}</div>${eventExtra}</div><div class="calendar-preview-actions"><button type="button" class="btn btn-primary" id="calendar-preview-full">Open full</button>${event.type==='event'?'<button type="button" class="btn" id="calendar-preview-edit-event">Edit event</button>':''}<button type="button" class="btn" id="calendar-preview-close">Close</button></div></div>`;
+    panel.classList.add('open');backdrop.classList.add('active');
+    document.getElementById('calendar-preview-full').onclick=()=>{closeInspector();event.fullAction?.()};
+    document.getElementById('calendar-preview-close').onclick=closeInspector;
+    if(event.type==='event'){document.getElementById('calendar-preview-edit-event').onclick=()=>{closeInspector();event.fullAction?.();};}
+}
+
+function closeInspector() {
+    document.getElementById('inspector-panel').classList.remove('open');
+    document.getElementById('inspector-backdrop').classList.remove('active');
+}
+
+document.getElementById('inspector-close-btn').addEventListener('click', closeInspector);
+document.getElementById('inspector-backdrop').addEventListener('click', closeInspector);
+
+// ================= TASKS & CALENDAR ENGINE =================
+let editingTaskId = null;
+let currentTaskView = 'kanban';
+let calMode = 'month'; // 'month' | 'week' | 'day'
+let calendarDate = new Date(); // Anchor date for calendar nav
+
+document.querySelectorAll('[data-taskview]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-taskview]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTaskView = btn.dataset.taskview;
+        renderTasks();
+    });
+});
+
+['filter-importance','filter-urgency','filter-status','filter-category','sort-by','search-input'].forEach(id => {
+    document.getElementById(id).addEventListener('change', renderTasks);
+    document.getElementById(id).addEventListener('input', renderTasks);
+});
+
+function getFilteredEntries() {
+    let entries = [...state.entries];
+    const imp = document.getElementById('filter-importance').value;
+    const urg = document.getElementById('filter-urgency').value;
+    const stat = document.getElementById('filter-status').value;
+    const cat = document.getElementById('filter-category').value;
+    const sort = document.getElementById('sort-by').value;
+    const search = document.getElementById('search-input').value.toLowerCase();
+
+    if (imp !== 'all') entries = entries.filter(e => e.importance === imp);
+    if (urg !== 'all') entries = entries.filter(e => e.urgency === urg);
+    if (stat !== 'all') entries = entries.filter(e => e.status === stat);
+    if (cat !== 'all') entries = entries.filter(e => e.category === cat);
+    if (search) entries = entries.filter(e => String(e.title || '').toLowerCase().includes(search) || String(e.notes || '').toLowerCase().includes(search));
+    if(getSetting('tasks.autoArchive',false)) entries=entries.filter(e=>e.status!=='completed');
+
+    const impOrder = { high: 0, medium: 1, low: 2 };
+    switch(sort) {
+        case 'date-asc': entries.sort((a,b) => new Date(a.date||0) - new Date(b.date||0)); break;
+        case 'date-desc': entries.sort((a,b) => new Date(b.date||0) - new Date(a.date||0)); break;
+        case 'importance': entries.sort((a,b) => impOrder[a.importance] - impOrder[b.importance]); break;
+        case 'title': entries.sort((a,b) => a.title.localeCompare(b.title)); break;
+    }
+    return entries;
+}
+
+function resetTaskForm() {
+    editingTaskId=null;
+    document.getElementById('task-modal-title').textContent='Add New Entry';
+    document.getElementById('task-title').value='';
+    document.getElementById('task-category').value=getSetting('tasks.defaultCategory','work');
+    document.getElementById('task-status').value='todo';
+    document.getElementById('task-importance').value=getSetting('tasks.defaultPriority','medium');
+    document.getElementById('task-urgency').value=getSetting('tasks.defaultUrgency','not-urgent');
+    document.getElementById('task-date').value=localDateString();
+    document.getElementById('task-notes').value='';
+}
+
+document.getElementById('task-save-btn').addEventListener('click', () => {
+    const title = document.getElementById('task-title').value.trim();
+    if (!title) { window.toast('Please enter a title'); return; }
+
+    const data = {
+        title,
+        category: document.getElementById('task-category').value,
+        status: document.getElementById('task-status').value,
+        importance: document.getElementById('task-importance').value,
+        urgency: document.getElementById('task-urgency').value,
+        date: document.getElementById('task-date').value,
+        notes: document.getElementById('task-notes').value
+    };
+
+    if (editingTaskId) {
+        const idx = state.entries.findIndex(e => String(e.id) === String(editingTaskId));
+        if (idx !== -1) state.entries[idx] = { ...state.entries[idx], ...data };
+    } else {
+        state.entries.push({
+            id: Date.now(),
+            ...data,
+            subtasks: [],
+            linkedIds: [],
+            createdAt: new Date().toISOString()
+        });
+    }
+
+    closeModal('task-modal');
+    saveState();
+});
+
+function editTask(id) {
+    const entry = state.entries.find(e => String(e.id) === String(id));
+    if (!entry) return;
+    editingTaskId = id;
+    document.getElementById('task-modal-title').textContent = 'Edit Entry';
+    document.getElementById('task-title').value = entry.title;
+    document.getElementById('task-category').value = entry.category;
+    document.getElementById('task-status').value = entry.status;
+    document.getElementById('task-importance').value = entry.importance;
+    document.getElementById('task-urgency').value = entry.urgency;
+    document.getElementById('task-date').value = entry.date || '';
+    document.getElementById('task-notes').value = entry.notes || '';
+    openModal('task-modal');
+}
+
+function deleteTask(id) {
+    if (!confirm('Delete this entry?')) return;
+    state.entries = state.entries.filter(e => String(e.id) !== String(id));
+    closeInspector();
+    saveState();
+    window.toastUndo && window.toastUndo('Task deleted');
+}
+
+function toggleTaskStatus(id) {
+    const entry = state.entries.find(e => String(e.id) === String(id));
+    if (!entry) return;
+    if (entry.status === 'completed') entry.status = 'todo';
+    else if (entry.status === 'todo') entry.status = 'in-progress';
+    else entry.status = 'completed';
+    saveState();
+}
+
+function getQuadrant(entry) {
+    const isImp = entry.importance === 'high';
+    const isUrg = entry.urgency === 'urgent';
+    if (isImp && isUrg) return 'q1';
+    if (isImp && !isUrg) return 'q2';
+    if (!isImp && isUrg) return 'q3';
+    return 'q4';
+}
+
+const catLabels = { work: '💼 Work', hobby: '🎨 Hobby', routine: '🔄 Routine', gym: '🏋️ Gym', meal: '🥗 Meal' };
+const statusLabels = { 'todo': 'To Do', 'in-progress': 'In Progress', 'completed': 'Completed' };
+const impLabels = { high: 'High', medium: 'Med', low: 'Low' };
+
+function renderTaskCard(entry, compact = false) {
+    const importance = ['high','medium','low'].includes(entry.importance) ? entry.importance : 'medium';
+    const urgency = ['urgent','not-urgent'].includes(entry.urgency) ? entry.urgency : 'not-urgent';
+    const impClass = importance === 'high' ? 'tag-high' : importance === 'medium' ? 'tag-med' : 'tag-low';
+    const urgClass = urgency === 'urgent' ? 'tag-urgent' : 'tag-not-urgent';
+    return `
+        <div class="kanban-card v24-group-item" data-entry-id="${entry.id}" data-group-item-id="${entry.id}" data-group-type="task">
+            <div class="kanban-card-title">${escapeHtml(entry.title)}</div>
+            <div class="kanban-card-meta">
+                <span class="tag ${impClass}">${escapeHtml(impLabels[importance] || importance)}</span>
+                <span class="tag ${urgClass}">${urgency === 'urgent' ? 'Urgent' : 'Not Urgent'}</span>
+                <span class="tag tag-cat">${escapeHtml(catLabels[entry.category] || entry.category)}</span>
+            </div>
+            ${!compact && entry.date ? `<div style="font-size:0.68rem; color:var(--text-muted); margin-top:5px;">📅 ${formatDateKeyLocal(entry.date)}</div>` : ''}
+        </div>
+    `;
+}
+
+function renderTasks() {
+    const entries = getFilteredEntries();
+    const container = document.getElementById('tasks-content');
+
+    if (entries.length === 0 && currentTaskView !== 'calendar') {
+        container.innerHTML = '<div class="empty-state">No entries found. Click "+ Quick Add" to create one.</div>';
+        return;
+    }
+
+    switch(currentTaskView) {
+        case 'kanban': renderKanban(entries, container); break;
+        case 'matrix': renderMatrix(entries, container); break;
+        case 'list': renderList(entries, container); break;
+        case 'gallery': renderGallery(entries, container); break;
+        case 'calendar': renderCalendarMaster(entries, container); break;
+        case 'groups': if (typeof window.renderTaskGroupsV25 === 'function') window.renderTaskGroupsV25(entries, container); break;
+    }
+    attachCardClicks();
+    setTimeout(()=>window.omniosV25RefreshGrouping?.(),0);
+}
+
+function attachCardClicks() {
+    document.querySelectorAll('[data-entry-id]').forEach(el => {
+        if (el.dataset.cardClickBound === '1') return;
+        el.dataset.cardClickBound = '1';
+        el.addEventListener('click', (e) => {
+            if (e.target.closest('[data-no-open]')) return;
+            // Task IDs can be plain integers (Date.now()) or decimals (Date.now()+Math.random(),
+            // used by templates and the Assistant) — parseInt used to truncate the latter and
+            // silently fail to find the entry, so the card looked clickable but did nothing.
+            openInspector(el.dataset.entryId);
+        });
+    });
+}
+
+function renderKanban(entries, container) {
+    const cols = { 'todo': [], 'in-progress': [], 'completed': [] };
+    entries.forEach(e => { if(cols[e.status]) cols[e.status].push(e); });
+
+    container.innerHTML = `
+        <div class="kanban-board">
+            <div class="kanban-col">
+                <div class="kanban-col-header">📋 To Do <span class="count">${cols.todo.length}</span></div>
+                <div class="kanban-cards">${cols.todo.map(e => renderTaskCard(e)).join('')}</div>
+            </div>
+            <div class="kanban-col">
+                <div class="kanban-col-header">⏳ In Progress <span class="count">${cols['in-progress'].length}</span></div>
+                <div class="kanban-cards">${cols['in-progress'].map(e => renderTaskCard(e)).join('')}</div>
+            </div>
+            <div class="kanban-col">
+                <div class="kanban-col-header">✅ Completed <span class="count">${cols.completed.length}</span></div>
+                <div class="kanban-cards">${cols.completed.map(e => renderTaskCard(e)).join('')}</div>
+            </div>
+        </div>
+    `;
+}
+
+function renderMatrix(entries, container) {
+    const boxes = { q1: [], q2: [], q3: [], q4: [] };
+    entries.forEach(e => boxes[getQuadrant(e)].push(e));
+
+    container.innerHTML = `
+        <div class="eisenhower-grid">
+            <div class="eq-box" style="border-top: 3px solid var(--accent-red);">
+                <div class="eq-box-header">🔥 Q1: Do First <span class="tag tag-high">Urgent & Important</span></div>
+                <div class="eq-box-content">${boxes.q1.map(e => renderTaskCard(e, true)).join('') || '<div class="empty-state" style="padding:15px;">Empty</div>'}</div>
+            </div>
+            <div class="eq-box" style="border-top: 3px solid var(--accent-cyan);">
+                <div class="eq-box-header">📅 Q2: Schedule <span class="tag tag-med">Not Urgent & Important</span></div>
+                <div class="eq-box-content">${boxes.q2.map(e => renderTaskCard(e, true)).join('') || '<div class="empty-state" style="padding:15px;">Empty</div>'}</div>
+            </div>
+            <div class="eq-box" style="border-top: 3px solid var(--accent-yellow);">
+                <div class="eq-box-header">⚡ Q3: Delegate <span class="tag tag-low">Urgent & Not Important</span></div>
+                <div class="eq-box-content">${boxes.q3.map(e => renderTaskCard(e, true)).join('') || '<div class="empty-state" style="padding:15px;">Empty</div>'}</div>
+            </div>
+            <div class="eq-box" style="border-top: 3px solid var(--text-muted);">
+                <div class="eq-box-header">📥 Q4: Eliminate <span class="tag" style="background:var(--bg-hover); color:var(--text-muted);">Not Urgent & Not Important</span></div>
+                <div class="eq-box-content">${boxes.q4.map(e => renderTaskCard(e, true)).join('') || '<div class="empty-state" style="padding:15px;">Empty</div>'}</div>
+            </div>
+        </div>
+    `;
+}
+
+function renderList(entries, container) {
+    container.innerHTML = `
+        <div class="list-view">
+            ${entries.map(e => `
+                <div class="list-item ${e.status === 'completed' ? 'completed' : ''}" data-entry-id="${e.id}">
+                    <div class="list-item-check ${e.status === 'completed' ? 'checked' : ''}" data-no-open data-toggle-status="${e.id}">${e.status === 'completed' ? '✓' : ''}</div>
+                    <span class="list-item-title">${escapeHtml(e.title)}</span>
+                    <span class="tag ${e.importance === 'high' ? 'tag-high' : e.importance === 'medium' ? 'tag-med' : 'tag-low'}">${impLabels[e.importance] || 'Med'}</span>
+                    <span class="tag tag-cat">${catLabels[e.category] || '💼 Work'}</span>
+                    <span class="list-item-date">${e.date ? formatDateKeyLocal(e.date) : ''}</span>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    document.querySelectorAll('[data-toggle-status]').forEach(el => {
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleTaskStatus(el.dataset.toggleStatus);
+        });
+    });
+}
+
+function renderGallery(entries, container) {
+    container.innerHTML = `
+        <div class="gallery-grid">
+            ${entries.map(e => `
+                <div class="gallery-card priority-${e.importance === 'high' ? 'high' : e.importance === 'medium' ? 'med' : 'low'}" data-entry-id="${e.id}">
+                    <div class="gallery-card-title">${escapeHtml(e.title)}</div>
+                    <div class="gallery-card-cat">${catLabels[e.category] || '💼 Work'}</div>
+                    ${e.notes ? `<div style="font-size:0.76rem; color:var(--text-secondary); margin-bottom:6px;">${e.notes.substring(0,70)}${e.notes.length > 70 ? '...' : ''}</div>` : ''}
+                    <div class="gallery-card-footer">
+                        <span class="tag ${e.importance === 'high' ? 'tag-high' : e.importance === 'medium' ? 'tag-med' : 'tag-low'}">${impLabels[e.importance] || 'Med'}</span>
+                        <span class="tag ${e.urgency === 'urgent' ? 'tag-urgent' : 'tag-not-urgent'}">${e.urgency === 'urgent' ? 'Urgent' : 'Not Urgent'}</span>
+                        <span class="tag" style="background:var(--bg-hover); color:var(--text-secondary);">${statusLabels[e.status] || 'To Do'}</span>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+// ================= MULTI-VIEW CALENDAR ENGINE =================
+function renderCalendarMaster(entries, container) {
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    
+    let titleStr = '';
+    if (calMode === 'month') {
+        titleStr = `${monthNames[calendarDate.getMonth()]} ${calendarDate.getFullYear()}`;
+    } else if (calMode === 'week') {
+        const startOfWeek = new Date(calendarDate);
+        startOfWeek.setDate(calendarDate.getDate() - (getSetting('calendar.weekStart','sunday')==='monday' ? ((calendarDate.getDay()+6)%7) : calendarDate.getDay()));
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        titleStr = `${startOfWeek.toLocaleDateString(undefined, {month:'short', day:'numeric'})} - ${endOfWeek.toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'})}`;
+    } else {
+        titleStr = calendarDate.toLocaleDateString(undefined, {weekday:'long', month:'short', day:'numeric', year:'numeric'});
+    }
+
+    let subViewContent = '';
+    if (calMode === 'month') subViewContent = buildCalendarMonthView(entries);
+    else if (calMode === 'week') subViewContent = buildCalendarWeekView(entries);
+    else if (calMode === 'day') subViewContent = buildCalendarDayView(entries);
+
+    container.innerHTML = `
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="calendar-month-title">${titleStr}</div>
+                    <div class="cal-subview-btns">
+                        <button type="button" class="cal-subview-btn ${calMode==='month'?'active':''}" id="cal-mode-month">Month</button>
+                        <button type="button" class="cal-subview-btn ${calMode==='week'?'active':''}" id="cal-mode-week">Week</button>
+                        <button type="button" class="cal-subview-btn ${calMode==='day'?'active':''}" id="cal-mode-day">Day</button>
+                    </div>
+                </div>
+                <div class="calendar-nav">
+                    <button type="button" id="cal-prev">◀</button>
+                    <button type="button" id="cal-today">Today</button>
+                    <button type="button" id="cal-next">▶</button>
+                </div>
+            </div>
+            ${subViewContent}
+        </div>
+    `;
+
+    document.getElementById('cal-mode-month').addEventListener('click', () => { calMode='month'; renderTasks(); });
+    document.getElementById('cal-mode-week').addEventListener('click', () => { calMode='week'; renderTasks(); });
+    document.getElementById('cal-mode-day').addEventListener('click', () => { calMode='day'; renderTasks(); });
+
+    document.getElementById('cal-prev').addEventListener('click', () => changeCalendarNav(-1));
+    document.getElementById('cal-next').addEventListener('click', () => changeCalendarNav(1));
+    document.getElementById('cal-today').addEventListener('click', () => { calendarDate = new Date(); renderTasks(); });
+
+    document.querySelectorAll('[data-quick-add-date]').forEach(el => {
+        el.addEventListener('click', (e) => {
+            if (e.target.closest('[data-entry-id]')) return;
+            quickAddOnDate(el.dataset.quickAddDate);
+        });
+    });
+}
+
+function changeCalendarNav(delta) {
+    if (calMode === 'month') {
+        calendarDate.setMonth(calendarDate.getMonth() + delta);
+    } else if (calMode === 'week') {
+        calendarDate.setDate(calendarDate.getDate() + (delta * 7));
+    } else if (calMode === 'day') {
+        calendarDate.setDate(calendarDate.getDate() + delta);
+    }
+    renderTasks();
+}
+
+function buildCalendarMonthView(entries) {
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDay = firstDay.getDay();
+    const totalDays = lastDay.getDate();
+    const today = new Date();
+
+    let daysHtml = '';
+    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
+        daysHtml += `<div class="calendar-day-header">${d}</div>`;
+    });
+
+    const prevMonthLast = new Date(year, month, 0).getDate();
+    for (let i = startDay - 1; i >= 0; i--) {
+        daysHtml += `<div class="calendar-day other-month"><div class="calendar-day-num">${prevMonthLast - i}</div></div>`;
+    }
+
+    for (let d = 1; d <= totalDays; d++) {
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const isToday = today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
+        const dayEntries = entries.filter(e => e.date === dateStr);
+
+        let eventsHtml = dayEntries.slice(0, 3).map(e => {
+            return `<div class="calendar-event cat-${e.category}" data-entry-id="${e.id}">${escapeHtml(e.title)}</div>`;
+        }).join('');
+        if (dayEntries.length > 3) eventsHtml += `<div style="font-size:0.55rem; color:var(--text-muted);">+${dayEntries.length - 3} more</div>`;
+
+        daysHtml += `<div class="calendar-day ${isToday ? 'today' : ''}" data-quick-add-date="${dateStr}"><div class="calendar-day-num">${d}</div>${eventsHtml}</div>`;
+    }
+
+    const remaining = 42 - (startDay + totalDays);
+    for (let i = 1; i <= remaining; i++) {
+        daysHtml += `<div class="calendar-day other-month"><div class="calendar-day-num">${i}</div></div>`;
+    }
+
+    return `<div class="calendar-grid">${daysHtml}</div>`;
+}
+
+function buildCalendarWeekView(entries) {
+    const today = new Date();
+    const startOfWeek = new Date(calendarDate);
+    startOfWeek.setDate(calendarDate.getDate() - (getSetting('calendar.weekStart','sunday')==='monday' ? ((calendarDate.getDay()+6)%7) : calendarDate.getDay()));
+
+    let weekColsHtml = '';
+    const dayNames = getSetting('calendar.weekStart','sunday')==='monday' ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(startOfWeek);
+        d.setDate(startOfWeek.getDate() + i);
+        const dateStr = localDateString(d);
+        const isToday = d.toDateString() === today.toDateString();
+
+        const dayEntries = entries.filter(e => e.date === dateStr);
+        const eventsHtml = dayEntries.map(e => renderTaskCard(e, true)).join('');
+
+        weekColsHtml += `
+            <div class="cal-week-col ${isToday ? 'today' : ''}" data-quick-add-date="${dateStr}">
+                <div class="cal-week-header">
+                    <div class="cal-week-dayname">${dayNames[i]}</div>
+                    <div class="cal-week-daynum">${d.getDate()}</div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; flex:1; overflow-y:auto;">
+                    ${eventsHtml || '<div style="font-size:0.65rem; color:var(--text-muted); text-align:center; margin-top:10px;">No entries</div>'}
+                </div>
+            </div>
+        `;
+    }
+
+    return `<div class="cal-week-grid">${weekColsHtml}</div>`;
+}
+
+function buildCalendarDayView(entries) {
+    const dateStr = localDateString(calendarDate);
+    const dayEntries = entries.filter(e => e.date === dateStr);
+
+    return `
+        <div class="cal-day-view-container" data-quick-add-date="${dateStr}">
+            <div class="cal-day-header">${calendarDate.toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'})}</div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                ${dayEntries.length > 0 ? dayEntries.map(e => renderTaskCard(e)).join('') : '<div class="empty-state">No scheduled entries for this day. Click anywhere to add one.</div>'}
+            </div>
+        </div>
+    `;
+}
+
+function quickAddOnDate(dateStr) {
+    resetTaskForm();
+    document.getElementById('task-date').value = dateStr;
+    openModal('task-modal');
+}
+
+// ================= INSPECTOR =================
+function openInspector(id) {
+    const entry = state.entries.find(e => String(e.id) === String(id));
+    if (!entry) return;
+
+    const panel = document.getElementById('inspector-panel');
+    const backdrop = document.getElementById('inspector-backdrop');
+    const content = document.getElementById('inspector-content');
+
+    const impClass = entry.importance === 'high' ? 'tag-high' : entry.importance === 'medium' ? 'tag-med' : 'tag-low';
+
+    let streakHtml = '';
+    if (entry.category === 'routine') {
+        const streak = calculateStreak(entry);
+        streakHtml = `<div style="margin-top:6px;"><span class="habit-streak-badge">🔥 Streak: ${streak} days</span></div>`;
+    }
+
+    const subtasksHtml = (entry.subtasks || []).map((st, i) => `
+        <div class="subtask-item ${st.done ? 'done' : ''}">
+            <input type="checkbox" ${st.done ? 'checked' : ''} data-subtask-toggle="${i}">
+            <span>${st.text}</span>
+            <button type="button" class="icon-btn" style="margin-left:auto; font-size:0.65rem;" data-subtask-remove="${i}">✕</button>
+        </div>
+    `).join('');
+
+    const otherEntries = state.entries.filter(e => String(e.id) !== String(id));
+    const linkedOptions = otherEntries.map(e => `<option value="${e.id}">${escapeHtml(e.title)}</option>`).join('');
+
+    content.innerHTML = `
+        <h2 style="font-size:1.15rem; font-weight:700; margin-bottom:4px; padding-right:30px;">${escapeHtml(entry.title)}</h2>
+        <div style="display:flex; gap:5px; margin-bottom:14px; flex-wrap:wrap;">
+            <span class="tag ${impClass}">${escapeHtml(impLabels[entry.importance] || entry.importance)}</span>
+            <span class="tag ${entry.urgency === 'urgent' ? 'tag-urgent' : 'tag-not-urgent'}">${entry.urgency === 'urgent' ? 'Urgent' : 'Not Urgent'}</span>
+            <span class="tag tag-cat">${escapeHtml(catLabels[entry.category] || entry.category)}</span>
+            <span class="tag" style="background:var(--bg-hover); color:var(--text-secondary);">${statusLabels[entry.status]}</span>
+        </div>
+        ${streakHtml}
+
+        <div class="inspector-section">
+            <div class="inspector-section-title">Details</div>
+            ${entry.date ? `<p class="text-sm" style="margin-bottom:5px;">📅 <strong>Date:</strong> ${formatDateKeyLocal(entry.date)}</p>` : ''}
+            ${entry.notes ? `<p class="text-sm" style="color:var(--text-secondary); white-space:pre-wrap;">${escapeHtml(entry.notes)}</p>` : '<p class="text-sm text-muted">No notes.</p>'}
+        </div>
+
+        <div class="inspector-section">
+            <div class="inspector-section-title">Checklist & Sub-tasks</div>
+            <div id="subtasks-list">${subtasksHtml || '<p class="text-sm text-muted">No sub-tasks yet.</p>'}</div>
+            <div style="display:flex; gap:5px; margin-top:7px;">
+                <input type="text" class="form-input" id="new-subtask-input" placeholder="Add sub-task..." style="font-size:0.78rem;">
+                <button type="button" class="btn btn-sm" id="add-subtask-btn">+</button>
+            </div>
+        </div>
+
+        <div class="inspector-section">
+            <div class="inspector-section-title">Linked / Related Items</div>
+            <div style="display:flex; gap:5px;">
+                <select class="form-select" id="link-select" style="font-size:0.78rem;">
+                    <option value="">Select item to link...</option>
+                    ${linkedOptions}
+                </select>
+                <button type="button" class="btn btn-sm" id="link-btn">Link</button>
+            </div>
+            <div style="margin-top:7px;" id="linked-list">
+                ${(entry.linkedIds||[]).map(lid => {
+                    const linked = state.entries.find(e => String(e.id) === String(lid));
+                    if (!linked) return '';
+                    return `<div style="display:flex; align-items:center; gap:5px; padding:3px 0; font-size:0.78rem;">
+                        <span style="cursor:pointer; color:var(--accent-cyan);" data-open-linked="${linked.id}">${escapeHtml(linked.title)}</span>
+                        <button type="button" class="icon-btn" style="font-size:0.6rem; margin-left:auto;" data-unlink="${linked.id}">✕</button>
+                    </div>`;
+                }).join('') || '<p class="text-sm text-muted">No linked items.</p>'}
+            </div>
+        </div>
+
+        <div style="display:flex; gap:7px; margin-top:20px;">
+            <button type="button" class="btn" id="inspector-edit-btn">✏️ Edit</button>
+            <button type="button" class="btn btn-danger" id="inspector-delete-btn">🗑️ Delete</button>
+        </div>
+    `;
+
+    panel.classList.add('open');
+    backdrop.classList.add('active');
+
+    document.getElementById('inspector-edit-btn').addEventListener('click', () => { closeInspector(); editTask(id); });
+    document.getElementById('inspector-delete-btn').addEventListener('click', () => deleteTask(id));
+    
+    const addSubtaskBtn = document.getElementById('add-subtask-btn');
+    if (addSubtaskBtn) {
+        addSubtaskBtn.addEventListener('click', () => {
+            const input = document.getElementById('new-subtask-input');
+            const text = input.value.trim();
+            if (!text) return;
+            if (!entry.subtasks) entry.subtasks = [];
+            entry.subtasks.push({ text, done: false });
+            saveState(); openInspector(id);
+        });
+    }
+
+    document.querySelectorAll('[data-subtask-toggle]').forEach(el => {
+        el.addEventListener('change', () => {
+            const idx = parseInt(el.dataset.subtaskToggle);
+            entry.subtasks[idx].done = el.checked;
+            saveState(); openInspector(id);
+        });
+    });
+
+    document.querySelectorAll('[data-subtask-remove]').forEach(el => {
+        el.addEventListener('click', () => {
+            const idx = parseInt(el.dataset.subtaskRemove);
+            entry.subtasks.splice(idx, 1);

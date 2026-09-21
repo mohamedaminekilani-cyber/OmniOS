@@ -1,0 +1,1000 @@
+});
+
+// ================= NOTES =================
+let editingNoteId = null;
+let noteSaveTimer = null;
+let noteEditorLastSelection = null;
+
+function notePlainText(html) {
+    const d = document.createElement('div');
+    d.innerHTML = html || '';
+    return (d.textContent || d.innerText || '').replace(/\s+/g,' ').trim();
+}
+
+function sanitizeNoteHtml(html) {
+    const template = document.createElement('template');
+    template.innerHTML = String(html || '');
+    const blocked = template.content.querySelectorAll('script,style,iframe,object,embed,form');
+    blocked.forEach(el => el.remove());
+    template.content.querySelectorAll('*').forEach(el => {
+        [...el.attributes].forEach(attr => {
+            const n = attr.name.toLowerCase();
+            const v = attr.value || '';
+            if (n.startsWith('on') || n === 'srcdoc' || (n === 'href' && /^\s*javascript:/i.test(v)) || (n === 'src' && /^\s*javascript:/i.test(v))) el.removeAttribute(attr.name);
+        });
+    });
+    return template.innerHTML;
+}
+
+function noteFormat(command, value = null) {
+    const editor = document.getElementById('note-content');
+    editor.focus();
+    try { document.execCommand(command, false, value); } catch(e) { console.warn('Formatting command failed', command, e); }
+    scheduleNoteAutosave();
+}
+
+function saveNoteSelection() {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount) noteEditorLastSelection = sel.getRangeAt(0).cloneRange();
+}
+function restoreNoteSelection() {
+    const editor = document.getElementById('note-content');
+    editor.focus();
+    if (noteEditorLastSelection) {
+        const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(noteEditorLastSelection);
+    }
+}
+
+function toggleTodoItem() {
+    restoreNoteSelection();
+    document.execCommand('insertHTML', false, '<div class="todo-item"><input type="checkbox"> <span>To-do item</span></div>');
+    scheduleNoteAutosave();
+}
+function insertNoteLink() {
+    restoreNoteSelection();
+    const url = prompt('Link URL');
+    if (!url) return;
+    const safe = /^https?:\/\//i.test(url) ? url : 'https://' + url;
+    document.execCommand('createLink', false, safe);
+    scheduleNoteAutosave();
+}
+
+function setNoteEditorHtml(html) {
+    const editor = document.getElementById('note-content');
+    editor.innerHTML = sanitizeNoteHtml(html || '');
+}
+function getNoteEditorHtml() { return sanitizeNoteHtml(document.getElementById('note-content').innerHTML); }
+
+function updateNotePinButton() {
+    const note = state.notes.find(n => n.id === editingNoteId);
+    const btn = document.getElementById('note-pin-btn');
+    if (!btn) return;
+    btn.textContent = note && note.pinned ? '★ Pinned' : '☆ Pin note';
+}
+
+function openNoteModal(noteId = null) {
+    editingNoteId = noteId;
+    const note = noteId ? state.notes.find(n => n.id === noteId) : null;
+    document.getElementById('note-modal-title').textContent = note ? 'Edit Note' : 'New Note';
+    document.getElementById('note-title').value = note ? (note.title || '') : '';
+    setNoteEditorHtml(note ? (note.contentHtml || note.content || '') : '');
+    document.getElementById('note-delete-btn').style.display = note ? 'inline-flex' : 'none';
+    document.getElementById('note-updated-label').textContent = note && (note.updatedAt || note.date) ? 'Updated ' + new Date(note.updatedAt || note.date).toLocaleString() : '';
+    document.getElementById('note-save-status').textContent = 'Saved automatically';
+    updateNotePinButton();
+    openModal('note-modal');
+    setTimeout(() => document.getElementById('note-title').focus(), 50);
+}
+
+function persistCurrentNote(showStatus = true) {
+    const title = document.getElementById('note-title').value.trim();
+    const contentHtml = getNoteEditorHtml();
+    const content = notePlainText(contentHtml);
+    if (!title && !content) return false;
+    const now = new Date().toISOString();
+    if (editingNoteId) {
+        const note = state.notes.find(n => n.id === editingNoteId);
+        if (note) { note.title = title || 'Untitled'; note.contentHtml = contentHtml; note.content = content; note.updatedAt = now; }
+    } else {
+        const newNote = { id: Date.now(), title: title || 'Untitled', contentHtml, content, date: now, updatedAt: now, pinned: false };
+        state.notes.unshift(newNote); editingNoteId = newNote.id;
+    }
+    saveState();
+    if (showStatus) document.getElementById('note-save-status').textContent = 'Saved just now';
+    document.getElementById('note-delete-btn').style.display = 'inline-flex';
+    document.getElementById('note-modal-title').textContent = 'Edit Note';
+    document.getElementById('note-updated-label').textContent = 'Updated ' + new Date(now).toLocaleString();
+    return true;
+}
+
+function scheduleNoteAutosave() {
+    clearTimeout(noteSaveTimer);
+    document.getElementById('note-save-status').textContent = 'Saving…';
+    noteSaveTimer = setTimeout(() => persistCurrentNote(true), 650);
+}
+
+document.getElementById('note-save-btn').addEventListener('click', () => { if (persistCurrentNote(true)) closeModal('note-modal'); });
+document.getElementById('note-delete-btn').addEventListener('click', () => {
+    if (!editingNoteId) return;
+    if (!confirm('Delete this note?')) return;
+    state.notes = state.notes.filter(n => n.id !== editingNoteId);
+    saveState(); closeModal('note-modal'); editingNoteId = null;
+    window.toastUndo && window.toastUndo('Note deleted');
+});
+document.getElementById('note-pin-btn').addEventListener('click', () => {
+    if (!editingNoteId) persistCurrentNote(false);
+    const note = state.notes.find(n => n.id === editingNoteId);
+    if (!note) return;
+    note.pinned = !note.pinned; note.updatedAt = new Date().toISOString(); saveState(); updateNotePinButton();
+});
+document.getElementById('note-content').addEventListener('input', scheduleNoteAutosave);
+document.getElementById('note-title').addEventListener('input', scheduleNoteAutosave);
+document.getElementById('note-content').addEventListener('keyup', saveNoteSelection);
+document.getElementById('note-content').addEventListener('mouseup', saveNoteSelection);
+
+document.querySelectorAll('[data-note-cmd]').forEach(btn => btn.addEventListener('mousedown', e => e.preventDefault()));
+document.querySelectorAll('[data-note-cmd]').forEach(btn => btn.addEventListener('click', () => {
+    restoreNoteSelection();
+    const cmd = btn.dataset.noteCmd;
+    if (cmd === 'formatBlock') noteFormat(cmd, '<' + btn.dataset.noteValue + '>'); else noteFormat(cmd);
+}));
+document.querySelectorAll('[data-note-action]').forEach(btn => btn.addEventListener('mousedown', e => e.preventDefault()));
+document.querySelectorAll('[data-note-action="todo"]').forEach(btn => btn.addEventListener('click', toggleTodoItem));
+document.querySelectorAll('[data-note-action="link"]').forEach(btn => btn.addEventListener('click', insertNoteLink));
+document.getElementById('note-block-format').addEventListener('change', e => noteFormat('formatBlock', '<' + e.target.value + '>'));
+
+document.getElementById('notes-search').addEventListener('input', renderNotes);
+document.getElementById('notes-sort').addEventListener('change', renderNotes);
+
+function deleteNote(id) {
+    if (!confirm('Delete this note?')) return;
+    state.notes = state.notes.filter(n => n.id !== id);
+    saveState();
+    window.toastUndo && window.toastUndo('Note deleted');
+}
+function toggleNotePin(id) {
+    const note = state.notes.find(n => n.id === id); if (!note) return;
+    note.pinned = !note.pinned; note.updatedAt = new Date().toISOString(); saveState();
+}
+
+function renderNotes() {
+    const grid = document.getElementById('notes-grid');
+    const q = (document.getElementById('notes-search')?.value || '').trim().toLowerCase();
+    const sort = document.getElementById('notes-sort')?.value || 'updated';
+    let notes = [...state.notes];
+    if (q) notes = notes.filter(n => ((n.title || '') + ' ' + (n.content || notePlainText(n.contentHtml || ''))).toLowerCase().includes(q));
+    notes.sort((a,b) => {
+        if (sort === 'title') return String(a.title||'').localeCompare(String(b.title||''));
+        if (sort === 'pinned') return Number(!!b.pinned)-Number(!!a.pinned) || new Date(b.updatedAt||b.date||0)-new Date(a.updatedAt||a.date||0);
+        if (sort === 'created') return new Date(b.date||0)-new Date(a.date||0);
+        return new Date(b.updatedAt||b.date||0)-new Date(a.updatedAt||a.date||0);
+    });
+    if (!notes.length) { grid.innerHTML = '<div class="empty-state note-empty">No notes found. Create a note to start building your knowledge space.</div>'; return; }
+    grid.innerHTML = '';
+    notes.forEach(n => {
+        const div = document.createElement('div'); div.className = 'note-card v24-group-item' + (n.pinned ? ' pinned' : '');
+        div.dataset.groupItemId = String(n.id);
+        div.dataset.groupType = 'note';
+        const previewHtml = sanitizeNoteHtml(n.contentHtml || (n.content ? '<p>' + escapeHtml(n.content).replace(/\n/g,'<br>') + '</p>' : '<p>No content yet.</p>'));
+        const d = new Date(n.updatedAt || n.date || Date.now());
+        div.innerHTML = `<div class="note-card-header"><div class="note-title">${n.pinned ? '★ ' : ''}${escapeHtml(n.title || 'Untitled')}</div><div class="note-actions"><button type="button" class="icon-btn" data-note-pin="${n.id}" aria-label="Pin note">${n.pinned ? '★' : '☆'}</button><button type="button" class="icon-btn" data-delete-note="${n.id}" aria-label="Delete note">🗑️</button></div></div><div class="note-preview">${previewHtml}</div><div class="note-footer"><span>${d.toLocaleDateString()}</span><span>Tap to edit</span></div>`;
+        div.addEventListener('click', e => { if (!e.target.closest('button')) openNoteModal(n.id); });
+        div.querySelector('[data-delete-note]').addEventListener('click', e => { e.stopPropagation(); deleteNote(n.id); });
+        div.querySelector('[data-note-pin]').addEventListener('click', e => { e.stopPropagation(); toggleNotePin(n.id); });
+        grid.appendChild(div);
+    });
+    try{window.omniosV25RefreshGrouping?.();}catch(e){}
+    setTimeout(()=>window.omniosV25RefreshGrouping?.(),0);
+}
+
+// ================= EXPORT / IMPORT =================
+// ================= SETTINGS =================
+let currentSettingsTab = 'appearance';
+document.getElementById('settings-topbar-btn').addEventListener('click', () => switchView('settings'));
+document.querySelectorAll('#settings-tabs [data-settings-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        currentSettingsTab = btn.dataset.settingsTab;
+        document.querySelectorAll('#settings-tabs [data-settings-tab]').forEach(b => b.classList.toggle('active', b === btn));
+        renderSettings();
+    });
+});
+
+function updateSetting(path, value) { setSetting(path, value); saveState(); }
+function toggleSetting(path) { setSetting(path, !getSetting(path, false)); saveState(); }
+function toggleWidget(key) { const w = state.settings.appearance.widgets; w[key] = w[key] === false ? true : false; saveState(); }
+
+const SETTINGS_ACCENTS = ['#06b6d4','#a855f7','#10b981','#ef4444','#f59e0b','#3b82f6','#ec4899','#f4f4f5'];
+
+function settingsToggleHtml(path, label, desc) {
+    const on = !!getSetting(path, false);
+    return `<div class="settings-row"><div><div class="settings-row-label">${escapeHtml(label)}</div>${desc?`<div class="settings-row-desc">${escapeHtml(desc)}</div>`:''}</div><div class="settings-toggle ${on?'on':''}" onclick="toggleSetting('${path}')"></div></div>`;
+}
+function settingsSelectHtml(path, label, options, desc) {
+    const cur = getSetting(path);
+    return `<div class="settings-row"><div><div class="settings-row-label">${escapeHtml(label)}</div>${desc?`<div class="settings-row-desc">${escapeHtml(desc)}</div>`:''}</div><div class="settings-row-control"><select class="filter-select" onchange="updateSetting('${path}', this.value)">${options.map(([v,l])=>`<option value="${v}" ${String(cur)===String(v)?'selected':''}>${escapeHtml(l)}</option>`).join('')}</select></div></div>`;
+}
+function settingsNumberHtml(path, label, desc, opts={}) {
+    const cur = getSetting(path);
+    return `<div class="settings-row"><div><div class="settings-row-label">${escapeHtml(label)}</div>${desc?`<div class="settings-row-desc">${escapeHtml(desc)}</div>`:''}</div><div class="settings-row-control"><input type="number" class="form-input" style="width:100px" value="${escapeHtml(cur)}" min="${opts.min??0}" max="${opts.max??999}" onchange="updateSetting('${path}', Math.max(${opts.min??0},Number(this.value)||0))"></div></div>`;
+}
+function settingsTimeHtml(path, label, desc) {
+    const cur = getSetting(path);
+    return `<div class="settings-row"><div><div class="settings-row-label">${escapeHtml(label)}</div>${desc?`<div class="settings-row-desc">${escapeHtml(desc)}</div>`:''}</div><div class="settings-row-control"><input type="time" class="form-input" style="width:130px" value="${escapeHtml(cur)}" onchange="updateSetting('${path}', this.value)"></div></div>`;
+}
+
+// ================= CUSTOM ICONS =================
+// Every icon slot in the sidebar carries a data-icon-file (e.g. "Dashboard.png"). If you drop a
+// matching image into an "icons" folder placed next to this HTML file, and turn the setting on
+// below, OmniOS will use your picture instead of the built-in icon. You can also upload an image
+// directly in Settings, which always takes priority over the folder file for that icon.
+const ICON_MANIFEST = [
+    { key: 'logo', file: 'Logo.png', label: 'App logo (sidebar top)' },
+    { key: 'dashboard', file: 'Dashboard.png', label: 'Dashboard' },
+    { key: 'master-calendar', file: 'Calendar.png', label: 'Calendar' },
+    { key: 'tasks', file: 'Tasks.png', label: 'Tasks' },
+    { key: 'budget', file: 'Budget.png', label: 'Finance' },
+    { key: 'habits', file: 'Habits.png', label: 'Habits' },
+    { key: 'workout', file: 'Workout.png', label: 'Workout' },
+    { key: 'focus', file: 'Focus.png', label: 'Focus' },
+    { key: 'notes', file: 'Notes.png', label: 'Notes' },
+    { key: 'passwords', file: 'Passwords.png', label: 'Passwords' },
+    { key: 'settings', file: 'Settings.png', label: 'Settings' }
+];
+function applyCustomIcons(){
+    const enabled = getSetting('appearance.customIconsEnabled', false);
+    document.querySelectorAll('.nav-icon-img').forEach(img => {
+        const file = img.dataset.iconFile;
+        const manifestEntry = ICON_MANIFEST.find(m => m.file === file);
+        const uploaded = manifestEntry ? state.customIcons?.[manifestEntry.key] : null;
+        const fallback = img.nextElementSibling;
+        img.onload = () => { img.style.display = ''; if (fallback) fallback.style.display = 'none'; };
+        img.onerror = () => { img.style.display = 'none'; if (fallback) fallback.style.display = ''; };
+        if (uploaded) {
+            img.src = uploaded;
+        } else if (enabled) {
+            img.src = 'icons/' + file;
+        } else {
+            img.removeAttribute('src');
+            img.style.display = 'none';
+            if (fallback) fallback.style.display = '';
+        }
+    });
+}
+function uploadCustomIcon(key, input){
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        state.customIcons = state.customIcons || {};
+        state.customIcons[key] = e.target.result;
+        saveState();
+        applyCustomIcons();
+        window.toast && window.toast('Custom icon saved');
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+}
+function clearCustomIcon(key){
+    if (!state.customIcons?.[key]) return;
+    delete state.customIcons[key];
+    saveState();
+    applyCustomIcons();
+    window.toast && window.toast('Reverted to default icon');
+}
+function renderIconSettingsSection(){
+    return `<div class="card settings-section">
+        <h3 class="card-title mb-4">Custom icons & pictures</h3>
+        ${settingsToggleHtml('appearance.customIconsEnabled','Use my own icon files','When on, OmniOS looks for image files in an "icons" folder placed next to this app file — for example icons/Dashboard.png. Any icon without a matching file just keeps its default look.')}
+        <div class="settings-row-desc" style="margin:10px 0">You can also upload an icon for a specific item right here — an upload always overrides the folder file for that one icon.</div>
+        <div>
+            ${ICON_MANIFEST.map(m => `
+                <div class="icon-list-row">
+                    <div style="display:flex;align-items:center;gap:10px">
+                        ${state.customIcons?.[m.key] ? `<img src="${state.customIcons[m.key]}" alt="" style="width:22px;height:22px;object-fit:cover;border-radius:5px">` : ''}
+                        <div>${escapeHtml(m.label)}<div class="text-muted text-sm">Folder file: <code>icons/${m.file}</code></div></div>
+                    </div>
+                    <div style="display:flex;gap:6px;align-items:center">
+                        <input type="file" accept="image/*" id="icon-upload-${m.key}" style="display:none" onchange="uploadCustomIcon('${m.key}', this)">
+                        <button type="button" class="btn btn-sm" onclick="document.getElementById('icon-upload-${m.key}').click()">Upload</button>
+                        ${state.customIcons?.[m.key] ? `<button type="button" class="btn btn-sm btn-danger" onclick="clearCustomIcon('${m.key}')">Reset</button>` : ''}
+                    </div>
+                </div>`).join('')}
+        </div>
+        <div class="settings-row-desc" style="margin-top:12px">Photos on items — grocery items, exercises in your Workout Library, and wallet cards — already have their own "Add photo" upload right inside each item's edit form, no folder needed.</div>
+    </div>`;
+}
+
+function renderSettings() {
+    const el = document.getElementById('settings-content');
+    if (!el) return;
+    let html = '';
+    if (currentSettingsTab === 'appearance') {
+        const a = state.settings.appearance;
+        html += `<div class="card settings-section"><h3 class="card-title mb-4">Theme & style</h3>
+            ${settingsSelectHtml('appearance.theme','Theme',[['dark','Dark'],['light','Light'],['system','Follow system']])}
+            <div class="settings-row"><div><div class="settings-row-label">Accent color</div><div class="settings-row-desc">Used for buttons, active states and highlights.</div></div><div class="settings-swatches">${SETTINGS_ACCENTS.map(c=>`<span class="settings-swatch ${a.accent===c?'active':''}" style="background:${c}" onclick="updateSetting('appearance.accent','${c}')"></span>`).join('')}</div></div>
+            ${settingsSelectHtml('appearance.density','Density',[['comfortable','Comfortable'],['compact','Compact']],'Controls the amount of information shown at once.')}
+            ${settingsSelectHtml('appearance.spacing','Spacing',[['compact','Compact'],['comfortable','Comfortable'],['spacious','Spacious']],'Fine-tunes gaps and internal padding without changing text size.')}
+            ${settingsSelectHtml('appearance.contentWidth','Content width',[['wide','Wide'],['comfortable','Comfortable'],['focused','Focused']],'Choose how much horizontal space the main workspace uses.')}
+            ${settingsSelectHtml('appearance.sidebarMode','Sidebar',[['standard','Standard'],['wide','Wide']],'Wide gives navigation labels more breathing room on desktop.')}
+            ${settingsSelectHtml('appearance.radius','Corner style',[['rounded','Rounded'],['sharp','Sharp']])}
+            ${settingsToggleHtml('appearance.stickyTopbar','Sticky top bar','Keeps the page title and primary actions visible while scrolling.')}
+            ${settingsToggleHtml('appearance.hoverLift','Hover feedback','Adds subtle lift to clickable cards on desktop.')}
+            ${settingsToggleHtml('appearance.reducedMotion','Reduce motion','Removes most page transitions and movement for a calmer interface.')}
+            ${settingsToggleHtml('appearance.confirmDestructive','Confirm destructive actions','Ask before resets and other irreversible actions.')}
+        </div>
+        <div class="card settings-section"><h3 class="card-title mb-4">Dashboard widgets</h3><div class="settings-row-desc" style="margin-bottom:10px">Choose which cards appear on your dashboard.</div>
+            <div class="settings-widget-grid">${['progress','priorities','insights','habits','focus','finance'].map(k=>`<span class="settings-widget-chip ${a.widgets[k]!==false?'on':''}" onclick="toggleWidget('${k}')">${a.widgets[k]!==false?'✓ ':''}${k.charAt(0).toUpperCase()+k.slice(1)}</span>`).join('')}</div>
+        </div>
+        <div class="card settings-section"><h3 class="card-title mb-4">Workflow & navigation</h3>
+            ${settingsSelectHtml('appearance.startView','Start page',[['dashboard','Dashboard'],['master-calendar','Calendar'],['tasks','Tasks'],['budget','Budget'],['habits','Habits'],['workout','Workout'],['focus','Focus'],['notes','Notes']],'Choose the first page shown when OmniOS opens.')}
+            ${settingsToggleHtml('appearance.autoFocusSearch','Auto-focus search','When a list opens, place the cursor in its search field when available.')}
+        </div>
+        ${renderIconSettingsSection()}`;
+    } else if (currentSettingsTab === 'calendar') {
+        html += `<div class="card settings-section"><h3 class="card-title mb-4">Calendar</h3>
+            ${settingsSelectHtml('calendar.defaultView','Default view',[['month','Month'],['agenda','Agenda']])}
+            ${settingsSelectHtml('calendar.weekStart','Week starts on',[['sunday','Sunday'],['monday','Monday']],'Applies to the Calendar grid.')}
+            ${settingsNumberHtml('calendar.defaultDuration','Default event duration (min)','',{min:5,max:600})}
+            ${settingsNumberHtml('calendar.defaultReminder','Default reminder (min before)','',{min:0,max:1440})}
+        </div>`;
+    } else if (currentSettingsTab === 'tasks') {
+        html += `<div class="card settings-section"><h3 class="card-title mb-4">Tasks</h3>
+            ${settingsSelectHtml('tasks.defaultCategory','Default category',[['work','💼 Work'],['hobby','🎨 Hobbies'],['routine','🔄 Routine'],['gym','🏋️ Gym'],['meal','🥗 Meals']])}
+            ${settingsSelectHtml('tasks.defaultPriority','Default priority',[['high','High'],['medium','Medium'],['low','Low']])}
+            ${settingsSelectHtml('tasks.defaultUrgency','Default urgency',[['urgent','Urgent'],['not-urgent','Not urgent']])}
+            ${settingsSelectHtml('tasks.overdueBehavior','Overdue behavior',[['keep','Keep visible'],['flag','Flag on dashboard']])}
+            ${settingsToggleHtml('tasks.autoArchive','Auto-archive completed tasks','Hides completed tasks from the main list after they are done.')}
+            ${settingsToggleHtml('groups.enabled','Enable item grouping','Adds selection and parent-group organization to Tasks, Notes and Grocery Lists.')}
+            ${settingsToggleHtml('groups.defaultCollapsed','Collapse new groups by default','New parent groups start closed until expanded.')}
+        </div>`;
+    } else if (currentSettingsTab === 'habits') {
+        html += `<div class="card settings-section"><h3 class="card-title mb-4">Habits</h3>
+            ${settingsNumberHtml('habits.defaultTarget','Default weekly target (days)','Pre-fills new habits.',{min:1,max:7})}
+            ${settingsTimeHtml('habits.reminderTime','Daily reminder time')}
+        </div>`;
+    } else if (currentSettingsTab === 'workout') {
+        html += `<div class="card settings-section"><h3 class="card-title mb-4">Workout</h3>
+            ${settingsNumberHtml('workout.defaultRest','Default rest timer (sec)','',{min:0,max:600})}
+            ${settingsSelectHtml('workout.weightUnit','Weight unit',[['kg','kg'],['lb','lb']])}
+            ${settingsToggleHtml('workout.autoStartRest','Auto-start rest timer','Starts the rest countdown automatically when you mark a set done.')}
+        </div>`;
+    } else if (currentSettingsTab === 'focus') {
+        html += `<div class="card settings-section"><h3 class="card-title mb-4">Focus timer</h3>
+            ${settingsNumberHtml('focus.focusMin','Focus session (min)','',{min:1,max:180})}
+            ${settingsNumberHtml('focus.shortBreak','Short break (min)','',{min:1,max:60})}
+            ${settingsNumberHtml('focus.longBreak','Long break (min)','',{min:1,max:120})}
+            ${settingsToggleHtml('focus.autoStartBreaks','Auto-start breaks','Starts the break timer automatically when a focus session ends.')}
+            ${settingsNumberHtml('focus.dailyGoal','Daily focus goal (min)','Drives the Focus goal bar on your dashboard.',{min:5,max:1440})}
+        </div>`;
+    } else if (currentSettingsTab === 'notifications') {
+        html += `<div class="card settings-section"><h3 class="card-title mb-4">Notifications</h3><div class="settings-row-desc" style="margin-bottom:6px">OmniOS is a local, offline-first app, so these control what appears inside the app rather than push notifications.</div>
+            ${settingsToggleHtml('notifications.taskReminders','Task reminders')}
+            ${settingsToggleHtml('notifications.habitReminders','Habit reminders')}
+            ${settingsToggleHtml('notifications.eventReminders','Event reminders')}
+            ${settingsToggleHtml('notifications.dailySummary','Daily summary','Shows the "Attention needed" panel on your dashboard.')}
+            ${settingsToggleHtml('notifications.weeklyReview','Weekly review prompts')}
+        </div>`;
+    } else if (currentSettingsTab === 'data') {
+        let backupMeta = null;
+        try { const b = storage.getItem('omnios_v3_backup'); if (b) backupMeta = JSON.parse(b); } catch(e){}
+        html += `<div class="card settings-section"><h3 class="card-title mb-4">Backup & data</h3>
+            <div class="settings-row"><div><div class="settings-row-label">Export data</div><div class="settings-row-desc">Download everything as a JSON file.</div></div><button type="button" class="btn btn-sm" onclick="exportData()">💾 Export JSON</button></div>
+            <div class="settings-row"><div><div class="settings-row-label">Import backup</div><div class="settings-row-desc">Restore from a previously exported JSON file.</div></div><button type="button" class="btn btn-sm" onclick="document.getElementById('import-file').click()">📂 Import</button></div>
+            <div class="settings-meta-line">${backupMeta?.savedAt ? `Last automatic local backup: ${new Date(backupMeta.savedAt).toLocaleString()}` : 'No local backup saved yet.'}</div>
+        </div>
+        <div class="card settings-section"><h3 class="card-title mb-4" style="color:var(--accent-red)">Danger zone</h3>
+            <div class="settings-danger-box">
+                <div class="settings-row"><div><div class="settings-row-label">Reset a module</div><div class="settings-row-desc">Clear just one area's data. This cannot be undone.</div></div>
+                <select class="filter-select" id="settings-reset-module"><option value="entries">Tasks</option><option value="calendarEvents">Calendar events</option><option value="transactions">Budget & transactions</option><option value="habits">Habits</option><option value="workouts">Workout history</option><option value="notes">Notes</option></select>
+                <button type="button" class="btn btn-sm btn-danger" onclick="resetSettingsModule()">Reset</button></div>
+                <div class="settings-row"><div><div class="settings-row-label">Full reset</div><div class="settings-row-desc">Erase all OmniOS data on this device and start fresh.</div></div><button type="button" class="btn btn-sm btn-danger" onclick="fullResetApp()">⚠ Reset everything</button></div>
+            </div>
+        </div>`;
+    }
+    el.innerHTML = html;
+}
+function resetSettingsModule() {
+    const key = document.getElementById('settings-reset-module').value;
+    const labels = {entries:'tasks',calendarEvents:'calendar events',transactions:'transactions',habits:'habits',workouts:'workout history',notes:'notes'};
+    if (!window.omniosConfirm(`Reset all ${labels[key]||key}? This cannot be undone.`)) return;
+    if (key === 'transactions') { state.transactions = []; }
+    else if (Array.isArray(state[key])) { state[key] = []; }
+    saveState();
+    window.toast('✅ Module reset.');
+}
+function fullResetApp() {
+    // A single, unambiguous confirmation instead of two back-to-back native dialogs.
+    // This bypasses the normal undo stack entirely (it clears storage directly), so it
+    // deserves a real confirmation — just one clear one, not two identical-feeling ones.
+    if (!window.omniosConfirm('Erase ALL OmniOS data on this device?\n\nThis permanently deletes every task, note, habit, workout, budget entry and setting. It cannot be undone — export a backup first if you want to keep a copy.\n\nType-check: click OK only if you are certain.')) return;
+    try { storage.removeItem('omnios_v3_state'); storage.removeItem('omnios_v3_backup'); } catch(e) {}
+    location.reload();
+}
+
+function exportData() {
+    const payload={version:3,app:'OmniOS',exportedAt:new Date().toISOString(),state};
+    const dataStr="data:application/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(payload,null,2));
+    const a=document.createElement('a'); a.setAttribute('href',dataStr); a.setAttribute('download',`omnios_backup_${localDateString()}.json`);
+    document.body.appendChild(a); a.click(); a.remove();
+}
+
+document.getElementById('import-file').addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const imported=JSON.parse(e.target.result);
+            if(!imported||typeof imported!=='object'||Array.isArray(imported))throw new Error('Invalid backup');
+            const incoming=imported.state&&typeof imported.state==='object'?imported.state:imported;
+            if(!Array.isArray(incoming.entries)&&!Array.isArray(incoming.transactions)&&!Array.isArray(incoming.habits)&&!Array.isArray(incoming.notes)&&!Array.isArray(incoming.calendarEvents))throw new Error('Invalid backup');
+            state=deepMergeDefaults(state,incoming); normalizeState(); saveState();
+            window.toast('✅ Data imported successfully!');
+        } catch(err) {
+            window.toast('❌ Invalid JSON file.');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+});
+
+
+// Keep one-page navigation usable even when opened as a local HTML file in Safari.
+window.addEventListener('error', (event) => {
+    console.error('OmniOS error:', event.error || event.message);
+});
+document.addEventListener('click', (event) => {
+    const button = event.target.closest('button');
+    if (button && !button.type) button.type = 'button';
+}, true);
+
+// ================= INIT =================
+// ================= PASSWORD MANAGER =================
+// Stored in plain state (same place as everything else in OmniOS, e.g. localStorage) — there is
+// no real encryption here. That's fine for a personal offline planner, but it's worth being
+// upfront about: don't rely on this for anything you'd protect with a dedicated password vault.
+let passwordSearch = '';
+let visiblePasswordIds = new Set();
+
+function genPassword(length = 16) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
+    let out = '';
+    for (let i = 0; i < length; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    return out;
+}
+
+function renderPasswords() {
+    const list = document.getElementById('password-list');
+    if (!list) return;
+    const q = passwordSearch.toLowerCase();
+    const items = state.passwords.filter(p => !q || p.site.toLowerCase().includes(q) || (p.username || '').toLowerCase().includes(q));
+    if (!items.length) {
+        list.innerHTML = state.passwords.length
+            ? '<div class="empty-state">No saved passwords match your search.</div>'
+            : '<div class="empty-state">No passwords saved yet. Add your first login to get started.</div>';
+        return;
+    }
+    list.innerHTML = items.map(p => {
+        const shown = visiblePasswordIds.has(String(p.id));
+        return `<div class="card" data-open-password="${p.id}" style="cursor:pointer">
+            <div class="flex-between" style="margin-bottom:6px">
+                <strong>${escapeHtml(p.site)}</strong>
+                <button type="button" class="icon-btn btn-sm" data-copy-password="${p.id}" title="Copy password" data-no-open>📋</button>
+            </div>
+            <div class="text-muted text-sm">${escapeHtml(p.username || 'No username set')}</div>
+            <div style="font-family:monospace;margin-top:6px;display:flex;align-items:center;gap:8px">
+                <span>${shown ? escapeHtml(p.password || '') : '•'.repeat(Math.min(14, (p.password || '').length || 8))}</span>
+                <button type="button" class="icon-btn btn-sm" data-toggle-password="${p.id}" data-no-open title="${shown ? 'Hide' : 'Show'}">${shown ? '🙈' : '👁️'}</button>
+            </div>
+        </div>`;
+    }).join('');
+    list.querySelectorAll('[data-open-password]').forEach(el => {
+        el.addEventListener('click', (e) => { if (e.target.closest('[data-no-open]')) return; openPasswordModal(el.dataset.openPassword); });
+    });
+    list.querySelectorAll('[data-toggle-password]').forEach(el => {
+        el.addEventListener('click', () => { const id = String(el.dataset.togglePassword); visiblePasswordIds.has(id) ? visiblePasswordIds.delete(id) : visiblePasswordIds.add(id); renderPasswords(); });
+    });
+    list.querySelectorAll('[data-copy-password]').forEach(el => {
+        el.addEventListener('click', () => {
+            const p = state.passwords.find(x => String(x.id) === String(el.dataset.copyPassword));
+            if (!p) return;
+            navigator.clipboard?.writeText(p.password || '').then(() => window.toast && window.toast('Password copied')).catch(() => window.toast && window.toast('Could not copy — select and copy manually'));
+        });
+    });
+}
+document.getElementById('password-search')?.addEventListener('input', e => { passwordSearch = e.target.value; renderPasswords(); });
+
+function openPasswordModal(id = null) {
+    const p = id ? state.passwords.find(x => String(x.id) === String(id)) : null;
+    const ov = budgetModalShell(p ? 'Edit Password' : 'Add Password', `
+        <div class="form-group"><label class="form-label">Site / service</label><input class="form-input" id="pw-site" value="${escapeHtml(p?.site || '')}" placeholder="e.g. Gmail, Netflix"></div>
+        <div class="form-group"><label class="form-label">Website URL (optional)</label><input class="form-input" id="pw-url" value="${escapeHtml(p?.url || '')}" placeholder="https://…"></div>
+        <div class="form-group"><label class="form-label">Username / email</label><input class="form-input" id="pw-username" value="${escapeHtml(p?.username || '')}"></div>
+        <div class="form-group">
+            <label class="form-label">Password</label>
+            <div style="display:flex;gap:6px">
+                <input class="form-input" id="pw-password" type="text" value="${escapeHtml(p?.password || '')}" style="font-family:monospace">
+                <button type="button" class="btn btn-sm" id="pw-generate">🎲 Generate</button>
+            </div>
+        </div>
+        <div class="form-group"><label class="form-label">Notes (optional)</label><textarea class="form-textarea" id="pw-notes">${escapeHtml(p?.notes || '')}</textarea></div>
+        <div class="text-muted text-sm">Saved locally on this device only, without encryption.</div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger" id="pw-delete" style="display:${p ? 'inline-flex' : 'none'}">Delete</button>
+            <span style="flex:1"></span>
+            <button type="button" class="btn" data-close>Cancel</button>
+            <button type="button" class="btn btn-primary" id="pw-save">Save</button>
+        </div>
+    `);
+    ov.querySelector('#pw-generate').onclick = () => { ov.querySelector('#pw-password').value = genPassword(); };
+    ov.querySelector('#pw-save').onclick = () => {
+        const site = ov.querySelector('#pw-site').value.trim();
+        if (!site) { window.toast('Enter a site or service name'); return; }
+        const data = {
+            site,
+            url: ov.querySelector('#pw-url').value.trim(),
+            username: ov.querySelector('#pw-username').value.trim(),
+            password: ov.querySelector('#pw-password').value,
+            notes: ov.querySelector('#pw-notes').value.trim()
+        };
+        if (p) { Object.assign(p, data); }
+        else { state.passwords.push({ id: Date.now() + Math.random(), ...data }); }
+        ov.remove(); saveState();
+        window.toast && window.toast(p ? 'Password updated' : 'Password saved');
+    };
+    if (p) {
+        ov.querySelector('#pw-delete').onclick = () => {
+            if (!confirm(`Delete the saved login for "${p.site}"?`)) return;
+            state.passwords = state.passwords.filter(x => String(x.id) !== String(p.id));
+            ov.remove(); saveState();
+            window.toastUndo && window.toastUndo('Password deleted');
+        };
+    }
+}
+
+function renderAll() {
+    renderDashboard();
+    renderMasterCalendar();
+    renderTasks();
+    renderBudget();
+    renderHabits();
+    renderWorkout();
+    renderNotes();
+    renderPasswords();
+    renderSettings();
+    applyCustomIcons();
+    updateTimerDisplay();
+    document.getElementById('total-focus-time').textContent = `${(state.focusDaily && state.focusDaily[localDateString()]) || 0} min`;
+    document.getElementById('total-sessions').textContent = state.focusSessions || 0;
+}
+
+normalizeState();
+applyAppearance();
+applyFocusDefaultsToTimer();
+renderAll();
+
+</script>
+
+
+
+
+<style id="omnios-budget-lists-style">
+/* ===== Budget planning + lists workspace ===== */
+.finance-hub{display:grid;grid-template-columns:1.15fr 1fr;gap:12px;margin-top:14px}.finance-card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:14px;padding:15px}.finance-card h3{font-size:.9rem}.finance-toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}.finance-list{display:flex;flex-direction:column;gap:7px}.finance-item{display:flex;align-items:flex-start;gap:10px;padding:10px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base);cursor:pointer}.finance-item:hover{border-color:var(--accent-cyan);background:var(--bg-elevated)}.finance-item-main{min-width:0;flex:1}.finance-item-title{font-size:.76rem;font-weight:700}.finance-item-meta{font-size:.62rem;color:var(--text-muted);margin-top:3px;line-height:1.4}.finance-amount{font-weight:800;font-size:.76rem;white-space:nowrap}.finance-pill{display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;background:var(--bg-hover);font-size:.58rem;color:var(--text-secondary);margin-right:4px}.finance-pill.warn{background:rgba(245,158,11,.13);color:var(--accent-yellow)}.finance-pill.good{background:rgba(16,185,129,.13);color:var(--accent-green)}.finance-pill.bad{background:rgba(239,68,68,.13);color:var(--accent-red)}.finance-progress{height:7px;background:var(--bg-hover);border-radius:99px;overflow:hidden;margin-top:7px}.finance-progress>div{height:100%;background:var(--accent-cyan);border-radius:99px}.goal-grid,.custom-list-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.custom-item-card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:14px;overflow:hidden;cursor:pointer;transition:.15s}.custom-item-card:hover{border-color:var(--accent-cyan);transform:translateY(-1px)}.custom-item-media{height:135px;background:var(--bg-base);display:flex;align-items:center;justify-content:center;overflow:hidden}.custom-item-media img{width:100%;height:100%;object-fit:cover}.custom-item-noimg{font-size:2rem;opacity:.65}.custom-item-body{padding:12px}.custom-item-title{font-size:.82rem;font-weight:750;display:flex;justify-content:space-between;gap:8px}.custom-item-meta{font-size:.64rem;color:var(--text-muted);line-height:1.45;margin-top:5px}.custom-item-actions{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}.list-controls{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.list-controls .search-input{width:190px}.list-empty{padding:30px;text-align:center;color:var(--text-muted);border:1px dashed var(--border-light);border-radius:12px}.image-strip{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.image-thumb{width:64px;height:64px;border-radius:8px;border:1px solid var(--border-color);object-fit:cover;cursor:pointer}.upload-zone{padding:10px;border:1px dashed var(--border-light);border-radius:10px;background:var(--bg-base);font-size:.7rem;color:var(--text-muted)}.item-modal-preview{max-width:100%;max-height:190px;border-radius:10px;border:1px solid var(--border-color);object-fit:cover}.quick-add-choice[data-quick-type="wishlist"],.quick-add-choice[data-quick-type="grocery"],.quick-add-choice[data-quick-type="bill"],.quick-add-choice[data-quick-type="goal"]{border-color:var(--border-light)}
+@media(max-width:1100px){.finance-hub{grid-template-columns:1fr}.goal-grid,.custom-list-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.goal-grid,.custom-list-grid{grid-template-columns:1fr}.list-controls{align-items:stretch}.list-controls>*{width:100%!important}.finance-item{padding:12px}.custom-item-media{height:155px}}
+</style>
+<script id="omnios-budget-lists-extension">
+// ===== OmniOS Budget Planning + Wishlist + Grocery extension =====
+(function(){
+  const DEFAULT_NEW_DATA={
+    wishlistCategories:[
+      {id:'wl-tech',name:'Technology',icon:'💻'},
+      {id:'wl-home',name:'Home',icon:'🏠'},
+      {id:'wl-clothes',name:'Clothing',icon:'👕'},
+      {id:'wl-other',name:'Other',icon:'⭐'}
+    ],
+    groceryCategories:[
+      {id:'gr-produce',name:'Produce',icon:'🥦'},
+      {id:'gr-dairy',name:'Dairy',icon:'🥛'},
+      {id:'gr-meat',name:'Meat',icon:'🥩'},
+      {id:'gr-pantry',name:'Pantry',icon:'🥫'},
+      {id:'gr-household',name:'Household',icon:'🧽'},
+      {id:'gr-other',name:'Other',icon:'🛒'}
+    ],
+    bills:[], paymentPlans:[], goals:[], wishlist:[], groceryLists:[]
+  };
+  function ensure(){
+    Object.entries(DEFAULT_NEW_DATA).forEach(([k,v])=>{if(!Array.isArray(state[k]))state[k]=JSON.parse(JSON.stringify(v));});
+    state.settings=state.settings||{};
+    state.settings.finance=state.settings.finance||{currency:'$',daysAhead:30,defaultBillReminder:5};
+    state.settings.lists=state.settings.lists||{wishlistView:'grid',groceryView:'grid',showImages:true};
+  }
+  ensure();
+  // Extend normalization conservatively.
+  const prevNormalize=normalizeState;
+  normalizeState=function(){prevNormalize();ensure();
+    state.bills=state.bills.map(b=>({...b,id:b.id||Date.now()+Math.random(),amount:Number(b.amount)||0,reminderDays:Number.isFinite(Number(b.reminderDays))?Number(b.reminderDays):getSetting('finance.defaultBillReminder',5),frequency:b.frequency||'once',images:Array.isArray(b.images)?b.images:[],paidDates:Array.isArray(b.paidDates)?b.paidDates:[]}));
+    state.paymentPlans=state.paymentPlans.map(x=>({...x,id:x.id||Date.now()+Math.random(),amount:Number(x.amount)||0,frequency:x.frequency||'monthly',reminderDays:Number.isFinite(Number(x.reminderDays))?Number(x.reminderDays):getSetting('finance.defaultBillReminder',5),images:Array.isArray(x.images)?x.images:[],paidCount:Number(x.paidCount)||0}));
+    state.goals=state.goals.map(g=>({...g,id:g.id||Date.now()+Math.random(),type:g.type||'saving',targetAmount:Number(g.targetAmount)||0,currentAmount:Number(g.currentAmount)||0,images:Array.isArray(g.images)?g.images:[]}));
+    state.wishlist=state.wishlist.map(w=>({...w,id:w.id||Date.now()+Math.random(),price:Number(w.price)||0,status:w.status||'wanted',images:Array.isArray(w.images)?w.images:[],priority:w.priority||'medium'}));
+    state.groceryLists=state.groceryLists.map(l=>({...l,id:l.id||Date.now()+Math.random(),title:l.title||'Grocery List',categoryId:l.categoryId||'',items:Array.isArray(l.items)?l.items:[],archived:!!l.archived}));
+  };
+  normalizeState();
+  const oldSaveState=saveState;
+  saveState=function(){oldSaveState(); try{renderFinanceExtension();renderWishlist();renderGrocery();}catch(e){console.warn('Extension render:',e)}};
+
+  function currency(n){const cur=getSetting('finance.currency','$');return `${cur}${Number(n||0).toFixed(2)}`;}
+  function dayStart(k){return new Date(k+'T00:00:00');}
+  function fmtDate(k){if(!k)return 'No date'; const d=dayStart(k);return isNaN(d)?String(k):d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});}
+  function daysUntil(k){if(!k)return null;return Math.round((dayStart(k)-dayStart(localDateString()))/86400000);}
+  function dueLabel(k){const d=daysUntil(k);if(d===null)return '';if(d<0)return `Overdue ${Math.abs(d)}d`;if(d===0)return 'Due today';if(d===1)return 'Due tomorrow';return `Due in ${d}d`;}
+  function addDays(k,n){const d=dayStart(k);d.setDate(d.getDate()+n);return localDateString(d);}
+  function advanceDate(k,freq){const d=dayStart(k);if(freq==='daily')d.setDate(d.getDate()+1);else if(freq==='weekly')d.setDate(d.getDate()+7);else if(freq==='quarterly')d.setMonth(d.getMonth()+3);else if(freq==='yearly')d.setFullYear(d.getFullYear()+1);else d.setMonth(d.getMonth()+1);return localDateString(d);}
+  function imgTags(images){return (images||[]).map(src=>`<img class="image-thumb" src="${src}" alt="Attachment" data-image-view="${src}">`).join('');}
+  function compressImage(file){return new Promise((resolve,reject)=>{if(!file||!file.type.startsWith('image/'))return reject(new Error('Not an image'));const r=new FileReader();r.onload=e=>{const im=new Image();im.onload=()=>{const max=1100,s=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*s));c.height=Math.max(1,Math.round(im.height*s));c.getContext('2d').drawImage(im,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.72));};im.onerror=reject;im.src=e.target.result;};r.onerror=reject;r.readAsDataURL(file);});}
+  async function handleImageFiles(input,target){const files=[...input.files].filter(f=>f.type.startsWith('image/')).slice(0,6);for(const f of files){try{target.images=target.images||[];target.images.push(await compressImage(f));}catch(e){}}input.value='';renderRelevantAfterChange();}
+  function renderRelevantAfterChange(){renderFinanceExtension();renderWishlist();renderGrocery();saveState();}
+  function navAdd(key,label,icon,group='Plan'){const nav=document.querySelector('.nav-menu');if(!nav)return;let section=[...nav.querySelectorAll('.nav-section')].find(x=>x.textContent.trim()===group);if(group==='Plan' && !section){section=document.createElement('div');section.className='nav-section';section.textContent=group;nav.prepend(section)}const item=document.createElement('div');item.className='nav-item';item.dataset.view=key;item.innerHTML=`<span style="font-size:14px;width:16px;text-align:center">${icon}</span>${label}`;item.addEventListener('click',()=>switchView(key));nav.appendChild(item);}
+  function addView(id,title,toolbarHtml){if(document.getElementById(id))return;const container=document.querySelector('.view-container');const sec=document.createElement('section');sec.id=id;sec.className='view';sec.innerHTML=`<div class="dashboard-toolbar"><div><h3 style="margin:0 0 3px">${title}</h3><div class="text-muted text-sm">Editable anytime. Click any item to open its full details in the sidebar.</div></div>${toolbarHtml||''}</div><div id="${id}-content"></div>`;container.appendChild(sec);}
+  navAdd('wishlist','Wishlist','♡','Plan');navAdd('grocery','Grocery','🛒','Plan');
+  const mobile=document.querySelector('.mobile-nav');
+  if(mobile&&!mobile.querySelector('[data-mobile-view="wishlist"]')){[['wishlist','♡','Wishlist'],['grocery','🛒','Grocery']].forEach(([v,i,l])=>{const b=document.createElement('button');b.type='button';b.dataset.mobileView=v;b.innerHTML=`<span class="nav-icon">${i}</span><span class="nav-label">${l}</span>`;b.addEventListener('click',()=>switchView(v));mobile.appendChild(b);});}
+  addView('view-wishlist','Wishlist',`<div class="toolbar-group"><button type="button" class="btn" onclick="openWishlistCategoryManager()">⚙ Categories</button><button type="button" class="btn btn-primary" onclick="openWishlistModal()">+ Add item</button></div>`);
+  addView('view-grocery','Grocery Lists',`<div class="toolbar-group"><button type="button" class="btn" onclick="openGroceryCategoryManager()">⚙ Categories</button><button type="button" class="btn btn-primary" onclick="openGroceryModal()">+ Add list</button></div>`);
+  // Inject advanced finance blocks into existing budget page.
+  const budget=document.getElementById('view-budget');
+  if(budget&&!document.getElementById('budget-planning-extension')){
+    const wrap=document.createElement('div');wrap.id='budget-planning-extension';wrap.className='finance-hub';wrap.innerHTML=`
+      <div class="finance-card"><div id="finance-reminders"></div><div class="finance-toolbar"><h3>🔔 Bills & recurring payments</h3><div><button type="button" class="btn btn-sm" onclick="openPaymentPlanModal()">+ Plan payment</button><button type="button" class="btn btn-sm btn-primary" onclick="openBillModal()">+ Add bill</button></div></div><div id="bills-list" class="finance-list"></div><div class="finance-toolbar" style="margin-top:12px"><span class="text-muted text-sm">Upcoming planned payments</span></div><div id="payment-plans-list" class="finance-list"></div></div>
+      <div class="finance-card"><div class="finance-toolbar"><h3>🎯 Saving & purchase goals</h3><button type="button" class="btn btn-sm btn-primary" onclick="openGoalModal()">+ New goal</button></div><div id="goals-list" class="finance-list"></div></div>`;
+    budget.appendChild(wrap);
+  }
+
+  function quickSidebar(kind,id){
+    const panel=document.getElementById('inspector-panel'),back=document.getElementById('inspector-backdrop'),content=document.getElementById('inspector-content'); if(!panel||!content)return;
+    let obj,typeLabel,editFn,deleteFn,extra='';
+    if(kind==='bill'){obj=state.bills.find(x=>x.id==id);typeLabel='Bill';editFn=()=>openBillModal(id);deleteFn=()=>deleteBill(id);extra=`<div class="inspector-section"><div class="inspector-section-title">Reminder</div><div class="text-sm">${obj?.reminderDays||0} days before · ${obj?.autopay?'Autopay enabled':'Manual payment'}</div></div>`;}
+    else if(kind==='plan'){obj=state.paymentPlans.find(x=>x.id==id);typeLabel='Payment Plan';editFn=()=>openPaymentPlanModal(id);deleteFn=()=>deletePaymentPlan(id);}
+    else if(kind==='goal'){obj=state.goals.find(x=>x.id==id);typeLabel=obj?.type==='purchase'?'Purchase Goal':'Saving Goal';editFn=()=>openGoalModal(id);deleteFn=()=>deleteGoal(id);}
+    else if(kind==='wishlist'){obj=state.wishlist.find(x=>x.id==id);typeLabel='Wishlist Item';editFn=()=>openWishlistModal(id);deleteFn=()=>deleteWishlist(id);}
+    else {obj=findGroceryItem(id);typeLabel='Grocery Item';editFn=()=>openGroceryItemModal(id);deleteFn=()=>deleteGroceryItem(id);}
+    if(!obj)return;
+    const images=obj.images||[];const title=obj.title||obj.name||'Untitled';
+    let details='';
+    if(kind==='bill') details=`<p class="text-sm">💵 <strong>Amount:</strong> ${currency(obj.amount)}</p><p class="text-sm">📅 <strong>Next due:</strong> ${fmtDate(obj.nextDueDate||obj.dueDate)} (${escapeHtml(dueLabel(obj.nextDueDate||obj.dueDate))})</p><p class="text-sm">🔁 <strong>Frequency:</strong> ${escapeHtml(obj.frequency||'once')}</p><p class="text-sm">🔔 <strong>Reminder:</strong> ${obj.reminderDays||0} days before</p><p class="text-sm">${obj.autopay?'✅ Autopay enabled':'🖐️ Manual payment'}</p>`;
+    else if(kind==='plan') details=`<p class="text-sm">💵 <strong>Payment:</strong> ${currency(obj.amount)}</p><p class="text-sm">📅 <strong>Next:</strong> ${fmtDate(obj.nextPayment)} (${escapeHtml(dueLabel(obj.nextPayment))})</p><p class="text-sm">🔁 <strong>Frequency:</strong> ${escapeHtml(obj.frequency||'monthly')}</p><p class="text-sm">📊 <strong>Progress:</strong> ${obj.paidCount||0}${obj.totalPayments?'/'+obj.totalPayments:''}</p>`;
+    else if(kind==='goal') details=`<p class="text-sm">🎯 <strong>Target:</strong> ${currency(obj.targetAmount)}</p><p class="text-sm">💰 <strong>Current:</strong> ${currency(obj.currentAmount)}</p><p class="text-sm">📅 <strong>Target date:</strong> ${fmtDate(obj.targetDate)}</p>${obj.linkedWishlistId?'<p class="text-sm">♡ Linked to wishlist item</p>':''}`;
+    else if(kind==='wishlist'){const c=state.wishlistCategories.find(x=>x.id===obj.categoryId);details=`<p class="text-sm">💵 <strong>Price:</strong> ${currency(obj.price)}</p><p class="text-sm">📁 <strong>Category:</strong> ${escapeHtml(c?.name||'Other')}</p><p class="text-sm">⚑ <strong>Priority:</strong> ${escapeHtml(obj.priority||'medium')}</p><p class="text-sm">📌 <strong>Status:</strong> ${escapeHtml(obj.status||'wanted')}</p>${obj.notes?`<p class="text-sm" style="color:var(--text-secondary);white-space:pre-wrap;margin-top:7px">${escapeHtml(obj.notes)}</p>`:''}`;}
+    else {const list=state.groceryLists.find(l=>l.id===obj._listId);details=`<p class="text-sm">📦 <strong>List:</strong> ${escapeHtml(list?.title||'Grocery')}</p><p class="text-sm">🧮 <strong>Quantity:</strong> ${obj.qty||1}</p><p class="text-sm">💵 <strong>Estimated:</strong> ${currency(obj.estimatedCost)}</p><p class="text-sm">${obj.done?'✅ Done':'⬜ Not purchased'}</p>`;}
+    let groceryExtra='';
+    if(kind==='grocery'&&obj&&obj._listId){const list=state.groceryLists.find(l=>l.id===obj._listId);if(list)groceryExtra=`<div class="inspector-section"><div class="inspector-section-title">Other items in this list</div>${list.items.map(i=>`<div style="padding:5px 0;border-bottom:1px solid var(--border-color);font-size:.75rem"><span>${i.done?'✅':'⬜'} ${escapeHtml(i.name||'Untitled')}</span><span style="float:right">${currency((Number(i.estimatedCost)||0)*(Number(i.qty)||1))}</span></div>`).join('')}</div>`;}
+    content.innerHTML=`<h2 style="font-size:1.2rem;padding-right:30px">${escapeHtml(title)}</h2><div class="text-muted text-sm" style="margin:5px 0 14px">${escapeHtml(typeLabel)}</div>${images.length?`<div class="image-strip">${imgTags(images)}</div>`:''}<div class="inspector-section"><div class="inspector-section-title">Details</div>${details}</div>${groceryExtra}${extra}<div style="display:flex;gap:7px;margin-top:20px;flex-wrap:wrap"><button type="button" class="btn btn-primary" id="ext-edit">✏️ Edit</button>${kind==='bill'&&!(obj.frequency==='once'&&obj.active===false)?`<button type="button" class="btn" id="ext-pay">✓ Mark paid</button>`:''}${kind==='plan'&&!obj.completed?`<button type="button" class="btn" id="ext-pay">✓ Paid + next</button>`:''}${kind==='goal'?`<button type="button" class="btn" id="ext-contrib">+ Contribution</button>`:''}<button type="button" class="btn btn-danger" id="ext-delete">🗑️ Delete</button></div>`;
+    panel.classList.add('open');back.classList.add('active');content.querySelector('#ext-edit').onclick=()=>{closeInspector();editFn();};content.querySelector('#ext-delete').onclick=()=>deleteFn();content.querySelector('#ext-pay')?.addEventListener('click',()=>{closeInspector();kind==='bill'?markBillPaid(id):markPaymentPlanPaid(id)});content.querySelector('#ext-contrib')?.addEventListener('click',()=>{closeInspector();addGoalContribution(id)});content.querySelectorAll('[data-image-view]').forEach(im=>im.onclick=()=>openImageViewer(im.dataset.imageView));
+      }
+  function stripLargeImages(o){const c=JSON.parse(JSON.stringify(o||{}));if(c.images)c.images=c.images.map((x,i)=>`[image ${i+1}, stored locally]`);return c;}
+  window.openUniversalExtensionItem=quickSidebar;
+  window.openImageViewer=function(src){const ov=document.createElement('div');ov.className='modal-overlay active';ov.style.zIndex='1300';ov.innerHTML=`<div class="modal" style="max-width:900px;text-align:center"><div class="modal-header"><h3 class="modal-title">Attachment</h3><button type="button" class="icon-btn" aria-label="Close">✕</button></div><img src="${src}" style="max-width:100%;max-height:75vh;border-radius:10px;border:1px solid var(--border-color);object-fit:contain"><div style="margin-top:12px"><button type="button" class="btn">Close</button></div></div>`;ov.querySelectorAll('button').forEach(b=>b.onclick=()=>ov.remove());document.body.appendChild(ov);}
+
+  function renderFinanceExtension(){
+    ensure();
+    const bl=document.getElementById('bills-list');const pl=document.getElementById('payment-plans-list');const gl=document.getElementById('goals-list'); if(!bl||!pl||!gl)return;
+    const reminderEl=document.getElementById('finance-reminders');
+    if(reminderEl){
+      const horizon=Number(getSetting('finance.daysAhead',30))||30;
+      const all=[...state.bills.filter(b=>b.active!==false&&b.nextDueDate).map(b=>({name:b.name,date:b.nextDueDate,amount:b.amount,rem:b.reminderDays||0,kind:'Bill',id:b.id})),...state.paymentPlans.filter(x=>!x.completed&&x.nextPayment).map(x=>({name:x.name,date:x.nextPayment,amount:x.amount,rem:x.reminderDays||0,kind:'Payment',id:x.id}))].filter(x=>{const d=daysUntil(x.date);return d<=horizon&&d<=Math.max(horizon,x.rem);}).sort((a,b)=>daysUntil(a.date)-daysUntil(b.date));
+      reminderEl.innerHTML=all.length?`<div class="finance-reminder"><strong>Upcoming attention</strong><div style="margin-top:4px">${all.slice(0,5).map(x=>`${escapeHtml(x.kind)} · ${escapeHtml(x.name)} · ${currencyLocal(x.amount)} · ${escapeHtml(dueLabel(x.date))}`).join('<br>')}</div></div>`:'';
+    }
+    const bills=[...state.bills].sort((a,b)=>(a.nextDueDate||a.dueDate||'').localeCompare(b.nextDueDate||b.dueDate||''));
+    bl.innerHTML=bills.length?bills.map(b=>{const d=b.nextDueDate||b.dueDate;const badge=dueLabel(d);return `<div class="finance-item" onclick="openUniversalExtensionItem('bill',${JSON.stringify(b.id)})"><div class="finance-item-main"><div class="finance-item-title">${escapeHtml(b.icon||'🧾')} ${escapeHtml(b.name)}</div><div class="finance-item-meta">${fmtDate(d)} · ${escapeHtml(b.frequency)} · reminder ${b.reminderDays||0}d · ${b.autopay?'Autopay':'Manual'}</div>${badge?`<div style="margin-top:5px"><span class="finance-pill ${badge.startsWith('Overdue')?'bad':badge==='Due today'?'warn':''}">${badge}</span></div>`:''}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="finance-amount">${currency(b.amount)}</div><button type="button" class="btn btn-sm" onclick="event.stopPropagation();markBillPaid(${JSON.stringify(b.id)})">Mark paid</button></div></div>`}).join(''):'<div class="list-empty">No bills planned yet.</div>';
+    pl.innerHTML=state.paymentPlans.length?state.paymentPlans.sort((a,b)=>(a.nextPayment||'').localeCompare(b.nextPayment||'')).map(x=>`<div class="finance-item" onclick="openUniversalExtensionItem('plan',${JSON.stringify(x.id)})"><div class="finance-item-main"><div class="finance-item-title">↻ ${escapeHtml(x.name)}</div><div class="finance-item-meta">${fmtDate(x.nextPayment)} · ${escapeHtml(x.frequency)} · paid ${x.paidCount||0}${x.totalPayments?`/${x.totalPayments}`:''} · reminder ${x.reminderDays||0}d</div></div><div class="finance-amount">${currencyLocal(x.amount)}</div></div>`).join(''):'<div class="list-empty">No payment plans yet.</div>';
+    gl.innerHTML=state.goals.length?state.goals.map(g=>{const pct=g.targetAmount>0?Math.min(100,(g.currentAmount/g.targetAmount)*100):0;return `<div class="finance-item" onclick="openUniversalExtensionItem('goal',${JSON.stringify(g.id)})"><div class="finance-item-main"><div class="finance-item-title">${g.type==='purchase'?'🛍️':'💰'} ${escapeHtml(g.name)}</div><div class="finance-item-meta">${currency(g.currentAmount)} / ${currency(g.targetAmount)} · ${g.targetDate?fmtDate(g.targetDate):'No target date'} · ${g.linkedWishlistId?'Linked to wishlist':''}</div><div class="finance-progress"><div style="width:${pct}%"></div></div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="finance-amount">${pct.toFixed(0)}%</div><button type="button" class="btn btn-sm" onclick="event.stopPropagation();addGoalContribution(${JSON.stringify(g.id)})">+ Contribute</button></div></div>`}).join(''):'<div class="list-empty">No goals yet.</div>';
+  }
+
+  function renderWishlist(){const el=document.getElementById('view-wishlist-content');if(!el)return;const cats=state.wishlistCategories;el.innerHTML=`<div class="list-controls"><input class="search-input" id="wishlist-search" placeholder="🔍 Search wishlist…"><select class="filter-select" id="wishlist-cat"><option value="all">All categories</option>${cats.map(c=>`<option value="${c.id}">${c.icon||'•'} ${escapeHtml(c.name)}</option>`).join('')}</select><select class="filter-select" id="wishlist-status"><option value="all">All status</option><option value="wanted">Wanted</option><option value="considering">Considering</option><option value="bought">Bought</option></select></div><div id="wishlist-grid" class="custom-list-grid"></div>`;drawWishlistGrid();['wishlist-search','wishlist-cat','wishlist-status'].forEach(id=>document.getElementById(id)?.addEventListener('input',drawWishlistGrid));}
+  function drawWishlistGrid(){const grid=document.getElementById('wishlist-grid');if(!grid)return;const q=(document.getElementById('wishlist-search')?.value||'').toLowerCase();const cat=document.getElementById('wishlist-cat')?.value||'all';const st=document.getElementById('wishlist-status')?.value||'all';const arr=state.wishlist.filter(w=>(!q||(w.title||'').toLowerCase().includes(q))&&(cat==='all'||w.categoryId===cat)&&(st==='all'||w.status===st));grid.innerHTML=arr.length?arr.map(w=>{const c=state.wishlistCategories.find(x=>x.id===w.categoryId);return `<div class="custom-item-card" onclick="openUniversalExtensionItem('wishlist',${JSON.stringify(w.id)})"><div class="custom-item-media">${w.images?.[0]?`<img src="${w.images[0]}" alt="">`:'<div class="custom-item-noimg">♡</div>'}</div><div class="custom-item-body"><div class="custom-item-title"><span>${escapeHtml(w.title)}</span><span>${w.price?currency(w.price):''}</span></div><div class="custom-item-meta">${c?.icon||'•'} ${escapeHtml(c?.name||'Other')} · ${escapeHtml(w.priority)} priority</div><div class="custom-item-meta">${w.notes?escapeHtml(w.notes):'No notes'}</div><div class="custom-item-actions"><button type="button" class="btn btn-sm" onclick="event.stopPropagation();openWishlistModal(${JSON.stringify(w.id)})">Edit</button>${w.status!=='bought'&&w.price?`<button type="button" class="btn btn-sm btn-primary" onclick="event.stopPropagation();buyWishlist(${JSON.stringify(w.id)})">Add to budget</button>`:''}</div></div></div>`}).join(''):'<div class="list-empty" style="grid-column:1/-1">No wishlist items match these filters.</div>';
+  }
+
+  function renderGrocery(){const el=document.getElementById('view-grocery-content');if(!el)return;el.innerHTML=`<div class="list-controls"><button type="button" class="btn btn-sm" data-v25-select="grocery">☑ Select</button><button type="button" class="btn btn-sm" data-v25-manage="grocery">🗂 Groups</button><input class="search-input" id="grocery-search" placeholder="🔍 Search lists…"><select class="filter-select" id="grocery-cat"><option value="all">All categories</option>${state.groceryCategories.map(c=>`<option value="${c.id}">${c.icon||'•'} ${escapeHtml(c.name)}</option>`).join('')}</select></div><div id="grocery-grid" class="custom-list-grid"></div>`;drawGroceryGrid();['grocery-search','grocery-cat'].forEach(id=>document.getElementById(id)?.addEventListener('input',drawGroceryGrid));}
+  function drawGroceryGrid(){const grid=document.getElementById('grocery-grid');if(!grid)return;const q=(document.getElementById('grocery-search')?.value||'').toLowerCase();const cat=document.getElementById('grocery-cat')?.value||'all';const arr=state.groceryLists.filter(l=>(!q||(l.title||'').toLowerCase().includes(q))&&(cat==='all'||l.categoryId===cat));grid.innerHTML=arr.length?arr.map(l=>{const done=l.items.filter(i=>i.done).length,total=l.items.length,est=l.items.reduce((a,i)=>a+(Number(i.estimatedCost)||0)*(Number(i.qty)||1),0),c=state.groceryCategories.find(x=>x.id===l.categoryId);return `<div class="custom-item-card v24-group-item" data-group-item-id="${escapeHtml(String(l.id))}" data-group-type="grocery" onclick="openUniversalExtensionItem('grocery',${JSON.stringify(l.id)})"><div class="custom-item-media">${l.images?.[0]?`<img src="${l.images[0]}" alt="">`:'<div class="custom-item-noimg">🛒</div>'}</div><div class="custom-item-body"><div class="custom-item-title"><span>${escapeHtml(l.title)}</span><span>${currency(est)}</span></div><div class="custom-item-meta">${c?.icon||'🛒'} ${escapeHtml(c?.name||'Other')} · ${done}/${total} items</div><div class="custom-item-actions"><button type="button" class="btn btn-sm" onclick="event.stopPropagation();openGroceryModal(${JSON.stringify(l.id)})">Edit</button><button type="button" class="btn btn-sm btn-primary" onclick="event.stopPropagation();addGroceryTotalToBudget(${JSON.stringify(l.id)})">Set budget from estimate</button></div></div></div>`}).join(''):'<div class="list-empty" style="grid-column:1/-1">No grocery lists yet.</div>';try{window.omniosV25RefreshGrouping?.();}catch(e){}setTimeout(()=>window.omniosV25RefreshGrouping?.(),0);
+  }
+  const drawGroceryGridV25Base=drawGroceryGrid;
+  drawGroceryGrid=function(){drawGroceryGridV25Base();setTimeout(()=>window.omniosV25RefreshGrouping?.(),0);};
+  window.drawGroceryGrid=drawGroceryGrid;
+  function findGroceryItem(id){for(const l of state.groceryLists){const i=(l.items||[]).find(x=>x.id==id);if(i)return {...i,_listId:l.id};}return null;}
+
+  function addModalShell(id,title,body){if(document.getElementById(id))document.getElementById(id).remove();const ov=document.createElement('div');ov.className='modal-overlay';ov.id=id;ov.innerHTML=`<div class="modal"><div class="modal-header"><h3 class="modal-title">${title}</h3><button type="button" class="icon-btn" data-close>✕</button></div>${body}</div>`;document.body.appendChild(ov);ov.querySelector('[data-close]').onclick=()=>ov.remove();ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});ov.classList.add('active');return ov;}
+  function attachmentFields(id,images){return `<div class="form-group"><label class="form-label">Images</label><div class="upload-zone"><input type="file" id="${id}-files" accept="image/*" multiple> Add images. They are compressed and stored locally.</div><div id="${id}-images" class="image-strip">${imgTags(images)}</div></div>`;}
+  // Shared with the main app script (grocery items, exercise library, wallets) so every item type
+  // that supports a photo uses the exact same upload/compress/preview behavior.
+  window.compressImage = compressImage; window.imgTags = imgTags; window.handleImageFiles = handleImageFiles; window.attachmentFields = attachmentFields;
+  function selected(v,target){return v===target?'selected':''}
+
+  window.openBillModal=function(id=null){const b=id?state.bills.find(x=>x.id==id):null;const ov=addModalShell('extension-bill-modal',b?'Edit Bill':'Plan a Bill',`<div class="form-grid"><div class="form-group"><label class="form-label">Bill / service</label><input class="form-input" id="ext-bill-name" value="${escapeHtml(b?.name||'')}" placeholder="Rent, internet, subscription…"></div><div class="form-group"><label class="form-label">Amount</label><input type="number" step="0.01" class="form-input" id="ext-bill-amount" value="${b?.amount??''}"></div><div class="form-group"><label class="form-label">Next due date</label><input type="date" class="form-input" id="ext-bill-date" value="${b?.nextDueDate||b?.dueDate||localDateString()}"></div><div class="form-group"><label class="form-label">Frequency</label><select class="form-select" id="ext-bill-frequency"><option value="once" ${selected(b?.frequency,'once')}>One time</option><option value="weekly" ${selected(b?.frequency,'weekly')}>Weekly</option><option value="monthly" ${selected(b?.frequency,'monthly')}>Monthly</option><option value="quarterly" ${selected(b?.frequency,'quarterly')}>Quarterly</option><option value="yearly" ${selected(b?.frequency,'yearly')}>Yearly</option></select></div><div class="form-group"><label class="form-label">Reminder days before</label><input type="number" min="0" max="365" class="form-input" id="ext-bill-reminder" value="${b?.reminderDays??getSetting('finance.defaultBillReminder',5)}"></div><div class="form-group"><label class="form-label">Category</label><select class="form-select" id="ext-bill-cat">${state.budgetCategories.map(c=>`<option value="${c.id}" ${String(b?.categoryId)===String(c.id)?'selected':''}>${c.icon||'📁'} ${escapeHtml(c.name)}</option>`).join('')}</select></div></div><div class="form-row"><label class="form-label"><input type="checkbox" id="ext-bill-autopay" ${b?.autopay?'checked':''}> Autopay</label><label class="form-label"><input type="checkbox" id="ext-bill-active" ${b?.active!==false?'checked':''}> Active reminder</label></div><div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="ext-bill-notes">${escapeHtml(b?.notes||'')}</textarea></div>${attachmentFields('ext-bill',b?.images||[])}<div class="modal-footer"><button type="button" class="btn btn-danger" id="ext-bill-delete" style="display:${b?'inline-flex':'none'}">Delete</button><span style="flex:1"></span><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn btn-primary" id="ext-bill-save">Save</button></div>`);const temp={images:[...(b?.images||[])]};ov.querySelector('#ext-bill-files').onchange=async e=>{await handleImageFiles(e.target,temp);ov.querySelector('#ext-bill-images').innerHTML=imgTags(temp.images)};ov.querySelector('#ext-bill-save').onclick=()=>{const x={id:b?.id||Date.now()+Math.random(),name:ov.querySelector('#ext-bill-name').value.trim()||'Bill',amount:parseFloat(ov.querySelector('#ext-bill-amount').value)||0,nextDueDate:ov.querySelector('#ext-bill-date').value||localDateString(),frequency:ov.querySelector('#ext-bill-frequency').value,reminderDays:parseInt(ov.querySelector('#ext-bill-reminder').value)||0,categoryId:ov.querySelector('#ext-bill-cat').value,autopay:ov.querySelector('#ext-bill-autopay').checked,active:ov.querySelector('#ext-bill-active').checked,notes:ov.querySelector('#ext-bill-notes').value.trim(),images:temp.images,paidDates:b?.paidDates||[]};if(!b)state.bills.push(x);else Object.assign(b,x);ov.remove();saveState();};ov.querySelector('#ext-bill-delete').onclick=()=>{if(id)deleteBill(id);ov.remove();};}
+  window.deleteBill=function(id){if(!confirm('Delete this bill?'))return;state.bills=state.bills.filter(x=>x.id!=id);saveState()};
+  window.markBillPaid=function(id){const b=state.bills.find(x=>x.id==id);if(!b)return;if(b.frequency==='once'&&b.active===false){window.toast('This one-time bill is already marked paid.');return;}const dueDate=b.nextDueDate||b.dueDate||localDateString();const paidDate=localDateString();b.paidDates=b.paidDates||[];b.paidDates.push(paidDate);state.transactions.push({id:Date.now()+Math.random(),type:'expense',amount:Number(b.amount)||0,categoryId:b.categoryId||null,desc:`Bill: ${b.name}`,date:paidDate,billId:b.id,dueDate});if(b.frequency!=='once')b.nextDueDate=advanceDate(dueDate,b.frequency);else b.active=false;saveState()};
+  window.openPaymentPlanModal=function(id=null){const b=id?state.paymentPlans.find(x=>x.id==id):null;const ov=addModalShell('extension-plan-modal',b?'Edit Payment Plan':'Plan Payments',`<div class="form-grid"><div class="form-group"><label class="form-label">Plan name</label><input class="form-input" id="ext-plan-name" value="${escapeHtml(b?.name||'')}" placeholder="Phone financing, course…"></div><div class="form-group"><label class="form-label">Payment amount</label><input type="number" step="0.01" class="form-input" id="ext-plan-amount" value="${b?.amount??''}"></div><div class="form-group"><label class="form-label">Next payment</label><input type="date" class="form-input" id="ext-plan-date" value="${b?.nextPayment||localDateString()}"></div><div class="form-group"><label class="form-label">Frequency</label><select class="form-select" id="ext-plan-frequency"><option value="weekly">Weekly</option><option value="monthly" ${selected(b?.frequency,'monthly')}>Monthly</option><option value="quarterly" ${selected(b?.frequency,'quarterly')}>Quarterly</option><option value="yearly" ${selected(b?.frequency,'yearly')}>Yearly</option></select></div><div class="form-group"><label class="form-label">Budget category</label><select class="form-select" id="ext-plan-cat"><option value="">Not linked</option>${state.budgetCategories.map(c=>`<option value="${c.id}" ${String(b?.categoryId)===String(c.id)?'selected':''}>${c.icon||'📁'} ${escapeHtml(c.name)}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Total payments</label><input type="number" min="0" class="form-input" id="ext-plan-total" value="${b?.totalPayments??''}" placeholder="Optional"></div><div class="form-group"><label class="form-label">Reminder days before</label><input type="number" min="0" class="form-input" id="ext-plan-reminder" value="${b?.reminderDays??getSetting('finance.defaultBillReminder',5)}"></div></div><div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="ext-plan-notes">${escapeHtml(b?.notes||'')}</textarea></div>${attachmentFields('ext-plan',b?.images||[])}<div class="modal-footer"><button type="button" class="btn btn-danger" id="ext-plan-delete" style="display:${b?'inline-flex':'none'}">Delete</button><span style="flex:1"></span><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn btn-primary" id="ext-plan-save">Save</button></div>`);const temp={images:[...(b?.images||[])]};ov.querySelector('#ext-plan-files').onchange=async e=>{await handleImageFiles(e,temp);ov.querySelector('#ext-plan-images').innerHTML=imgTags(temp.images)};ov.querySelector('#ext-plan-save').onclick=()=>{const x={id:b?.id||Date.now()+Math.random(),name:ov.querySelector('#ext-plan-name').value.trim()||'Payment plan',amount:parseFloat(ov.querySelector('#ext-plan-amount').value)||0,nextPayment:ov.querySelector('#ext-plan-date').value||localDateString(),frequency:ov.querySelector('#ext-plan-frequency').value,totalPayments:parseInt(ov.querySelector('#ext-plan-total').value)||0,categoryId:ov.querySelector('#ext-plan-cat').value||null,reminderDays:parseInt(ov.querySelector('#ext-plan-reminder').value)||0,paidCount:b?.paidCount||0,notes:ov.querySelector('#ext-plan-notes').value.trim(),images:temp.images};if(!b)state.paymentPlans.push(x);else Object.assign(b,x);ov.remove();saveState();};ov.querySelector('#ext-plan-delete').onclick=()=>{if(id)deletePaymentPlan(id);ov.remove();};}
+  window.deletePaymentPlan=function(id){if(!confirm('Delete this payment plan?'))return;state.paymentPlans=state.paymentPlans.filter(x=>x.id!=id);saveState()};
+  window.markPaymentPlanPaid=function(id){const p=state.paymentPlans.find(x=>x.id==id);if(!p)return;if(p.completed){window.toast('This payment plan is already complete.');return;}const dueDate=p.nextPayment||localDateString();const paidDate=localDateString();p.paidCount=(p.paidCount||0)+1;state.transactions.push({id:Date.now()+Math.random(),type:'expense',amount:Number(p.amount)||0,categoryId:p.categoryId||null,desc:`Payment plan: ${p.name}`,date:paidDate,paymentPlanId:p.id,dueDate});if(p.totalPayments&&p.paidCount>=p.totalPayments){p.completed=true;}else p.nextPayment=advanceDate(dueDate,p.frequency);saveState()};
+  window.openGoalModal=function(id=null){const g=id?state.goals.find(x=>x.id==id):null;const ov=addModalShell('extension-goal-modal',g?'Edit Goal':'New Goal',`<div class="form-grid"><div class="form-group"><label class="form-label">Goal name</label><input class="form-input" id="ext-goal-name" value="${escapeHtml(g?.name||'')}" placeholder="Emergency fund, new laptop…"></div><div class="form-group"><label class="form-label">Type</label><select class="form-select" id="ext-goal-type"><option value="saving" ${selected(g?.type,'saving')}>Saving</option><option value="purchase" ${selected(g?.type,'purchase')}>Purchase</option></select></div><div class="form-group"><label class="form-label">Target amount</label><input type="number" step="0.01" min="0" class="form-input" id="ext-goal-target" value="${g?.targetAmount??''}"></div><div class="form-group"><label class="form-label">Current amount</label><input type="number" step="0.01" min="0" class="form-input" id="ext-goal-current" value="${g?.currentAmount??0}"></div><div class="form-group"><label class="form-label">Target date</label><input type="date" class="form-input" id="ext-goal-date" value="${g?.targetDate||''}"></div><div class="form-group"><label class="form-label">Budget category</label><select class="form-select" id="ext-goal-cat"><option value="">Not linked</option>${state.budgetCategories.map(c=>`<option value="${c.id}" ${String(g?.categoryId)===String(c.id)?'selected':''}>${c.icon||'📁'} ${escapeHtml(c.name)}</option>`).join('')}</select></div><div class="form-group full"><label class="form-label">Link wishlist item</label><select class="form-select" id="ext-goal-wishlist"><option value="">None</option>${state.wishlist.map(w=>`<option value="${w.id}" ${String(g?.linkedWishlistId)===String(w.id)?'selected':''}>${escapeHtml(w.title)}${w.price?' · '+currency(w.price):''}</option>`).join('')}</select></div></div><div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="ext-goal-notes">${escapeHtml(g?.notes||'')}</textarea></div>${attachmentFields('ext-goal',g?.images||[])}<div class="modal-footer"><button type="button" class="btn btn-danger" id="ext-goal-delete" style="display:${g?'inline-flex':'none'}">Delete</button><span style="flex:1"></span><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn btn-primary" id="ext-goal-save">Save</button></div>`);const temp={images:[...(g?.images||[])]};ov.querySelector('#ext-goal-files').onchange=async e=>{await handleImageFiles(e,temp);ov.querySelector('#ext-goal-images').innerHTML=imgTags(temp.images)};ov.querySelector('#ext-goal-save').onclick=()=>{const x={id:g?.id||Date.now()+Math.random(),name:ov.querySelector('#ext-goal-name').value.trim()||'Goal',type:ov.querySelector('#ext-goal-type').value,targetAmount:parseFloat(ov.querySelector('#ext-goal-target').value)||0,currentAmount:parseFloat(ov.querySelector('#ext-goal-current').value)||0,targetDate:ov.querySelector('#ext-goal-date').value,categoryId:ov.querySelector('#ext-goal-cat').value||null,linkedWishlistId:ov.querySelector('#ext-goal-wishlist').value||null,notes:ov.querySelector('#ext-goal-notes').value.trim(),images:temp.images};if(!g)state.goals.push(x);else Object.assign(g,x);state.wishlist.forEach(w=>{if(String(w.linkedGoalId||'')===String(x.id)&&String(w.id)!==String(x.linkedWishlistId||''))w.linkedGoalId=null});const linkedWish=state.wishlist.find(w=>String(w.id)===String(x.linkedWishlistId||''));if(linkedWish)linkedWish.linkedGoalId=x.id;ov.remove();saveState();};ov.querySelector('#ext-goal-delete').onclick=()=>{if(id)deleteGoal(id);ov.remove();};}
+  window.deleteGoal=function(id){if(!confirm('Delete this goal?'))return;state.goals=state.goals.filter(x=>x.id!=id);state.wishlist.forEach(w=>{if(String(w.linkedGoalId||'')===String(id))w.linkedGoalId=null});saveState()};
+  window.addGoalContribution=function(id){const g=state.goals.find(x=>x.id==id);if(!g)return;const n=parseFloat(prompt(`Add contribution to ${g.name}`,''));if(!Number.isFinite(n)||n<=0)return;g.currentAmount+=n;if(g.categoryId){state.transactions.push({id:Date.now()+Math.random(),type:'expense',amount:n,categoryId:g.categoryId,desc:`Goal contribution: ${g.name}`,date:localDateString(),goalId:g.id});}saveState()};
+  window.buyWishlist=function(id){const w=state.wishlist.find(x=>x.id==id);if(!w)return;if(w.status==='bought'){window.toast('This wishlist item is already marked bought.');return;}const amount=parseFloat(prompt(`Purchase amount for ${w.title}`,w.price||''));if(!Number.isFinite(amount)||amount<=0)return;state.transactions.push({id:Date.now()+Math.random(),type:'expense',amount,categoryId:null,desc:`Wishlist: ${w.title}`,date:localDateString(),wishlistId:w.id});w.status='bought';const g=state.goals.find(x=>x.linkedWishlistId==w.id);if(g&&g.type==='purchase'&&Number(g.targetAmount)>0)g.currentAmount=Number(g.targetAmount);saveState();};
+
+  window.openWishlistModal=function(id=null){const w=id?state.wishlist.find(x=>x.id==id):null;const ov=addModalShell('extension-wishlist-modal',w?'Edit Wishlist Item':'Add Wishlist Item',`<div class="form-grid"><div class="form-group full"><label class="form-label">Item</label><input class="form-input" id="ext-wl-title" value="${escapeHtml(w?.title||'')}" placeholder="What do you want?"></div><div class="form-group"><label class="form-label">Category</label><select class="form-select" id="ext-wl-cat">${state.wishlistCategories.map(c=>`<option value="${c.id}" ${c.id===w?.categoryId?'selected':''}>${c.icon||'•'} ${escapeHtml(c.name)}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Price</label><input type="number" step="0.01" class="form-input" id="ext-wl-price" value="${w?.price??''}"></div><div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="ext-wl-priority"><option value="high" ${selected(w?.priority,'high')}>High</option><option value="medium" ${selected(w?.priority,'medium')}>Medium</option><option value="low" ${selected(w?.priority,'low')}>Low</option></select></div><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="ext-wl-status"><option value="wanted" ${selected(w?.status,'wanted')}>Wanted</option><option value="considering" ${selected(w?.status,'considering')}>Considering</option><option value="bought" ${selected(w?.status,'bought')}>Bought</option></select></div></div><div class="form-group"><label class="form-label">Link to a saving/purchase goal</label><select class="form-select" id="ext-wl-goal"><option value="">None</option>${state.goals.filter(g=>g.type==='purchase').map(g=>`<option value="${g.id}" ${String(w?.linkedGoalId||'')===String(g.id)?'selected':''}>${escapeHtml(g.name)}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Notes / link</label><textarea class="form-textarea" id="ext-wl-notes">${escapeHtml(w?.notes||'')}</textarea></div>${attachmentFields('ext-wl',w?.images||[])}<div class="modal-footer"><button type="button" class="btn btn-danger" id="ext-wl-delete" style="display:${w?'inline-flex':'none'}">Delete</button><span style="flex:1"></span><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn btn-primary" id="ext-wl-save">Save</button></div>`);const temp={images:[...(w?.images||[])]};ov.querySelector('#ext-wl-files').onchange=async e=>{await handleImageFiles(e,temp);ov.querySelector('#ext-wl-images').innerHTML=imgTags(temp.images)};ov.querySelector('#ext-wl-save').onclick=()=>{const x={id:w?.id||Date.now()+Math.random(),title:ov.querySelector('#ext-wl-title').value.trim()||'Wishlist item',categoryId:ov.querySelector('#ext-wl-cat').value,price:parseFloat(ov.querySelector('#ext-wl-price').value)||0,priority:ov.querySelector('#ext-wl-priority').value,status:ov.querySelector('#ext-wl-status').value,linkedGoalId:ov.querySelector('#ext-wl-goal').value||null,notes:ov.querySelector('#ext-wl-notes').value.trim(),images:temp.images};if(!w)state.wishlist.push(x);else Object.assign(w,x); state.goals.forEach(g=>{if(g.type==='purchase' && String(g.linkedWishlistId)===String(x.id) && String(g.id)!==String(x.linkedGoalId||''))g.linkedWishlistId=null;}); const linkedGoal=state.goals.find(g=>String(g.id)===String(x.linkedGoalId||'')); if(linkedGoal) linkedGoal.linkedWishlistId=x.id; ov.remove();saveState();};ov.querySelector('#ext-wl-delete').onclick=()=>{if(id)deleteWishlist(id);ov.remove();};}
+  window.deleteWishlist=function(id){if(!confirm('Delete this wishlist item?'))return;state.wishlist=state.wishlist.filter(x=>x.id!=id);state.goals.forEach(g=>{if(String(g.linkedWishlistId||'')===String(id))g.linkedWishlistId=null});saveState()};
+
+  window.openGroceryModal=function(id=null){const l=id?state.groceryLists.find(x=>x.id==id):null;const ov=addModalShell('extension-grocery-modal',l?'Edit Grocery List':'New Grocery List',`<div class="form-row"><div class="form-group"><label class="form-label">List name</label><input class="form-input" id="ext-gr-name" value="${escapeHtml(l?.title||'')}" placeholder="Weekly groceries"></div><div class="form-group"><label class="form-label">Category</label><select class="form-select" id="ext-gr-cat">${state.groceryCategories.map(c=>`<option value="${c.id}" ${c.id===l?.categoryId?'selected':''}>${c.icon||'•'} ${escapeHtml(c.name)}</option>`).join('')}</select></div></div><div class="form-group"><label class="form-label">Items</label><div id="ext-gr-items"></div><button type="button" class="btn btn-sm" id="ext-gr-add">+ Add item</button></div>${attachmentFields('ext-gr',l?.images||[])}<div class="modal-footer"><span style="flex:1"></span><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn btn-primary" id="ext-gr-save">Save list</button></div>`);const items=JSON.parse(JSON.stringify(l?.items||[]));function draw(){ov.querySelector('#ext-gr-items').innerHTML=items.map((it,i)=>`<div class="form-row" style="align-items:end;margin-bottom:6px"><div><input class="form-input gr-name" data-i="${i}" value="${escapeHtml(it.name||'')}" placeholder="Item"></div><div style="max-width:90px"><input type="number" min="1" class="form-input gr-qty" data-i="${i}" value="${it.qty||1}" placeholder="Qty"></div><div style="max-width:120px"><input type="number" min="0" step="0.01" class="form-input gr-cost" data-i="${i}" value="${it.estimatedCost??''}" placeholder="Cost"></div><button type="button" class="icon-btn gr-del" data-i="${i}">✕</button></div>`).join('')||'<div class="text-muted text-sm">No items yet.</div>';ov.querySelectorAll('.gr-del').forEach(b=>b.onclick=()=>{items.splice(Number(b.dataset.i),1);draw();});ov.querySelectorAll('.gr-name').forEach(x=>x.oninput=()=>items[Number(x.dataset.i)].name=x.value);ov.querySelectorAll('.gr-qty').forEach(x=>x.oninput=()=>items[Number(x.dataset.i)].qty=parseInt(x.value)||1);ov.querySelectorAll('.gr-cost').forEach(x=>x.oninput=()=>items[Number(x.dataset.i)].estimatedCost=parseFloat(x.value)||0);}draw();ov.querySelector('#ext-gr-add').onclick=()=>{items.push({id:Date.now()+Math.random(),name:'',qty:1,estimatedCost:0,done:false});draw()};const temp={images:[...(l?.images||[])]};ov.querySelector('#ext-gr-files').onchange=async e=>{await handleImageFiles(e,temp);ov.querySelector('#ext-gr-images').innerHTML=imgTags(temp.images)};ov.querySelector('#ext-gr-save').onclick=()=>{const x={id:l?.id||Date.now()+Math.random(),title:ov.querySelector('#ext-gr-name').value.trim()||'Grocery List',categoryId:ov.querySelector('#ext-gr-cat').value,items,images:temp.images};if(!l)state.groceryLists.push(x);else Object.assign(l,x);ov.remove();saveState();};}
+  window.openGroceryItemModal=function(itemId){const found=findGroceryItem(itemId);if(!found)return;const ov=addModalShell('extension-grocery-item-modal','Edit Grocery Item',`<div class="form-row"><div class="form-group"><label class="form-label">Item</label><input class="form-input" id="ext-gri-name" value="${escapeHtml(found.name||'')}"></div><div class="form-group"><label class="form-label">Qty</label><input type="number" min="1" class="form-input" id="ext-gri-qty" value="${found.qty||1}"></div><div class="form-group"><label class="form-label">Estimated cost</label><input type="number" min="0" step="0.01" class="form-input" id="ext-gri-cost" value="${found.estimatedCost||0}"></div></div>${attachmentFields('ext-gri',found.images||[])}<div class="modal-footer"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn btn-primary" id="ext-gri-save">Save</button></div>`);const temp={images:[...(found.images||[])]};ov.querySelector('#ext-gri-files').onchange=async e=>{await handleImageFiles(e.target,temp);ov.querySelector('#ext-gri-images').innerHTML=imgTags(temp.images)};ov.querySelector('#ext-gri-save').onclick=()=>{const i=findGroceryItem(itemId);if(!i)return;const list=state.groceryLists.find(l=>l.id===i._listId),real=list?.items.find(x=>x.id==itemId);if(!real)return;real.name=ov.querySelector('#ext-gri-name').value.trim()||real.name;real.qty=parseInt(ov.querySelector('#ext-gri-qty').value)||1;real.estimatedCost=parseFloat(ov.querySelector('#ext-gri-cost').value)||0;real.images=temp.images;ov.remove();saveState();};}
+  window.deleteGroceryItem=function(itemId){for(const l of state.groceryLists){const before=l.items.length;l.items=l.items.filter(x=>x.id!=itemId);if(l.items.length!==before){saveState();return;}}};
+  window.addGroceryTotalToBudget=function(id){const l=state.groceryLists.find(x=>x.id==id);if(!l)return;const total=(l.items||[]).reduce((a,i)=>{const q=Number.isFinite(Number(i.qty))?Math.max(0,Number(i.qty)):1;return a+(Number(i.estimatedCost)||0)*q},0);if(total<=0){window.toast('Add estimated costs first.');return;}l.budget=Number(total.toFixed(2));l.updatedAt=new Date().toISOString();window.toast('✅ Grocery budget set from the current estimate. No expense was recorded.');saveState();};
+
+  function categoryManager(kind){
+    const key=kind==='wishlist'?'wishlistCategories':'groceryCategories';
+    const arr=state[key];
+    const title=kind==='wishlist'?'Wishlist Categories':'Grocery Categories';
+    const ov=addModalShell('extension-cat-modal',title,`<div class="finance-list" id="ext-cat-list"></div><div class="form-row" style="margin-top:12px"><input class="form-input" id="ext-cat-name" placeholder="New category name"><input class="form-input" id="ext-cat-icon" style="max-width:80px" placeholder="⭐"><button type="button" class="btn btn-primary" id="ext-cat-add">Add</button></div><div class="modal-footer"><button type="button" class="btn" data-close>Close</button></div>`);
+    function refresh(){
+      ov.querySelector('#ext-cat-list').innerHTML=arr.map((c,i)=>`<div class="finance-item"><div class="finance-item-main"><div class="finance-item-title">${c.icon||'•'} ${escapeHtml(c.name)}</div></div><button type="button" class="btn btn-sm" data-cat-edit="${i}">Edit</button><button type="button" class="btn btn-sm btn-danger" data-cat-del="${i}">Delete</button></div>`).join('');
+      ov.querySelectorAll('[data-cat-edit]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.catEdit),n=prompt('Category name',arr[i].name);if(n?.trim()){arr[i].name=n.trim();saveState();refresh();}});
+      ov.querySelectorAll('[data-cat-del]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.catDel);if(arr.length<=1){window.toast('Keep at least one category.');return;}if(confirm('Delete this category? Existing items will remain uncategorized.')){arr.splice(i,1);saveState();refresh();}});
+    }
+    refresh();
+    ov.querySelector('#ext-cat-add').onclick=()=>{const n=ov.querySelector('#ext-cat-name').value.trim();if(!n)return;arr.push({id:`${kind}-${Date.now()}-${Math.random()}`,name:n,icon:ov.querySelector('#ext-cat-icon').value.trim()||(kind==='wishlist'?'⭐':'🛒')});ov.querySelector('#ext-cat-name').value='';ov.querySelector('#ext-cat-icon').value='';saveState();refresh();};
+  }
+  window.openWishlistCategoryManager=()=>categoryManager('wishlist');window.openGroceryCategoryManager=()=>categoryManager('grocery');
+
+  // Quick Add integration.
+  const quickGrid=document.querySelector('#quick-add-modal .quick-add-grid');if(quickGrid){[['bill','🧾','Bill','Schedule a bill and reminder'],['goal','🎯','Goal','Plan saving or a purchase'],['wishlist','♡','Wishlist item','Save something to buy later'],['grocery','🛒','Grocery list','Plan a shopping list']].forEach(([t,i,l,d])=>{const b=document.createElement('button');b.type='button';b.className='btn quick-add-choice';b.dataset.quickType=t;b.innerHTML=`<span>${i}</span><span><strong>${l}</strong><small>${d}</small></span>`;b.onclick=()=>{document.getElementById('quick-add-modal')?.classList.remove('active');({bill:openBillModal,goal:openGoalModal,wishlist:openWishlistModal,grocery:openGroceryModal})[t]();};quickGrid.appendChild(b);});}
+  // Global add routing on newly-created views.
+  // Global Quick Add is intentionally routed through the single Quick Add menu.
+  // Existing task/item inspector: make generic finance/list items and images interactive.
+  document.addEventListener('click',e=>{const im=e.target.closest('[data-image-view]');if(im){e.stopPropagation();openImageViewer(im.dataset.imageView);}});
+
+  // Render once after extension is installed.
+  renderFinanceExtension();renderWishlist();renderGrocery();
+})();
+</script>
+
+
+<style id="omnios-diet-style">
+/* ===== Diet & nutrition workspace ===== */
+.diet-hero{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-bottom:14px}
+.diet-card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:14px;padding:15px}
+.diet-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.diet-toolbar .toolbar-group{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.diet-kpi-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-bottom:14px}
+.diet-kpi{padding:11px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base)}
+.diet-kpi-label{font-size:.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}.diet-kpi-value{font-size:1.18rem;font-weight:800;margin-top:5px}.diet-kpi-meta{font-size:.58rem;color:var(--text-muted);margin-top:2px}
+.diet-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.diet-cal-head{font-size:.62rem;color:var(--text-muted);text-align:center;padding:5px;font-weight:700;text-transform:uppercase}.diet-day{min-height:105px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-base);padding:7px;cursor:pointer;transition:.15s}.diet-day:hover{border-color:var(--accent-cyan);background:var(--bg-elevated)}.diet-day.selected{box-shadow:inset 0 0 0 2px var(--accent-cyan)}.diet-day.today .diet-day-num{color:var(--accent-cyan)}.diet-day.other-month{opacity:.4}.diet-day-num{font-size:.68rem;font-weight:800;margin-bottom:4px}.diet-day-meta{font-size:.56rem;color:var(--text-muted);line-height:1.4}.diet-day-status{margin-top:6px;font-size:.54rem;font-weight:700;padding:3px 5px;border-radius:6px;display:inline-block}.diet-status-neutral{background:rgba(113,113,122,.14);color:var(--text-secondary)}.diet-status-complete{background:rgba(16,185,129,.13);color:var(--accent-green)}.diet-status-reference{background:rgba(6,182,212,.12);color:var(--accent-cyan)}.diet-status-high{background:rgba(245,158,11,.13);color:var(--accent-yellow)}
+.diet-meal-slot{border:1px solid var(--border-color);border-radius:12px;background:var(--bg-base);margin-bottom:8px;overflow:hidden}.diet-slot-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 10px;background:var(--bg-elevated);border-bottom:1px solid var(--border-color)}.diet-slot-title{font-size:.76rem;font-weight:800}.diet-slot-total{font-size:.58rem;color:var(--text-muted)}.diet-slot-items{padding:7px 10px}.diet-item-row{display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border-color)}.diet-item-row:last-child{border-bottom:none}.diet-item-thumb{width:34px;height:34px;border-radius:7px;object-fit:cover;border:1px solid var(--border-color);flex:none}.diet-item-icon{width:34px;height:34px;border-radius:7px;background:var(--bg-hover);display:grid;place-items:center;flex:none}.diet-item-main{min-width:0;flex:1}.diet-item-name{font-size:.68rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.diet-item-meta{font-size:.56rem;color:var(--text-muted);margin-top:2px}.diet-item-actions{display:flex;gap:4px}.diet-empty-slot{padding:10px;color:var(--text-muted);font-size:.62rem;text-align:center}
+.diet-nutrition-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-top:9px}.diet-nutrient{padding:8px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-surface)}.diet-nutrient-label{font-size:.56rem;color:var(--text-muted)}.diet-nutrient-value{font-size:.9rem;font-weight:800;margin-top:3px}.diet-reference{font-size:.54rem;color:var(--text-muted);margin-top:2px}.diet-ref-good .diet-nutrient-value{color:var(--accent-cyan)}.diet-ref-high .diet-nutrient-value{color:var(--accent-yellow)}
+.diet-db-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.diet-food-card{border:1px solid var(--border-color);border-radius:12px;background:var(--bg-base);overflow:hidden;cursor:pointer}.diet-food-card:hover{border-color:var(--accent-cyan)}.diet-food-media{height:95px;background:var(--bg-elevated);display:flex;align-items:center;justify-content:center}.diet-food-media img{width:100%;height:100%;object-fit:cover}.diet-food-body{padding:10px}.diet-food-name{font-size:.74rem;font-weight:800}.diet-food-meta{font-size:.58rem;color:var(--text-muted);line-height:1.45;margin-top:4px}
+.diet-prep-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.diet-prep-card{border:1px solid var(--border-color);border-radius:12px;background:var(--bg-base);padding:11px}.diet-prep-progress{height:7px;background:var(--bg-hover);border-radius:99px;overflow:hidden;margin-top:8px}.diet-prep-progress>div{height:100%;background:var(--accent-green);border-radius:99px}
+.diet-progress-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:12px}.diet-weight-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-color);font-size:.66rem}.diet-weight-chart{height:190px;padding:8px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base);overflow:hidden}.diet-weight-chart svg{width:100%;height:100%}.diet-profile-note{padding:10px;border:1px solid rgba(6,182,212,.2);background:rgba(6,182,212,.06);border-radius:10px;color:var(--text-secondary);font-size:.68rem;line-height:1.45}
+.diet-image-strip{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}.diet-image-thumb{width:58px;height:58px;object-fit:cover;border-radius:8px;border:1px solid var(--border-color);cursor:pointer}
+@media(max-width:1100px){.diet-hero,.diet-progress-grid{grid-template-columns:1fr}.diet-kpi-grid{grid-template-columns:repeat(3,1fr)}.diet-db-grid,.diet-prep-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.diet-kpi-grid{grid-template-columns:repeat(2,1fr)}.diet-db-grid,.diet-prep-grid{grid-template-columns:1fr}.diet-calendar{min-width:760px}.diet-calendar-wrap{overflow-x:auto}.diet-nutrition-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+<script id="omnios-diet-extension">
+(function(){
+  const DIET_DEFAULTS={
+    dietCategories:[
+      {id:'dc-produce',name:'Produce',icon:'🥦'},{id:'dc-protein',name:'Protein',icon:'🍗'},{id:'dc-grains',name:'Grains',icon:'🌾'},
+      {id:'dc-dairy',name:'Dairy',icon:'🥛'},{id:'dc-snacks',name:'Snacks',icon:'🍎'},{id:'dc-other',name:'Other',icon:'🍽️'}
+    ],
+    dietFoods:[],dietMeals:[],dietPrep:[],weightLog:[],dietPlan:{},
+    settingsProfile:{name:'',age:null,sex:'female',heightCm:null,weightKg:null,activity:'moderate'},
+    dietSettings:{mealSlots:[
+      {id:'breakfast',label:'Breakfast',icon:'🌅'},{id:'lunch',label:'Lunch',icon:'🍽️'},{id:'dinner',label:'Dinner',icon:'🌙'},{id:'snacks',label:'Snacks',icon:'🍎'}
+    ],firstDay:'sunday',currency:'$'}
+  };
+  function ensureDiet(){
+    Object.entries(DIET_DEFAULTS).forEach(([k,v])=>{if(state[k]===undefined)state[k]=JSON.parse(JSON.stringify(v));});
+    state.dietCategories=Array.isArray(state.dietCategories)?state.dietCategories:JSON.parse(JSON.stringify(DIET_DEFAULTS.dietCategories));
+    state.dietFoods=Array.isArray(state.dietFoods)?state.dietFoods:[]; state.dietMeals=Array.isArray(state.dietMeals)?state.dietMeals:[];
+    state.dietPrep=Array.isArray(state.dietPrep)?state.dietPrep:[]; state.weightLog=Array.isArray(state.weightLog)?state.weightLog:[];
+    state.dietPlan=state.dietPlan&&typeof state.dietPlan==='object'&&!Array.isArray(state.dietPlan)?state.dietPlan:{};
+    state.settings=state.settings||{}; state.settings.profile={...DIET_DEFAULTS.settingsProfile,...(state.settings.profile||{})};
+    state.settings.diet={...DIET_DEFAULTS.dietSettings,...(state.settings.diet||{})};
+    state.settings.diet.mealSlots=Array.isArray(state.settings.diet.mealSlots)&&state.settings.diet.mealSlots.length?state.settings.diet.mealSlots:JSON.parse(JSON.stringify(DIET_DEFAULTS.dietSettings.mealSlots));
+  }
+  ensureDiet();
+  const prevNormalize=normalizeState;
+  normalizeState=function(){prevNormalize();ensureDiet();
+    state.dietFoods=state.dietFoods.map(x=>({...x,id:x.id||Date.now()+Math.random(),name:x.name||'Food',categoryId:x.categoryId||state.dietCategories[0]?.id,serving:x.serving||'1 serving',calories:Math.max(0,Number(x.calories)||0),protein:Math.max(0,Number(x.protein)||0),carbs:Math.max(0,Number(x.carbs)||0),fat:Math.max(0,Number(x.fat)||0),fiber:Math.max(0,Number(x.fiber)||0),costPerServing:Math.max(0,Number(x.costPerServing)||0),images:Array.isArray(x.images)?x.images:[]}));
+    state.dietMeals=state.dietMeals.map(x=>({...x,id:x.id||Date.now()+Math.random(),name:x.name||'Meal',categoryId:x.categoryId||state.dietCategories[0]?.id,items:Array.isArray(x.items)?x.items:[],prepMinutes:Math.max(0,Number(x.prepMinutes)||0),notes:x.notes||'',images:Array.isArray(x.images)?x.images:[]}));
+    state.dietPrep=state.dietPrep.map(x=>({...x,id:x.id||Date.now()+Math.random(),date:x.date||localDateString(),mealId:x.mealId||null,plannedPortions:Math.max(1,Number(x.plannedPortions)||1),preparedPortions:Math.max(0,Number(x.preparedPortions)||0),usedPortions:Math.max(0,Number(x.usedPortions)||0),status:x.status||'planned',notes:x.notes||''}));
+    state.weightLog=state.weightLog.map(x=>({...x,id:x.id||Date.now()+Math.random(),date:x.date||localDateString(),weightKg:Math.max(0,Number(x.weightKg)||0),note:x.note||''}));
+  };
+  normalizeState();
+  const oldSaveState=saveState;
+  saveState=function(){oldSaveState();try{renderDiet();renderDietProfileSettings();}catch(e){console.warn('Diet render:',e)}};
+
+  let dietDate=new Date(); dietDate.setDate(1); let dietSelected=localDateString(new Date()); let dietTab='calendar';
+  const daySlots=()=>state.settings.diet.mealSlots;
+  function esc(v){return escapeHtml(v)}
+  function dkey(d){return localDateString(d)}
+  function dateObj(k){return new Date(k+'T12:00:00')}
+  function addDays(k,n){const d=dateObj(k);d.setDate(d.getDate()+n);return dkey(d)}
+  function monthGridStart(d){const first=new Date(d.getFullYear(),d.getMonth(),1,12),dow=first.getDay(),offset=(state.settings.diet.firstDay==='monday'?((dow+6)%7):dow);const x=new Date(first);x.setDate(first.getDate()-offset);return x}
+  function nutrientZero(){return {calories:0,protein:0,carbs:0,fat:0,fiber:0,cost:0}}
+  function addNut(a,b,m=1){return{calories:a.calories+b.calories*m,protein:a.protein+b.protein*m,carbs:a.carbs+b.carbs*m,fat:a.fat+b.fat*m,fiber:a.fiber+b.fiber*m,cost:a.cost+b.cost*m}}
+  function foodById(id){return state.dietFoods.find(x=>String(x.id)===String(id))}
+  function mealById(id){return state.dietMeals.find(x=>String(x.id)===String(id))}
+  function itemNut(item,scale=1){
+    if(!item)return nutrientZero();
+    if(item.type==='meal'){const m=mealById(item.refId);if(!m)return nutrientZero();return (m.items||[]).reduce((a,i)=>addNut(a,itemNut({...i,type:'food',refId:i.foodId,qty:i.qty||1},scale),(1)),nutrientZero());}
+    const f=foodById(item.refId);if(!f)return nutrientZero();return {calories:f.calories*(Number(item.qty)||1)*scale,protein:f.protein*(Number(item.qty)||1)*scale,carbs:f.carbs*(Number(item.qty)||1)*scale,fat:f.fat*(Number(item.qty)||1)*scale,fiber:f.fiber*(Number(item.qty)||1)*scale,cost:f.costPerServing*(Number(item.qty)||1)*scale};
+  }
+  function mealItemNut(item){
+    if(item.type==='meal'){const m=mealById(item.refId);return m?(m.items||[]).reduce((a,i)=>addNut(a,itemNut({type:'food',refId:i.foodId,qty:i.qty||1}),1),nutrientZero()):nutrientZero();}
+    // A planned food's quantity belongs to the plan entry, not the base food serving.
+    return itemNut({...item,qty:1});
+  }
+  function plannedItemNut(item){return addNut(nutrientZero(),mealItemNut(item),Number(item?.qty)||1)}
+  function dayData(k){const plan=state.dietPlan[k]||{};const totals=nutrientZero();let logged=0;daySlots().forEach(slot=>{(plan[slot.id]||[]).forEach(i=>{logged++;Object.assign(totals,addNut(totals,plannedItemNut(i),1));});});return{plan,totals,logged}}
+  function adultReference(){const p=state.settings.profile||{},age=Number(p.age),w=Number(p.weightKg),h=Number(p.heightCm);if(!age||age<18||!w||!h||!p.sex)return null;const bmr=p.sex==='male'?10*w+6.25*h-5*age+5:10*w+6.25*h-5*age-161;const mult={sedentary:1.2,light:1.375,moderate:1.55,active:1.725,veryActive:1.9}[p.activity]||1.55;return{bmr,tdee:bmr*mult}};
+  function conditionForDay(k){const x=dayData(k),ref=adultReference();if(!x.logged)return ['neutral','Not logged'];if(!ref)return x.logged>=daySlots().length?['complete','Logged'] : ['neutral','Partially logged'];const ratio=x.totals.calories/ref.tdee; if(ratio>1.25)return['high','Above reference'];if(ratio>=.75)return['reference','Near reference'];return['neutral','Below reference'];}
+  function imgDataURL(files){return Promise.all([...files].filter(f=>f.type.startsWith('image/')).slice(0,6).map(f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{const im=new Image();im.onload=()=>{const max=1000,s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,im.width*s);c.height=Math.max(1,im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.72))};im.onerror=rej;im.src=e.target.result};r.onerror=rej;r.readAsDataURL(f)})))}
+  function imagesHtml(images){return(images||[]).map(src=>`<img src="${src}" class="diet-image-thumb" data-diet-image="${src}" alt="Food image">`).join('')}
+  function showDietInspector(title,html,buttons=''){
+    const p=document.getElementById('inspector-panel'),b=document.getElementById('inspector-backdrop'),c=document.getElementById('inspector-content');if(!p||!b||!c)return;
+    c.innerHTML=`<div class="calendar-item-preview"><div class="calendar-preview-icon">🥗</div><div class="calendar-preview-type">Diet</div><h2 class="calendar-preview-title">${esc(title)}</h2>${html}<div class="calendar-preview-actions">${buttons}<button type="button" class="btn" id="diet-inspector-close">Close</button></div></div>`;p.classList.add('open');b.classList.add('active');document.getElementById('diet-inspector-close').onclick=closeInspector;
+  }
+  function openDietImage(src){
+    const p=document.createElement('div');p.className='modal-overlay active';p.innerHTML=`<div class="modal" style="max-width:860px;text-align:center"><div class="modal-header"><h3 class="modal-title">Image</h3><button class="icon-btn" type="button">✕</button></div><img src="${src}" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:10px"><div class="modal-footer"><button class="btn" type="button">Close</button></div></div>`;document.body.appendChild(p);p.querySelectorAll('button').forEach(b=>b.onclick=()=>p.remove());
+  }
+  document.addEventListener('click',e=>{const x=e.target.closest('[data-diet-image]');if(x){e.stopPropagation();openDietImage(x.dataset.dietImage)}});
+
+  function addNav(){
+    const nav=document.querySelector('.nav-menu');if(nav&&!nav.querySelector('[data-view="diet"]')){const sec=document.createElement('div');sec.className='nav-section';sec.textContent='Track';const it=document.createElement('div');it.className='nav-item';it.dataset.view='diet';it.innerHTML='<span style="font-size:14px;width:16px;text-align:center">🥗</span>Nutrition';it.onclick=()=>switchView('diet');const notes=nav.querySelector('[data-view="notes"]');if(notes){nav.insertBefore(sec,notes);nav.insertBefore(it,notes)}}
+    const mob=document.querySelector('.mobile-nav');if(mob&&!mob.querySelector('[data-mobile-view="diet"]')){const b=document.createElement('button');b.type='button';b.dataset.mobileView='diet';b.innerHTML='<span class="nav-icon">🥗</span><span class="nav-label">Diet</span>';b.onclick=()=>switchView('diet');mob.appendChild(b)}
+  }
+  addNav();
+  if(!document.getElementById('view-diet')){
+    const sec=document.createElement('section');sec.id='view-diet';sec.className='view';sec.innerHTML=`<div class="diet-hero"><div class="diet-card"><div class="eyebrow">NUTRITION HQ</div><h3 style="font-size:1.35rem;margin:4px 0">Diet & Meal Planner</h3><p class="text-muted text-sm" style="line-height:1.55">Build a reusable food and meal database, plan each day, track meal prep, and review nutrition and weight history. All entries remain editable from the workspace and sidebar.</p></div><div class="diet-card"><div class="diet-profile-note" id="diet-profile-summary"></div></div></div><div class="diet-toolbar"><div class="toolbar-group"><button class="view-btn active" data-diet-tab="calendar">📅 Planner</button><button class="view-btn" data-diet-tab="database">🗂 Database</button><button class="view-btn" data-diet-tab="prep">🍱 Meal Prep</button><button class="view-btn" data-diet-tab="progress">📈 Progress</button></div><div class="toolbar-group"><button class="btn btn-sm" onclick="openDietSlotManager()">⚙ Meal slots</button><button class="btn btn-sm" onclick="openDietCategoryManager()">⚙ Categories</button><button class="btn btn-primary" id="diet-add-btn">+ Add</button></div></div><div id="diet-content"></div>`;document.querySelector('.view-container').appendChild(sec);
+  }
+  document.querySelectorAll('[data-diet-tab]').forEach(b=>b.addEventListener('click',()=>{dietTab=b.dataset.dietTab;document.querySelectorAll('[data-diet-tab]').forEach(x=>x.classList.toggle('active',x===b));renderDiet();}));
+  document.getElementById('diet-add-btn').onclick=()=>{if(dietTab==='calendar')openDietEntryModal(dietSelected);else if(dietTab==='database')openFoodModal();else if(dietTab==='prep')openPrepModal();else openWeightModal()};
+  function renderProfileSummary(){const el=document.getElementById('diet-profile-summary');if(!el)return;const p=state.settings.profile||{},r=adultReference();if(!p.age||!p.heightCm||!p.weightKg){el.innerHTML='<strong>Profile not complete</strong><br>Open Settings → User Profile to enter age, height, weight, sex and activity level. Nutrition needs are not estimated until an adult profile is complete.';return}el.innerHTML=r?`<strong>${esc(p.name||'Your profile')}</strong><br>${esc(p.age)} years · ${esc(p.heightCm)} cm · ${esc(p.weightKg)} kg · ${esc(p.activity)} activity<br><span class="text-muted">Estimated adult reference energy: ${Math.round(r.tdee)} kcal/day. This is a reference estimate, not a medical prescription.</span>`:`<strong>${esc(p.name||'Your profile')}</strong><br>${esc(p.age)} years · ${esc(p.heightCm)} cm · ${esc(p.weightKg)} kg<br><span class="text-muted">Because the profile is under 18, OmniOS does not generate a calorie target. Use the tracker for meal records and discuss individualized nutrition needs with a qualified adult/professional.</span>`}
+  function renderDiet(){const el=document.getElementById('diet-content');if(!el)return;renderProfileSummary();if(dietTab==='calendar')renderPlanner(el);else if(dietTab==='database')renderDatabase(el);else if(dietTab==='prep')renderPrep(el);else renderProgress(el)}
+
+  function renderPlanner(el){
+    const y=dietDate.getFullYear(),m=dietDate.getMonth(),start=monthGridStart(dietDate),cells=[];for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);cells.push(d)}
+    const names=state.settings.diet.firstDay==='monday'?['Mon','Tue','Wed','Thu','Fri','Sat','Sun']:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const monthTitle=dietDate.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+    const ref=adultReference();const sd=dayData(dietSelected);
+    el.innerHTML=`<div class="diet-toolbar"><div class="toolbar-group"><button class="btn btn-sm" id="diet-prev">←</button><button class="btn btn-sm" id="diet-today">Today</button><button class="btn btn-sm" id="diet-next">→</button><strong style="min-width:155px;text-align:center">${monthTitle}</strong></div><div class="toolbar-group"><button class="btn btn-sm" id="diet-grocery-day">🛒 Create grocery list</button><button class="btn btn-sm" id="diet-edit-day">Edit selected day</button></div></div><div class="diet-kpi-grid">${[['Calories',sd.totals.calories.toFixed(0),'kcal'],['Protein',sd.totals.protein.toFixed(1),'g'],['Carbs',sd.totals.carbs.toFixed(1),'g'],['Fat',sd.totals.fat.toFixed(1),'g'],['Fiber',sd.totals.fiber.toFixed(1),'g']].map(x=>`<div class="diet-kpi"><div class="diet-kpi-label">${x[0]}</div><div class="diet-kpi-value">${x[1]}</div><div class="diet-kpi-meta">${x[2]}${x[0]==='Calories'&&ref?' · ref '+Math.round(ref.tdee):''}</div></div>`).join('')}</div><div class="diet-calendar-wrap"><div class="diet-calendar">${names.map(n=>`<div class="diet-cal-head">${n}</div>`).join('')}${cells.map(d=>{const k=dkey(d),x=dayData(k),[cl,label]=conditionForDay(k);const slots=daySlots().filter(s=>(x.plan[s.id]||[]).length).map(s=>s.label).slice(0,3);return `<div class="diet-day ${d.getMonth()!==m?'other-month':''} ${k===dietSelected?'selected':''} ${k===dkey(new Date())?'today':''}" data-diet-day="${k}"><div class="diet-day-num">${d.getDate()}</div><div class="diet-day-meta">${x.logged?Math.round(x.totals.calories)+' kcal':'No meals logged'}<br>${slots.join(' · ')||'—'}</div><span class="diet-day-status diet-status-${cl}">${label}</span></div>`}).join('')}</div></div><div class="diet-card" style="margin-top:12px"><div class="diet-toolbar"><div><strong>${dateObj(dietSelected).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'})}</strong><div class="text-muted text-sm">Plan breakfast, lunch, dinner and any custom slots. Click an item for full details.</div></div><button class="btn btn-primary btn-sm" id="diet-add-entry">+ Add food / meal</button></div>${daySlots().map(slot=>{const items=(sd.plan[slot.id]||[]);const nut=items.reduce((a,i)=>addNut(a,plannedItemNut(i),1),nutrientZero());return `<div class="diet-meal-slot"><div class="diet-slot-head"><div class="diet-slot-title">${slot.icon||'🍽️'} ${esc(slot.label)}</div><div><span class="diet-slot-total">${nut.calories.toFixed(0)} kcal</span> <button class="btn btn-sm" data-slot-add="${slot.id}">+ Add</button></div></div><div class="diet-slot-items">${items.length?items.map((it,idx)=>{const name=it.type==='meal'?mealById(it.refId)?.name||'Meal':foodById(it.refId)?.name||'Food';const n=plannedItemNut(it);const img=(it.type==='meal'?mealById(it.refId)?.images?.[0]:foodById(it.refId)?.images?.[0]);return `<div class="diet-item-row" data-diet-item="${slot.id}|${idx}">${img?`<img class="diet-item-thumb" src="${img}">`:'<div class="diet-item-icon">🥗</div>'}<div class="diet-item-main"><div class="diet-item-name">${esc(name)}</div><div class="diet-item-meta">× ${Number(it.qty||1)} · ${Math.round(n.calories)} kcal · P ${n.protein.toFixed(1)}g · C ${n.carbs.toFixed(1)}g · F ${n.fat.toFixed(1)}g</div></div><div class="diet-item-actions"><button class="icon-btn" data-diet-edit-item="${slot.id}|${idx}">✎</button><button class="icon-btn" data-diet-del-item="${slot.id}|${idx}">✕</button></div></div>`}).join(''):'<div class="diet-empty-slot">No items planned yet.</div>'}</div></div>`}).join('')}<div class="diet-nutrition-grid">${[['Calories',sd.totals.calories,'kcal'],['Protein',sd.totals.protein,'g'],['Carbs',sd.totals.carbs,'g'],['Fat',sd.totals.fat,'g'],['Fiber',sd.totals.fiber,'g']].map(([a,v,u])=>`<div class="diet-nutrient ${a==='Calories'&&ref?(sd.totals.calories/ref.tdee>1.25?'diet-ref-high':'diet-ref-good'):''}"><div class="diet-nutrient-label">${a}</div><div class="diet-nutrient-value">${Number(v).toFixed(1)}</div><div class="diet-reference">${u}${a==='Calories'&&ref?' · ref '+Math.round(ref.tdee):''}</div></div>`).join('')}</div></div>`;
+    el.querySelector('#diet-prev').onclick=()=>{dietDate.setMonth(dietDate.getMonth()-1);renderDiet()};el.querySelector('#diet-next').onclick=()=>{dietDate.setMonth(dietDate.getMonth()+1);renderDiet()};el.querySelector('#diet-today').onclick=()=>{const t=new Date();dietDate=new Date(t.getFullYear(),t.getMonth(),1);dietSelected=dkey(t);renderDiet()};el.querySelectorAll('[data-diet-day]').forEach(c=>c.onclick=()=>{dietSelected=c.dataset.dietDay;renderDiet()});el.querySelector('#diet-add-entry').onclick=()=>openDietEntryModal(dietSelected);el.querySelectorAll('[data-slot-add]').forEach(b=>b.onclick=()=>openDietEntryModal(dietSelected,b.dataset.slotAdd));el.querySelectorAll('[data-diet-edit-item]').forEach(b=>b.onclick=()=>openDietEntryModal(dietSelected,b.dataset.dietEditItem.split('|')[0],Number(b.dataset.dietEditItem.split('|')[1])));el.querySelectorAll('[data-diet-del-item]').forEach(b=>b.onclick=()=>{const [slot,idx]=b.dataset.dietDelItem.split('|');state.dietPlan[dietSelected][slot].splice(Number(idx),1);saveState()});el.querySelector('#diet-edit-day').onclick=()=>openDayInspector(dietSelected);el.querySelector('#diet-grocery-day').onclick=()=>createGroceryFromDay(dietSelected);
+  }
+  function openDayInspector(k){const x=dayData(k),r=adultReference();showDietInspector(dateObj(k).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}),`<div class="inspector-section"><div class="inspector-section-title">Daily totals</div><div class="text-sm">${Math.round(x.totals.calories)} kcal · Protein ${x.totals.protein.toFixed(1)} g · Carbs ${x.totals.carbs.toFixed(1)} g · Fat ${x.totals.fat.toFixed(1)} g · Fiber ${x.totals.fiber.toFixed(1)} g</div></div>${r?`<div class="inspector-section"><div class="inspector-section-title">Reference</div><div class="text-sm">Estimated adult reference energy: ${Math.round(r.tdee)} kcal/day. This is informational and not a prescription.</div></div>`:''}<div class="inspector-section"><div class="inspector-section-title">Meal slots</div>${daySlots().map(s=>`<div class="diet-weight-row"><span>${s.icon||'🍽️'} ${esc(s.label)}</span><span>${(x.plan[s.id]||[]).length} items</span></div>`).join('')}</div>`,`<button type="button" class="btn btn-primary" id="diet-inspector-grocery">Create grocery list</button>`);document.getElementById('diet-inspector-grocery').onclick=()=>createGroceryFromDay(k)}
+  function renderDatabase(el){el.innerHTML=`<div class="diet-toolbar"><div class="toolbar-group"><button class="view-btn active" data-db="foods">🥦 Foods</button><button class="view-btn" data-db="meals">🍽️ Meals</button></div><div class="toolbar-group"><input id="diet-db-search" class="search-input" placeholder="🔍 Search…"><button class="btn btn-primary" id="diet-db-add">+ Add</button></div></div><div id="diet-db-body"></div>`;let mode='foods';function draw(){const q=(el.querySelector('#diet-db-search').value||'').toLowerCase();const body=el.querySelector('#diet-db-body');if(mode==='foods'){const arr=state.dietFoods.filter(f=>f.name.toLowerCase().includes(q));body.innerHTML=`<div class="diet-db-grid">${arr.map(f=>`<div class="diet-food-card" data-food-id="${f.id}"><div class="diet-food-media">${f.images?.[0]?`<img src="${f.images[0]}">`:'🥗'}</div><div class="diet-food-body"><div class="diet-food-name">${esc(f.name)}</div><div class="diet-food-meta">${esc(f.serving)} · ${f.calories} kcal · P ${f.protein}g · C ${f.carbs}g · F ${f.fat}g · Fiber ${f.fiber}g</div></div></div>`).join('')||'<div class="list-empty">No foods yet.</div>'}</div>`;body.querySelectorAll('[data-food-id]').forEach(c=>c.onclick=()=>showFoodInspector(c.dataset.foodId))}else{const arr=state.dietMeals.filter(f=>f.name.toLowerCase().includes(q));body.innerHTML=`<div class="diet-db-grid">${arr.map(f=>{const n=(f.items||[]).reduce((a,i)=>addNut(a,itemNut({type:'food',refId:i.foodId,qty:i.qty||1}),1),nutrientZero());return `<div class="diet-food-card" data-meal-id="${f.id}"><div class="diet-food-media">${f.images?.[0]?`<img src="${f.images[0]}">`:'🍽️'}</div><div class="diet-food-body"><div class="diet-food-name">${esc(f.name)}</div><div class="diet-food-meta">${(f.items||[]).length} ingredients · ${Math.round(n.calories)} kcal · P ${n.protein.toFixed(1)}g · prep ${f.prepMinutes||0} min</div></div></div>`}).join('')||'<div class="list-empty">No meals yet.</div>'}</div>`;body.querySelectorAll('[data-meal-id]').forEach(c=>c.onclick=()=>showMealInspector(c.dataset.mealId))}}
+    el.querySelectorAll('[data-db]').forEach(b=>b.onclick=()=>{mode=b.dataset.db;el.querySelectorAll('[data-db]').forEach(x=>x.classList.toggle('active',x===b));draw()});el.querySelector('#diet-db-search').oninput=draw;el.querySelector('#diet-db-add').onclick=()=>mode==='foods'?openFoodModal():openMealModal();draw();}
+  function renderPrep(el){const arr=state.dietPrep.slice().sort((a,b)=>b.date.localeCompare(a.date));el.innerHTML=`<div class="diet-toolbar"><div><strong>Meal prep batches</strong><div class="text-muted text-sm">Plan batches, record what was prepared, track portions used, and keep notes.</div></div><button class="btn btn-primary" onclick="openPrepModal()">+ New prep batch</button></div><div class="diet-prep-grid">${arr.map(p=>{const m=mealById(p.mealId);const pct=Math.min(100,(Number(p.preparedPortions)||0)/(Number(p.plannedPortions)||1)*100);return `<div class="diet-prep-card"><div class="diet-food-name">${esc(m?.name||'Meal')}</div><div class="diet-food-meta">${esc(p.date)} · planned ${p.plannedPortions} portions · prepared ${p.preparedPortions} · used ${p.usedPortions} · ${esc(p.status)}</div><div class="diet-prep-progress"><div style="width:${pct}%"></div></div><div class="custom-item-actions"><button class="btn btn-sm" onclick="openPrepModal('${p.id}')">Edit</button><button class="btn btn-sm" onclick="showDietPrepInspector('${p.id}')">View</button><button class="btn btn-sm btn-danger" onclick="deletePrep('${p.id}')">Delete</button></div></div>`}).join('')||'<div class="list-empty">No meal-prep batches yet.</div>'}</div>`}
+  window.showDietPrepInspector=function showDietPrepInspector(id){const p=state.dietPrep.find(x=>String(x.id)===String(id));if(!p)return;const m=mealById(p.mealId);showDietInspector(m?.name||'Meal prep',`<div class="inspector-section"><div class="inspector-section-title">Batch</div><div class="text-sm">${esc(p.date)} · ${p.status}</div></div><div class="inspector-section"><div class="inspector-section-title">Portions</div><div class="text-sm">Planned ${p.plannedPortions} · Prepared ${p.preparedPortions} · Used ${p.usedPortions} · Remaining ${Math.max(0,p.preparedPortions-p.usedPortions)}</div></div><div class="inspector-section"><div class="inspector-section-title">Notes</div><div class="text-sm">${esc(p.notes||'None')}</div></div>`,`<button class="btn btn-primary" id="diet-prep-edit">Edit</button>`);document.getElementById('diet-prep-edit').onclick=()=>{closeInspector();openPrepModal(id)}}
+  window.deletePrep=function(id){if(!confirm('Delete this meal-prep batch?'))return;state.dietPrep=state.dietPrep.filter(x=>String(x.id)!==String(id));saveState()}
+
+  function renderProgress(el){const logs=state.weightLog.slice().sort((a,b)=>a.date.localeCompare(b.date));const r=adultReference();let svg='';if(logs.length){const vals=logs.map(x=>x.weightKg),min=Math.min(...vals),max=Math.max(...vals),range=Math.max(.1,max-min);const pts=logs.map((x,i)=>{const px=20+(i/(Math.max(1,logs.length-1)))*360;const py=160-((x.weightKg-min)/range)*125;return `${px},${py}`}).join(' ');svg=`<svg viewBox="0 0 400 180" preserveAspectRatio="none"><line x1="20" y1="160" x2="380" y2="160" stroke="var(--border-light)"/><polyline points="${pts}" fill="none" stroke="var(--accent-cyan)" stroke-width="3"/>${logs.map((x,i)=>{const px=20+(i/(Math.max(1,logs.length-1)))*360;const py=160-((x.weightKg-min)/range)*125;return `<circle cx="${px}" cy="${py}" r="4" fill="var(--accent-cyan)"/>`}).join('')}</svg>`}else svg='<div class="empty-state">Add weight entries to see progress.</div>';
+    const first=logs[0],last=logs[logs.length-1];el.innerHTML=`<div class="diet-progress-grid"><div class="diet-card"><div class="diet-toolbar"><div><strong>Weight history</strong><div class="text-muted text-sm">Track measurements over time. OmniOS does not set a target weight.</div></div><button class="btn btn-primary" id="diet-add-weight">+ Add weight</button></div><div class="diet-weight-chart">${svg}</div><div class="diet-profile-note" style="margin-top:10px">${last?`Latest recorded: <strong>${last.weightKg.toFixed(1)} kg</strong> on ${esc(last.date)}.`:'No measurements recorded yet.'}${first&&last&&first.id!==last.id?` Change since first logged entry: ${((last.weightKg-first.weightKg)).toFixed(1)} kg.`:''}${r?` Estimated adult reference energy is ${Math.round(r.tdee)} kcal/day based on the current profile.`:''}</div></div><div class="diet-card"><div class="diet-toolbar"><div><strong>Recent entries</strong></div></div>${logs.slice().reverse().slice(0,10).map(x=>`<div class="diet-weight-row"><span>${esc(x.date)} · ${x.weightKg.toFixed(1)} kg</span><span><button class="icon-btn" onclick="openWeightModal('${x.id}')">✎</button> <button class="icon-btn" onclick="deleteWeight('${x.id}')">✕</button></span></div>`).join('')||'<div class="empty-state">No entries.</div>'}</div></div>`;el.querySelector('#diet-add-weight').onclick=()=>openWeightModal()}
+  window.deleteWeight=function(id){if(!confirm('Delete this weight entry?'))return;state.weightLog=state.weightLog.filter(x=>String(x.id)!==String(id));saveState()}
+
+  function modalShell(id,title,body){document.getElementById(id)?.remove();const ov=document.createElement('div');ov.className='modal-overlay active';ov.id=id;ov.innerHTML=`<div class="modal" style="max-width:760px"><div class="modal-header"><h3 class="modal-title">${title}</h3><button class="icon-btn" type="button" data-close>✕</button></div>${body}</div>`;document.body.appendChild(ov);ov.querySelector('[data-close]').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove()};return ov}
+  function uploadField(id,images=[]){return `<div class="form-group"><label class="form-label">Images</label><div class="upload-zone"><input type="file" id="${id}-files" accept="image/*" multiple><div class="diet-image-strip" id="${id}-images">${imagesHtml(images)}</div></div></div>`}
+  function fileHandler(input,target,render){input.onchange=async()=>{const imgs=await imgDataURL(input.files);target.images=(target.images||[]).concat(imgs);render(target.images);input.value=''}}
+  function showFoodInspector(id){const f=foodById(id);if(!f)return;const cat=state.dietCategories.find(c=>String(c.id)===String(f.categoryId));const html=`${f.images?.length?`<div class="diet-image-strip">${imagesHtml(f.images)}</div>`:''}<div class="inspector-section"><div class="inspector-section-title">Nutrition per serving</div><div class="text-sm">${esc(f.serving)}<br>${f.calories} kcal · Protein ${f.protein} g · Carbs ${f.carbs} g · Fat ${f.fat} g · Fiber ${f.fiber} g</div></div><div class="inspector-section"><div class="inspector-section-title">Category</div><div class="text-sm">${cat?.icon||'•'} ${esc(cat?.name||'Uncategorized')}</div></div>${f.costPerServing?`<div class="inspector-section"><div class="inspector-section-title">Cost</div><div class="text-sm">${Number(f.costPerServing).toFixed(2)} per serving</div></div>`:''}`;showDietInspector(f.name,html,`<button class="btn btn-primary" id="diet-food-inspector-edit">Edit food</button>`);document.getElementById('diet-food-inspector-edit').onclick=()=>{closeInspector();openFoodModal(id)}}
+  function showMealInspector(id){const m=mealById(id);if(!m)return;const n=(m.items||[]).reduce((a,i)=>addNut(a,itemNut({type:'food',refId:i.foodId,qty:i.qty||1}),1),nutrientZero());const html=`${m.images?.length?`<div class="diet-image-strip">${imagesHtml(m.images)}</div>`:''}<div class="inspector-section"><div class="inspector-section-title">Nutrition</div><div class="text-sm">${Math.round(n.calories)} kcal · Protein ${n.protein.toFixed(1)} g · Carbs ${n.carbs.toFixed(1)} g · Fat ${n.fat.toFixed(1)} g · Fiber ${n.fiber.toFixed(1)} g</div></div><div class="inspector-section"><div class="inspector-section-title">Ingredients</div>${(m.items||[]).map(i=>`<div class="diet-weight-row"><span>${esc(foodById(i.foodId)?.name||'Missing food')}</span><span>× ${Number(i.qty||1)}</span></div>`).join('')||'<div class="text-muted text-sm">No ingredients.</div>'}</div><div class="inspector-section"><div class="inspector-section-title">Preparation</div><div class="text-sm">${m.prepMinutes||0} min</div></div>${m.notes?`<div class="inspector-section"><div class="inspector-section-title">Notes</div><div class="text-sm">${esc(m.notes)}</div></div>`:''}`;showDietInspector(m.name,html,`<button class="btn btn-primary" id="diet-meal-inspector-edit">Edit meal</button>`);document.getElementById('diet-meal-inspector-edit').onclick=()=>{closeInspector();openMealModal(id)}}
+  window.openFoodModal=function(id=null){const f=id?foodById(id):null,tmp={images:[...(f?.images||[])]};const ov=modalShell('diet-food-modal',f?'Edit Food':'New Food',`<div class="form-row"><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="diet-food-name" value="${esc(f?.name||'')}" placeholder="Chicken breast"></div><div class="form-group"><label class="form-label">Category</label><select class="form-select" id="diet-food-cat">${state.dietCategories.map(c=>`<option value="${c.id}" ${c.id===f?.categoryId?'selected':''}>${c.icon||'•'} ${esc(c.name)}</option>`).join('')}</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Serving description</label><input class="form-input" id="diet-food-serving" value="${esc(f?.serving||'1 serving')}"></div><div class="form-group"><label class="form-label">Cost / serving (optional)</label><input type="number" min="0" step="0.01" class="form-input" id="diet-food-cost" value="${f?.costPerServing??0}"></div></div><div class="form-row"><div class="form-group"><label class="form-label">Calories</label><input type="number" min="0" class="form-input" id="diet-food-cal" value="${f?.calories??0}"></div><div class="form-group"><label class="form-label">Protein (g)</label><input type="number" min="0" step="0.1" class="form-input" id="diet-food-protein" value="${f?.protein??0}"></div><div class="form-group"><label class="form-label">Carbs (g)</label><input type="number" min="0" step="0.1" class="form-input" id="diet-food-carbs" value="${f?.carbs??0}"></div></div><div class="form-row"><div class="form-group"><label class="form-label">Fat (g)</label><input type="number" min="0" step="0.1" class="form-input" id="diet-food-fat" value="${f?.fat??0}"></div><div class="form-group"><label class="form-label">Fiber (g)</label><input type="number" min="0" step="0.1" class="form-input" id="diet-food-fiber" value="${f?.fiber??0}"></div></div>${uploadField('diet-food',tmp.images)}<div class="modal-footer"><button class="btn btn-danger" id="diet-food-del" style="display:${f?'inline-flex':'none'}">Delete</button><span style="flex:1"></span><button class="btn" data-close>Cancel</button><button class="btn btn-primary" id="diet-food-save">Save</button></div>`);const render=imgs=>ov.querySelector('#diet-food-images').innerHTML=imagesHtml(imgs);fileHandler(ov.querySelector('#diet-food-files'),tmp,render);ov.querySelector('#diet-food-save').onclick=()=>{const x={id:f?.id||Date.now()+Math.random(),name:ov.querySelector('#diet-food-name').value.trim()||'Food',categoryId:ov.querySelector('#diet-food-cat').value,serving:ov.querySelector('#diet-food-serving').value.trim()||'1 serving',costPerServing:Number(ov.querySelector('#diet-food-cost').value)||0,calories:Number(ov.querySelector('#diet-food-cal').value)||0,protein:Number(ov.querySelector('#diet-food-protein').value)||0,carbs:Number(ov.querySelector('#diet-food-carbs').value)||0,fat:Number(ov.querySelector('#diet-food-fat').value)||0,fiber:Number(ov.querySelector('#diet-food-fiber').value)||0,images:tmp.images};if(f)Object.assign(f,x);else state.dietFoods.push(x);ov.remove();saveState()};ov.querySelector('#diet-food-del').onclick=()=>{const mealRefs=state.dietMeals.reduce((n,m)=>n+(m.items||[]).filter(i=>String(i.foodId)===String(id)).length,0);let planRefs=0;Object.values(state.dietPlan||{}).forEach(day=>Object.values(day||{}).forEach(items=>planRefs+=(items||[]).filter(i=>i.type==='food'&&String(i.refId)===String(id)).length));if(!confirm(`Delete this food? It will also be removed from ${mealRefs} meal ingredient${mealRefs===1?'':'s'} and ${planRefs} planned entr${planRefs===1?'y':'ies'}.`))return;state.dietFoods=state.dietFoods.filter(x=>String(x.id)!==String(id));state.dietMeals.forEach(m=>m.items=(m.items||[]).filter(i=>String(i.foodId)!==String(id)));Object.values(state.dietPlan||{}).forEach(day=>Object.keys(day||{}).forEach(slot=>day[slot]=(day[slot]||[]).filter(i=>!(i.type==='food'&&String(i.refId)===String(id)))));ov.remove();saveState()}}
+  window.openMealModal=function(id=null){const m=id?mealById(id):null,tmp={images:[...(m?.images||[])]};const lines=JSON.parse(JSON.stringify(m?.items||[]));const ov=modalShell('diet-meal-modal',m?'Edit Meal':'New Meal',`<div class="form-row"><div class="form-group"><label class="form-label">Meal name</label><input class="form-input" id="diet-meal-name" value="${esc(m?.name||'')}" placeholder="Chicken rice bowl"></div><div class="form-group"><label class="form-label">Category</label><select class="form-select" id="diet-meal-cat">${state.dietCategories.map(c=>`<option value="${c.id}" ${c.id===m?.categoryId?'selected':''}>${c.icon||'•'} ${esc(c.name)}</option>`).join('')}</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Prep time (min)</label><input type="number" min="0" class="form-input" id="diet-meal-prep" value="${m?.prepMinutes??0}"></div></div><div class="form-group"><label class="form-label">Ingredients</label><div id="diet-meal-lines"></div><button type="button" class="btn btn-sm" id="diet-meal-add-line">+ Add ingredient</button></div>${uploadField('diet-meal',tmp.images)}<div class="form-group"><label class="form-label">Notes</label><textarea class="form-input" id="diet-meal-notes" rows="3">${esc(m?.notes||'')}</textarea></div><div class="modal-footer"><button class="btn btn-danger" id="diet-meal-del" style="display:${m?'inline-flex':'none'}">Delete</button><span style="flex:1"></span><button class="btn" data-close>Cancel</button><button class="btn btn-primary" id="diet-meal-save">Save meal</button></div>`);function draw(){ov.querySelector('#diet-meal-lines').innerHTML=lines.map((i,idx)=>`<div class="form-row" style="align-items:end;margin-bottom:6px"><div><select class="form-select diet-meal-food" data-i="${idx}">${state.dietFoods.map(f=>`<option value="${f.id}" ${String(f.id)===String(i.foodId)?'selected':''}>${esc(f.name)}</option>`).join('')}</select></div><div style="max-width:120px"><input type="number" min="0.01" step="0.25" class="form-input diet-meal-qty" data-i="${idx}" value="${i.qty??1}"></div><button class="icon-btn diet-meal-del-line" type="button" data-i="${idx}">✕</button></div>`).join('')||'<div class="text-muted text-sm">No ingredients yet.</div>';ov.querySelectorAll('.diet-meal-food').forEach(x=>x.onchange=()=>lines[Number(x.dataset.i)].foodId=x.value);ov.querySelectorAll('.diet-meal-qty').forEach(x=>x.oninput=()=>lines[Number(x.dataset.i)].qty=Number(x.value)||1);ov.querySelectorAll('.diet-meal-del-line').forEach(x=>x.onclick=()=>{lines.splice(Number(x.dataset.i),1);draw()})}draw();ov.querySelector('#diet-meal-add-line').onclick=()=>{const f=state.dietFoods[0];if(!f){window.toast('Create a food first.');return}lines.push({foodId:f.id,qty:1});draw()};const render=imgs=>ov.querySelector('#diet-meal-images').innerHTML=imagesHtml(imgs);fileHandler(ov.querySelector('#diet-meal-files'),tmp,render);ov.querySelector('#diet-meal-save').onclick=()=>{const x={id:m?.id||Date.now()+Math.random(),name:ov.querySelector('#diet-meal-name').value.trim()||'Meal',categoryId:ov.querySelector('#diet-meal-cat').value,prepMinutes:Number(ov.querySelector('#diet-meal-prep').value)||0,items:lines,images:tmp.images,notes:ov.querySelector('#diet-meal-notes').value.trim()};if(m)Object.assign(m,x);else state.dietMeals.push(x);ov.remove();saveState()};ov.querySelector('#diet-meal-del').onclick=()=>{let planRefs=0;Object.values(state.dietPlan||{}).forEach(day=>Object.values(day||{}).forEach(items=>planRefs+=(items||[]).filter(i=>i.type==='meal'&&String(i.refId)===String(id)).length));const prepRefs=state.dietPrep.filter(p=>String(p.mealId)===String(id)).length;if(!confirm(`Delete this meal? It will also remove ${planRefs} planned entr${planRefs===1?'y':'ies'} and ${prepRefs} meal-prep batch${prepRefs===1?'':'es'}.`))return;state.dietMeals=state.dietMeals.filter(x=>String(x.id)!==String(id));Object.values(state.dietPlan||{}).forEach(day=>Object.keys(day||{}).forEach(slot=>day[slot]=(day[slot]||[]).filter(i=>!(i.type==='meal'&&String(i.refId)===String(id)))));state.dietPrep=state.dietPrep.filter(p=>String(p.mealId)!==String(id));ov.remove();saveState()}}
+  window.openDietEntryModal=function(date=localDateString(),slotId=null,index=null){const existing=(index!==null&&slotId)?((state.dietPlan[date]||{})[slotId]||[])[index]:null;const ov=modalShell('diet-entry-modal',existing?'Edit planned item':'Add food / meal',`<div class="form-row"><div class="form-group"><label class="form-label">Date</label><input type="date" id="diet-entry-date" class="form-input" value="${date}"></div><div class="form-group"><label class="form-label">Meal slot</label><select id="diet-entry-slot" class="form-select">${daySlots().map(s=>`<option value="${s.id}" ${s.id===slotId?'selected':''}>${s.icon||'🍽️'} ${esc(s.label)}</option>`).join('')}</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Type</label><select id="diet-entry-type" class="form-select"><option value="food" ${existing?.type==='food'?'selected':''}>Food</option><option value="meal" ${existing?.type==='meal'?'selected':''}>Meal</option></select></div><div class="form-group"><label class="form-label">Item</label><select id="diet-entry-ref" class="form-select"></select></div><div class="form-group"><label class="form-label">Quantity / servings</label><input type="number" min="0.25" step="0.25" id="diet-entry-qty" class="form-input" value="${existing?.qty??1}"></div></div><div class="diet-profile-note" id="diet-entry-preview"></div><div class="modal-footer">${existing?'<button class="btn btn-danger" id="diet-entry-delete">Delete</button>':''}<span style="flex:1"></span><button class="btn" data-close>Cancel</button><button class="btn btn-primary" id="diet-entry-save">Save</button></div>`);function drawRef(){
+      const type=ov.querySelector('#diet-entry-type').value;
+      const sel=ov.querySelector('#diet-entry-ref');
+      const qtyEl=ov.querySelector('#diet-entry-qty');
+      const arr=type==='food'?state.dietFoods:state.dietMeals;
+      sel.innerHTML=arr.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')||'<option value="">Create one first</option>';
+      if(existing && !sel.value) sel.value=existing.refId;
+      const preview=type==='food'?foodById(sel.value):mealById(sel.value);
+      const qty=Math.max(.25,Number(qtyEl.value)||1);
+      const n=preview ? plannedItemNut({type,refId:preview.id,qty}) : nutrientZero();
+      ov.querySelector('#diet-entry-preview').innerHTML=preview?`<strong>${esc(preview.name)}</strong><br>${Math.round(n.calories)} kcal · P ${n.protein.toFixed(1)}g · C ${n.carbs.toFixed(1)}g · F ${n.fat.toFixed(1)}g · Fiber ${n.fiber.toFixed(1)}g`:'No database item selected.';
+    }
+drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector('#diet-entry-ref').onchange=drawRef;ov.querySelector('#diet-entry-qty').oninput=drawRef;ov.querySelector('#diet-entry-save').onclick=()=>{const dd=ov.querySelector('#diet-entry-date').value||localDateString(),sl=ov.querySelector('#diet-entry-slot').value,tp=ov.querySelector('#diet-entry-type').value,ref=ov.querySelector('#diet-entry-ref').value,qty=Math.max(.25,Number(ov.querySelector('#diet-entry-qty').value)||1);state.dietPlan[dd]=state.dietPlan[dd]||{};state.dietPlan[dd][sl]=state.dietPlan[dd][sl]||[];const val={type:tp,refId:ref,qty};if(existing){const oldPlan=state.dietPlan[date]?.[slotId]||[];oldPlan.splice(index,1);if(!state.dietPlan[dd][sl])state.dietPlan[dd][sl]=[];state.dietPlan[dd][sl].push(val)}else state.dietPlan[dd][sl].push(val);dietSelected=dd;const d=dateObj(dd);dietDate=new Date(d.getFullYear(),d.getMonth(),1);ov.remove();saveState()};if(existing)ov.querySelector('#diet-entry-delete').onclick=()=>{state.dietPlan[date][slotId].splice(index,1);ov.remove();saveState()}}
+  window.openPrepModal=function(id=null){const p=id?state.dietPrep.find(x=>String(x.id)===String(id)):null;const ov=modalShell('diet-prep-modal',p?'Edit Meal Prep':'New Meal Prep',`<div class="form-row"><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="diet-prep-date" value="${p?.date||dietSelected}"></div><div class="form-group"><label class="form-label">Meal</label><select class="form-select" id="diet-prep-meal">${state.dietMeals.map(m=>`<option value="${m.id}" ${String(m.id)===String(p?.mealId)?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Planned portions</label><input type="number" min="1" class="form-input" id="diet-prep-planned" value="${p?.plannedPortions??1}"></div><div class="form-group"><label class="form-label">Prepared portions</label><input type="number" min="0" class="form-input" id="diet-prep-prepared" value="${p?.preparedPortions??0}"></div><div class="form-group"><label class="form-label">Used portions</label><input type="number" min="0" class="form-input" id="diet-prep-used" value="${p?.usedPortions??0}"></div></div><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="diet-prep-status"><option value="planned" ${p?.status==='planned'?'selected':''}>Planned</option><option value="prepared" ${p?.status==='prepared'?'selected':''}>Prepared</option><option value="partial" ${p?.status==='partial'?'selected':''}>Partially used</option><option value="finished" ${p?.status==='finished'?'selected':''}>Finished</option></select></div><div class="form-group"><label class="form-label">Notes</label><textarea class="form-input" id="diet-prep-notes" rows="3">${esc(p?.notes||'')}</textarea></div><div class="modal-footer"><button class="btn" data-close>Cancel</button><button class="btn btn-primary" id="diet-prep-save">Save</button></div>`);ov.querySelector('#diet-prep-save').onclick=()=>{const x={id:p?.id||Date.now()+Math.random(),date:ov.querySelector('#diet-prep-date').value||dietSelected,mealId:ov.querySelector('#diet-prep-meal').value,plannedPortions:Number(ov.querySelector('#diet-prep-planned').value)||1,preparedPortions:Number(ov.querySelector('#diet-prep-prepared').value)||0,usedPortions:Number(ov.querySelector('#diet-prep-used').value)||0,status:ov.querySelector('#diet-prep-status').value,notes:ov.querySelector('#diet-prep-notes').value.trim()};if(p)Object.assign(p,x);else state.dietPrep.push(x);ov.remove();saveState()}}
+  window.openWeightModal=function(id=null){const w=id?state.weightLog.find(x=>String(x.id)===String(id)):null;const ov=modalShell('diet-weight-modal',w?'Edit Weight Entry':'Add Weight Entry',`<div class="form-row"><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="diet-weight-date" value="${w?.date||localDateString()}"></div><div class="form-group"><label class="form-label">Weight (kg)</label><input type="number" min="0" step="0.1" class="form-input" id="diet-weight-value" value="${w?.weightKg??state.settings.profile.weightKg??''}"></div></div><div class="form-group"><label class="form-label">Note</label><input class="form-input" id="diet-weight-note" value="${esc(w?.note||'')}" placeholder="Optional context"></div><div class="modal-footer"><button class="btn" data-close>Cancel</button><button class="btn btn-primary" id="diet-weight-save">Save</button></div>`);ov.querySelector('#diet-weight-save').onclick=()=>{const x={id:w?.id||Date.now()+Math.random(),date:ov.querySelector('#diet-weight-date').value||localDateString(),weightKg:Number(ov.querySelector('#diet-weight-value').value)||0,note:ov.querySelector('#diet-weight-note').value.trim()};if(!x.weightKg){window.toast('Enter a weight.');return}if(w)Object.assign(w,x);else state.weightLog.push(x);ov.remove();saveState()}}
+  function openCategoryManager(){const arr=state.dietCategories,ov=modalShell('diet-cat-modal','Diet Categories',`<div id="diet-cat-list"></div><div class="form-row" style="margin-top:12px"><input class="form-input" id="diet-cat-name" placeholder="Category name"><input class="form-input" id="diet-cat-icon" style="max-width:80px" placeholder="🥗"><button class="btn btn-primary" id="diet-cat-add">Add</button></div><div class="modal-footer"><button class="btn" data-close>Close</button></div>`);function refresh(){ov.querySelector('#diet-cat-list').innerHTML=arr.map((c,i)=>`<div class="finance-item"><div class="finance-item-main"><div class="finance-item-title">${c.icon||'•'} ${esc(c.name)}</div></div><button class="btn btn-sm" data-e="${i}">Edit</button><button class="btn btn-sm btn-danger" data-d="${i}">Delete</button></div>`).join('');ov.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.e),n=prompt('Category name',arr[i].name);if(n?.trim()){arr[i].name=n.trim();saveState();refresh()}});ov.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.d);if(arr.length<=1)return window.toast('Keep at least one category.');if(confirm('Delete this category? Existing foods/meals remain but become uncategorized.')){arr.splice(i,1);saveState();refresh()}})}refresh();ov.querySelector('#diet-cat-add').onclick=()=>{const n=ov.querySelector('#diet-cat-name').value.trim();if(!n)return;arr.push({id:'dc-'+Date.now()+Math.random(),name:n,icon:ov.querySelector('#diet-cat-icon').value.trim()||'🍽️'});ov.querySelector('#diet-cat-name').value='';ov.querySelector('#diet-cat-icon').value='';saveState();refresh()}}
+  window.openDietCategoryManager=openCategoryManager;
+  window.openDietSlotManager=function(){const slots=JSON.parse(JSON.stringify(daySlots()));const ov=modalShell('diet-slot-modal','Meal Slots',`<div id="diet-slot-list"></div><button class="btn btn-sm" id="diet-slot-add">+ Add slot</button><div class="modal-footer"><button class="btn" data-close>Cancel</button><button class="btn btn-primary" id="diet-slot-save">Save slots</button></div>`);function refresh(){ov.querySelector('#diet-slot-list').innerHTML=slots.map((s,i)=>`<div class="form-row" style="align-items:end;margin-bottom:6px"><input class="form-input ds-label" data-i="${i}" value="${esc(s.label)}"><input class="form-input ds-icon" style="max-width:80px" data-i="${i}" value="${esc(s.icon||'🍽️')}"><button class="icon-btn ds-del" data-i="${i}" type="button">✕</button></div>`).join('');ov.querySelectorAll('.ds-label').forEach(x=>x.oninput=()=>slots[Number(x.dataset.i)].label=x.value);ov.querySelectorAll('.ds-icon').forEach(x=>x.oninput=()=>slots[Number(x.dataset.i)].icon=x.value);ov.querySelectorAll('.ds-del').forEach(x=>x.onclick=()=>{if(slots.length<=1)return;slots.splice(Number(x.dataset.i),1);refresh()})}refresh();ov.querySelector('#diet-slot-add').onclick=()=>{slots.push({id:'slot-'+Date.now()+Math.random(),label:'New slot',icon:'🍽️'});refresh()};ov.querySelector('#diet-slot-save').onclick=()=>{state.settings.diet.mealSlots=slots;saveState();ov.remove()}}
+  function createGroceryFromDay(k){
+    const x=dayData(k); const map={};
+    daySlots().forEach(s=>{
+      (x.plan[s.id]||[]).forEach(it=>{
+        if(it.type==='food'){
+          const f=foodById(it.refId); if(!f)return;
+          const key=f.id; map[key]=map[key]||{name:f.name,qty:0,cost:0};
+          map[key].qty+=Number(it.qty)||1; map[key].cost+=(Number(it.qty)||1)*Number(f.costPerServing||0);
+        } else {
+          const m=mealById(it.refId); (m?.items||[]).forEach(mi=>{
+            const f=foodById(mi.foodId); if(!f)return;
+            const key=f.id; map[key]=map[key]||{name:f.name,qty:0,cost:0};
+            const q=(Number(it.qty)||1)*(Number(mi.qty)||1); map[key].qty+=q; map[key].cost+=q*Number(f.costPerServing||0);
+          });
+        }
+      });
+    });
+    const items=Object.values(map).map(v=>({id:Date.now()+Math.random(),name:v.name,qty:Number(v.qty.toFixed(2)),estimatedCost:Number((v.qty>0?v.cost/v.qty:0).toFixed(2)),done:false}));
+    state.groceryLists=Array.isArray(state.groceryLists)?state.groceryLists:[];
+    state.groceryLists.push({id:Date.now()+Math.random(),title:`Diet groceries · ${k}`,categoryId:state.groceryCategories?.[0]?.id||'',items,images:[]});
+    saveState(); window.toast('✅ Grocery list created from the selected day.'); switchView('grocery');
+  }
+
+  function renderDietProfileSettings(){const el=document.getElementById('settings-content');if(!el||currentSettingsTab!=='profile')return;const p=state.settings.profile||{};const r=adultReference();el.innerHTML=`<div class="card settings-section"><h3 class="card-title mb-4">User Profile</h3><div class="settings-row-desc" style="margin-bottom:12px">Used to personalize nutrition summaries and reference energy estimates. Weight tracking remains optional. OmniOS does not set a target weight.</div><div class="form-row"><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="profile-name" value="${esc(p.name||'')}"></div><div class="form-group"><label class="form-label">Age</label><input type="number" min="1" max="120" class="form-input" id="profile-age" value="${p.age??''}"></div></div><div class="form-row"><div class="form-group"><label class="form-label">Sex</label><select class="form-select" id="profile-sex"><option value="female" ${p.sex==='female'?'selected':''}>Female</option><option value="male" ${p.sex==='male'?'selected':''}>Male</option></select></div><div class="form-group"><label class="form-label">Height (cm)</label><input type="number" min="50" max="250" step="0.1" class="form-input" id="profile-height" value="${p.heightCm??''}"></div><div class="form-group"><label class="form-label">Current weight (kg)</label><input type="number" min="0" max="500" step="0.1" class="form-input" id="profile-weight" value="${p.weightKg??''}"></div></div><div class="form-group"><label class="form-label">Typical activity level</label><select class="form-select" id="profile-activity"><option value="sedentary" ${p.activity==='sedentary'?'selected':''}>Sedentary</option><option value="light" ${p.activity==='light'?'selected':''}>Lightly active</option><option value="moderate" ${p.activity==='moderate'?'selected':''}>Moderately active</option><option value="active" ${p.activity==='active'?'selected':''}>Active</option><option value="veryActive" ${p.activity==='veryActive'?'selected':''}>Very active</option></select></div><div id="profile-reference" class="diet-profile-note" style="margin-top:10px">${r?`Estimated adult reference energy: <strong>${Math.round(r.tdee)} kcal/day</strong>. This is a general equation-based estimate, not medical advice.`:p.age&&Number(p.age)<18?'For profiles under 18, OmniOS intentionally does not calculate a calorie target. Use the planner for logging and seek individualized guidance from a qualified adult/professional.':'Complete age, height and weight to see the available reference calculation.'}</div><div class="modal-footer"><button class="btn btn-primary" id="profile-save">Save profile</button></div></div>`;el.querySelector('#profile-save').onclick=()=>{state.settings.profile={name:el.querySelector('#profile-name').value.trim(),age:Number(el.querySelector('#profile-age').value)||null,sex:el.querySelector('#profile-sex').value,heightCm:Number(el.querySelector('#profile-height').value)||null,weightKg:Number(el.querySelector('#profile-weight').value)||null,activity:el.querySelector('#profile-activity').value};saveState()}}
+  const oldRenderSettings=renderSettings;renderSettings=function(){if(currentSettingsTab==='profile'){renderDietProfileSettings()}else{oldRenderSettings();if(currentSettingsTab==='data'){const sel=document.getElementById('settings-reset-module');if(sel&&!sel.querySelector('option[value=\"dietFoods\"]'))sel.insertAdjacentHTML('beforeend','<option value=\"dietFoods\">Diet foods</option><option value=\"dietMeals\">Diet meals</option><option value=\"dietPrep\">Meal prep</option><option value=\"weightLog\">Weight history</option><option value=\"dietPlan\">Meal plan</option>')}}};
+  const oldDietReset=resetSettingsModule;resetSettingsModule=function(){const key=document.getElementById('settings-reset-module')?.value;if(key==='dietPlan'){if(!confirm('Reset the entire meal plan? This cannot be undone.'))return;state.dietPlan={};saveState();window.toast('✅ Meal plan reset.');return}if(['dietFoods','dietMeals','dietPrep','weightLog'].includes(key)){if(!confirm(`Reset all ${({dietFoods:'diet foods',dietMeals:'diet meals',dietPrep:'meal prep',weightLog:'weight history'})[key]}? This cannot be undone.`))return;state[key]=[];saveState();window.toast('✅ Diet module reset.');return}oldDietReset()};
+  const quickDietGrid=document.querySelector('#quick-add-modal .quick-add-grid');
+  if(quickDietGrid&&!quickDietGrid.querySelector('[data-quick-type="diet-food"]')){
+    [['diet-food','🥦','Food item','Add or edit a reusable food'],['diet-meal','🍽️','Meal','Build a reusable meal'],['diet-weight','⚖️','Weight entry','Log a measurement']].forEach(([t,i,l,d])=>{const b=document.createElement('button');b.type='button';b.className='btn quick-add-choice';b.dataset.quickType=t;b.innerHTML=`<span>${i}</span><span><strong>${l}</strong><small>${d}</small></span>`;b.onclick=()=>{document.getElementById('quick-add-modal')?.classList.remove('active');({"diet-food":openFoodModal,"diet-meal":openMealModal,"diet-weight":openWeightModal})[t]()};quickDietGrid.appendChild(b)})
+  }
+  const settingsTabs=document.getElementById('settings-tabs');if(settingsTabs&&!settingsTabs.querySelector('[data-settings-tab="profile"]')){const b=document.createElement('button');b.type='button';b.className='view-btn';b.dataset.settingsTab='profile';b.textContent='User Profile';settingsTabs.insertBefore(b,settingsTabs.querySelector('[data-settings-tab="data"]'));b.onclick=()=>{currentSettingsTab='profile';settingsTabs.querySelectorAll('[data-settings-tab]').forEach(x=>x.classList.toggle('active',x===b));renderSettings()}}
+  renderDiet();renderDietProfileSettings();
+})();
+</script>
+
+
+<style id="omnios-power-style">
+/* ===== OmniOS Power Workspace ===== */
+.power-topbar-search{min-width:260px;max-width:420px;flex:1}.power-topbar-search .power-search{width:100%;min-height:38px;padding:7px 11px;border:1px solid var(--border-color);background:var(--bg-base);color:var(--text-primary);border-radius:9px;font-size:.78rem}.power-kicker{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-cyan);font-weight:800}.power-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.power-grid-2{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}.power-card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:14px;padding:14px}.power-card h3{font-size:.9rem;margin-bottom:8px}.power-stat{padding:12px;border:1px solid var(--border-color);border-radius:11px;background:var(--bg-base)}.power-stat .v{font-size:1.45rem;font-weight:800}.power-stat .l{font-size:.61rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em}.power-item{display:flex;align-items:flex-start;gap:10px;padding:10px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base);cursor:pointer}.power-item:hover{border-color:var(--accent-cyan);background:var(--bg-elevated)}.power-item-main{min-width:0;flex:1}.power-item-title{font-size:.76rem;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.power-item-meta{font-size:.62rem;color:var(--text-muted);line-height:1.4;margin-top:3px}.power-list{display:flex;flex-direction:column;gap:7px}.power-progress{height:7px;background:var(--bg-hover);border-radius:99px;overflow:hidden;margin-top:7px}.power-progress>div{height:100%;background:var(--accent-cyan);border-radius:99px}.power-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1400;display:none}.power-overlay.open{display:block}.power-sidebar{position:fixed;right:0;top:0;bottom:0;width:470px;max-width:100vw;background:var(--bg-surface);border-left:1px solid var(--border-color);z-index:1410;transform:translateX(100%);transition:transform .22s ease;display:flex;flex-direction:column}.power-sidebar.open{transform:translateX(0)}.power-sidebar-head{padding:14px 16px;border-bottom:1px solid var(--border-color);display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.power-sidebar-body{padding:16px;overflow:auto;flex:1}.power-sidebar-foot{padding:12px 16px;border-top:1px solid var(--border-color);display:flex;gap:7px;flex-wrap:wrap}.power-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;font-size:.58rem;background:var(--bg-hover);color:var(--text-secondary)}.power-danger{color:var(--accent-red)}.power-good{color:var(--accent-green)}.power-warn{color:var(--accent-yellow)}.power-muted{color:var(--text-muted)}.power-command{position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:1500;display:none;align-items:flex-start;justify-content:center;padding:11vh 16px}.power-command.open{display:flex}.power-command-box{width:min(760px,100%);background:var(--bg-surface);border:1px solid var(--border-light);border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.42);overflow:hidden}.power-command-head{padding:12px;border-bottom:1px solid var(--border-color)}.power-command-input{width:100%;padding:12px 14px;font-size:1rem;border-radius:11px;border:1px solid var(--border-color);background:var(--bg-base);color:var(--text-primary);outline:none}.power-command-results{max-height:55vh;overflow:auto;padding:8px}.power-command-row{display:flex;align-items:center;gap:10px;padding:11px;border-radius:10px;cursor:pointer}.power-command-row:hover,.power-command-row.active{background:var(--bg-elevated)}.power-command-row .ico{width:30px;height:30px;display:grid;place-items:center;border-radius:8px;background:var(--bg-base)}.power-command-row .main{min-width:0;flex:1}.power-command-row .title{font-size:.76rem;font-weight:700}.power-command-row .meta{font-size:.61rem;color:var(--text-muted);margin-top:2px}.power-empty{padding:24px;text-align:center;color:var(--text-muted);border:1px dashed var(--border-light);border-radius:12px}.power-table{width:100%;border-collapse:collapse}.power-table th,.power-table td{padding:8px;border-bottom:1px solid var(--border-color);font-size:.68rem;text-align:left}.power-table th{font-size:.6rem;color:var(--text-muted);text-transform:uppercase}.power-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.power-form-grid .full{grid-column:1/-1}.power-custom-list{display:flex;flex-wrap:wrap;gap:6px}.power-custom-field{padding:7px 9px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);font-size:.65rem}.power-rel{display:flex;align-items:center;justify-content:space-between;gap:7px;padding:7px 8px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-base);margin-bottom:6px}.power-toast{position:fixed;right:18px;bottom:18px;z-index:1600;padding:10px 13px;border:1px solid var(--border-light);border-radius:10px;background:var(--bg-surface);box-shadow:0 12px 40px rgba(0,0,0,.3);font-size:.73rem;display:none}.power-toast.show{display:block}.power-pantry-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.power-pantry-item{padding:11px;border:1px solid var(--border-color);border-radius:11px;background:var(--bg-base);cursor:pointer}.power-pantry-item.low{border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.05)}.power-pantry-item.expired{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.05)}.power-shortcut{font-size:.58rem;color:var(--text-muted);padding:3px 6px;border:1px solid var(--border-color);border-radius:5px}.power-forecast-bar{height:9px;background:var(--bg-hover);border-radius:99px;overflow:hidden}.power-forecast-bar>div{height:100%;border-radius:99px;background:var(--accent-cyan)}
+@media(max-width:1100px){.power-grid{grid-template-columns:1fr 1fr}.power-grid-2{grid-template-columns:1fr}.power-pantry-grid{grid-template-columns:repeat(3,1fr)}.power-topbar-search{min-width:180px}}
+@media(max-width:760px){.power-topbar-search{display:none}.power-grid{grid-template-columns:1fr}.power-sidebar{width:100%}.power-form-grid{grid-template-columns:1fr}.power-pantry-grid{grid-template-columns:1fr 1fr}.power-command{padding:8vh 8px 16px}.power-command-results{max-height:62vh}}
+
+/* Native Pantry thumbnails in the legacy Power workspace */
+.power-pantry-visual{width:64px;aspect-ratio:4/3;border-radius:9px;overflow:hidden;border:1px solid var(--border-color);background:var(--bg-elevated);display:grid;place-items:center;position:relative}.power-pantry-visual img{width:100%;height:100%;object-fit:cover;display:block}.power-pantry-state{position:absolute;right:4px;top:4px;min-width:20px;height:20px;padding:0 4px;border-radius:999px;display:grid;place-items:center;background:rgba(12,14,18,.78);color:#fff;font-size:.62rem;border:1px solid rgba(255,255,255,.16)}</style>
+
+
+<script id="omnios-power-workspace">
+(function(){
+  const P=window.OmniPower={};
+  const clone=o=>{try{return JSON.parse(JSON.stringify(o));}catch(e){return null;}};
+  const id=()=>Date.now()+Math.random();
+  const esc=v=>escapeHtml(v==null?'':v);
+  // Uses the global currencyLocal() defined in the core application scope.
+  const dkey=d=>typeof localDateString==='function'?localDateString(d):new Date(d).toISOString().slice(0,10);
+  const fmt=k=>{if(!k)return 'No date';const d=new Date(k+'T00:00:00');return isNaN(d)?String(k):d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});};
+  const days=k=>Math.round((new Date(k+'T00:00:00')-new Date(dkey()+'T00:00:00'))/86400000);
+  function ensure(){
+    state.relations=Array.isArray(state.relations)?state.relations:[];
+    state.activityLog=Array.isArray(state.activityLog)?state.activityLog:[];
+    state.trash=Array.isArray(state.trash)?state.trash:[];
+    state.templates=Array.isArray(state.templates)?state.templates:[];
+    state.pantry=Array.isArray(state.pantry)?state.pantry:[];
+    state.customFields=state.customFields&&typeof state.customFields==='object'?state.customFields:{};
+    state.settings.power=state.settings.power||{dashboardDensity:'comfortable',searchRecent:[],trashRetentionDays:30};
+  }
+  ensure();
+  const baseNormalize=normalizeState;
+  normalizeState=function(){baseNormalize();ensure();state.pantry=state.pantry.map(x=>({...x,id:x.id||id(),name:x.name||'Pantry item',qty:Number(x.qty)||0,unit:x.unit||'unit',minQty:Number(x.minQty)||0,cost:Number(x.cost)||0,category:x.category||'Other',expires:x.expires||'',images:Array.isArray(x.images)?x.images:[]}));state.relations=state.relations.filter(r=>r&&r.a&&r.b&&r.a!==r.b);state.activityLog=state.activityLog.slice(-300);state.trash=state.trash.slice(-150)};
+  normalizeState();
+
+
+  function powerModalShell(modalId,title,body){let old=document.getElementById(modalId);if(old)old.remove();const ov=document.createElement('div');ov.className='modal-overlay active';ov.id=modalId;ov.innerHTML=`<div class="modal"><div class="modal-header"><h3 class="modal-title">${esc(title)}</h3><button type="button" class="icon-btn" data-power-close>✕</button></div>${body}</div>`;document.body.appendChild(ov);ov.querySelector('[data-power-close]')?.addEventListener('click',()=>ov.remove());ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});return ov;}
+
+  function log(action,type,objectId,label,extra){ensure();state.activityLog.push({id:id(),at:new Date().toISOString(),action,type,objectId:objectId==null?'':String(objectId),label:label||'',extra:extra||''});state.activityLog=state.activityLog.slice(-300);}
+
+  // Undo: capture last stable state before every save, without storing the snapshot itself.
+  let lastCommittedState=clone(state); let undoSnapshot=null; let saving=false;
+  const originalSave=saveState;
+  saveState=function(){
+    if(!saving){undoSnapshot=clone(lastCommittedState);}
+    saving=true;
+    originalSave();
+    lastCommittedState=clone(state);
+    saving=false;
+  };
+  window.omniUndo=function(){if(!undoSnapshot){toast('Nothing to undo');return;}const current=clone(state);state=clone(undoSnapshot);undoSnapshot=current;log('Undo','system','', 'Undo last saved change');originalSave();toast('↶ Last change undone');};
+  window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();omniUndo();}});
+
+  function toast(msg,opts){
+    opts=opts||{};
+    let t=document.getElementById('power-toast');
+    if(!t){t=document.createElement('div');t.id='power-toast';t.className='power-toast';document.body.appendChild(t);}
+    t.innerHTML='';

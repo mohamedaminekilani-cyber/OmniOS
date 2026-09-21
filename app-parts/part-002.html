@@ -1,0 +1,1000 @@
+    text-align: center;
+    padding: 30px 16px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    border: 1px dashed var(--border-light);
+    border-radius: var(--radius-md);
+    line-height: 1.5;
+}
+.empty-state::before, .list-empty::before, .power-empty::before {
+    content: '';
+}
+
+/* ---- Consistent focus-visible ring for keyboard users (was inconsistent/missing) ---- */
+.btn:focus-visible, .icon-btn:focus-visible, .view-btn:focus-visible,
+.form-input:focus-visible, .form-select:focus-visible, .form-textarea:focus-visible,
+.nav-item:focus-visible, .list-item:focus-visible, .kanban-card:focus-visible,
+.gallery-card:focus-visible, .power-item:focus-visible, .power-command-row:focus-visible {
+    outline: 2px solid var(--accent-cyan);
+    outline-offset: 2px;
+}
+
+/* ---- Toast: upgraded to support an inline action (e.g. Undo) ---- */
+.power-toast {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    max-width: min(420px, calc(100vw - 36px));
+}
+.power-toast.show { display: flex; }
+.power-toast-msg { flex: 1; }
+.power-toast-action {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid var(--accent-cyan);
+    color: var(--accent-cyan);
+    font-weight: 600;
+    font-size: 0.7rem;
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+.power-toast-action:hover { background: rgba(6,182,212,0.12); }
+
+/* ---- Shortcuts help panel ---- */
+.shortcuts-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1550;
+    display: none; align-items: center; justify-content: center; padding: 24px;
+}
+.shortcuts-overlay.open { display: flex; }
+.shortcuts-box {
+    width: min(480px, 100%); background: var(--bg-surface); border: 1px solid var(--border-light);
+    border-radius: 16px; box-shadow: 0 24px 70px rgba(0,0,0,.42); padding: 20px;
+}
+.shortcuts-box h3 { font-size: 1rem; margin-bottom: 4px; }
+.shortcuts-box .text-muted { margin-bottom: 14px; }
+.shortcuts-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 9px 0; border-bottom: 1px solid var(--border-color); font-size: 0.8rem;
+}
+.shortcuts-row:last-of-type { border-bottom: none; }
+.shortcuts-keys kbd {
+    display: inline-block; padding: 2px 7px; border-radius: 5px; background: var(--bg-elevated);
+    border: 1px solid var(--border-light); font-size: 0.7rem; font-family: inherit; margin-left: 4px;
+}
+.shortcuts-box .modal-footer { margin-top: 14px; }
+
+/* ---- Sidebar footer: make room for the new Shortcuts trigger, keep buttons even width ---- */
+.sidebar-footer { flex-wrap: wrap; }
+.sidebar-footer .btn { min-width: 0; }
+
+/* ---- Custom icon slots (nav + logo): hidden by default, shown only once the setting is on AND the file loads ---- */
+.nav-icon-img { width: 16px; height: 16px; object-fit: contain; border-radius: 3px; flex-shrink: 0; display: none; }
+@media (max-width: 900px) { .nav-icon-img { width: 18px; height: 18px; } }
+.icon-list-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 0.8rem; }
+.icon-list-row:last-child { border-bottom: none; }
+.icon-list-row code { background: var(--bg-elevated); padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; }
+</style>
+
+
+<style id="omnios-ux-v20">
+/* ============================================================
+   OmniOS v20 — spacing, hierarchy and fluid interaction layer
+   ============================================================ */
+:root{
+  --ux-space-1:4px;
+  --ux-space-2:8px;
+  --ux-space-3:12px;
+  --ux-space-4:16px;
+  --ux-space-5:20px;
+  --ux-space-6:24px;
+  --ux-space-7:32px;
+  --ux-content-max:1600px;
+}
+
+/* A single rhythm for the desktop workspace. */
+.view-container{
+  width:100%;
+  max-width:var(--ux-content-max);
+  margin:0 auto;
+  padding:24px 28px 32px;
+}
+.card{padding:20px}
+.card-header{margin-bottom:16px}
+.grid-2{gap:20px}
+.stats-row{gap:12px;margin-bottom:20px}
+.toolbar{gap:10px;margin-bottom:20px;padding:12px 16px}
+.form-group{margin-bottom:14px}
+.form-row,.form-grid{gap:12px}
+.modal{padding:24px}
+.inspector-panel{padding:24px}
+.empty-state,.list-empty,.power-empty{padding:36px 20px}
+
+/* Avoid layout jumps from hover effects and make clickable surfaces feel intentional. */
+.card,.kanban-card,.gallery-card,.list-item,.note-card,.workout-item-card,.workout-session-card,
+.master-agenda-item,.habit-week-day,.budget-progress{transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease}
+html[data-hover-lift="false"] .card:hover,
+html[data-hover-lift="false"] .kanban-card:hover,
+html[data-hover-lift="false"] .gallery-card:hover,
+html[data-hover-lift="false"] .note-card:hover,
+html[data-hover-lift="false"] .habit-week-day:hover{transform:none;box-shadow:none}
+
+/* Density affects the whole system, not just a couple of cards. */
+html[data-density="compact"] .view-container{padding:18px 20px 24px}
+html[data-density="compact"] .card{padding:15px}
+html[data-density="compact"] .toolbar{padding:9px 12px;margin-bottom:14px}
+html[data-density="compact"] .grid-2{gap:14px}
+html[data-density="compact"] .stats-row{gap:8px;margin-bottom:14px}
+html[data-density="compact"] .form-group{margin-bottom:10px}
+
+html[data-spacing="compact"]{
+  --ux-space-1:3px;--ux-space-2:6px;--ux-space-3:9px;--ux-space-4:12px;--ux-space-5:16px;--ux-space-6:20px;--ux-space-7:26px;
+}
+html[data-spacing="spacious"]{
+  --ux-space-1:6px;--ux-space-2:10px;--ux-space-3:15px;--ux-space-4:20px;--ux-space-5:26px;--ux-space-6:32px;--ux-space-7:40px;
+}
+html[data-spacing="compact"] .view-container{padding:18px 20px 24px}
+html[data-spacing="compact"] .card{padding:16px}
+html[data-spacing="compact"] .toolbar{padding:10px 12px}
+html[data-spacing="spacious"] .view-container{padding:30px 34px 40px}
+html[data-spacing="spacious"] .card{padding:24px}
+html[data-spacing="spacious"] .toolbar{padding:14px 18px}
+html[data-spacing="spacious"] .grid-2{gap:24px}
+
+html[data-content-width="comfortable"]{--ux-content-max:1380px}
+html[data-content-width="focused"]{--ux-content-max:1120px}
+html[data-sidebar-mode="wide"] .sidebar{width:280px}
+html[data-sidebar-mode="wide"] .nav-item{padding-left:14px;padding-right:14px}
+html[data-sticky-topbar="true"] .topbar{position:sticky;top:0;z-index:400}
+
+/* Better form rhythm and action hierarchy. */
+.settings-section + .settings-section{margin-top:16px}
+.settings-row{min-height:52px;padding:10px 0}
+.settings-row + .settings-row{border-top:1px solid var(--border-color)}
+.settings-row-control{min-width:130px}
+.settings-row-control .form-input,.settings-row-control .filter-select{min-height:40px}
+.quick-add-grid{gap:10px}
+.quick-add-choice{min-height:76px;border-radius:12px}
+.btn,.view-btn,.tab-btn,.filter-select,.search-input{transition:background .15s ease,border-color .15s ease,color .15s ease,transform .1s ease}
+
+/* Reduce motion globally when requested. */
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after{
+  animation-duration:.001ms !important;
+  animation-iteration-count:1 !important;
+  transition-duration:.001ms !important;
+  scroll-behavior:auto !important;
+}
+
+/* Mobile: use the extra width available without making controls cramped. */
+@media(max-width:760px){
+  .view-container{max-width:none;padding:14px 12px calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 16px)}
+  html[data-density="compact"] .view-container,
+  html[data-spacing="compact"] .view-container{padding:12px 10px calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 12px)}
+  html[data-spacing="spacious"] .view-container{padding:18px 14px calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 18px)}
+  .card{padding:16px}
+  .toolbar{padding:10px}
+  .settings-row{align-items:flex-start}
+  .settings-row-control{min-width:120px}
+  .quick-add-grid{grid-template-columns:1fr}
+}
+@media(min-width:1200px){
+  .view-container > .view{width:100%}
+}
+</style>
+
+
+<style id="omnios-grouped-cards-v21">
+.group-parent-card{
+  border:1px solid var(--border-color,rgba(148,163,184,.16));
+  border-radius:var(--radius,16px);
+  background:var(--card-bg,rgba(15,23,42,.55));
+  overflow:hidden;
+  margin-bottom:var(--ux-space-4,16px);
+}
+.group-parent-head{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 16px;
+  min-height:54px;
+  cursor:pointer;
+  user-select:none;
+}
+.group-parent-head:hover{background:rgba(148,163,184,.05)}
+.group-parent-main{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.group-parent-title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.group-parent-meta{font-size:.78rem;opacity:.62;white-space:nowrap}
+.group-parent-actions{display:flex;align-items:center;gap:6px}
+.group-parent-body{padding:0 12px 12px}
+.group-parent-body.is-collapsed{display:none}
+.group-child-card{
+  position:relative;
+  margin-top:8px;
+  border:1px solid var(--border-color,rgba(148,163,184,.12));
+  border-radius:12px;
+  background:rgba(148,163,184,.035);
+}
+.group-child-card .group-child-indent{
+  padding-left:10px;
+}
+.group-drop-zone{
+  border:1px dashed var(--accent-cyan,#06b6d4);
+  border-radius:12px;
+  min-height:46px;
+  display:flex;align-items:center;justify-content:center;
+  opacity:.7;
+  margin:8px 0;
+}
+.group-toolbar{
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  padding:8px 12px 0;
+}
+.group-toolbar .btn,.group-toolbar button{min-height:34px}
+.group-drag-handle{cursor:grab;opacity:.5}
+.group-drag-handle:active{cursor:grabbing}
+@media(max-width:700px){
+  .group-parent-head{padding:12px}
+  .group-parent-meta{display:none}
+  .group-parent-actions .btn span,.group-parent-actions button span{display:none}
+}
+</style>
+
+
+<style id="omnios-grouping-v22-css">
+.group-selectable{transition:transform .16s ease,box-shadow .16s ease,opacity .16s ease}
+.group-selectable.group-dragging{opacity:.45;transform:scale(.985)}
+.group-drop-target{
+  outline:2px dashed var(--accent-cyan,#06b6d4)!important;
+  outline-offset:3px;
+  background:rgba(6,182,212,.08)!important;
+}
+.group-drop-target::after{
+  content:"Drop here to group";
+  display:block;
+  font-size:.75rem;
+  color:var(--accent-cyan,#06b6d4);
+  padding:6px 10px;
+  text-align:center;
+  font-weight:700;
+}
+.group-selection-bar{
+  position:sticky;bottom:12px;z-index:80;
+  display:none;align-items:center;gap:10px;flex-wrap:wrap;
+  margin:12px auto;max-width:900px;padding:10px 12px;
+  border:1px solid rgba(6,182,212,.35);
+  border-radius:14px;
+  background:rgba(15,23,42,.94);
+  box-shadow:0 12px 35px rgba(0,0,0,.28);
+  backdrop-filter:blur(14px);
+}
+.group-selection-bar.is-visible{display:flex}
+.group-selection-count{font-weight:700;margin-right:auto}
+.group-create-drop{
+  border:1px dashed rgba(6,182,212,.45);
+  border-radius:12px;padding:8px 12px;
+  font-size:.8rem;opacity:.75;
+}
+.group-parent-card.group-drop-target .group-parent-head{background:rgba(6,182,212,.1)}
+.group-inline-check{
+  width:17px;height:17px;accent-color:var(--accent-cyan,#06b6d4);
+  cursor:pointer;flex:none;
+}
+@media(max-width:700px){
+  .group-selection-bar{bottom:6px;margin:8px}
+  .group-selection-bar .btn{flex:1}
+}
+</style>
+
+
+<style id="omnios-v23-fixes-css">
+.omnios-group-modal-backdrop{
+  position:fixed;inset:0;z-index:10000;display:none;
+  align-items:center;justify-content:center;padding:18px;
+  background:rgba(2,6,23,.68);backdrop-filter:blur(8px)
+}
+.omnios-group-modal-backdrop.is-open{display:flex}
+.omnios-group-modal{
+  width:min(480px,100%);border:1px solid rgba(148,163,184,.18);
+  border-radius:18px;background:var(--card-bg,#0f172a);
+  box-shadow:0 24px 70px rgba(0,0,0,.4);overflow:hidden
+}
+.omnios-group-modal-head{padding:18px 20px;border-bottom:1px solid rgba(148,163,184,.12)}
+.omnios-group-modal-head h3{margin:0 0 4px;font-size:1.05rem}
+.omnios-group-modal-head p{margin:0;opacity:.62;font-size:.82rem}
+.omnios-group-modal-body{padding:18px 20px}
+.omnios-group-modal-body label{display:block;font-size:.78rem;font-weight:700;margin-bottom:7px}
+.omnios-group-modal-body input,.omnios-group-modal-body select{
+  width:100%;min-height:42px;padding:9px 12px;border-radius:10px;
+  border:1px solid rgba(148,163,184,.2);background:rgba(148,163,184,.06);
+  color:inherit
+}
+.omnios-group-modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid rgba(148,163,184,.12)}
+.habit-week-grid-v23{
+  display:grid;grid-template-columns:170px repeat(7,minmax(52px,1fr));
+  gap:6px;min-width:640px
+}
+.habit-week-scroll-v23{overflow-x:auto;padding-bottom:6px}
+.habit-week-head-v23{font-size:.72rem;text-align:center;opacity:.7;padding:6px 3px}
+.habit-week-name-v23{display:flex;align-items:center;gap:8px;font-size:.84rem;font-weight:650;padding:8px}
+.habit-day-v23{
+  min-height:42px;border:1px solid rgba(148,163,184,.12);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:transform .12s ease,background .12s ease,border-color .12s ease
+}
+.habit-day-v23:hover{transform:translateY(-1px);border-color:rgba(6,182,212,.45)}
+.habit-day-v23.is-done{background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.35)}
+.habit-day-v23.is-today{box-shadow:inset 0 0 0 2px rgba(6,182,212,.45)}
+.habit-day-v23 .habit-mark{font-weight:800;font-size:.9rem}
+.habit-week-summary-v23{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.habit-week-stat-v23{padding:8px 10px;border-radius:10px;background:rgba(148,163,184,.06);font-size:.75rem}
+@media(max-width:700px){
+  .habit-week-grid-v23{grid-template-columns:130px repeat(7,minmax(48px,1fr));min-width:470px}
+}
+</style>
+
+
+<style id="omnios-v24-ux-css">
+/* V24: grouping + interaction polish */
+.v24-group-toolbar{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin:0 0 12px;
+}
+.v24-group-toolbar .group-spacer{flex:1}
+.v24-group-card{
+  grid-column:1/-1;
+  border:1px solid rgba(148,163,184,.17);
+  border-radius:16px;
+  background:rgba(148,163,184,.035);
+  overflow:hidden;
+  margin-bottom:10px;
+}
+.v24-group-card-head{
+  display:flex;align-items:center;gap:9px;padding:12px 14px;
+  border-bottom:1px solid rgba(148,163,184,.11);
+  cursor:pointer;
+}
+.v24-group-card-head:hover{background:rgba(148,163,184,.045)}
+.v24-group-card-title{font-weight:750;flex:1;min-width:0}
+.v24-group-card-count{font-size:.72rem;opacity:.58}
+.v24-group-card-body{padding:10px}
+.v24-group-card-body.is-collapsed{display:none}
+.v24-group-item{position:relative}
+.v24-group-check{
+  position:absolute;top:9px;left:9px;z-index:4;width:18px;height:18px;
+  margin:0;cursor:pointer;accent-color:var(--accent-cyan,#06b6d4);
+}
+.v24-group-selected{outline:2px solid var(--accent-cyan,#06b6d4);outline-offset:2px}
+.v24-selection-bar{
+  position:sticky;bottom:10px;z-index:90;
+  display:none;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:9px 11px;margin:10px 0;
+  border:1px solid rgba(6,182,212,.35);border-radius:14px;
+  background:rgba(15,23,42,.94);backdrop-filter:blur(14px);
+  box-shadow:0 14px 40px rgba(0,0,0,.3)
+}
+.v24-selection-bar.is-visible{display:flex}
+.v24-selection-count{font-weight:750;margin-right:auto}
+.v24-habit-week-wrap{overflow:auto}
+.v24-habit-week{
+  min-width:700px;
+  display:grid;grid-template-columns:minmax(170px,1.4fr) repeat(7,minmax(62px,1fr));
+  gap:5px;
+}
+.v24-habit-cell{
+  min-height:48px;border:1px solid var(--border-color);
+  border-radius:10px;background:var(--bg-elevated);
+}
+.v24-habit-head{
+  min-height:46px;padding:7px 5px;text-align:center;
+  background:var(--bg-hover);font-size:.68rem;font-weight:700;
+}
+.v24-habit-name{display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:.78rem;font-weight:700}
+.v24-habit-day{
+  width:100%;height:100%;min-height:48px;border:0;border-radius:9px;
+  background:transparent;color:inherit;cursor:pointer;
+}
+.v24-habit-day:hover{background:rgba(6,182,212,.08)}
+.v24-habit-day.is-done{background:rgba(16,185,129,.13);color:var(--accent-green,#10b981)}
+.v24-habit-day.is-today{box-shadow:inset 0 0 0 2px rgba(6,182,212,.5)}
+.v24-habit-mark{font-size:1rem;font-weight:800}
+.v24-habit-progress{font-size:.64rem;opacity:.58;font-weight:600}
+@media(max-width:700px){
+  .v24-habit-week{min-width:610px;grid-template-columns:130px repeat(7,minmax(55px,1fr))}
+  .v24-selection-bar{bottom:6px}
+}
+</style>
+
+
+<style id="omnios-v24-layout-fix">
+#notes-grid .v24-generated-group,
+#grocery-grid .v24-generated-group{grid-column:1/-1}
+#tasks-content .v24-generated-group{width:100%}
+.v24-group-card .v24-group-item{margin-bottom:7px}
+.v24-group-card .v24-group-item:last-child{margin-bottom:0}
+</style>
+
+
+<style id="omnios-v25-stabilization-css">
+/* OmniOS v25 — stabilization: one grouping system, clear selection mode, reliable mobile navigation. */
+.v25-selectable{position:relative}
+.v25-selection-mode .v25-selectable{padding-left:42px!important}
+.v25-group-check{position:absolute;left:11px;top:12px;z-index:8;width:19px;height:19px;margin:0;accent-color:var(--accent-cyan);cursor:pointer}
+.v25-group-selected{outline:2px solid var(--accent-cyan)!important;outline-offset:2px}
+.v25-selection-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:1450;display:none;align-items:center;gap:8px;flex-wrap:wrap;max-width:min(760px,calc(100vw - 32px));padding:10px 12px;border:1px solid rgba(6,182,212,.4);border-radius:14px;background:color-mix(in srgb,var(--bg-surface) 94%,transparent);box-shadow:0 16px 50px rgba(0,0,0,.38);backdrop-filter:blur(16px)}
+.v25-selection-bar.is-visible{display:flex}.v25-selection-count{font-weight:750;margin-right:auto;white-space:nowrap}.v25-selection-context{font-size:.7rem;color:var(--text-muted)}
+.v25-group-card{grid-column:1/-1;width:100%;border:1px solid var(--border-color);border-radius:var(--radius-lg);background:var(--bg-surface);overflow:hidden;margin-bottom:12px}
+.v25-group-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border-color);min-height:52px}.v25-group-head-main{display:flex;align-items:center;gap:8px;min-width:0;flex:1;cursor:pointer}.v25-group-title{font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v25-group-count{font-size:.68rem;color:var(--text-muted);white-space:nowrap}.v25-group-actions{display:flex;gap:5px;align-items:center}.v25-group-body{padding:10px}.v25-group-body.is-collapsed{display:none}.v25-group-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}.v25-group-body .v25-selectable{margin:0}
+.v25-group-empty{padding:16px;color:var(--text-muted);font-size:.76rem;text-align:center}
+.v25-manager-list{display:flex;flex-direction:column;gap:8px}.v25-manager-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-elevated)}.v25-manager-main{display:flex;align-items:center;gap:8px;min-width:0}.v25-manager-name{min-width:0;flex:1}.v25-manager-actions{display:flex;gap:5px;flex-wrap:wrap}.v25-manager-meta{font-size:.65rem;color:var(--text-muted);margin-top:3px}
+.v25-mobile-more-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.v25-mobile-more-section{grid-column:1/-1;color:var(--text-muted);font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-top:6px}.v25-mobile-destination{justify-content:flex-start;min-height:48px}
+@media(max-width:760px){.v25-selection-bar{left:10px;right:10px;transform:none;bottom:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 8px);max-width:none}.v25-selection-bar .btn{flex:1}.v25-group-head{padding:10px}.v25-group-actions .v25-action-label{display:none}.v25-group-grid{grid-template-columns:1fr}.v25-mobile-more-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:420px){.v25-mobile-more-grid{grid-template-columns:1fr}.v25-selection-context{display:none}}
+</style>
+
+
+<style id="omnios-v33-uiux-css">
+/* ============================================================
+   OmniOS v33 — UI/UX stabilization
+   Reachable controls, no clipped actions, cleaner navigation.
+   ============================================================ */
+:root{--ui-mobile-topbar-h:62px}
+
+/* Keep surfaces and child flex/grid content shrinkable. */
+.view,.card,.finance-card,.finance-hub,.toolbar,.toolbar-group,.settings-row,.workout-hero,.master-calendar-shell{min-width:0}
+img,svg{max-width:100%}
+
+/* Database belongs to Dashboard, not every module. */
+#database-panel{margin:0 0 18px!important;border-color:color-mix(in srgb,var(--accent-cyan) 18%,var(--border-color));}
+#database-panel .db-panel-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#database-panel .db-panel-copy{min-width:220px;flex:1}
+#database-panel .db-panel-actions{display:flex;gap:7px;flex-wrap:wrap}
+
+/* Navigation hierarchy and hit targets. */
+.nav-menu .nav-section{margin-top:4px}
+.nav-item[role="button"]{outline:none}
+.nav-item[role="button"]:focus-visible{outline:2px solid var(--accent-cyan);outline-offset:2px}
+
+/* Generic modal close controls were visually inconsistent in older modules. */
+.modal-close-btn:not(.btn):not(.icon-btn){
+  width:36px;height:36px;display:inline-grid;place-items:center;flex:0 0 36px;
+  border:1px solid var(--border-color);border-radius:var(--radius-sm);
+  background:var(--bg-elevated);color:var(--text-primary);cursor:pointer;font:inherit;
+}
+.modal-close-btn:not(.btn):not(.icon-btn):hover{background:var(--bg-hover)}
+
+/* Make horizontal strips visibly interactive and consistent. */
+.workout-tabs,.help-nav,.toolbar-group{scrollbar-width:thin;scrollbar-color:var(--bg-hover) transparent}
+.workout-tabs::-webkit-scrollbar,.help-nav::-webkit-scrollbar,.toolbar-group::-webkit-scrollbar{height:4px}
+.workout-tabs::-webkit-scrollbar-thumb,.help-nav::-webkit-scrollbar-thumb,.toolbar-group::-webkit-scrollbar-thumb{background:var(--bg-hover);border-radius:99px}
+
+/* Finance cards must never force the whole page wider than the viewport. */
+#view-budget,#view-budget .finance-hub,#view-budget .finance-card,#view-budget .grid-2,#view-budget .card{min-width:0;max-width:100%}
+#view-budget .finance-toolbar{min-width:0}
+#view-budget .finance-toolbar>div{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
+#view-budget .finance-item{min-width:0;max-width:100%}
+#view-budget .finance-item-main{min-width:0;overflow-wrap:anywhere}
+#view-budget .finance-amount{max-width:42%;white-space:normal;text-align:right;overflow-wrap:anywhere}
+#view-budget .goal-grid,#view-budget .custom-list-grid{min-width:0}
+
+/* Grouping should look like an intentional mode, not an invisible checkbox overlay. */
+.v25-selection-mode .v25-selectable{padding-left:46px!important}
+.v25-group-check{
+  width:21px!important;height:21px!important;left:12px!important;top:12px!important;
+  border-radius:5px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25));
+}
+.v25-selection-mode .v25-selectable::before{
+  content:'';position:absolute;left:5px;top:5px;bottom:5px;width:32px;border-radius:8px;
+  background:color-mix(in srgb,var(--accent-cyan) 8%,transparent);pointer-events:none;
+}
+.v25-selection-bar{max-height:calc(100dvh - 24px);overflow:auto}
+.v25-selection-bar [data-v25-bar-create],.v25-selection-bar [data-v25-bar-move],.v25-selection-bar [data-v25-bar-ungroup]{white-space:nowrap}
+
+
+/* Shared v25/v23 modal shell must remain fully reachable on small screens. */
+.omnios-group-modal{max-height:calc(100dvh - 36px);display:flex;flex-direction:column;min-height:0}
+.omnios-group-modal-head,.omnios-group-modal-foot{flex:0 0 auto}
+.omnios-group-modal-body{overflow-y:auto;min-height:0;overscroll-behavior:contain}
+@media(max-width:760px){
+  .omnios-group-modal-backdrop{align-items:flex-end;padding:0}
+  .omnios-group-modal{width:100%;max-height:92dvh;border-radius:18px 18px 0 0;border-bottom:0}
+  .omnios-group-modal-head{padding:15px 16px}
+  .omnios-group-modal-body{padding:14px 16px}
+  .omnios-group-modal-foot{padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--bg-surface);position:sticky;bottom:0}
+  .v25-mobile-more-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+
+/* Toasts must sit above bottom navigation on phones. */
+@media(max-width:760px){
+  .power-toast{left:10px;right:10px;bottom:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 10px);max-width:none}
+}
+
+@media(max-width:760px){
+  /* Mobile topbar: page title remains readable; utility actions are compact. */
+  .topbar{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:7px;min-height:var(--ui-mobile-topbar-h);padding:8px 8px 8px 12px!important}
+  .topbar-title{max-width:none!important;min-width:0;font-size:.95rem!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar-actions{display:flex;align-items:center;gap:5px;min-width:0}
+  #settings-topbar-btn{display:none!important}
+  #power-search-wrap{display:none!important}
+  #mobile-search-v33{width:40px;min-width:40px;height:42px;padding:0;justify-content:center;font-size:1rem}
+  #omni-assistant-launcher{width:40px;min-width:40px;height:42px;padding:0;justify-content:center}
+  #omni-assistant-launcher span{display:none}
+  #global-add-btn{min-width:64px!important;height:42px;padding:0 10px!important;font-size:0!important;justify-content:center}
+  #global-add-btn::after{content:'+ Add';font-size:.76rem;font-weight:700}
+  #save-status{width:9px!important;min-width:9px!important;height:9px;display:block;border-radius:50%;overflow:hidden;font-size:0!important;padding:0;margin:0 1px;background:var(--accent-yellow);flex:0 0 9px}
+  #save-status.saved{background:var(--accent-green)}
+  #save-status.error{background:var(--accent-red)}
+
+  /* The bottom bar always owns exactly six equal destinations. */
+  .mobile-nav{grid-template-columns:repeat(6,minmax(0,1fr))!important;overflow:hidden!important}
+  .mobile-nav>button{min-width:0!important}
+
+  /* Database card is useful on Dashboard, but no longer dominates the screen. */
+  #database-panel{padding:12px!important;margin-bottom:14px!important}
+  #database-panel .db-panel-inner{gap:9px}
+  #database-panel .db-panel-copy{min-width:0;width:100%}
+  #database-panel .db-panel-description{display:none}
+  #database-panel .db-panel-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  #database-panel .db-panel-actions .btn{width:100%;min-width:0;justify-content:center;font-size:.68rem}
+
+  /* Tasks: every view/filter/group control is visible without hidden horizontal actions. */
+  #view-tasks>.toolbar{display:grid;grid-template-columns:1fr;gap:9px;overflow:visible}
+  #view-tasks>.toolbar>.toolbar-divider{display:none}
+  #view-tasks>.toolbar>.toolbar-group{overflow:visible!important;width:100%;gap:6px}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(1){display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(1) .view-btn{width:100%;padding:8px 5px;font-size:.66rem;white-space:normal;text-align:center;justify-content:center}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(2){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(2) .filter-select{width:100%;min-width:0}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(3){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(3) #sort-by{width:100%;min-width:0}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(3) #search-input{grid-column:1/-1;width:100%;min-width:0}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(3) [data-v25-select="task"]{width:100%;justify-content:center;display:inline-flex!important}
+  #view-tasks>.toolbar>.task-view-group-v33{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible!important}
+  #view-tasks>.toolbar>.task-filter-group-v33{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible!important}
+  #view-tasks>.toolbar>.task-action-group-v33{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible!important}
+  #view-tasks>.toolbar>.task-action-group-v33 #sort-by{width:100%;min-width:0}
+  #view-tasks>.toolbar>.task-action-group-v33 #search-input{grid-column:1/-1;width:100%;min-width:0}
+  #view-tasks>.toolbar>.task-action-group-v33 [data-v25-select="task"]{width:100%;min-width:0;justify-content:center;display:inline-flex!important}
+
+  /* Settings and Workout tabs must not hide half their destinations off-screen. */
+  #settings-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible!important;gap:5px}
+  #settings-tabs .view-btn{width:100%;padding:8px 4px;font-size:.64rem;white-space:normal;text-align:center}
+  #view-workout>.workout-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible!important;gap:5px}
+  #view-workout>.workout-tabs .view-btn{width:100%;padding:8px 5px;font-size:.66rem;white-space:normal;text-align:center}
+
+  /* Help manual destinations are all visible; no mystery horizontal overflow. */
+  #view-help .help-nav{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;overflow:visible!important;position:static!important}
+  #view-help .help-nav .help-group{display:block!important;grid-column:1/-1;margin:9px 3px 1px}
+  #view-help .help-nav button{width:100%!important;min-width:0!important;white-space:normal;text-align:left;padding:8px 9px;font-size:.7rem}
+
+  /* Finance controls wrap instead of forcing 450+px content widths. */
+  #view-budget .finance-toolbar{align-items:flex-start}
+  #view-budget .finance-toolbar>div{width:100%}
+  #view-budget .finance-toolbar>div .btn{flex:1 1 120px;justify-content:center}
+  #view-budget .finance-amount{max-width:38%;font-size:.7rem}
+  #view-budget .goal-grid,#view-budget .custom-list-grid{grid-template-columns:1fr!important}
+  #finance-forecast .power-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+  /* Extension list/search controls fit the phone viewport. */
+  .list-controls{display:grid!important;grid-template-columns:1fr 1fr;gap:7px}
+  .list-controls .search-input{grid-column:1/-1;width:100%!important;min-width:0}
+  .list-controls .filter-select,.list-controls .btn{width:100%;min-width:0}
+
+  /* Action rows should never disappear beyond the edge of a card. */
+  .custom-item-actions,.exercise-actions,.modal-actions{display:flex;flex-wrap:wrap;gap:6px}
+  .custom-item-actions .btn,.exercise-actions .btn{flex:1 1 auto;justify-content:center}
+
+  /* Tables retain their own scrolling instead of enlarging the entire page. */
+  .transaction-list,.habit-calendar-wrap,.v24-habit-week-wrap,.master-cal-shell-wrap,.workout-session-card{max-width:100%}
+}
+
+@media(max-width:420px){
+  #settings-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(1),#view-tasks>.toolbar>.task-view-group-v33{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #view-help .help-nav{grid-template-columns:1fr}
+  #view-workout>.workout-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .v25-mobile-more-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+</style>
+
+
+<style id="omnios-v47-rhythm-css">
+/* ===== OmniOS v47 — coherent spacing + connection-first cleanup ===== */
+:root{
+  --om-page-x:clamp(18px,2.15vw,30px);
+  --om-page-y:22px;
+  --om-page-bottom:38px;
+  --om-section-gap:16px;
+  --om-grid-gap:12px;
+  --om-card-pad:16px;
+  --om-control-gap:8px;
+  --om-tight-gap:6px;
+}
+/* Remove the v46 UI layer even if stale DOM survives a hot reload. */
+.v46-family-nav,.v46-drag-handle,.v46-inline-drag,.v46-drop-hint,.v46-area-dropbar,
+.v46-area-target,.v46-family-link,.v46-family-label{display:none!important}
+.v46-drag-source,.v46-dragging,.v46-drop-target{outline:0!important;box-shadow:none!important;transform:none!important}
+
+/* One page rhythm. Specialized modules keep their internal layouts. */
+.view-container{padding:var(--om-page-y) var(--om-page-x) var(--om-page-bottom)!important}
+.view,.view>*{min-width:0}
+.view>.v44-page-cover-shell{margin-bottom:var(--om-section-gap)}
+.view>:is(.toolbar,.dashboard-toolbar,.habit-toolbar,.notes-toolbar,.v35-page-head,.v43-hero,.org-hero,.workout-hero,.nut-hero,.v38-finance-head,.v36-cal-top,.master-cal-toolbar){margin-bottom:var(--om-section-gap)!important}
+.view>:is(.stats-row,.kpi-grid,.org-kpis,.v43-kpis,.workout-kpi-grid,.habit-summary-grid,.nut-kpis){margin-bottom:var(--om-section-gap)!important}
+
+/* Shared surface rhythm. */
+.card,.stat-card,.kpi-card,.workout-kpi,.workout-session-card,.workout-item-card,.habit-week-card,
+.note-card,.org-card,.v35-card,.v43-card,.nut-surface,.finance-card,.v38-card,.eq-box,.calendar-container,
+.master-calendar-shell,.diet-card{padding:var(--om-card-pad)}
+.grid-2,.stats-row,.kpi-grid,.analytics-grid,.org-grid,.org-kpis,.v43-kpis,.v43-grid,.v43-domain-grid,
+.workout-kpi-grid,.template-grid,.exercise-library-grid,.history-grid,.workout-analytics-grid,.habit-summary-grid,
+.nut-kpis,.nut-today-grid,.v35-grid,.v35-kpis{gap:var(--om-grid-gap)!important}
+.card-header,.v35-card-head,.v43-card-head,.org-card-head{margin-bottom:12px}
+
+/* Toolbars and actions use the same control spacing. */
+.toolbar,.dashboard-toolbar,.habit-toolbar,.notes-toolbar,.v35-page-actions,.v43-hero-actions,.org-hero-actions,
+.org-toolbar,.nut-toolbar,.workout-hero-actions,.workout-session-head,.topbar-actions,.modal-footer{gap:var(--om-control-gap)!important}
+.toolbar{padding:10px 12px!important}
+.toolbar-group{gap:var(--om-control-gap)!important}
+
+/* Forms and modal rhythm. */
+.form-group{margin-bottom:12px!important}
+.form-row,.form-grid,.nut-form-grid,.power-form-grid{gap:10px!important}
+.modal{padding:20px!important}
+.modal-header{margin-bottom:14px!important}
+.modal-footer{margin-top:16px!important}
+.settings-row{padding:10px 0!important}
+
+/* Lists: enough air without oversized rows. */
+.list-item,.org-row,.v43-row,.v35-row,.master-agenda-item{padding:10px 12px}
+.org-list,.v43-list,.v35-list,.mini-list{gap:7px!important}
+
+/* Sidebar/header rhythm. */
+.sidebar{padding-top:14px;padding-bottom:12px}
+.logo{padding-bottom:14px;margin-bottom:10px}
+.nav-menu{padding-inline:9px}
+.nav-section{padding:11px 11px 5px}
+.nav-item{padding:8px 10px;margin-bottom:2px;min-height:36px}
+.sidebar-footer{padding:9px 10px;gap:6px}
+.topbar{padding-inline:18px}
+
+/* Empty states should not produce giant dead zones. */
+.empty-state,.list-empty,.power-empty,.org-empty,.master-empty,.workout-session-empty{padding:26px 16px!important}
+
+/* Content-heavy module specifics. */
+#view-tasks .toolbar{margin-bottom:14px!important}
+#view-master-calendar .master-calendar-shell{padding:0}
+#view-workout .workout-tabs,#view-settings .workout-tabs{margin-bottom:12px}
+#view-notes .notes-toolbar{margin-bottom:12px!important}
+#view-life-hub .v43-life-toolbar{margin-bottom:12px}
+#view-budget .v38-finance-head{padding:0}
+/* Empty cover affordance should not create a fake banner-sized top gap. */
+.v44-page-cover-shell:has(.v44-page-cover-empty){margin-bottom:6px!important}
+.v44-page-cover-empty{height:22px!important}
+
+@media(max-width:760px){
+  :root{--om-page-x:10px;--om-page-y:12px;--om-page-bottom:calc(var(--mobile-nav-h,72px) + env(safe-area-inset-bottom) + 16px);--om-section-gap:12px;--om-grid-gap:9px;--om-card-pad:13px;--om-control-gap:7px}
+  .view-container{padding:var(--om-page-y) var(--om-page-x) var(--om-page-bottom)!important}
+  .card,.stat-card,.kpi-card,.workout-kpi,.workout-session-card,.workout-item-card,.habit-week-card,
+  .note-card,.org-card,.v35-card,.v43-card,.nut-surface,.finance-card,.v38-card,.eq-box,.calendar-container,.diet-card{padding:var(--om-card-pad)!important}
+  .toolbar{padding:8px!important}
+  .modal{padding:16px 13px calc(16px + env(safe-area-inset-bottom))!important}
+  .topbar{padding-inline:9px!important}
+  .org-hero,.v43-hero,.v35-page-head,.workout-hero{gap:10px!important}
+  .list-item,.org-row,.v43-row,.v35-row{padding:10px!important}
+  .empty-state,.list-empty,.power-empty,.org-empty,.master-empty,.workout-session-empty{padding:22px 12px!important}
+}
+</style>
+
+
+<style id="omnios-ui-refinements-css">
+
+/* ===== OmniOS v48 — Nutrition rhythm, icon hierarchy, editor-owned covers ===== */
+:root{
+  --v48-space-1:6px;--v48-space-2:8px;--v48-space-3:10px;--v48-space-4:12px;--v48-space-5:16px;
+  --v48-icon-sm:28px;--v48-icon-md:32px;--v48-icon-lg:38px;
+}
+/* Nutrition: one spacing system, no stacked legacy margins. */
+#view-diet .nut-shell{gap:12px!important}
+#view-diet #nut-content{display:flex!important;flex-direction:column!important;gap:11px!important;min-width:0}
+#view-diet #nut-content>*,#view-diet #nut-content>.nut-library-grid,#view-diet #nut-content>.nut-prep-grid{margin-top:0!important;margin-bottom:0!important}
+#view-diet .nut-hero{gap:10px!important;margin:0!important}
+#view-diet .nut-surface{padding:14px!important}
+#view-diet .nut-hero-main{padding:16px!important}
+#view-diet .nut-hero-actions{margin-top:11px!important;gap:7px!important}
+#view-diet .nut-tabs{margin:0!important;padding:3px!important;gap:3px!important}
+#view-diet .nut-tab{min-height:36px!important;padding:6px 11px!important}
+#view-diet .nut-toolbar{margin:0!important;gap:8px!important;min-height:36px}
+#view-diet .nut-kpis{margin:0!important;gap:8px!important}
+#view-diet .nut-kpi{padding:10px 11px!important}
+#view-diet .nut-today-grid{gap:10px!important}
+#view-diet .nut-stack{gap:8px!important}
+#view-diet .nut-slot-head{padding:9px 11px!important}
+#view-diet .nut-slot-col{padding:8px 9px!important}
+#view-diet .nut-item{padding:6px 0!important;gap:7px!important}
+#view-diet .nut-side-list{gap:6px!important}
+#view-diet .nut-side-row{padding:8px 9px!important}
+#view-diet .nut-library-toolbar{gap:7px!important;margin:0!important}
+#view-diet #nut-library-body{margin-top:0!important}
+#view-diet .nut-library-grid,#view-diet .nut-prep-grid{gap:9px!important}
+#view-diet .nut-card-top{padding:10px 10px 0!important;gap:9px!important}
+#view-diet .nut-card-body{padding:9px 10px 10px!important}
+#view-diet .nut-prep{padding:11px!important}
+#view-diet .nut-week{gap:6px!important}
+#view-diet .nut-day-card{padding:9px!important}
+#view-diet .nut-insights-grid{gap:10px!important}
+#view-diet .nut-chart{padding:9px!important}
+#view-diet .nut-modal-wide{max-width:780px}
+#view-diet .nut-photo-strip{margin-top:7px}
+/* Consistent icon hierarchy: page/section, cards, rows. */
+.org-hero-icon{width:var(--v48-icon-lg)!important;height:var(--v48-icon-lg)!important;border-radius:10px!important;font-size:1rem!important;line-height:1!important}
+.org-card-icon,.v43-record-icon,.v38-account-icon{width:var(--v48-icon-md)!important;height:var(--v48-icon-md)!important;min-width:var(--v48-icon-md)!important;border-radius:9px!important;font-size:.92rem!important;display:grid!important;place-items:center!important;line-height:1!important}
+.org-row-icon,.v35-row-icon,.v43-row-icon,.v38-txn-icon,.master-agenda-icon,.v36-agenda-icon,.v36-event-icon,.calendar-preview-icon{width:var(--v48-icon-sm)!important;height:var(--v48-icon-sm)!important;min-width:var(--v48-icon-sm)!important;border-radius:8px!important;font-size:.82rem!important;display:grid!important;place-items:center!important;line-height:1!important}
+.v43-domain-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--bg-elevated);font-size:.96rem!important;line-height:1}
+.v37-empty-icon,.v37-membership-icon{line-height:1!important}
+/* One sidebar icon language. Legacy SVG/emoji icons are visually replaced, labels/data stay intact. */
+.nav-menu .nav-item{gap:10px!important;align-items:center!important}
+.nav-menu .nav-item>.nav-icon-img,.nav-menu .nav-item>.icon-fallback,.nav-menu .nav-item>.v35-nav-emoji,.nav-menu .nav-item>.nav-icon,.nav-menu .nav-item>span[style*="width:16px"]{display:none!important}
+.v48-nav-icon{width:18px;height:18px;min-width:18px;display:grid;place-items:center;color:currentColor;opacity:.88;line-height:1}
+.v48-nav-icon svg{width:17px;height:17px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav-menu .nav-item.active .v48-nav-icon{opacity:1}
+.mobile-nav .v48-mobile-icon{width:20px;height:20px;display:grid;place-items:center;margin:auto;line-height:1}
+.mobile-nav .v48-mobile-icon svg{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.mobile-nav button[data-v35-mobile-view]>.nav-icon{display:none!important}
+#v35-mobile-more>.nav-icon{font-size:14px!important;letter-spacing:1px;line-height:20px!important;height:20px!important}
+@media(max-width:760px){#view-diet #nut-content{gap:9px!important}}
+@media(max-width:760px){#view-diet .nut-shell{gap:10px!important}#view-diet .nut-surface{padding:12px!important}#view-diet .nut-hero-main{padding:13px!important}#view-diet .nut-kpis{gap:7px!important}#view-diet .nut-kpi{padding:9px!important}#view-diet .nut-today-grid,#view-diet .nut-stack{gap:8px!important}#view-diet .nut-slot-head{padding:8px 9px!important}#view-diet .nut-slot-col{padding:8px!important}#view-diet .nut-card-top{padding:9px 9px 0!important}#view-diet .nut-card-body{padding:8px 9px 9px!important}}
+</style>
+
+
+<style id="omnios-grocery-checkout-v56-css">
+/* Grocery → Pantry → Finance: explicit, step-based purchase flow */
+.gpf-flow{display:flex;flex-direction:column;gap:14px}
+.gpf-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.gpf-step{padding:8px 9px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);font-size:.66rem;color:var(--text-muted);text-align:center}
+.gpf-step.active{border-color:var(--accent-cyan);color:var(--accent-cyan);background:rgba(6,182,212,.08);font-weight:700}
+.gpf-step.done{border-color:rgba(16,185,129,.35);color:var(--accent-green);background:rgba(16,185,129,.07)}
+.gpf-review{border:1px solid var(--border-color);border-radius:12px;overflow:hidden}
+.gpf-review-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 11px;border-bottom:1px solid var(--border-color);font-size:.72rem}
+.gpf-review-row:last-child{border-bottom:0}
+.gpf-review-main{min-width:0}
+.gpf-review-title{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gpf-review-meta{font-size:.62rem;color:var(--text-muted);margin-top:2px}
+.gpf-section{border:1px solid var(--border-color);border-radius:12px;padding:12px;background:var(--bg-base)}
+.gpf-section-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:9px}
+.gpf-section-title{font-size:.8rem;font-weight:800}
+.gpf-section-copy{font-size:.62rem;color:var(--text-muted);margin-top:2px;line-height:1.4}
+.gpf-pantry-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(145px,.9fr);gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--border-color)}
+.gpf-pantry-row:first-of-type{border-top:0}
+.gpf-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.gpf-summary-card{padding:9px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-elevated)}
+.gpf-summary-card span{display:block;font-size:.58rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em}
+.gpf-summary-card strong{display:block;margin-top:4px;font-size:.9rem}
+.gpf-checkline{display:flex;align-items:flex-start;gap:8px;font-size:.72rem;line-height:1.4}
+.gpf-checkline input{margin-top:2px;accent-color:var(--accent-cyan)}
+.gpf-receipt-note{padding:10px;border:1px solid rgba(16,185,129,.25);background:rgba(16,185,129,.06);border-radius:10px;font-size:.68rem;color:var(--text-secondary)}
+@media(max-width:700px){
+  .gpf-steps{grid-template-columns:repeat(2,1fr)}
+  .gpf-pantry-row{grid-template-columns:1fr}
+  .gpf-summary{grid-template-columns:1fr}
+}
+</style>
+
+<style id="omnios-v5734-uiux-connections-css">
+/* ===== OmniOS v57.34 — final UI/UX + connections stabilization ===== */
+:root{--rel-accent:var(--accent-cyan)}
+
+/* Settings: remove double separators created by stacked legacy style layers. */
+#settings-content .settings-row + .settings-row{border-top:0!important}
+#settings-content .settings-row:last-child{border-bottom:0}
+
+/* All switch-like controls share the same keyboard-visible affordance. */
+.settings-toggle[role="switch"]:focus-visible,
+.nav-item[data-view]:focus-visible,
+[data-open-linked]:focus-visible{outline:2px solid var(--accent-cyan)!important;outline-offset:2px!important}
+.settings-toggle[role="switch"]{border:1px solid var(--border-color)}
+
+/* Connections settings workspace. */
+.conn34-shell{display:flex;flex-direction:column;gap:12px}
+.conn34-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:16px;border:1px solid color-mix(in srgb,var(--accent-cyan) 24%,var(--border-color));border-radius:var(--radius-lg);background:linear-gradient(145deg,color-mix(in srgb,var(--accent-cyan) 7%,var(--bg-surface)),var(--bg-surface))}
+.conn34-hero-main{min-width:0;flex:1}.conn34-kicker{font-size:.61rem;letter-spacing:.11em;text-transform:uppercase;font-weight:800;color:var(--accent-cyan)}
+.conn34-hero h3{font-size:1.05rem;margin:4px 0}.conn34-hero p{margin:0;color:var(--text-secondary);font-size:.72rem;line-height:1.5;max-width:760px}
+.conn34-hero-actions{display:flex;gap:6px;flex-wrap:wrap}
+.conn34-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.conn34-node{position:relative;padding:12px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-surface);min-width:0}
+.conn34-node strong{display:block;font-size:.76rem}.conn34-node span{display:block;margin-top:3px;font-size:.61rem;line-height:1.4;color:var(--text-muted)}
+.conn34-node:not(:last-child)::after{content:'→';position:absolute;right:-9px;top:50%;transform:translate(50%,-50%);z-index:2;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--accent-cyan);font-size:.7rem;font-weight:900}
+.conn34-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(260px,.7fr);gap:12px;align-items:start}
+.conn34-card{border:1px solid var(--border-color);border-radius:var(--radius-lg);background:var(--bg-surface);padding:16px}
+.conn34-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}.conn34-card-title{font-size:.86rem;font-weight:750}.conn34-card-sub{font-size:.65rem;color:var(--text-muted);line-height:1.45;margin-top:2px}
+.conn34-status{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border-radius:999px;background:rgba(16,185,129,.10);color:var(--accent-green);font-size:.59rem;font-weight:800;white-space:nowrap}.conn34-status::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.conn34-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.conn34-kpi{padding:10px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base)}.conn34-kpi span{display:block;font-size:.57rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.045em}.conn34-kpi strong{display:block;margin-top:4px;font-size:1rem}
+.conn34-log{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow:auto}.conn34-log-row{padding:8px 9px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base)}.conn34-log-row strong{display:block;font-size:.69rem}.conn34-log-row span{display:block;font-size:.59rem;color:var(--text-muted);margin-top:2px;line-height:1.4}.conn34-empty{padding:14px;text-align:center;color:var(--text-muted);font-size:.68rem;border:1px dashed var(--border-light);border-radius:10px}
+.conn34-managed{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-color)}.conn34-managed:last-child{border-bottom:0}.conn34-managed strong{font-size:.78rem}.conn34-managed span{display:block;color:var(--text-muted);font-size:.65rem;line-height:1.45;margin-top:2px}.conn34-badge{padding:4px 7px;border-radius:999px;background:var(--bg-elevated);color:var(--text-secondary);font-size:.58rem;font-weight:800;white-space:nowrap}
+
+/* Task relations: distinguish true related-item actions from plain text. */
+#linked-list [data-open-linked]{display:inline-flex;align-items:center;min-height:30px;padding:3px 7px;margin-left:-7px;border-radius:7px;text-decoration:none}
+#linked-list [data-open-linked]:hover{background:rgba(6,182,212,.09)}
+
+/* Better narrow-layout behavior without hiding actions. */
+@media(max-width:900px){.conn34-flow{grid-template-columns:repeat(2,minmax(0,1fr))}.conn34-node::after{display:none}.conn34-grid{grid-template-columns:1fr}}
+@media(max-width:760px){
+  .conn34-hero{flex-direction:column;padding:13px}.conn34-hero-actions{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.conn34-hero-actions .btn{width:100%;justify-content:center}
+  .conn34-flow{grid-template-columns:1fr}.conn34-card{padding:13px}.conn34-kpis{grid-template-columns:1fr 1fr}
+  /* Never let an uninitialized legacy mobile nav silently clip extra destinations. */
+  .mobile-nav{overflow-x:auto!important;overflow-y:hidden!important}
+}
+@media(max-width:420px){.conn34-hero-actions,.conn34-kpis{grid-template-columns:1fr}}
+</style>
+
+
+<style id="omnios-v582-bible365-mood-spacing-css">
+/* ===== OmniOS v58.2 — Bible 365, Mood controls, spacing normalization ===== */
+#view-bible{--bib-space-1:4px;--bib-space-2:8px;--bib-space-3:12px;--bib-space-4:16px;--bib-space-5:20px;--bib-space-6:24px}
+#view-bible .bib-shell{gap:var(--bib-space-3)!important}
+#view-bible .bib-top{gap:var(--bib-space-4)!important;padding:var(--bib-space-5)!important}
+#view-bible .bib-title{margin:var(--bib-space-1) 0 var(--bib-space-1)!important}
+#view-bible .bib-source-chip{margin-top:var(--bib-space-2)!important;padding:6px 10px!important;gap:6px!important}
+#view-bible .bib-top-actions{gap:var(--bib-space-2)!important}
+#view-bible .bib-tabs{gap:var(--bib-space-1)!important;padding:var(--bib-space-1)!important}
+#view-bible .bib-tab{padding:9px 12px!important}
+#view-bible .bib-kpis{gap:var(--bib-space-3)!important}
+#view-bible .bib-kpi{padding:var(--bib-space-3)!important}
+#view-bible .bib-card{padding:var(--bib-space-4)!important}
+#view-bible .bib-card-head{gap:var(--bib-space-3)!important;margin-bottom:var(--bib-space-3)!important}
+#view-bible .bib-two,#view-bible .bib-study-layout,#view-bible .bib-timer-layout,#view-bible .bib-journal-layout{gap:var(--bib-space-3)!important}
+#view-bible .bib-actions{gap:var(--bib-space-2)!important}
+#view-bible .bib-progress{margin-top:var(--bib-space-3)!important}
+
+/* 365 plan */
+#view-bible .bib-plan-head{gap:var(--bib-space-4)!important}
+#view-bible .bib-plan-calnav{gap:var(--bib-space-2)!important;margin:var(--bib-space-4) 0 var(--bib-space-3)!important}
+#view-bible .bib-plan-calendar-wrap{border-radius:14px!important}
+#view-bible .bib-plan-cell{min-height:132px!important;padding:var(--bib-space-3)!important}
+#view-bible .bib-plan-cell.selected:not(.today){box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bib-accent) 58%,transparent)!important}
+#view-bible .bib-plan-cell-head{gap:var(--bib-space-2)!important;margin-bottom:var(--bib-space-2)!important}
+#view-bible .bib-plan-ref{font-size:.72rem!important;line-height:1.38!important}
+#view-bible .bib-plan-sub{margin-top:var(--bib-space-2)!important;line-height:1.42!important}
+#view-bible .bib-plan-daynum{margin-top:var(--bib-space-2)!important}
+#view-bible .bib-plan-detail{margin-top:var(--bib-space-3);padding:var(--bib-space-4);border:1px solid var(--border-color);border-radius:14px;background:var(--bg-base)}
+#view-bible .bib-plan-detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--bib-space-3);margin-bottom:var(--bib-space-3)}
+#view-bible .bib-plan-detail-title{font-family:Georgia,'Times New Roman',serif;font-size:1rem;font-weight:800}
+#view-bible .bib-plan-detail-meta{font-size:.62rem;color:var(--text-muted);margin-top:4px}
+#view-bible .bib-plan-readings{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--bib-space-2)}
+#view-bible .bib-plan-reading{display:flex;align-items:center;justify-content:space-between;gap:var(--bib-space-2);padding:10px 12px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-surface)}
+#view-bible .bib-plan-reading span{font-family:Georgia,'Times New Roman',serif;font-size:.7rem;font-weight:700}
+#view-bible .bib-plan-note{margin-top:var(--bib-space-3);font-size:.62rem;line-height:1.5;color:var(--text-muted)}
+
+/* Mood — use the same outlined SVG language as menu/navigation icons. */
+#view-bible .bib-mood-intro{margin-bottom:var(--bib-space-3)!important}
+#view-bible .bib-mood-layout{grid-template-columns:minmax(300px,340px) minmax(0,1fr)!important;gap:var(--bib-space-3)!important}
+#view-bible .bib-all-moods{grid-template-columns:1fr 1fr!important;gap:var(--bib-space-2)!important}
+#view-bible .bib-mood{display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:10px;min-height:48px;padding:9px 10px!important;border-radius:10px!important;text-align:left!important}
+#view-bible .bib-mood-icon{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:var(--bg-elevated);color:var(--text-secondary);margin:0!important;font-size:0!important}
+#view-bible .bib-mood-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#view-bible .bib-mood-name{margin:0!important;font-size:.64rem!important;line-height:1.25!important}
+#view-bible .bib-mood:hover .bib-mood-icon,#view-bible .bib-mood.active .bib-mood-icon{color:var(--bib-accent);background:color-mix(in srgb,var(--bib-accent) 12%,var(--bg-elevated))}
+#view-bible .bib-mood.active{box-shadow:inset 3px 0 0 var(--bib-accent)}
+#view-bible .bib-mood-card-v573{padding:var(--bib-space-3)!important;margin-top:var(--bib-space-2)!important;border-radius:12px!important}
+#view-bible .bib-mood-excerpt{margin:var(--bib-space-2) 0 var(--bib-space-3)!important;line-height:1.62!important}
+#view-bible .bib-mood-history-note{display:flex;align-items:center;gap:var(--bib-space-2);margin-top:var(--bib-space-3);padding:9px 10px;border-radius:9px;background:var(--bg-elevated);font-size:.58rem;color:var(--text-muted)}
+
+@media(max-width:1100px){#view-bible .bib-mood-layout{grid-template-columns:1fr!important}#view-bible .bib-all-moods{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(max-width:760px){
+  #view-bible .bib-top{padding:var(--bib-space-4)!important}
+  #view-bible .bib-card{padding:var(--bib-space-3)!important}
+  #view-bible .bib-plan-cell{min-height:120px!important;padding:10px!important}
+  #view-bible .bib-all-moods{grid-template-columns:1fr 1fr!important}
+  #view-bible .bib-mood{grid-template-columns:30px minmax(0,1fr);min-height:46px;padding:8px!important}
+  #view-bible .bib-mood-icon{width:28px;height:28px}
+  #view-bible .bib-plan-detail-head{flex-direction:column}
+}
+@media(max-width:430px){#view-bible .bib-all-moods{grid-template-columns:1fr!important}}
+</style>
+
+
+<style id="omnios-v583-bible-lifehub-css">
+/* ===== OmniOS v58.3 — Bible Today verse hierarchy + Life Hub complete CRUD ===== */
+#view-bible .bib-today-scripture-v5717{font-size:.96rem;line-height:1.78}
+#view-bible .bib-today-verse-v583{display:inline}
+#view-bible .bib-today-verse-num-v583{
+  display:inline-block;margin:0 4px 0 7px;vertical-align:super;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:.52rem;line-height:1;font-weight:750;color:var(--bib-accent);
+  opacity:.78;letter-spacing:0;font-variant-numeric:tabular-nums;
+}
+#view-bible .bib-today-verse-v583:first-child .bib-today-verse-num-v583{margin-left:0}
+
+#view-life-hub .v35-life-sectionbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:10px 12px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-surface);font-size:.72rem;color:var(--text-muted)}
+#view-life-hub .v35-life-sectionbar strong{color:var(--text-primary)}
+#view-life-hub .v35-record-card{display:flex;flex-direction:column;gap:12px;min-width:0}
+#view-life-hub .v35-record-card-main{min-width:0;flex:1}
+#view-life-hub .v35-record-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:auto;padding-top:10px;border-top:1px solid var(--border-color)}
+#view-life-hub .v35-record-actions .btn{min-height:34px}
+#view-life-hub .v35-life-delete{color:var(--accent-red)}
+#view-life-hub .v35-life-delete:hover{border-color:color-mix(in srgb,var(--accent-red) 55%,var(--border-color));background:color-mix(in srgb,var(--accent-red) 10%,var(--bg-elevated));color:var(--accent-red)}
+#view-life-hub .v35-admin-group{margin-bottom:12px}
+#view-life-hub .v35-admin-row{gap:10px;align-items:center}
+#view-life-hub .v35-admin-row .v35-record-actions{border-top:0;padding-top:0;margin-top:0;flex:none}
+#view-life-hub .v35-auto-row{gap:10px;align-items:center}
+#view-life-hub .v35-auto-row .v35-record-actions{border-top:0;padding-top:0;margin-top:0;flex:none}
+#view-life-hub .v35-auto-state{padding:3px 7px;border-radius:999px;font-size:.6rem;font-weight:700;white-space:nowrap}
+#view-life-hub .v35-auto-state.on{background:rgba(16,185,129,.13);color:var(--accent-green)}
+#view-life-hub .v35-auto-state.off{background:var(--bg-elevated);color:var(--text-muted)}
+.v35-life-detail-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-color)}
+.v35-life-detail-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--bg-elevated);font-size:1.2rem;flex:none}
+.v35-life-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.v35-life-detail-field{padding:11px 12px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base);min-width:0}
+.v35-life-detail-field.wide{grid-column:1/-1}
+.v35-life-detail-field>span{display:block;margin-bottom:5px;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)}
+.v35-life-detail-field>div{font-size:.8rem;line-height:1.5;color:var(--text-primary);overflow-wrap:anywhere}
+@media(max-width:760px){
+  #view-life-hub .v35-life-sectionbar{align-items:stretch;flex-direction:column}
+  #view-life-hub .v35-life-sectionbar .btn{width:100%;justify-content:center}
+  #view-life-hub .v35-record-actions{justify-content:stretch}
+  #view-life-hub .v35-record-actions .btn{flex:1;justify-content:center}
+  #view-life-hub .v35-admin-row,#view-life-hub .v35-auto-row{align-items:flex-start;flex-wrap:wrap}
+  #view-life-hub .v35-admin-row .v35-record-actions,#view-life-hub .v35-auto-row .v35-record-actions{width:100%}
+  .v35-life-detail-grid{grid-template-columns:1fr}.v35-life-detail-field.wide{grid-column:auto}
+}
+</style>
+
+
+<!-- OmniOS v60 local-premium PWA bridge -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="OmniOS">
+
+
+
+
+
+<script id="omnios-v612-iphone-early">
+try{if(/iPhone|iPod/i.test(navigator.userAgent||''))document.documentElement.classList.add('omni-ios','omni-iphone-pro')}catch(_){}
+</script>
+
+<style id="omnios-v612-iphone-native-css">
+/* ========================================================================
+   OmniOS v61.2 — dedicated iPhone application shell
+   This is intentionally a different mobile composition, not a desktop shrink.
+   ======================================================================== */
+html.omni-iphone-pro{
+  --iphone-header-h:64px;
+  --iphone-tab-h:66px;
+  --iphone-page-x:12px;
+  --iphone-card-r:16px;
+  --iphone-control-r:12px;
+  --iphone-soft:color-mix(in srgb,var(--bg-elevated) 72%,var(--bg-surface));
+  --iphone-bar:color-mix(in srgb,var(--bg-surface) 94%,transparent);
+  background:var(--bg-base);
+}
+html.omni-iphone-pro body{background:var(--bg-base)!important;}
+html.omni-iphone-pro .sidebar,
+html.omni-iphone-pro .topbar,
+html.omni-iphone-pro .mobile-nav{display:none!important;}
+html.omni-iphone-pro .main-content{height:var(--ios-vvh,100dvh)!important;min-height:0!important;width:100%!important;display:grid!important;grid-template-rows:auto minmax(0,1fr) auto!important;background:var(--bg-base)!important;}
+
+/* ----- native compact header ----- */
+#ios-native-header{display:none;}
+html.omni-iphone-pro #ios-native-header{
+  display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:7px;
+  min-height:calc(var(--iphone-header-h) + env(safe-area-inset-top));
+  padding:max(7px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 7px max(10px,env(safe-area-inset-left));
+  background:var(--iphone-bar);border-bottom:1px solid color-mix(in srgb,var(--border-color) 72%,transparent);
+  -webkit-backdrop-filter:blur(22px) saturate(145%);backdrop-filter:blur(22px) saturate(145%);
+  z-index:850;
+}
+.ios-native-back,.ios-native-action{
+  width:40px;height:40px;min-width:40px;border:0;border-radius:12px;display:grid;place-items:center;
+  background:transparent;color:var(--text-primary);font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.ios-native-back:active,.ios-native-action:active{background:var(--bg-elevated);transform:scale(.96)}
+.ios-native-back svg,.ios-native-action svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ios-native-title-wrap{min-width:0;display:flex;flex-direction:column;justify-content:center;}
+.ios-native-eyebrow{display:flex;align-items:center;gap:5px;font-size:9px;line-height:1.1;font-weight:750;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ios-native-title{margin-top:2px;font-size:17px;line-height:1.15;font-weight:800;letter-spacing:-.025em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary)}
+.ios-native-header-actions{display:flex;gap:2px;align-items:center;}
+
+/* ----- new bottom tab bar ----- */
+#ios-native-tabs{display:none;}
+html.omni-iphone-pro #ios-native-tabs{

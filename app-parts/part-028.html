@@ -1,0 +1,78 @@
+  const close=()=>{el.classList.remove('open');el.setAttribute('aria-hidden','true')};
+  el.querySelector('.ios-overflow-close').onclick=close;
+  el.addEventListener('click',e=>{if(e.target===el)close()});
+  return el;
+}
+function actionLabel(btn){
+  return (btn.getAttribute('aria-label')||btn.getAttribute('title')||btn.textContent||'Action').replace(/\s+/g,' ').trim()||'Action';
+}
+function openOverflow(container){
+  const sheet=ensureOverflowSheet(),list=sheet.querySelector('.ios-action-overflow-list');list.innerHTML='';
+  const hidden=[...container.querySelectorAll(':scope > [data-ios-overflow-hidden="1"]')];
+  hidden.forEach(original=>{
+    const b=document.createElement('button');b.type='button';b.className='ios-overflow-item';b.disabled=!!original.disabled;
+    b.innerHTML='<span></span><span aria-hidden="true">›</span>';b.firstElementChild.textContent=actionLabel(original);
+    b.onclick=()=>{sheet.classList.remove('open');sheet.setAttribute('aria-hidden','true');setTimeout(()=>original.click(),20)};
+    list.appendChild(b);
+  });
+  if(!hidden.length)return;
+  sheet.classList.add('open');sheet.setAttribute('aria-hidden','false');
+}
+function streamlineActions(container){
+  if(!container||!isPhone())return;
+  const buttons=[...container.children].filter(el=>el.matches?.('button,.btn')&&!el.classList.contains('ios-overflow-trigger'));
+  const signature=buttons.map(b=>`${actionLabel(b)}:${b.classList.contains('btn-primary')?'p':'s'}`).join('|');
+  const existing=container.querySelector(':scope > .ios-overflow-trigger');
+  if(container.dataset.v614ActionSig===signature&&((buttons.length<=2&&!existing)||(buttons.length>2&&existing)))return;
+  container.dataset.v614ActionSig=signature;
+  buttons.forEach(b=>delete b.dataset.iosOverflowHidden);
+  existing?.remove();
+  if(buttons.length<=2)return;
+  const primary=buttons.find(b=>b.classList.contains('btn-primary'))||buttons[0];
+  buttons.forEach(b=>{if(b!==primary)b.dataset.iosOverflowHidden='1'});
+  const more=document.createElement('button');more.type='button';more.className='btn btn-sm ios-overflow-trigger';more.setAttribute('aria-label','More actions');more.title='More actions';more.textContent='•••';
+  more.onclick=e=>{e.preventDefault();e.stopPropagation();openOverflow(container)};
+  container.appendChild(more);
+}
+function streamlineAllActions(){qa(ACTION_CONTAINERS).forEach(streamlineActions)}
+
+function tabRetapScroll(){
+  qa('#ios-native-tabs .ios-tab').forEach(tab=>{
+    if(tab.dataset.v614Retap==='1')return;tab.dataset.v614Retap='1';
+    tab.addEventListener('click',()=>{
+      if(tab.classList.contains('active'))q('.view-container')?.scrollTo({top:0,behavior:'smooth'});
+    },{capture:true});
+  });
+}
+function closeOverflowOnNavigation(){
+  if(document.body.dataset.v614Nav==='1')return;document.body.dataset.v614Nav='1';
+  document.addEventListener('click',e=>{
+    if(e.target.closest?.('[data-ios-view],[data-ios-library],[data-view],[data-v35-mobile-view],[data-mobile-view]')){
+      const sheet=q('#ios-action-overflow');sheet?.classList.remove('open');sheet?.setAttribute('aria-hidden','true');
+    }
+  },true);
+}
+function sanitizeButtonLabels(){
+  qa('button,.btn').forEach(b=>{if(!b.hasAttribute('title')&&b.scrollWidth>b.clientWidth+4){const label=actionLabel(b);if(label)b.title=label}});
+}
+function audit(){
+  if(!isPhone())return;
+  ensureLibrarySearch();ensureOverflowSheet();streamlineAllActions();tabRetapScroll();closeOverflowOnNavigation();sanitizeButtonLabels();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(audit,180));else setTimeout(audit,180);
+new MutationObserver(()=>{clearTimeout(auditTimer);auditTimer=setTimeout(audit,110)}).observe(document.body,{subtree:true,childList:true});
+window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),audit,version:'61.4'};
+})();
+</script>
+
+
+<script id="omnios-v620-static-pwa-mode">
+(function(){
+  const standalone=window.matchMedia?.('(display-mode: standalone)')?.matches||navigator.standalone===true;
+  document.documentElement.classList.toggle('omnios-pwa-standalone',!!standalone);
+  window.OmniStaticPWA={version:'62.0',standalone:!!standalone,localOnly:true};
+})();
+</script>
+
+</body>
+</html>

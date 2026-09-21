@@ -242,9 +242,9 @@ new MutationObserver(()=>{
 }).observe(document.body,{subtree:true,childList:true});
 
 window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),audit,version:'62.2'};
-window.OmniBuild={version:'62.3',name:'Simplified iPhone UI'};
+window.OmniBuild={version:'62.4',name:'Minimal iPhone UI'};
 document.documentElement.dataset.omniosVersion='62.3';
-document.title='OmniOS v62.3 — iPhone PWA';
+document.title='OmniOS v62.4 — iPhone PWA';
 })();
 </script>
 
@@ -488,7 +488,7 @@ window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),version:'62.2',revealActiveTab
 
 
 <style id="omnios-v623-iphone-simplified-css">
-/* ===== OmniOS v62.3 — simplified iPhone visual hierarchy ===== */
+/* ===== OmniOS v62.4 — simplified iPhone visual hierarchy ===== */
 @media(max-width:480px){
   html.omni-iphone-pro{
     --ios-flat-divider:color-mix(in srgb,var(--border-color) 70%,transparent);
@@ -537,9 +537,8 @@ window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),version:'62.2',revealActiveTab
      2. Keep containers only where they communicate a real unit.
      ------------------------------------------------------------ */
   html.omni-iphone-pro :is(
-    .calendar-container,.workout-session-card,.nut-surface,
-    .bib-native-chapter,.bib-card,.settings-section,
-    .master-cal-shell,.set-table,.table-wrap,.table-container,
+    .calendar-container,.master-cal-shell,.workout-session-card,
+    .set-table,.table-wrap,.table-container,
     .inspector-panel,.v55-drawer,#v35-drawer
   ){
     border:1px solid var(--ios-flat-divider)!important;
@@ -548,10 +547,35 @@ window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),version:'62.2',revealActiveTab
     box-shadow:none!important;
   }
 
-  /* Forms are grouped only when grouping helps comprehension. */
-  html.omni-iphone-pro .settings-section{
-    padding:10px 12px!important;
-    margin-bottom:10px!important;
+  /* Reading, nutrition and settings belong to the page itself, not inside another box. */
+  html.omni-iphone-pro :is(
+    .nut-surface,.bib-native-chapter,.bib-card,.settings-section
+  ){
+    background:transparent!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    padding:9px 0!important;
+    margin:0!important;
+  }
+  html.omni-iphone-pro .settings-section + .settings-section,
+  html.omni-iphone-pro .nut-surface + .nut-surface,
+  html.omni-iphone-pro .bib-card + .bib-card{
+    border-top:1px solid var(--ios-flat-divider)!important;
+    padding-top:14px!important;
+    margin-top:5px!important;
+  }
+
+  /* Settings rows are simple rows; only the actual controls remain visually contained. */
+  html.omni-iphone-pro .settings-row{
+    background:transparent!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    padding:10px 0!important;
+  }
+  html.omni-iphone-pro .settings-row + .settings-row{
+    border-top:1px solid var(--ios-flat-divider)!important;
   }
 
   /* ------------------------------------------------------------
@@ -783,6 +807,31 @@ window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),version:'62.2',revealActiveTab
   html.omni-iphone-pro .view.active > * + *{
     margin-top:8px;
   }
+
+  /* Layout wrappers should organize content without looking like containers. */
+  html.omni-iphone-pro :is(
+    .analytics-grid,.grid-2,.org-grid,.v43-grid,.v35-grid,
+    .template-grid,.exercise-library-grid,.history-grid,
+    .workout-analytics-grid,.nut-today-grid,.goal586-grid,
+    .v55-grid,.v55-grid.two,.v55-grid.four,.v60-grid
+  ){
+    background:transparent!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+  }
+
+  /* Empty states use whitespace and typography, not another card. */
+  html.omni-iphone-pro :is(
+    .v35-empty,.v43-empty,.org-empty,.nut-empty,.v38-empty,
+    .workout-session-empty,.empty-state
+  ){
+    background:transparent!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    padding:18px 4px!important;
+  }
 }
 
 @media(max-width:360px){
@@ -800,7 +849,7 @@ window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),version:'62.2',revealActiveTab
 (function(){
   const standalone=window.matchMedia?.('(display-mode: standalone)')?.matches||navigator.standalone===true;
   document.documentElement.classList.toggle('omnios-pwa-standalone',!!standalone);
-  window.OmniStaticPWA={version:'62.3',standalone:!!standalone,localOnly:true};
+  window.OmniStaticPWA={version:'62.4',standalone:!!standalone,localOnly:true};
 })();
 </script>
 

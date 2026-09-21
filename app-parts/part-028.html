@@ -91,6 +91,12 @@ html.omni-iphone-pro select,
 html.omni-iphone-pro textarea{font-family:inherit!important}
 html.omni-iphone-pro #iphone-install-hint,
 html.omni-iphone-pro #v432-assistant-fab{display:none!important;visibility:hidden!important;pointer-events:none!important}
+html.omni-iphone-pro :is(button,a,[role="button"],input,select,textarea){-webkit-tap-highlight-color:transparent}
+html.omni-iphone-pro :is(button,a,[role="button"]){touch-action:manipulation}
+html.omni-iphone-pro :is(button,a,[role="button"],input,select,textarea):focus-visible{
+  outline:2px solid var(--accent-cyan)!important;outline-offset:2px!important;
+}
+html.omni-iphone-pro :is(button,a,[role="button"]):disabled{opacity:.46!important;cursor:default!important}
 
 /* ---------- chrome ---------- */
 html.omni-iphone-pro #ios-native-header{

@@ -504,6 +504,28 @@ html.omni-iphone-pro .modal-footer{
 }
 html.omni-iphone-pro .modal-footer .btn{width:100%!important;min-height:44px!important}
 
+/* Secondary modal systems use the same sheet language. */
+html.omni-iphone-pro :is(.omnios-group-modal-backdrop,.v60-modal-backdrop){
+  align-items:flex-end!important;padding:0!important;background:rgba(0,0,0,.40)!important;
+  -webkit-backdrop-filter:blur(4px)!important;backdrop-filter:blur(4px)!important;
+}
+html.omni-iphone-pro :is(.omnios-group-modal,.v60-modal){
+  width:100%!important;max-width:none!important;max-height:calc(100dvh - max(12px,env(safe-area-inset-top)))!important;
+  margin:0!important;padding:0!important;border:1px solid var(--ios-line)!important;border-bottom:0!important;
+  border-radius:23px 23px 0 0!important;background:var(--bg-surface)!important;overflow:auto!important;
+  box-shadow:0 -18px 46px rgba(0,0,0,.24)!important;
+}
+html.omni-iphone-pro :is(.omnios-group-modal-head,.v60-modal-head){
+  padding:10px 13px!important;border-bottom:1px solid var(--ios-line)!important;background:var(--bg-surface)!important;
+}
+html.omni-iphone-pro :is(.omnios-group-modal-body,.v60-modal-body){padding:12px 13px!important}
+html.omni-iphone-pro :is(.omnios-group-modal-foot,.v60-modal-foot){
+  position:sticky!important;bottom:0!important;display:grid!important;grid-template-columns:1fr!important;gap:7px!important;
+  padding:9px 13px max(10px,env(safe-area-inset-bottom))!important;border-top:1px solid var(--ios-line)!important;background:var(--bg-surface)!important;
+}
+html.omni-iphone-pro :is(.omnios-group-modal-foot,.v60-modal-foot) .btn{width:100%!important;min-height:44px!important}
+
+
 html.omni-iphone-pro #ios-action-overflow{display:none}
 html.omni-iphone-pro #ios-action-overflow.open{
   display:block!important;position:fixed!important;inset:0!important;z-index:2450!important;background:rgba(0,0,0,.38)!important;

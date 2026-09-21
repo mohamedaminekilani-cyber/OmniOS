@@ -316,7 +316,7 @@ function installHomeActions(){
 function installTaskBar(){
   if(q('#ios-task-bar'))return;
   const view=q('#view-tasks');if(!view)return;
-  const bar=document.createElement('div');bar.id='ios-task-bar';bar.innerHTML=`<div class="ios-segment"><button type="button" data-ios-taskview="list">List</button><button type="button" data-ios-taskview="kanban">Board</button><button type="button" data-ios-taskview="calendar">Calendar</button></div><button type="button" class="ios-filter-btn" id="ios-task-filter-btn" aria-label="Filter tasks">${svg('filter')}</button>`;
+  const bar=document.createElement('div');bar.id='ios-task-bar';bar.innerHTML=`<div class="ios-segment"><button type="button" data-ios-taskview="kanban">Board</button><button type="button" data-ios-taskview="matrix">Matrix</button><button type="button" data-ios-taskview="list">List</button><button type="button" data-ios-taskview="gallery">Gallery</button><button type="button" data-ios-taskview="calendar">Calendar</button><button type="button" data-ios-taskview="groups">Groups</button></div><button type="button" class="ios-filter-btn" id="ios-task-filter-btn" aria-label="Filter tasks">${svg('filter')}</button>`;
   const content=q('#tasks-content');view.insertBefore(bar,content||view.firstChild);
   bar.querySelectorAll('[data-ios-taskview]').forEach(b=>b.onclick=()=>{const original=q(`[data-taskview="${b.dataset.iosTaskview}"]`);original?.click();setTimeout(syncTaskSegment,20)});
   bar.querySelector('#ios-task-filter-btn').onclick=openTaskFilter;

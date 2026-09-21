@@ -176,6 +176,8 @@ html.omni-iphone-pro :is(.v35-page-head,.v43-hero,.org-hero,.workout-hero,.nut-h
 html.omni-iphone-pro .view.active>div.flex-between:first-child{flex-wrap:wrap!important}
 html.omni-iphone-pro .view.active>div.flex-between:first-child>div:first-child{flex:1 1 210px!important;min-width:0!important}
 html.omni-iphone-pro .view.active h3{letter-spacing:-.018em}
+html.omni-iphone-pro .ios-redundant-title{display:none!important}
+html.omni-iphone-pro .ios-redundant-title+*{margin-top:0!important}
 html.omni-iphone-pro :is(.v35-kicker,.org-kicker,.v43-kicker,.goal586-kicker,.conn34-kicker){font-size:9px!important;letter-spacing:.09em!important}
 html.omni-iphone-pro :is(.text-muted.text-sm,.v35-card-sub,.v43-card-sub,.org-card-sub,.v55-card-sub){font-size:11px!important;line-height:1.45!important}
 
@@ -710,6 +712,16 @@ function syncHeader(){
     if(title)title.textContent='Bible';if(section)section.textContent='Reflect';
   }
 }
+function markRedundantTitles(){
+  qa('.ios-redundant-title').forEach(el=>el.classList.remove('ios-redundant-title'));
+  const active=q('.view.active'),nativeTitle=(q('#ios-native-title')?.textContent||'').trim().toLowerCase();
+  if(!active||!nativeTitle)return;
+  const candidates=[...active.querySelectorAll(':scope > .flex-between:first-child h3,:scope > .v35-page-head h3,:scope > .v43-hero h3,:scope > .org-hero h3,:scope > .workout-hero h3,:scope > .nut-hero h3,:scope > .v38-finance-head h3,:scope > .goal586-hero h3,:scope > .conn34-hero h3')];
+  candidates.forEach(el=>{
+    const t=(el.textContent||'').trim().toLowerCase();
+    if(t===nativeTitle)el.classList.add('ios-redundant-title');
+  });
+}
 function bindKeyboard(){
   if(root.dataset.v630Keyboard==='1')return;root.dataset.v630Keyboard='1';
   const vv=window.visualViewport;if(!vv)return;
@@ -721,12 +733,12 @@ function bindKeyboard(){
 }
 function audit(){
   if(!isPhone())return;
-  accessibleIconNav();ensureBible();protectIconButtons();syncHeader();revealActiveRail();bindKeyboard();
+  accessibleIconNav();ensureBible();protectIconButtons();syncHeader();markRedundantTitles();revealActiveRail();bindKeyboard();
 }
 document.addEventListener('click',e=>{
   if(!isPhone())return;
   if(e.target.closest?.('.bib-tab,.bib-lib-tab,.view-btn,.tab-btn,.v43-tab,.v55-tab,[role="tab"],[data-ios-library],[data-ios-view]')){
-    setTimeout(()=>{syncHeader();revealActiveRail()},35);
+    setTimeout(()=>{syncHeader();markRedundantTitles();revealActiveRail()},35);
   }
 },true);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(audit,180),{once:true});else setTimeout(audit,180);

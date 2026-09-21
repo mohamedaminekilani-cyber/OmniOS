@@ -387,6 +387,21 @@ html.omni-iphone-pro .form-textarea{min-height:96px!important}
 html.omni-iphone-pro .form-group{margin-bottom:12px!important}
 html.omni-iphone-pro :is(.form-label,.form-group>label){display:block!important;font-size:11px!important;font-weight:690!important;margin-bottom:5px!important}
 html.omni-iphone-pro :is(.form-grid,.modal .form-grid){grid-template-columns:1fr!important;gap:9px!important}
+html.omni-iphone-pro :is(.form-row,.modal .form-row){grid-template-columns:1fr!important;gap:9px!important}
+html.omni-iphone-pro .quick-add-grid{display:flex!important;flex-direction:column!important;gap:0!important;padding:5px 0 8px!important}
+html.omni-iphone-pro .quick-add-choice{
+  width:100%!important;min-height:58px!important;display:grid!important;grid-template-columns:36px minmax(0,1fr)!important;
+  align-items:center!important;gap:10px!important;text-align:left!important;padding:8px 2px!important;
+  background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+}
+html.omni-iphone-pro .quick-add-choice+.quick-add-choice{border-top:1px solid var(--ios-line-soft)!important}
+html.omni-iphone-pro .quick-add-choice>span:first-child{
+  width:34px!important;height:34px!important;border-radius:10px!important;background:var(--bg-elevated)!important;
+  display:grid!important;place-items:center!important;font-size:16px!important;
+}
+html.omni-iphone-pro .quick-add-choice strong{display:block!important;font-size:13px!important;line-height:1.2!important}
+html.omni-iphone-pro .quick-add-choice small{display:block!important;font-size:10px!important;line-height:1.35!important;color:var(--text-muted)!important;margin-top:2px!important;white-space:normal!important}
+html.omni-iphone-pro .modal-close-btn{min-width:40px!important;min-height:40px!important}
 html.omni-iphone-pro .settings-section{
   background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
   padding:9px 0!important;margin:0!important;
@@ -461,15 +476,17 @@ html.omni-iphone-pro .modal-overlay.active{
 }
 html.omni-iphone-pro .modal{
   width:100%!important;max-width:none!important;max-height:calc(100dvh - max(12px,env(safe-area-inset-top)))!important;
-  margin:0!important;border:1px solid var(--ios-line)!important;border-bottom:0!important;border-radius:23px 23px 0 0!important;
-  background:var(--bg-surface)!important;overflow:hidden!important;box-shadow:0 -18px 46px rgba(0,0,0,.24)!important;
+  margin:0!important;padding:0 13px max(12px,env(safe-area-inset-bottom))!important;
+  border:1px solid var(--ios-line)!important;border-bottom:0!important;border-radius:23px 23px 0 0!important;
+  background:var(--bg-surface)!important;overflow-x:hidden!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;
+  box-shadow:0 -18px 46px rgba(0,0,0,.24)!important;
 }
 html.omni-iphone-pro .modal::before{
   content:"";display:block;width:36px;height:4px;border-radius:999px;background:var(--text-muted);opacity:.32;margin:7px auto 1px;
 }
 html.omni-iphone-pro .modal-header{
   position:sticky!important;top:0!important;z-index:3!important;background:var(--bg-surface)!important;
-  padding:9px 13px!important;border-bottom:1px solid var(--ios-line)!important;
+  padding:9px 13px!important;margin-left:-13px!important;margin-right:-13px!important;border-bottom:1px solid var(--ios-line)!important;
 }
 html.omni-iphone-pro .modal-title{font-size:16px!important;letter-spacing:-.02em!important}
 html.omni-iphone-pro :is(.modal-body,.v35-modal-body){
@@ -477,7 +494,7 @@ html.omni-iphone-pro :is(.modal-body,.v35-modal-body){
 }
 html.omni-iphone-pro .modal-footer{
   position:sticky!important;bottom:0!important;z-index:3!important;display:grid!important;grid-template-columns:1fr!important;
-  background:var(--bg-surface)!important;padding:9px 13px max(10px,env(safe-area-inset-bottom))!important;border-top:1px solid var(--ios-line)!important;gap:7px!important;
+  background:var(--bg-surface)!important;padding:9px 13px max(10px,env(safe-area-inset-bottom))!important;margin-left:-13px!important;margin-right:-13px!important;margin-bottom:calc(-1 * max(12px,env(safe-area-inset-bottom)))!important;border-top:1px solid var(--ios-line)!important;gap:7px!important;
 }
 html.omni-iphone-pro .modal-footer .btn{width:100%!important;min-height:44px!important}
 

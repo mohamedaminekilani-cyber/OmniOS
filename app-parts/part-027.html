@@ -239,7 +239,9 @@ const ICONS={
  back:'<path d="m15 18-6-6 6-6"/>',
  plus:'<path d="M12 5v14M5 12h14"/>',
  more:'<circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/>',
- filter:'<path d="M4 6h16M7 12h10M10 18h4"/>'
+ filter:'<path d="M4 6h16M7 12h10M10 18h4"/>',
+ image:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m5 17 4.4-4.4 3.2 3.1 2.3-2.3L19 17"/>',
+ book:'<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v17H6.5A2.5 2.5 0 0 0 4 22V5.5Z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v17h4.5A2.5 2.5 0 0 1 20 22V5.5Z"/>'
 };
 const svg=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]||''}</svg>`;
 const q=s=>document.querySelector(s);
@@ -250,7 +252,7 @@ const META={
  today:['Home','Today'],dashboard:['Analytics','Overview'],inbox:['Inbox','Capture'],planner:['Planner','Schedule'],projects:['Projects','Projects'],
  'master-calendar':['Calendar','Calendar'],tasks:['Tasks','Tasks'],habits:['Habits','Wellbeing'],workout:['Workout','Wellbeing'],diet:['Nutrition','Wellbeing'],focus:['Focus','Wellbeing'],
  budget:['Finance','Life'], 'life-hub':['Life Hub','Life'],notes:['Notes','Organize'],grocery:['Grocery','Organize'],wishlist:['Wishlist','Organize'],goals:['Goals','Organize'],pantry:['Pantry','Organize'],reminders:['Reminders','Organize'],
- studio:['Studio','Organize'],relations:['Relations','System'],automations:['Automations','System'],integrations:['Integrations','System'],activity:['Activity','System'],templates:['Templates','System'],passwords:['Passwords','System'],settings:['Settings','System'],help:['Help','System'],'data-center':['Data Center','System']
+ studio:['Studio','Organize'],bible:['Bible','Reflect'],relations:['Relations','System'],automations:['Automations','System'],integrations:['Integrations','System'],activity:['Activity','System'],templates:['Templates','System'],passwords:['Passwords','System'],settings:['Settings','System'],help:['Help','System'],'data-center':['Data Center','System']
 };
 
 function installShell(){
@@ -259,7 +261,7 @@ function installShell(){
   const header=document.createElement('header');header.id='ios-native-header';header.innerHTML=`
     <button type="button" class="ios-native-back" id="ios-native-back" aria-label="Back">${svg('back')}</button>
     <div class="ios-native-title-wrap"><div class="ios-native-eyebrow"><span id="ios-native-section">OmniOS</span></div><div class="ios-native-title" id="ios-native-title">Home</div></div>
-    <div class="ios-native-header-actions"><button type="button" class="ios-native-action" id="ios-native-search" aria-label="Search">${svg('search')}</button><button type="button" class="ios-native-action" id="ios-native-ai" aria-label="Assistant">${svg('bot')}</button></div>`;
+    <div class="ios-native-header-actions"><button type="button" class="ios-native-action" id="ios-native-cover" aria-label="Edit page cover" title="Edit page cover">${svg('image')}</button><button type="button" class="ios-native-action" id="ios-native-search" aria-label="Search">${svg('search')}</button><button type="button" class="ios-native-action" id="ios-native-ai" aria-label="Assistant">${svg('bot')}</button></div>`;
   const tabs=document.createElement('nav');tabs.id='ios-native-tabs';tabs.setAttribute('aria-label','Primary navigation');tabs.innerHTML=`
     <button type="button" class="ios-tab" data-ios-view="today">${svg('home')}<span>Home</span></button>
     <button type="button" class="ios-tab" data-ios-view="master-calendar">${svg('calendar')}<span>Calendar</span></button>
@@ -269,6 +271,7 @@ function installShell(){
   main.insertBefore(header,q('.view-container'));
   main.appendChild(tabs);
   header.querySelector('#ios-native-back').onclick=()=>{if(typeof window.goHistory35==='function')window.goHistory35(-1);else history.back()};
+  header.querySelector('#ios-native-cover').onclick=()=>{const key=current();if(window.OmniCovers?.add)window.OmniCovers.add('page',key);else{const view=q('#view-'+key);(view?.querySelector('.v44-add-cover,[data-act="change"]'))?.click()}};
   header.querySelector('#ios-native-search').onclick=()=>{const b=q('#mobile-search-v33')||q('#power-search-btn');if(b)b.click();else document.dispatchEvent(new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true}))};
   header.querySelector('#ios-native-ai').onclick=()=>{if(typeof window.openFloatingAssistant==='function')return window.openFloatingAssistant();if(window.OmniAssistant&&typeof window.OmniAssistant.open==='function')window.OmniAssistant.open();const p=q('#omni-assistant-panel');if(p){p.classList.add('open');p.setAttribute('aria-hidden','false');setTimeout(()=>q('#omni-assistant-input')?.focus(),30)}};
   tabs.querySelector('#ios-native-add').onclick=()=>{const legacy=q('#global-add-btn');if(legacy){legacy.click();return}if(typeof window.openModal==='function')window.openModal('quick-add-modal');else q('#quick-add-modal')?.classList.add('active')};
@@ -279,9 +282,10 @@ function installShell(){
 
 function installMore(){
   if(q('#ios-native-more'))return;
-  const el=document.createElement('section');el.id='ios-native-more';el.innerHTML=`<div class="ios-sheet-head"><button class="ios-sheet-close" type="button" data-ios-close>×</button><h3>OmniOS</h3><span></span></div><div class="ios-sheet-body" id="ios-native-more-body"></div>`;document.body.appendChild(el);
+  const el=document.createElement('section');el.id='ios-native-more';el.innerHTML=`<div class="ios-sheet-head"><button class="ios-sheet-close" type="button" data-ios-close>×</button><div><div class="ios-sheet-kicker">APP LIBRARY</div><h3>Explore OmniOS</h3></div><span></span></div><div class="ios-sheet-body" id="ios-native-more-body"></div>`;document.body.appendChild(el);
   el.querySelector('[data-ios-close]').onclick=()=>el.classList.remove('open');
   const groups=[
+    ['Reflect', [['bible','▤','Bible','Read, meditate, highlight & journal']]],
     ['Plan', [['inbox','⌁','Inbox','Capture anything'],['planner','▦','Planner','Plan your week'],['projects','◫','Projects','Outcomes & milestones'],['dashboard','⌗','Analytics','Progress overview']]],
     ['Wellbeing', [['habits','⚡','Habits','Consistency'],['workout','🏋','Workout','Training'],['diet','◌','Nutrition','Meals & nutrition'],['focus','◉','Focus','Pomodoro & deep work']]],
     ['Life', [['budget','$','Finance','Money & budgets'],['life-hub','◎','Life Hub','People, admin & life records']]],
@@ -344,6 +348,7 @@ function updateShell(){
   const back=q('#ios-native-back');if(back){const idx=typeof navIndex35!=='undefined'?navIndex35:1;back.style.visibility=idx>0?'visible':'hidden'}
   if(v==='tasks')syncTaskSegment();
   if(v==='today')installHomeActions();
+  const cover=q('#ios-native-cover');if(cover){cover.hidden=!(window.OmniCovers?.add||q('#view-'+v)?.querySelector('.v44-page-cover-shell,.v44-add-cover,[data-act="change"]'))}
 }
 
 // Update after every navigation, regardless of how older layers invoke switchView.

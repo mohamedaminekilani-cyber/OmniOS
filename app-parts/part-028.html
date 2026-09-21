@@ -545,6 +545,78 @@ html.omni-iphone-pro #view-bible :is(.bib-toolbar-v5814,.bib-library-toolbar){
   max-width:100%!important;
 }
 
+
+/* ---------- module-specific mobile layouts ---------- */
+/* Workout */
+html.omni-iphone-pro :is(.v37-template-grid,.v37-library-grid,.v37-history-grid,.v37-start-grid,.v37-progress-grid){
+  grid-template-columns:1fr!important;gap:10px!important;
+}
+html.omni-iphone-pro :is(.v37-session-stats,.v37-progress-summary,.v37-recent-strip){
+  display:flex!important;grid-template-columns:none!important;overflow-x:auto!important;gap:0!important;scrollbar-width:none!important;
+}
+html.omni-iphone-pro :is(.v37-session-stats,.v37-progress-summary,.v37-recent-strip)::-webkit-scrollbar{display:none!important}
+html.omni-iphone-pro :is(.v37-session-stats,.v37-progress-summary,.v37-recent-strip)>*{
+  flex:1 0 92px!important;min-width:92px!important;padding:8px 10px!important;
+}
+html.omni-iphone-pro .v37-rest-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+html.omni-iphone-pro :is(.v37-toolbar-main,.v37-filter-row){grid-template-columns:1fr!important;gap:7px!important}
+
+/* Finance */
+html.omni-iphone-pro :is(.v38-fin-layout,.v38-account-grid,.v38-rec-grid,.v38-budget-grid,.v38-goal-grid,.v38-insight-grid){
+  grid-template-columns:1fr!important;gap:10px!important;
+}
+html.omni-iphone-pro .v38-fin-grid{
+  display:flex!important;grid-template-columns:none!important;overflow-x:auto!important;gap:0!important;scrollbar-width:none!important;
+}
+html.omni-iphone-pro .v38-fin-grid::-webkit-scrollbar{display:none!important}
+html.omni-iphone-pro .v38-fin-grid>*{flex:1 0 92px!important;min-width:92px!important}
+
+/* Organize / Life Hub */
+html.omni-iphone-pro :is(.org-two-pane,.org-split,.v43-life-shell,.v431-board,.v431-detail-grid,.v431-side,.v43-domain-grid,.v43-record-grid){
+  grid-template-columns:1fr!important;gap:10px!important;
+}
+html.omni-iphone-pro .org-board{
+  display:grid!important;grid-template-columns:repeat(3,minmax(82vw,1fr))!important;
+  overflow-x:auto!important;overflow-y:hidden!important;gap:9px!important;scroll-snap-type:x proximity!important;
+  -webkit-overflow-scrolling:touch!important;scrollbar-width:none!important;
+}
+html.omni-iphone-pro .org-board::-webkit-scrollbar{display:none!important}
+html.omni-iphone-pro .org-board>*{scroll-snap-align:start!important}
+
+/* Nutrition */
+html.omni-iphone-pro :is(.nut-hero,.nut-today-grid,.nut-insights-grid,.nut-prep-grid,.nut-form-grid){
+  grid-template-columns:1fr!important;gap:10px!important;
+}
+html.omni-iphone-pro .nut-slot-columns{grid-template-columns:1fr!important}
+html.omni-iphone-pro .nut-week{
+  display:grid!important;grid-template-columns:repeat(7,minmax(112px,1fr))!important;
+  overflow-x:auto!important;gap:7px!important;scroll-snap-type:x proximity!important;
+  -webkit-overflow-scrolling:touch!important;scrollbar-width:none!important;
+}
+html.omni-iphone-pro .nut-week::-webkit-scrollbar{display:none!important}
+html.omni-iphone-pro .nut-week>*{scroll-snap-align:start!important}
+
+/* Calendar: preserve the useful 7-column month, simplify auxiliary panes. */
+html.omni-iphone-pro :is(.v36-event-extra,.v36-preview-schedule){grid-template-columns:1fr!important}
+html.omni-iphone-pro .v36-month-grid{min-width:560px!important}
+html.omni-iphone-pro .calendar-container:has(.v36-month-grid){overflow-x:auto!important;-webkit-overflow-scrolling:touch!important}
+
+/* Bible: reader/study/journal/map side layouts collapse cleanly on iPhone. */
+html.omni-iphone-pro #view-bible :is(
+  .bib-read-grid-v5814,.bib-study-layout,.bib-journal-layout,.bib-timer-layout,.bib-mood-layout,
+  .bib-atlas-shell,.bib-atlas-grid,.bib-source-grid,.bib-related-grid,.bib-guide-grid,.bib-purpose-grid,
+  .bib-map-workspace-v5720,.bib-map-workspace-v5721
+){
+  grid-template-columns:1fr!important;gap:10px!important;
+}
+html.omni-iphone-pro #view-bible :is(.bib-toolbar-v5814,.bib-library-toolbar,.bib-top){
+  flex-wrap:wrap!important;
+}
+html.omni-iphone-pro #view-bible :is(.bib-reader-scroll-v5814,.bib-passage-main){min-width:0!important}
+
+/* Tiny inline detail grids should not become narrow two-column forms. */
+html.omni-iphone-pro :is(.v43-mini-grid,.v431-detail-grid,.nut-form-grid){grid-template-columns:1fr!important}
+
 /* ---------- tables / overflow safety ---------- */
 html.omni-iphone-pro table{max-width:none!important}
 html.omni-iphone-pro :is(.table-wrap,.table-container,.set-table,.power-table,.org-stock-table){

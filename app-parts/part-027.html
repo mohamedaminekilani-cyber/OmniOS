@@ -282,7 +282,7 @@ function installShell(){
 
 function installMore(){
   if(q('#ios-native-more'))return;
-  const el=document.createElement('section');el.id='ios-native-more';el.innerHTML=`<div class="ios-sheet-head"><button class="ios-sheet-close" type="button" data-ios-close>×</button><div><div class="ios-sheet-kicker">APP LIBRARY</div><h3>Explore OmniOS</h3></div><span></span></div><div class="ios-sheet-body" id="ios-native-more-body"></div>`;document.body.appendChild(el);
+  const el=document.createElement('section');el.id='ios-native-more';el.innerHTML=`<div class="ios-sheet-head"><button class="ios-sheet-close" type="button" data-ios-close>×</button><div><div class="ios-sheet-kicker">OMNIOS</div><h3>Library</h3></div><span></span></div><div class="ios-sheet-body" id="ios-native-more-body"></div>`;document.body.appendChild(el);
   el.querySelector('[data-ios-close]').onclick=()=>el.classList.remove('open');
   const groups=[
     ['Reflect', [['bible','▤','Bible','Read, meditate, highlight & journal']]],

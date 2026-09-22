@@ -65,6 +65,61 @@ window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),audit,version:'61.4'};
 })();
 </script>
 
+<style id="omnios-v633-bible-meditation-clarity-css">
+/* Bible Meditation — readable Scripture with visually distinct verse numbers */
+#view-bible .bib-med-passage-v633{
+  margin:12px 0 4px;
+  padding:12px 0 3px;
+  border-top:1px solid var(--border-color);
+  text-align:left;
+}
+#view-bible .bib-med-verse-v633{
+  display:grid;
+  grid-template-columns:30px minmax(0,1fr);
+  align-items:start;
+  gap:8px;
+  padding:5px 0;
+}
+#view-bible .bib-med-verse-num-v633{
+  color:var(--accent-cyan);
+  font-size:.72rem;
+  line-height:1.85;
+  font-weight:850;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.02em;
+  text-align:right;
+  user-select:none;
+}
+#view-bible .bib-med-verse-text-v633{
+  color:var(--text-primary);
+  font-size:var(--bib-font-size,1rem);
+  line-height:1.75;
+  letter-spacing:.003em;
+  text-wrap:pretty;
+}
+#view-bible .bib-step-copy{
+  line-height:1.55;
+}
+html.omni-iphone-pro #view-bible .bib-med-passage-v633{
+  margin-top:10px!important;
+  padding-top:10px!important;
+}
+html.omni-iphone-pro #view-bible .bib-med-verse-v633{
+  grid-template-columns:27px minmax(0,1fr)!important;
+  gap:8px!important;
+  padding:5px 0!important;
+}
+html.omni-iphone-pro #view-bible .bib-med-verse-num-v633{
+  font-size:11px!important;
+  line-height:1.82!important;
+}
+html.omni-iphone-pro #view-bible .bib-med-verse-text-v633{
+  font-size:max(16px,var(--bib-font-size,1rem))!important;
+  line-height:1.72!important;
+}
+</style>
+
+
 
 
 

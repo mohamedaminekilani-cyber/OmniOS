@@ -169,7 +169,7 @@ html.omni-iphone-pro #routine-editor-v60 .rt-builder-row:first-child{border-top:
 (function(){
 'use strict';
 if(window.OmniRoutine60)return;
-const API=window.OmniRoutine60={version:'63.2'};
+const API=window.OmniRoutine60={version:'63.3};
 const esc=s=>String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));
 const A=x=>Array.isArray(x)?x:[];
 const uid=(p='rt')=>p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);
@@ -305,7 +305,7 @@ Object.assign(API,{render,openEditor,normalize,dueToday,progress});
 
 <style id="omnios-v630-iphone-ui-css">
 /* =========================================================================
-   OmniOS v63.2 — unified iPhone UI/UX system
+   OmniOS v63.3 — unified iPhone UI/UX system
    Flat by default. Containers only when they clarify interaction or grouping.
    Applies to every iPhone orientation through the omni-iphone-pro root class.
    ========================================================================= */
@@ -1044,10 +1044,10 @@ document.addEventListener('click',e=>{
 },true);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(audit,180),{once:true});else setTimeout(audit,180);
 new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(audit,120)}).observe(document.body,{subtree:true,childList:true});
-window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),audit,revealActiveRail,version:'63.2'};
-window.OmniBuild={version:'63.2',name:'Connected Routines + Data Center'};
+window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),audit,revealActiveRail,version:'63.3};
+window.OmniBuild={version:'63.3,name:'Bible Atlas Audit + Meditation Reader'};
 document.documentElement.dataset.omniosVersion='63.0';
-document.title='OmniOS v63.2 — iPhone PWA';
+document.title='OmniOS v63.3 — iPhone PWA';
 })();
 </script>
 
@@ -1055,7 +1055,7 @@ document.title='OmniOS v63.2 — iPhone PWA';
 (function(){
   const standalone=window.matchMedia?.('(display-mode: standalone)')?.matches||navigator.standalone===true;
   document.documentElement.classList.toggle('omnios-pwa-standalone',!!standalone);
-  window.OmniStaticPWA={version:'63.2',standalone:!!standalone,localOnly:true};
+  window.OmniStaticPWA={version:'63.3,standalone:!!standalone,localOnly:true};
 })();
 </script>
 

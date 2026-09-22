@@ -250,7 +250,7 @@ const current=()=>q('.view.active')?.id?.replace(/^view-/,'')||'today';
 
 const META={
  today:['Home','Today'],dashboard:['Analytics','Overview'],inbox:['Inbox','Capture'],planner:['Planner','Schedule'],projects:['Projects','Projects'],
- 'master-calendar':['Calendar','Calendar'],tasks:['Tasks','Tasks'],habits:['Habits','Wellbeing'],workout:['Workout','Wellbeing'],diet:['Nutrition','Wellbeing'],focus:['Focus','Wellbeing'],
+ 'master-calendar':['Calendar','Calendar'],tasks:['Tasks','Tasks'],routine:['Routine','Plan'],habits:['Habits','Wellbeing'],workout:['Workout','Wellbeing'],diet:['Nutrition','Wellbeing'],focus:['Focus','Wellbeing'],
  budget:['Finance','Life'], 'life-hub':['Life Hub','Life'],notes:['Notes','Organize'],grocery:['Grocery','Organize'],wishlist:['Wishlist','Organize'],goals:['Goals','Organize'],pantry:['Pantry','Organize'],reminders:['Reminders','Organize'],
  studio:['Studio','Organize'],bible:['Bible','Reflect'],relations:['Relations','System'],automations:['Automations','System'],integrations:['Integrations','System'],activity:['Activity','System'],templates:['Templates','System'],passwords:['Passwords','System'],settings:['Settings','System'],help:['Help','System'],'data-center':['Data Center','System']
 };
@@ -286,7 +286,7 @@ function installMore(){
   el.querySelector('[data-ios-close]').onclick=()=>el.classList.remove('open');
   const groups=[
     ['Reflect', [['bible','▤','Bible','Read, meditate, highlight & journal']]],
-    ['Plan', [['inbox','⌁','Inbox','Capture anything'],['planner','▦','Planner','Plan your week'],['projects','◫','Projects','Outcomes & milestones'],['dashboard','⌗','Analytics','Progress overview']]],
+    ['Plan', [['inbox','⌁','Inbox','Capture anything'],['planner','▦','Planner','Plan your week'],['routine','↻','Routine','Daily, weekly & monthly flows'],['projects','◫','Projects','Outcomes & milestones'],['dashboard','⌗','Analytics','Progress overview']]],
     ['Wellbeing', [['habits','⚡','Habits','Consistency'],['workout','🏋','Workout','Training'],['diet','◌','Nutrition','Meals & nutrition'],['focus','◉','Focus','Pomodoro & deep work']]],
     ['Life', [['budget','$','Finance','Money & budgets'],['life-hub','◎','Life Hub','People, admin & life records']]],
     ['Organize', [['notes','✎','Notes','Ideas & knowledge'],['grocery','⌁','Grocery','Shopping lists'],['pantry','▤','Pantry','Inventory'],['wishlist','♡','Wishlist','Things you want'],['goals','◎','Goals','Long-term targets'],['reminders','◷','Reminders','Time-based nudges'],['studio','≡','Studio','Workspace tools']]],

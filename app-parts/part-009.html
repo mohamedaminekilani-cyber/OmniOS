@@ -23,7 +23,7 @@ function statusPill(text){return `<span class="v35-chip">${esc(text)}</span>`}
 
 /* ---------- coherent navigation ---------- */
 const NAV35=[
-  ['Plan',[['today','Today','⌂'],['dashboard','Dashboard','⌗'],['inbox','Inbox','⌁'],['planner','Planner','▦'],['projects','Projects','◫'],['master-calendar','Calendar','▣'],['tasks','Tasks','✓']]],
+  ['Plan',[['today','Today','⌂'],['dashboard','Dashboard','⌗'],['inbox','Inbox','⌁'],['planner','Planner','▦'],['projects','Projects','◫'],['master-calendar','Calendar','▣'],['tasks','Tasks','✓'],['routine','Routine','↻']]],
   ['Wellbeing',[['habits','Habits','⚡'],['workout','Workout','🏋'],['diet','Nutrition','🥗'],['focus','Focus','◉']]],
   ['Life',[['budget','Finance','$'],['life-hub','Life Hub','◎']]],
   ['Organize',[['notes','Notes','✎'],['grocery','Grocery','🛒'],['wishlist','Wishlist','♡'],['goals','Goals','◎'],['pantry','Pantry','▤'],['reminders','Reminders','◔']]],
@@ -42,14 +42,14 @@ function organizeDesktopNav35(){
 }
 function buildMobileNav35(){
   const nav=document.querySelector('.mobile-nav');if(!nav)return;nav.innerHTML='';
-  const specs=[['today','⌂','Today'],['planner','▦','Plan'],['tasks','✓','Tasks'],['master-calendar','□','Calendar'],['life-hub','◎','Life']];
+  const specs=[['today','⌂','Today'],['planner','▦','Plan'],['tasks','✓','Tasks'],['master-calendar','□','Calendar'],['routine','↻','Routine']];
   specs.forEach(([v,i,l])=>{const b=document.createElement('button');b.type='button';b.dataset.v35MobileView=v;b.innerHTML=`<span class="nav-icon">${i}</span><span class="nav-label">${l}</span>`;b.onclick=()=>window.switchView(v);nav.appendChild(b)});
   const more=document.createElement('button');more.type='button';more.id='v35-mobile-more';more.innerHTML='<span class="nav-icon">•••</span><span class="nav-label">More</span>';more.onclick=openMore35;nav.appendChild(more);updateMobileActive35(activeView35());
 }
 function activeView35(){return document.querySelector('.view.active')?.id?.replace(/^view-/,'')||'today'}
-function updateMobileActive35(v){document.querySelectorAll('.mobile-nav [data-v35-mobile-view]').forEach(b=>b.classList.toggle('active',b.dataset.v35MobileView===v));document.getElementById('v35-mobile-more')?.classList.toggle('active',!['today','planner','tasks','master-calendar','life-hub'].includes(v))}
+function updateMobileActive35(v){document.querySelectorAll('.mobile-nav [data-v35-mobile-view]').forEach(b=>b.classList.toggle('active',b.dataset.v35MobileView===v));document.getElementById('v35-mobile-more')?.classList.toggle('active',!['today','planner','tasks','master-calendar','routine'].includes(v))}
 function openMore35(){
-  const options=[['inbox','⌁','Inbox'],['projects','◫','Projects'],['dashboard','⌗','Analytics'],['habits','⚡','Habits'],['workout','🏋','Workout'],['diet','🥗','Nutrition'],['focus','◉','Focus'],['budget','$','Finance'],['notes','✎','Notes'],['grocery','🛒','Grocery'],['wishlist','♡','Wishlist'],['goals','🎯','Goals'],['pantry','🥫','Pantry'],['reminders','🔔','Reminders'],['data-center','◈','Data Center'],['settings','⚙','Settings'],['help','?','Help']];
+  const options=[['inbox','⌁','Inbox'],['projects','◫','Projects'],['dashboard','⌗','Analytics'],['habits','⚡','Habits'],['workout','🏋','Workout'],['diet','🥗','Nutrition'],['focus','◉','Focus'],['budget','$','Finance'],['notes','✎','Notes'],['grocery','🛒','Grocery'],['wishlist','♡','Wishlist'],['goals','🎯','Goals'],['pantry','🥫','Pantry'],['reminders','🔔','Reminders'],['life-hub','◎','Life Hub'],['data-center','◈','Data Center'],['settings','⚙','Settings'],['help','?','Help']];
   const m=modal35('More',`<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">${options.map(([v,i,l])=>`<button type="button" class="btn" style="justify-content:flex-start;min-height:52px" data-v35-more="${v}"><span style="width:24px;text-align:center">${i}</span>${esc(l)}</button>`).join('')}</div>`,'');m.querySelectorAll('[data-v35-more]').forEach(b=>b.onclick=()=>{m.remove();window.switchView(b.dataset.v35More)})
 }
 
@@ -66,7 +66,7 @@ function updateNavControls35(){const b=document.getElementById('v35-back-btn'),f
 let undo35=[],redo35=[],lastCommitted35=clone(state),saveGuard35=false;
 function comparable35(s){const c=clone(s)||{};if(c.core){delete c.core.changeLog;delete c.core.localDB}return c}
 function changedModules35(a,b){
-  const keys=[['entries','Tasks'],['calendarEvents','Calendar'],['transactions','Finance'],['habits','Habits'],['workouts','Workout'],['notes','Notes'],['goals','Goals'],['groceryLists','Grocery'],['wishlist','Wishlist'],['pantry','Pantry'],['life','Life OS'],['settings','Settings']];
+  const keys=[['entries','Tasks'],['calendarEvents','Calendar'],['transactions','Finance'],['habits','Habits'],['workouts','Workout'],['notes','Notes'],['goals','Goals'],['groceryLists','Grocery'],['wishlist','Wishlist'],['pantry','Pantry'],['routines','Routines'],['life','Life OS'],['settings','Settings']];
   return keys.filter(([k])=>JSON.stringify(a?.[k])!==JSON.stringify(b?.[k])).map(([,l])=>l)
 }
 function automationPass35(){
@@ -113,6 +113,49 @@ function importBackup35(){const inp=document.createElement('input');inp.type='fi
 async function storageInfo35(){let usage=0,quota=0,persisted=false;try{const e=await navigator.storage?.estimate?.();usage=e?.usage||0;quota=e?.quota||0;persisted=await navigator.storage?.persisted?.()}catch(_){}return{usage,quota,persisted}}
 function formatBytes35(n){if(!n)return '0 B';const u=['B','KB','MB','GB'];let i=0;while(n>=1024&&i<u.length-1){n/=1024;i++}return `${n.toFixed(i?1:0)} ${u[i]}`}
 function updateDBStatus35(){const b=document.getElementById('v35-db-status-btn');if(!b)return;const err=state.core?.localDB?.status==='error';b.textContent=err?'◈ Basic local':'◈ Local';b.title=err?'Basic local storage is active; IndexedDB snapshots are unavailable in this browser context.':`Local browser database active${state.core.localDB.lastSavedAt?' · '+new Date(state.core.localDB.lastSavedAt).toLocaleTimeString():''}`}
+
+
+function dataInventory35(){
+  const A=x=>Array.isArray(x)?x:[];
+  return [
+    ['Tasks',A(state.entries).length],['Calendar',A(state.calendarEvents).length],['Routines',A(state.routines).length],['Habits',A(state.habits).length],
+    ['Transactions',A(state.transactions).length],['Notes',A(state.notes).length],['Workouts',A(state.workouts).length],['Grocery',A(state.groceryLists).length],
+    ['Pantry',A(state.pantry).length],['Goals',A(state.goals).length],['Life Hub',Object.values(state.life||{}).reduce((n,v)=>n+(Array.isArray(v)?v.length:0),0)]
+  ];
+}
+async function renderDataCenter35(){
+  const el=root('data-center');if(!el)return;ensureV35State();
+  if(!Array.isArray(state.routines))state.routines=[];
+  const last=state.core?.localDB?.lastSavedAt||'';
+  el.innerHTML=`<div class="v35-page-head"><div><div class="v35-kicker">LOCAL DATA & RECOVERY</div><h3>Data Center</h3><div class="text-muted text-sm">Your OmniOS data stays local to this browser. Review storage health, create recovery snapshots, and export portable backups.</div></div><div class="v35-page-actions"><button class="btn" id="v35-db-refresh">↻ Refresh</button><button class="btn btn-primary" id="v35-db-snapshot">+ Snapshot</button></div></div>
+  <div class="v35-db-hero"><div class="v35-card-head"><div><div class="v35-card-title">Local database</div><div class="v35-card-sub">Primary app state + IndexedDB recovery layer</div></div><span class="v35-chip" id="v35-db-health-chip">Checking…</span></div><div class="v35-db-state"><span class="v35-db-led" id="v35-db-led"></span><span id="v35-db-health-text">Checking browser storage…</span></div><div class="v35-stat-grid" style="margin-top:14px"><div class="v35-stat"><div class="v35-stat-label">Last saved</div><div class="v35-stat-value" style="font-size:.92rem" id="v35-db-last">${last?esc(new Date(last).toLocaleString()):'This session'}</div></div><div class="v35-stat"><div class="v35-stat-label">Storage used</div><div class="v35-stat-value" id="v35-db-used">—</div></div><div class="v35-stat"><div class="v35-stat-label">Available quota</div><div class="v35-stat-value" id="v35-db-quota">—</div></div><div class="v35-stat"><div class="v35-stat-label">Persistent storage</div><div class="v35-stat-value" style="font-size:.92rem" id="v35-db-persisted">—</div></div></div></div>
+  <div class="v35-grid" style="margin-top:12px">
+    <div class="v35-card v35-span-7"><div class="v35-card-head"><div><div class="v35-card-title">Recovery snapshots</div><div class="v35-card-sub">Automatic daily snapshots plus any snapshots you create manually. Up to 30 are retained.</div></div><button class="btn btn-sm" id="v35-db-clear-snaps">Clear snapshots</button></div><div id="v35-db-snapshots"><div class="v35-empty">Loading snapshots…</div></div></div>
+    <div class="v35-card v35-span-5"><div class="v35-card-head"><div><div class="v35-card-title">Portable backup</div><div class="v35-card-sub">Export one JSON file containing the complete OmniOS state, or restore from a previous backup.</div></div></div><div class="v35-list"><button class="btn btn-primary" id="v35-db-export" style="justify-content:flex-start">⇩ Export complete backup</button><button class="btn" id="v35-db-import" style="justify-content:flex-start">⇧ Restore from backup</button><button class="btn" id="v35-db-folder" style="justify-content:flex-start">▣ ${backupDir35?'Backup folder connected':'Connect backup folder'}</button></div><div class="text-muted" style="font-size:.62rem;line-height:1.5;margin-top:10px">Folder mirroring is available only when the browser permits direct folder access. Portable export works without it.</div></div>
+    <div class="v35-card v35-span-7"><div class="v35-card-head"><div><div class="v35-card-title">Data inventory</div><div class="v35-card-sub">Live counts from the current OmniOS state.</div></div></div><div class="v35-grid">${dataInventory35().map(([k,n])=>`<div class="v35-stat v35-span-3"><div class="v35-stat-label">${esc(k)}</div><div class="v35-stat-value">${Number(n)||0}</div></div>`).join('')}</div></div>
+    <div class="v35-card v35-span-5"><div class="v35-card-head"><div><div class="v35-card-title">Recent changes</div><div class="v35-card-sub">Latest local change-history records.</div></div><button class="btn btn-sm" id="v35-db-history">Full history</button></div><div class="v35-list">${[...(state.core?.changeLog||[])].reverse().slice(0,8).map(x=>`<div class="v35-history-item"><div class="v35-row-icon">↺</div><div><div class="v35-row-title">${esc(x.label||'Saved changes')}</div><div class="v35-history-time">${esc(new Date(x.at).toLocaleString())}</div></div></div>`).join('')||'<div class="v35-empty">No recorded changes yet.</div>'}</div></div>
+  </div>`;
+
+  el.querySelector('#v35-db-refresh')?.addEventListener('click',()=>renderDataCenter35());
+  el.querySelector('#v35-db-snapshot')?.addEventListener('click',async()=>{try{await makeSnapshot35('Manual snapshot');window.toast?.('Snapshot created');await renderDataCenter35()}catch(e){window.toast?.('Snapshot could not be created')}});
+  el.querySelector('#v35-db-export')?.addEventListener('click',exportBackup35);
+  el.querySelector('#v35-db-import')?.addEventListener('click',importBackup35);
+  el.querySelector('#v35-db-folder')?.addEventListener('click',connectBackupFolder35);
+  el.querySelector('#v35-db-history')?.addEventListener('click',openHistory35);
+
+  let info={usage:0,quota:0,persisted:false},snaps=[],dbErr='';
+  try{[info,snaps]=await Promise.all([storageInfo35(),idbAll35(STORE_SNAPS)]);snaps.sort((a,b)=>String(b.at).localeCompare(String(a.at)))}catch(e){dbErr=String(e?.message||e)}
+  if(!document.body.contains(el))return;
+  const used=el.querySelector('#v35-db-used'),quota=el.querySelector('#v35-db-quota'),persisted=el.querySelector('#v35-db-persisted'),health=el.querySelector('#v35-db-health-text'),chip=el.querySelector('#v35-db-health-chip'),led=el.querySelector('#v35-db-led');
+  if(used)used.textContent=formatBytes35(info.usage||0);if(quota)quota.textContent=formatBytes35(info.quota||0);if(persisted)persisted.textContent=info.persisted?'Protected':'Best effort';
+  if(dbErr){if(health)health.textContent='IndexedDB snapshots are unavailable here. OmniOS is still using its basic local save layer.';if(chip){chip.textContent='Basic local';chip.style.color='var(--accent-yellow)'}if(led)led.style.background='var(--accent-yellow)'}
+  else{if(health)health.textContent=`Local browser database active · ${snaps.length} recovery snapshot${snaps.length===1?'':'s'} available.`;if(chip){chip.textContent='Healthy';chip.style.color='var(--accent-green)'}}
+  const host=el.querySelector('#v35-db-snapshots');if(host){host.innerHTML=dbErr?`<div class="v35-empty">${esc(dbErr)}</div>`:(snaps.length?snaps.map(s=>`<div class="v35-snapshot-row"><div class="v35-row-icon">◈</div><div class="v35-snapshot-main"><div class="v35-row-title">${esc(s.label||'Snapshot')}</div><div class="v35-row-meta">${esc(new Date(s.at).toLocaleString())}</div></div><button class="btn btn-sm" data-v35-restore-snap="${esc(s.id)}">Restore</button><button class="icon-btn" data-v35-delete-snap="${esc(s.id)}" title="Delete snapshot">✕</button></div>`).join(''):'<div class="v35-empty">No snapshots yet. Create one before a major change or import.</div>')}
+  el.querySelectorAll('[data-v35-restore-snap]').forEach(b=>b.onclick=()=>restoreSnapshot35(b.dataset.v35RestoreSnap));
+  el.querySelectorAll('[data-v35-delete-snap]').forEach(b=>b.onclick=async()=>{if(!confirm('Delete this recovery snapshot?'))return;await idbDelete35(STORE_SNAPS,b.dataset.v35DeleteSnap);await renderDataCenter35()});
+  el.querySelector('#v35-db-clear-snaps')?.addEventListener('click',async()=>{if(!snaps.length){window.toast?.('No snapshots to clear');return}if(!confirm(`Delete all ${snaps.length} recovery snapshots? Your current OmniOS data is not deleted.`))return;for(const s of snaps)await idbDelete35(STORE_SNAPS,s.id);await renderDataCenter35()});
+  if(!info.persisted&&navigator.storage?.persist){persisted?.setAttribute('title','Your browser may clear best-effort storage under pressure.');persisted?.addEventListener('click',async()=>{try{const ok=await navigator.storage.persist();window.toast?.(ok?'Persistent storage enabled':'Browser did not grant persistent storage');await renderDataCenter35()}catch(_){}})}
+}
 
 /* ---------- modal + drawer ---------- */
 function modal35(title,body,footer='<button type="button" class="btn btn-primary" data-v35-close>Done</button>'){
@@ -309,7 +352,7 @@ function applyTodayWidgetVisibility35(){const sec=document.getElementById('view-
 
 /* ---------- settings + help integration ---------- */
 function enrichSettings35(){
-  if(window.renderSettings?.__v35)return;const base=window.renderSettings;if(typeof base!=='function')return;const f=function(){const r=base.apply(this,arguments);setTimeout(()=>{document.querySelectorAll('#settings-content .settings-row').forEach(row=>{if(row.querySelector('.settings-row-label')?.textContent?.trim()!=='Start page')return;const sel=row.querySelector('select');if(!sel)return;const additions=[['today','Today'],['inbox','Inbox'],['planner','Planner'],['projects','Projects'],['life-hub','Life Hub'],['data-center','Data Center']];additions.forEach(([v,l])=>{if(![...sel.options].some(o=>o.value===v))sel.add(new Option(l,v))});sel.value=getSetting('appearance.startView','today')})},0);return r};f.__v35=true;window.renderSettings=f
+  if(window.renderSettings?.__v35)return;const base=window.renderSettings;if(typeof base!=='function')return;const f=function(){const r=base.apply(this,arguments);setTimeout(()=>{document.querySelectorAll('#settings-content .settings-row').forEach(row=>{if(row.querySelector('.settings-row-label')?.textContent?.trim()!=='Start page')return;const sel=row.querySelector('select');if(!sel)return;const additions=[['today','Today'],['inbox','Inbox'],['planner','Planner'],['projects','Projects'],['routine','Routine'],['life-hub','Life Hub'],['data-center','Data Center']];additions.forEach(([v,l])=>{if(![...sel.options].some(o=>o.value===v))sel.add(new Option(l,v))});sel.value=getSetting('appearance.startView','today')})},0);return r};f.__v35=true;window.renderSettings=f
 }
 function installHelp35(){
   const api=window.omniOSHelp;if(!api?.manuals)return;const add=[

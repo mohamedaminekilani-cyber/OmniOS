@@ -1703,11 +1703,11 @@ window.addEventListener('pageshow',stamp);
 
 const root=document.documentElement;
 const boot=document.getElementById('omnios-boot-screen');
-const MIN_WAIT=720;
-const QUIET_FOR=260;
-const MAX_WAIT=2800;
-const SAMPLE_MS=70;
-const REQUIRED_STABLE_SAMPLES=4;
+const MIN_WAIT=260;
+const QUIET_FOR=120;
+const MAX_WAIT=1600;
+const SAMPLE_MS=60;
+const REQUIRED_STABLE_SAMPLES=3;
 let released=false;
 let observer=null;
 let startedAt=performance.now();
@@ -1820,7 +1820,11 @@ function checkStable(){
   const quiet=now-lastMutation;
   const geometryStable=stableSamples>=REQUIRED_STABLE_SAMPLES;
   const startupQuiet=quiet>=QUIET_FOR;
-  if(age>=MIN_WAIT&&geometryStable&&(startupQuiet||age>=MAX_WAIT)){
+  if(age>=MAX_WAIT){
+    release();
+    return;
+  }
+  if(age>=MIN_WAIT&&geometryStable&&startupQuiet){
     release();
     return;
   }

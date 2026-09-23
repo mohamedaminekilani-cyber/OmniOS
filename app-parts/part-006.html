@@ -674,7 +674,15 @@ const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 function ensure(){state.ui=state.ui&&typeof state.ui==='object'?state.ui:{};state.ui.covers=state.ui.covers&&typeof state.ui.covers==='object'?state.ui.covers:{};state.ui.covers.pages=state.ui.covers.pages&&typeof state.ui.covers.pages==='object'?state.ui.covers.pages:{};state.ui.covers.blocks=state.ui.covers.blocks&&typeof state.ui.covers.blocks==='object'?state.ui.covers.blocks:{};return state.ui.covers}
 function getPage(key){const c=ensure().pages[key];return c&&c.src?c:null}function setPage(key,data){const bag=ensure().pages;if(data)bag[key]={x:50,y:50,...bag[key],...data,updatedAt:new Date().toISOString()};else delete bag[key]}
 function persist(){
-  try{if(typeof saveState==='function')saveState()}catch(e){console.warn('Cover save failed',e);window.toast?.('Cover is visible, but storage could not save it')}
+  try{
+    const raw=JSON.stringify(state);
+    if(typeof storage!=='undefined'&&storage?.setItem)storage.setItem('omnios_v3_state',raw);
+    else localStorage.setItem('omnios_v3_state',raw);
+    try{setSaveStatus?.('Saved locally','saved')}catch(_){}
+  }catch(e){
+    console.warn('Cover save failed',e);
+    window.toast?.('Cover is visible, but browser storage is full. Export a backup and remove old large images.');
+  }
   try{decorate()}catch(_){}
   requestDecorate();
 }

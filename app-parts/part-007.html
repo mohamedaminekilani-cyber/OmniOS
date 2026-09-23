@@ -104,7 +104,7 @@ window.OmniUI={customize:customize45,search:search45,assistant:assistant45,setti
 /* ---------- remove stale hidden-trigger dependencies ---------- */
 function bindHeader45(){
   const more=document.getElementById('v432-header-menu');if(more){
-    const map={search:search45,redo:redo45,history:history45,view:()=>customize45(),settings:settings45,data:data45,shortcuts:()=>document.getElementById('shortcuts-open-btn')?.click()};
+    const map={search:search45,notifications:()=>{if(typeof openNotifications55==='function')openNotifications55()},undo:undo45,redo:redo45,history:history45,view:()=>customize45(),settings:settings45,data:data45,shortcuts:()=>document.getElementById('shortcuts-open-btn')?.click()};
     more.querySelectorAll('[data-v432-action]').forEach(old=>{const b=old.cloneNode(true);old.replaceWith(b);b.addEventListener('click',()=>{more.classList.remove('open');more.hidden=true;more.style.display='none';more.setAttribute('aria-hidden','true');document.getElementById('v432-header-more')?.setAttribute('aria-expanded','false');map[b.dataset.v432Action]?.()})});
   }
   const search=document.getElementById('mobile-search-v33');if(search){const b=search.cloneNode(true);search.replaceWith(b);b.onclick=search45}

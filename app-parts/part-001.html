@@ -1621,7 +1621,93 @@ img,svg{max-width:100%}
 </style>
 
 
+<style id="omnios-v47-rhythm-css">
+/* ===== OmniOS v47 — coherent spacing + connection-first cleanup ===== */
+:root{
+  --om-page-x:clamp(18px,2.15vw,30px);
+  --om-page-y:22px;
+  --om-page-bottom:38px;
+  --om-section-gap:16px;
+  --om-grid-gap:12px;
+  --om-card-pad:16px;
+  --om-control-gap:8px;
+  --om-tight-gap:6px;
+}
+/* Remove the v46 UI layer even if stale DOM survives a hot reload. */
+.v46-family-nav,.v46-drag-handle,.v46-inline-drag,.v46-drop-hint,.v46-area-dropbar,
+.v46-area-target,.v46-family-link,.v46-family-label{display:none!important}
+.v46-drag-source,.v46-dragging,.v46-drop-target{outline:0!important;box-shadow:none!important;transform:none!important}
 
+/* One page rhythm. Specialized modules keep their internal layouts. */
+.view-container{padding:var(--om-page-y) var(--om-page-x) var(--om-page-bottom)!important}
+.view,.view>*{min-width:0}
+.view>.v44-page-cover-shell{margin-bottom:var(--om-section-gap)}
+.view>:is(.toolbar,.dashboard-toolbar,.habit-toolbar,.notes-toolbar,.v35-page-head,.v43-hero,.org-hero,.workout-hero,.nut-hero,.v38-finance-head,.v36-cal-top,.master-cal-toolbar){margin-bottom:var(--om-section-gap)!important}
+.view>:is(.stats-row,.kpi-grid,.org-kpis,.v43-kpis,.workout-kpi-grid,.habit-summary-grid,.nut-kpis){margin-bottom:var(--om-section-gap)!important}
+
+/* Shared surface rhythm. */
+.card,.stat-card,.kpi-card,.workout-kpi,.workout-session-card,.workout-item-card,.habit-week-card,
+.note-card,.org-card,.v35-card,.v43-card,.nut-surface,.finance-card,.v38-card,.eq-box,.calendar-container,
+.master-calendar-shell,.diet-card{padding:var(--om-card-pad)}
+.grid-2,.stats-row,.kpi-grid,.analytics-grid,.org-grid,.org-kpis,.v43-kpis,.v43-grid,.v43-domain-grid,
+.workout-kpi-grid,.template-grid,.exercise-library-grid,.history-grid,.workout-analytics-grid,.habit-summary-grid,
+.nut-kpis,.nut-today-grid,.v35-grid,.v35-kpis{gap:var(--om-grid-gap)!important}
+.card-header,.v35-card-head,.v43-card-head,.org-card-head{margin-bottom:12px}
+
+/* Toolbars and actions use the same control spacing. */
+.toolbar,.dashboard-toolbar,.habit-toolbar,.notes-toolbar,.v35-page-actions,.v43-hero-actions,.org-hero-actions,
+.org-toolbar,.nut-toolbar,.workout-hero-actions,.workout-session-head,.topbar-actions,.modal-footer{gap:var(--om-control-gap)!important}
+.toolbar{padding:10px 12px!important}
+.toolbar-group{gap:var(--om-control-gap)!important}
+
+/* Forms and modal rhythm. */
+.form-group{margin-bottom:12px!important}
+.form-row,.form-grid,.nut-form-grid,.power-form-grid{gap:10px!important}
+.modal{padding:20px!important}
+.modal-header{margin-bottom:14px!important}
+.modal-footer{margin-top:16px!important}
+.settings-row{padding:10px 0!important}
+
+/* Lists: enough air without oversized rows. */
+.list-item,.org-row,.v43-row,.v35-row,.master-agenda-item{padding:10px 12px}
+.org-list,.v43-list,.v35-list,.mini-list{gap:7px!important}
+
+/* Sidebar/header rhythm. */
+.sidebar{padding-top:14px;padding-bottom:12px}
+.logo{padding-bottom:14px;margin-bottom:10px}
+.nav-menu{padding-inline:9px}
+.nav-section{padding:11px 11px 5px}
+.nav-item{padding:8px 10px;margin-bottom:2px;min-height:36px}
+.sidebar-footer{padding:9px 10px;gap:6px}
+.topbar{padding-inline:18px}
+
+/* Empty states should not produce giant dead zones. */
+.empty-state,.list-empty,.power-empty,.org-empty,.master-empty,.workout-session-empty{padding:26px 16px!important}
+
+/* Content-heavy module specifics. */
+#view-tasks .toolbar{margin-bottom:14px!important}
+#view-master-calendar .master-calendar-shell{padding:0}
+#view-workout .workout-tabs,#view-settings .workout-tabs{margin-bottom:12px}
+#view-notes .notes-toolbar{margin-bottom:12px!important}
+#view-life-hub .v43-life-toolbar{margin-bottom:12px}
+#view-budget .v38-finance-head{padding:0}
+/* Empty cover affordance should not create a fake banner-sized top gap. */
+.v44-page-cover-shell:has(.v44-page-cover-empty){margin-bottom:6px!important}
+.v44-page-cover-empty{height:22px!important}
+
+@media(max-width:760px){
+  :root{--om-page-x:10px;--om-page-y:12px;--om-page-bottom:calc(var(--mobile-nav-h,72px) + env(safe-area-inset-bottom) + 16px);--om-section-gap:12px;--om-grid-gap:9px;--om-card-pad:13px;--om-control-gap:7px}
+  .view-container{padding:var(--om-page-y) var(--om-page-x) var(--om-page-bottom)!important}
+  .card,.stat-card,.kpi-card,.workout-kpi,.workout-session-card,.workout-item-card,.habit-week-card,
+  .note-card,.org-card,.v35-card,.v43-card,.nut-surface,.finance-card,.v38-card,.eq-box,.calendar-container,.diet-card{padding:var(--om-card-pad)!important}
+  .toolbar{padding:8px!important}
+  .modal{padding:16px 13px calc(16px + env(safe-area-inset-bottom))!important}
+  .topbar{padding-inline:9px!important}
+  .org-hero,.v43-hero,.v35-page-head,.workout-hero{gap:10px!important}
+  .list-item,.org-row,.v43-row,.v35-row{padding:10px!important}
+  .empty-state,.list-empty,.power-empty,.org-empty,.master-empty,.workout-session-empty{padding:22px 12px!important}
+}
+</style>
 
 
 <style id="omnios-ui-refinements-css">

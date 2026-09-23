@@ -384,12 +384,23 @@ function buildMobileNav35(){
 }
 function activeView35(){return document.querySelector('.view.active')?.id?.replace(/^view-/,'')||'today'}
 function updateMobileActive35(v){
-  document.querySelectorAll('.mobile-nav [data-v35-mobile-view]').forEach(b=>b.classList.toggle('active',b.dataset.v35MobileView===v));
   const more=document.getElementById('v35-mobile-more');
   const launcher=document.getElementById('v35-page-launcher');
   const menuOpen=!!launcher?.classList.contains('open');
-  const secondary=!['today','planner','tasks','master-calendar','routine'].includes(v);
-  more?.classList.toggle('active',menuOpen||secondary);
+  const primary=['today','planner','tasks','master-calendar','routine'];
+  const secondary=!primary.includes(v);
+
+  /* Bottom navigation is strictly single-select.
+     While Menu is open, it owns the active state exclusively. */
+  document.querySelectorAll('.mobile-nav button').forEach(b=>b.classList.remove('active'));
+  if(menuOpen){
+    more?.classList.add('active');
+  }else{
+    const current=document.querySelector('.mobile-nav [data-v35-mobile-view="'+CSS.escape(String(v||''))+'"]');
+    if(current)current.classList.add('active');
+    else if(secondary)more?.classList.add('active');
+  }
+
   if(more){
     more.setAttribute('aria-expanded',menuOpen?'true':'false');
     more.setAttribute('aria-label',menuOpen?'Close page menu':'Open page menu');

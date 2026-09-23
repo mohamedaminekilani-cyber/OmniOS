@@ -2773,5 +2773,55 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 }
 </style>
 
+<style id="omnios-v64-mobile-bars-stacking-fix">
+@media(max-width:760px){
+  /* Keep normal page content below the chrome. */
+  .main-content{
+    position:relative!important;
+    z-index:1!important;
+    isolation:isolate!important;
+  }
+  .view-container{
+    position:relative!important;
+    z-index:1!important;
+  }
+
+  /* Header must sit above the scrolling view and receive taps. */
+  .topbar{
+    position:relative!important;
+    z-index:1200!important;
+    pointer-events:auto!important;
+    isolation:isolate!important;
+  }
+  .topbar *,
+  .topbar button{
+    pointer-events:auto!important;
+  }
+
+  /* Bottom dock must never inherit the old z-index:1 aurora rule. */
+  html:not([data-theme="light"]) .mobile-nav,
+  .mobile-nav{
+    position:fixed!important;
+    z-index:2147482000!important;
+    pointer-events:auto!important;
+    isolation:isolate!important;
+    touch-action:manipulation!important;
+  }
+
+  .mobile-nav::before,
+  .mobile-nav::after{
+    pointer-events:none!important;
+  }
+
+  .mobile-nav button{
+    position:relative!important;
+    z-index:2!important;
+    pointer-events:auto!important;
+    touch-action:manipulation!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+}
+</style>
+
 </body>
 </html>

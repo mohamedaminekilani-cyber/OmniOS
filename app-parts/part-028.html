@@ -169,7 +169,7 @@ html.omni-iphone-pro #routine-editor-v60 .rt-builder-row:first-child{border-top:
 (function(){
 'use strict';
 if(window.OmniRoutine60)return;
-const API=window.OmniRoutine60={version:'63.3'};
+const API=window.OmniRoutine60={version:'62.2'};
 const esc=s=>String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));
 const A=x=>Array.isArray(x)?x:[];
 const uid=(p='rt')=>p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);
@@ -305,7 +305,7 @@ Object.assign(API,{render,openEditor,normalize,dueToday,progress});
 
 <style id="omnios-v630-iphone-ui-css">
 /* =========================================================================
-   OmniOS v63.3 — unified iPhone UI/UX system
+   OmniOS v62.2 — unified iPhone UI/UX system
    Flat by default. Containers only when they clarify interaction or grouping.
    Applies to every iPhone orientation through the omni-iphone-pro root class.
    ========================================================================= */
@@ -1044,10 +1044,10 @@ document.addEventListener('click',e=>{
 },true);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(audit,180),{once:true});else setTimeout(audit,180);
 new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(audit,120)}).observe(document.body,{subtree:true,childList:true});
-window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),audit,revealActiveRail,version:'63.3'};
-window.OmniBuild={version:'63.3',name:'Bible Atlas Audit + Meditation Reader'};
-document.documentElement.dataset.omniosVersion='63.3';
-document.title='OmniOS v63.3 — iPhone PWA';
+window.OmniIPhoneUI={...(window.OmniIPhoneUI||{}),audit,revealActiveRail,version:'62.2'};
+window.OmniBuild={version:'62.2',name:'Unified Core — Clean Startup + Bible Atlas Audit'};
+document.documentElement.dataset.omniosVersion='62.2';
+document.title='OmniOS v62.2 — Clean Startup';
 })();
 </script>
 
@@ -1055,7 +1055,59 @@ document.title='OmniOS v63.3 — iPhone PWA';
 (function(){
   const standalone=window.matchMedia?.('(display-mode: standalone)')?.matches||navigator.standalone===true;
   document.documentElement.classList.toggle('omnios-pwa-standalone',!!standalone);
-  window.OmniStaticPWA={version:'63.3',standalone:!!standalone,localOnly:true};
+  window.OmniStaticPWA={version:'62.2',standalone:!!standalone,localOnly:true};
+})();
+</script>
+
+
+<!-- OmniOS v62.2 — Clean Startup coordinator sourced from the uploaded v62.2 build. -->
+<script id="omnios-v622-startup-coordinator">
+(function(){
+'use strict';
+const root=document.documentElement;
+const boot=document.getElementById('omnios-boot-screen');
+let released=false,observer=null,lastMutation=performance.now(),domReadyAt=null;
+const MIN_AFTER_DOM=650;
+const QUIET_FOR=150;
+const MAX_AFTER_DOM=1400;
+function noteMutation(){lastMutation=performance.now()}
+function observeStartup(){
+  if(!window.MutationObserver)return;
+  observer=new MutationObserver(noteMutation);
+  [document.querySelector('.sidebar'),document.querySelector('.mobile-nav'),document.querySelector('.main-content')].filter(Boolean).forEach(el=>observer.observe(el,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','data-view']}));
+}
+function finalSync(){
+  try{
+    const active=document.querySelector('.view.active')?.id?.replace(/^view-/,'');
+    if(active==='routine')window.OmniRoutine60?.render?.();
+    if(active==='dashboard'&&typeof window.renderDashboard==='function')window.renderDashboard();
+    if(typeof window.omniosV25RefreshGrouping==='function')window.omniosV25RefreshGrouping();
+    if(typeof window.applyCustomIcons==='function')window.applyCustomIcons();
+    window.OmniIPhoneUI?.audit?.();
+  }catch(err){console.warn('OmniOS final startup sync',err)}
+}
+function release(){
+  if(released)return;released=true;observer?.disconnect();finalSync();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    root.dataset.omniosBoot='ready';
+    root.classList.remove('omnios-booting');
+    root.classList.add('omnios-ready');
+    boot?.classList.add('is-leaving');
+    setTimeout(()=>{boot?.remove();root.classList.remove('omnios-no-first-motion')},220);
+  }));
+}
+function check(){
+  if(released)return;
+  const now=performance.now(),age=now-domReadyAt,quiet=now-lastMutation;
+  if((age>=MIN_AFTER_DOM&&quiet>=QUIET_FOR)||age>=MAX_AFTER_DOM){release();return}
+  setTimeout(check,45);
+}
+function start(){
+  domReadyAt=performance.now();lastMutation=domReadyAt;observeStartup();
+  requestAnimationFrame(()=>setTimeout(check,45));
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+window.addEventListener('pageshow',()=>{if(root.dataset.omniosBoot==='ready')root.classList.remove('omnios-booting')});
 })();
 </script>
 

@@ -220,7 +220,23 @@ function collectSchedules(){
         if(r.manual&&r.snoozeUntil&&new Date(r.snoozeUntil)>new Date()){
           addInstant(out,'manual:'+r.id,r.snoozeUntil,r.title,r.meta||'Reminder','reminders');return;
         }
-        addSchedule(out,'rem:'+r.type+':'+r.id,r.date,r.time||'09:00',r.title,r.meta||'OmniOS reminder','reminders',0);
+        var advance=0;
+        if(r.type==='task'){
+          var task=(st.entries||[]).find(function(x){return String(x.id)===String(r.id)});
+          advance=Number(task&&task.reminderMinutes)||0;
+        }else if(r.type==='event'){
+          var eventItem=(st.calendarEvents||[]).find(function(x){return String(x.id)===String(r.id)});
+          advance=Number(eventItem&&eventItem.reminder!=null?eventItem.reminder:(st.settings&&st.settings.calendar&&st.settings.calendar.defaultReminder))||0;
+        }else if(r.type==='bill'){
+          var bill=(st.bills||[]).find(function(x){return String(x.id)===String(r.id)});
+          advance=(Number(bill&&bill.reminderDays)||0)*1440;
+        }else if(r.type==='plan'){
+          var plan=(st.paymentPlans||[]).find(function(x){return String(x.id)===String(r.id)});
+          advance=(Number(plan&&plan.reminderDays)||0)*1440;
+        }else if(r.type==='goal'){
+          advance=2*1440;
+        }
+        addSchedule(out,'rem:'+r.type+':'+r.id,r.date,r.time||'09:00',r.title,r.meta||'OmniOS reminder','reminders',advance);
       });
     }else{
       (st.entries||[]).filter(function(x){return x.status!=='completed'&&!x.completed&&(x.dueDate||x.date)}).forEach(function(x){

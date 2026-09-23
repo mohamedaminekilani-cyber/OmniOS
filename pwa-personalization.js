@@ -37,7 +37,7 @@ function standalone(){
   return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true;
 }
 function iosNeedsInstall(){
-  return Object.prototype.hasOwnProperty.call(navigator,'standalone') && !standalone();
+  return ('standalone' in navigator) && !standalone();
 }
 function deviceId(){
   var id='';
@@ -348,6 +348,13 @@ function wrapSave(){
 function handleServiceWorkerMessage(event){
   if(event.data&&event.data.type==='OMNIOS_OPEN_VIEW'&&event.data.view&&typeof window.switchView==='function')window.switchView(event.data.view);
 }
+function legacyNotificationButton(event){
+  var b=event.target&&event.target.closest?event.target.closest('#v55-notif-permission,#v55-browser-notif'):null;
+  if(!b)return;
+  event.preventDefault();event.stopPropagation();
+  if(event.stopImmediatePropagation)event.stopImmediatePropagation();
+  enablePush().catch(function(error){toast(error&&error.message?error.message:'Could not enable push')});
+}
 function openHashView(){
   var v='';
   try{v=decodeURIComponent(location.hash.replace(/^#/,''))}catch(_){}
@@ -356,6 +363,7 @@ function openHashView(){
 function start(){
   applyAppIconLink();injectStyle();wrapSettings();wrapSave();enhanceSettings();
   if('serviceWorker'in navigator)navigator.serviceWorker.addEventListener('message',handleServiceWorkerMessage);
+  document.addEventListener('click',legacyNotificationButton,true);
   openHashView();
   if(settings().pushEnabled)setTimeout(syncPush,3500);
 }

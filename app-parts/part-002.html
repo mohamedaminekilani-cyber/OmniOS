@@ -1564,43 +1564,19 @@ function applyCustomIcons(){
         }
     });
 }
-function customIconData(file){
-    return new Promise((resolve,reject)=>{
-        if(!file||!/^image\//i.test(file.type||''))return reject(new Error('Choose an image file'));
-        const url=URL.createObjectURL(file),img=new Image();
-        const cleanup=()=>{try{URL.revokeObjectURL(url)}catch(_){}};
-        img.onerror=()=>{cleanup();reject(new Error('Could not read that image'))};
-        img.onload=()=>{
-            try{
-                const size=192,cv=document.createElement('canvas');cv.width=size;cv.height=size;
-                const ctx=cv.getContext('2d');if(!ctx)throw new Error('Image canvas is unavailable');
-                ctx.clearRect(0,0,size,size);
-                const iw=img.naturalWidth||1,ih=img.naturalHeight||1,scale=Math.min(size/iw,size/ih);
-                const w=Math.max(1,Math.round(iw*scale)),h=Math.max(1,Math.round(ih*scale));
-                ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
-                cleanup();resolve(cv.toDataURL('image/png'));
-            }catch(e){cleanup();reject(e)}
-        };
-        img.src=url;
-    });
-}
-async function uploadCustomIcon(key, input){
-    const file=input.files?.[0];
-    if(!file)return;
-    try{
-        const data=await customIconData(file);
-        state.customIcons=state.customIcons||{};
-        state.customIcons[key]=data;
+function uploadCustomIcon(key, input){
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        state.customIcons = state.customIcons || {};
+        state.customIcons[key] = e.target.result;
         saveState();
-        if(typeof window.applyCustomIcons==='function')window.applyCustomIcons();
-        else if(typeof applyCustomIcons==='function')applyCustomIcons();
-        if(typeof renderSettings==='function')renderSettings();
-        window.toast&&window.toast('Custom icon saved');
-    }catch(e){
-        console.warn(e);window.toast&&window.toast(e.message||'Could not save icon');
-    }finally{
-        input.value='';
-    }
+        applyCustomIcons();
+        window.toast && window.toast('Custom icon saved');
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
 }
 function clearCustomIcon(key){
     if (!state.customIcons?.[key]) return;
@@ -1612,25 +1588,26 @@ function clearCustomIcon(key){
 function renderIconSettingsSection(){
     return `<div class="card settings-section">
         <h3 class="card-title mb-4">Custom icons & pictures</h3>
-        ${settingsToggleHtml('appearance.customIconsEnabled','Use my own icon files','When on, OmniOS looks for image files in an "icons" folder placed next to this app file. Uploaded icons work on desktop and mobile and always override folder files.')}
-        <div class="settings-row-desc" style="margin:10px 0">Choose an image from Files, Photos, or the camera roll. OmniOS resizes it automatically so mobile uploads stay small and persistent.</div>
+        ${settingsToggleHtml('appearance.customIconsEnabled','Use my own icon files','When on, OmniOS looks for image files in an "icons" folder placed next to this app file — for example icons/Dashboard.png. Any icon without a matching file just keeps its default look.')}
+        <div class="settings-row-desc" style="margin:10px 0">You can also upload an icon for a specific item right here — an upload always overrides the folder file for that one icon.</div>
         <div>
             ${ICON_MANIFEST.map(m => `
                 <div class="icon-list-row">
-                    <div class="icon-list-main" style="display:flex;align-items:center;gap:10px;min-width:0">
-                        ${state.customIcons?.[m.key] ? `<img src="${state.customIcons[m.key]}" alt="" style="width:28px;height:28px;object-fit:contain;border-radius:6px;flex:none">` : ''}
-                        <div style="min-width:0">${escapeHtml(m.label)}<div class="text-muted text-sm">Folder file: <code>icons/${m.file}</code></div></div>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        ${state.customIcons?.[m.key] ? `<img src="${state.customIcons[m.key]}" alt="" style="width:22px;height:22px;object-fit:cover;border-radius:5px">` : ''}
+                        <div>${escapeHtml(m.label)}<div class="text-muted text-sm">Folder file: <code>icons/${m.file}</code></div></div>
                     </div>
-                    <div class="icon-list-actions" style="display:flex;gap:6px;align-items:center;flex:none">
-                        <input type="file" accept="image/*" id="icon-upload-${m.key}" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:.001" onchange="uploadCustomIcon('${m.key}', this)">
-                        <label class="btn btn-sm" for="icon-upload-${m.key}">${state.customIcons?.[m.key]?'Replace':'Upload'}</label>
+                    <div style="display:flex;gap:6px;align-items:center">
+                        <input type="file" accept="image/*" id="icon-upload-${m.key}" style="display:none" onchange="uploadCustomIcon('${m.key}', this)">
+                        <button type="button" class="btn btn-sm" onclick="document.getElementById('icon-upload-${m.key}').click()">Upload</button>
                         ${state.customIcons?.[m.key] ? `<button type="button" class="btn btn-sm btn-danger" onclick="clearCustomIcon('${m.key}')">Reset</button>` : ''}
                     </div>
                 </div>`).join('')}
         </div>
-        <div class="settings-row-desc" style="margin-top:12px">These icons are used in the desktop sidebar, the mobile bottom navigation, and the mobile More menu wherever that destination is available.</div>
+        <div class="settings-row-desc" style="margin-top:12px">Photos on items — grocery items, exercises in your Workout Library, and wallet cards — already have their own "Add photo" upload right inside each item's edit form, no folder needed.</div>
     </div>`;
 }
+
 function renderSettings() {
     const el = document.getElementById('settings-content');
     if (!el) return;

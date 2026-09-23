@@ -296,6 +296,7 @@ window.OmniConnections={process:()=>{const p=clone47(last47||state);process47(p)
 (function(){
 'use strict';
 const NAV_ICONS48={
+ menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
  dashboard:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
  today:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M9.5 20v-6h5v6"/>',
  inbox:'<path d="M4 5h16l1 11H15l-2 3h-2l-2-3H3L4 5Z"/><path d="M8 10h8"/>',
@@ -349,6 +350,7 @@ function paintNavIcon48(item,key,cls){
 function decorateNavIcons(){
   document.querySelectorAll('.nav-menu .nav-item[data-view]').forEach(item=>paintNavIcon48(item,item.dataset.view,'v48-nav-icon'));
   document.querySelectorAll('.mobile-nav button[data-v35-mobile-view]').forEach(item=>paintNavIcon48(item,item.dataset.v35MobileView,'v48-mobile-icon'));
+  paintNavIcon48(document.getElementById('v35-mobile-more'),'menu','v48-mobile-icon');
   document.querySelectorAll('[data-v35-more]').forEach(item=>paintNavIcon48(item,item.dataset.v35More,'v48-more-icon'));
 }
 let queued=false;function refresh(){if(queued)return;queued=true;queueMicrotask(()=>{queued=false;decorateNavIcons()})}const navObs48=new MutationObserver(refresh);const side48=document.querySelector('.nav-menu'),mob48=document.querySelector('.mobile-nav');if(side48)navObs48.observe(side48,{childList:true,subtree:true});if(mob48)navObs48.observe(mob48,{childList:true,subtree:true});decorateNavIcons();window.OmniIcons={refresh,decorate:decorateNavIcons,paint:paintNavIcon48};

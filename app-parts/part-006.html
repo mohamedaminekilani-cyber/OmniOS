@@ -673,12 +673,57 @@ const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 function ensure(){state.ui=state.ui&&typeof state.ui==='object'?state.ui:{};state.ui.covers=state.ui.covers&&typeof state.ui.covers==='object'?state.ui.covers:{};state.ui.covers.pages=state.ui.covers.pages&&typeof state.ui.covers.pages==='object'?state.ui.covers.pages:{};state.ui.covers.blocks=state.ui.covers.blocks&&typeof state.ui.covers.blocks==='object'?state.ui.covers.blocks:{};return state.ui.covers}
 function getPage(key){const c=ensure().pages[key];return c&&c.src?c:null}function setPage(key,data){const bag=ensure().pages;if(data)bag[key]={x:50,y:50,...bag[key],...data,updatedAt:new Date().toISOString()};else delete bag[key]}
-function persist(){try{if(typeof saveState==='function')saveState()}catch(e){console.warn('Cover save failed',e)}requestDecorate()}
+function persist(){
+  try{if(typeof saveState==='function')saveState()}catch(e){console.warn('Cover save failed',e);window.toast?.('Cover is visible, but storage could not save it')}
+  try{decorate()}catch(_){}
+  requestDecorate();
+}
 function renderPageCover(view){if(!view)return;const key=view.id.replace(/^view-/,'');let shell=view.querySelector(':scope > .v44-page-cover-shell');if(!shell){shell=document.createElement('div');shell.className='v44-page-cover-shell';shell.dataset.v44Page=key;view.insertBefore(shell,view.firstChild)}const c=getPage(key),sig=c?`${c.src}|${Number(c.x??50)}|${Number(c.y??50)}`:'0';if(shell.dataset.v44Sig===sig)return;shell.dataset.v44Sig=sig;shell.innerHTML=c?`<div class="v44-page-cover"><img src="${E(c.src)}" alt="" style="object-position:${Number(c.x??50)}% ${Number(c.y??50)}%"><div class="v44-cover-tools"><button class="v44-cover-tool" data-act="change">Change</button><button class="v44-cover-tool" data-act="reposition">Reposition</button><button class="v44-cover-tool" data-act="remove">Remove</button></div></div>`:`<div class="v44-page-cover-empty"><button class="v44-add-cover">🖼 Add cover</button></div>`;shell.querySelector('.v44-add-cover')?.addEventListener('click',()=>openCoverDialog(key));shell.querySelector('[data-act="change"]')?.addEventListener('click',()=>openCoverDialog(key));shell.querySelector('[data-act="reposition"]')?.addEventListener('click',()=>openReposition(key));shell.querySelector('[data-act="remove"]')?.addEventListener('click',()=>{setPage(key,null);persist()})}
 function decorate(){renderPageCover(document.querySelector('.view.active'))}let raf=0;function requestDecorate(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;decorate()})}
 function closeDialog(){document.querySelector('.v44-cover-dialog')?.remove()}function dialog(title,sub,body,footer=''){closeDialog();const d=document.createElement('div');d.className='v44-cover-dialog';d.innerHTML=`<div class="v44-cover-dialog-card" role="dialog" aria-modal="true"><div class="v44-cover-dialog-head"><div><div class="v44-cover-dialog-title">${E(title)}</div><div class="v44-cover-dialog-sub">${E(sub||'')}</div></div><button class="v44-cover-close" aria-label="Close">✕</button></div><div class="v44-cover-dialog-body">${body}</div>${footer?`<div class="v44-cover-dialog-foot">${footer}</div>`:''}</div>`;document.body.appendChild(d);d.querySelector('.v44-cover-close').onclick=closeDialog;d.addEventListener('click',e=>{if(e.target===d)closeDialog()});return d}
-function readImage(file){return new Promise((resolve,reject)=>{if(!file)return reject(new Error('No file'));const fr=new FileReader();fr.onerror=reject;fr.onload=()=>{const im=new Image();im.onerror=reject;im.onload=()=>{let w=im.naturalWidth,h=im.naturalHeight,s=Math.min(1,1920/w,1280/h);w=Math.max(1,Math.round(w*s));h=Math.max(1,Math.round(h*s));const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(im,0,0,w,h);resolve(cv.toDataURL(file.type==='image/png'&&file.size<900000?'image/png':'image/jpeg',.84))};im.src=String(fr.result)};fr.readAsDataURL(file)})}
-function pickUpload(key){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=async()=>{try{const src=await readImage(inp.files?.[0]);setPage(key,{src,x:50,y:50});closeDialog();persist();setTimeout(()=>openReposition(key),80)}catch(e){console.warn(e);window.toast?.('Could not read that image')}};inp.click()}
+function readImage(file){
+  return new Promise((resolve,reject)=>{
+    if(!file||!/^image\//i.test(file.type||''))return reject(new Error('Choose an image file'));
+    const url=URL.createObjectURL(file),im=new Image();
+    const cleanup=()=>{try{URL.revokeObjectURL(url)}catch(_){}};
+    im.onerror=()=>{cleanup();reject(new Error('Could not read that image'))};
+    im.onload=()=>{
+      try{
+        let w=im.naturalWidth||1,h=im.naturalHeight||1;
+        const scale=Math.min(1,1400/w,900/h);
+        w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));
+        const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+        const ctx=cv.getContext('2d',{alpha:false});if(!ctx)throw new Error('Image canvas is unavailable');
+        ctx.fillStyle='#111';ctx.fillRect(0,0,w,h);ctx.drawImage(im,0,0,w,h);
+        const data=cv.toDataURL('image/jpeg',.76);
+        cleanup();resolve(data);
+      }catch(e){cleanup();reject(e)}
+    };
+    im.src=url;
+  });
+}
+function pickUpload(key){
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='image/*';
+  inp.onchange=async()=>{
+    try{
+      const file=inp.files?.[0];if(!file)return;
+      const src=await readImage(file);
+      setPage(key,{src,x:50,y:50});
+      const active=document.querySelector('.view.active');
+      if(active&&active.id==='view-'+key)renderPageCover(active);
+      persist();
+      closeDialog();
+      window.toast?.('Cover image applied');
+      setTimeout(()=>openReposition(key),80);
+    }catch(e){
+      console.warn(e);window.toast?.(e.message||'Could not read that image');
+    }finally{inp.remove()}
+  };
+  document.body.appendChild(inp);
+  inp.style.cssText='position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:.001';
+  inp.click();
+}
 function addUrl(key){const url=prompt('Paste an image URL (https://…):','');if(!url)return;if(!/^(https?:|data:image\/|blob:)/i.test(url.trim()))return window.toast?.('Please use a valid image URL');setPage(key,{src:url.trim(),x:50,y:50});closeDialog();persist();setTimeout(()=>openReposition(key),80)}
 function openCoverDialog(key){const c=getPage(key),d=dialog(c?'Cover image':'Add cover','Full-width page banner',`${c?`<div class="v44-cover-dialog-preview"><img src="${E(c.src)}" style="object-position:${Number(c.x??50)}% ${Number(c.y??50)}%;width:100%;height:100%;object-fit:cover" alt=""></div>`:''}<div class="v44-cover-dialog-actions"><button class="btn btn-primary" data-cover="upload">↑ Upload image</button><button class="btn" data-cover="url">↗ Use image URL</button>${c?`<button class="btn" data-cover="position">↕ Reposition</button><button class="btn btn-danger" data-cover="remove">Remove cover</button>`:''}</div>`);d.querySelector('[data-cover="upload"]').onclick=()=>pickUpload(key);d.querySelector('[data-cover="url"]').onclick=()=>addUrl(key);d.querySelector('[data-cover="position"]')?.addEventListener('click',()=>openReposition(key));d.querySelector('[data-cover="remove"]')?.addEventListener('click',()=>{setPage(key,null);closeDialog();persist()})}
 function coverRatio(key){const el=[...document.querySelectorAll('.v44-page-cover-shell')].find(n=>n.dataset.v44Page===String(key))?.querySelector('.v44-page-cover');if(el){const r=el.getBoundingClientRect();if(r.width>20&&r.height>20)return r.width/r.height}return 5.45}

@@ -2823,5 +2823,69 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 }
 </style>
 
+<style id="omnios-v64-mobile-nav-final-polish">
+@media(max-width:760px){
+  /* Full-width dock: no left/right floating inset. */
+  html:not([data-theme="light"]) .mobile-nav,
+  .mobile-nav{
+    left:0!important;
+    right:0!important;
+    width:100%!important;
+    max-width:none!important;
+    border-left:0!important;
+    border-right:0!important;
+    border-bottom:0!important;
+    border-radius:18px 18px 0 0!important;
+  }
+
+  /* Active state is glow/fill only — never an underline. */
+  html:not([data-theme="light"]) .mobile-nav button.active::after,
+  .mobile-nav button.active::after{
+    content:none!important;
+    display:none!important;
+    width:0!important;
+    height:0!important;
+    background:none!important;
+    box-shadow:none!important;
+  }
+}
+
+@media(max-width:390px){
+  .mobile-nav{
+    left:0!important;
+    right:0!important;
+    width:100%!important;
+  }
+}
+</style>
+
+<script id="omnios-v64-more-autoclose">
+(function(){
+  if(window.__omniMoreAutoClose64)return;
+  window.__omniMoreAutoClose64=true;
+
+  function closeMoreLauncher(){
+    try{
+      if(typeof window.closeMore35==='function'){
+        window.closeMore35();
+        return;
+      }
+      const m=document.getElementById('v35-page-launcher');
+      if(!m)return;
+      m.classList.remove('open');
+      m.setAttribute('aria-hidden','true');
+      document.body.style.removeProperty('overflow');
+    }catch(_){}
+  }
+
+  /* Capture first so navigation/rendering cannot leave the launcher stranded. */
+  document.addEventListener('click',function(e){
+    const item=e.target.closest?.('[data-v35-more]');
+    if(!item)return;
+    closeMoreLauncher();
+  },true);
+})();
+</script>
+
 </body>
 </html>

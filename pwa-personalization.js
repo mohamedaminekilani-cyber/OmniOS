@@ -19,6 +19,17 @@ var syncTimer=0;
 
 function S(v){return String(v==null?'':v)}
 function esc(v){return S(v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]})}
+function safeImageUrl(value,allowData){
+  value=S(value).trim();if(!value)return '';
+  if(allowData&&/^data:image\/(?:png|jpeg|webp);base64,[a-z0-9+/=\s]+$/i.test(value))return value;
+  try{var u=new URL(value,location.href);if(u.origin===location.origin||u.origin==='https://omnios-pwa.netlify.app')return u.href}catch(_){}
+  return '';
+}
+function safeInstallUrl(value){
+  value=S(value).trim();if(!value)return '';
+  try{var u=new URL(value,location.href);if(u.origin===location.origin&&/^https?:$/.test(u.protocol))return u.href}catch(_){}
+  return '';
+}
 function toast(msg){try{if(window.toast)return window.toast(msg)}catch(_){} console.log(msg)}
 function stateObj(){try{return state}catch(_){return null}}
 function settings(){
@@ -109,16 +120,16 @@ function appIconHref(){
     var qid=(qs.get('pwaIcon')||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,120);
     var qrev=(qs.get('pwaIconRev')||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,80);
     if(qid)return ICON_SERVICE+'?id='+encodeURIComponent(qid)+(qrev?'&v='+encodeURIComponent(qrev):'');
-    var publicUrl=localStorage.getItem(APP_ICON_PUBLIC)||'';
+    var publicUrl=safeImageUrl(localStorage.getItem(APP_ICON_PUBLIC)||'',false);
     if(publicUrl)return publicUrl;
   }catch(_){}
-  return './icons/icon-192.png';
+  return './icons/icon-180.png';
 }
 function applyAppIconLink(){
   var old=document.querySelector('link[rel="apple-touch-icon"]');
   if(old)old.remove();
   var link=document.createElement('link');
-  link.rel='apple-touch-icon';link.setAttribute('sizes','180x180');link.href=appIconHref();
+  var href=appIconHref();link.rel='apple-touch-icon';if(/\/icons\/icon-180\.png(?:$|[?#])/.test(href))link.setAttribute('sizes','180x180');link.href=href;
   document.head.appendChild(link);
 }
 function installUrlForIcon(id,rev){
@@ -190,7 +201,7 @@ function resetBootIcon(){
 }
 function assetCardHtml(){
   var app='',boot='',installUrl='';
-  try{app=localStorage.getItem(APP_ICON_PREVIEW)||'';boot=localStorage.getItem(BOOT_ICON_KEY)||'';installUrl=localStorage.getItem(APP_ICON_INSTALL_URL)||''}catch(_){}
+  try{app=safeImageUrl(localStorage.getItem(APP_ICON_PREVIEW)||'',true);boot=safeImageUrl(localStorage.getItem(BOOT_ICON_KEY)||'',true);installUrl=safeInstallUrl(localStorage.getItem(APP_ICON_INSTALL_URL)||'')}catch(_){}
   return '<div class="card settings-section" id="omnios-pwa-assets-card">'+
     '<h3 class="card-title mb-4">App & startup icons</h3>'+
     '<div class="settings-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="omni-pwa-preview">'+(app?'<img src="'+esc(app)+'" alt="Home Screen icon preview">':'<img src="./icons/icon-192.png" alt="Default OmniOS icon">')+'</div><div><div class="settings-row-label">Home Screen app icon</div><div class="settings-row-desc">Upload a square icon. This preview is the icon prepared for the next Home Screen installation.</div></div></div><div class="omni-pwa-actions"><input id="omni-pwa-icon-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="omni-pwa-icon-upload">'+(app?'Replace':'Upload')+'</button>'+(app?'<button type="button" class="btn btn-sm" id="omni-pwa-icon-reset">Reset</button>':'')+'</div></div>'+

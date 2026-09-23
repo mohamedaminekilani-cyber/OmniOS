@@ -1768,12 +1768,29 @@ function resetSettingsModule() {
     saveState();
     window.toast('✅ Module reset.');
 }
-function fullResetApp() {
+async function fullResetApp() {
     // A single, unambiguous confirmation instead of two back-to-back native dialogs.
-    // This bypasses the normal undo stack entirely (it clears storage directly), so it
-    // deserves a real confirmation — just one clear one, not two identical-feeling ones.
+    // Clear both the primary browser state and the IndexedDB recovery mirror so an
+    // intentional reset can never be undone automatically on the next launch.
     if (!window.omniosConfirm('Erase ALL OmniOS data on this device?\n\nThis permanently deletes every task, note, habit, workout, budget entry and setting. It cannot be undone — export a backup first if you want to keep a copy.\n\nType-check: click OK only if you are certain.')) return;
-    try { storage.removeItem('omnios_v3_state'); storage.removeItem('omnios_v3_backup'); } catch(e) {}
+    const resetAt=new Date().toISOString();
+    try {
+        storage.setItem('omnios_v35_full_reset_at',resetAt);
+        storage.removeItem('omnios_v3_state');
+        storage.removeItem('omnios_v3_backup');
+        storage.removeItem('omnios_v35_migrated');
+        storage.removeItem('omnios_v35_started');
+    } catch(e) {}
+    try {
+        if(typeof db35!=='undefined'&&db35){db35.close();db35=null}
+        if('indexedDB'in window){
+            await new Promise(resolve=>{
+                const q=indexedDB.deleteDatabase('OmniOS_Local_v35');
+                q.onsuccess=q.onerror=q.onblocked=()=>resolve();
+                setTimeout(resolve,1200);
+            });
+        }
+    } catch(e) { console.warn('Could not fully clear IndexedDB',e); }
     location.reload();
 }
 

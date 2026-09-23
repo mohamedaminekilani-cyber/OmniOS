@@ -1,4 +1,4 @@
-const CACHE='omnios-v62.3-stable-startup-r4';
+const CACHE='omnios-v63-consolidated-ux-r1';
 const USER_ASSET_CACHE='omnios-user-assets-v1';
 const CORE=['./','./index.html','./manifest.webmanifest','./icons/icon-192.png','./pwa-personalization.js'];
 

@@ -4998,5 +4998,59 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 })();
 </script>
 
+<style id="omnios-v66-atlas-scroll-fix">
+@media(max-width:760px){
+  /* The app's mobile scroller must remain the single vertical page scroller. */
+  .view-container{
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-y:auto!important;
+    scroll-padding-bottom:calc(var(--mobile-nav-h,64px) + env(safe-area-inset-bottom) + 28px)!important;
+  }
+
+  #view-bible,
+  #view-bible .bib-shell,
+  #view-bible #bib-content,
+  #view-bible .atlas28{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  /* Ensure the real end of Atlas can clear the persistent bottom navigation. */
+  #view-bible .atlas28{
+    padding-bottom:calc(var(--mobile-nav-h,64px) + env(safe-area-inset-bottom) + 28px)!important;
+  }
+  #view-bible .atlas28-timeline:last-child{
+    margin-bottom:8px!important;
+  }
+
+  /* Leaflet normally claims all touch gestures. On phone, vertical swipes
+     belong to page scrolling; pinch still belongs to the map. */
+  #view-bible .atlas28-map,
+  #view-bible .atlas28-map.leaflet-container{
+    touch-action:pan-y pinch-zoom!important;
+    overscroll-behavior:auto!important;
+  }
+
+  /* Fixed Atlas sheets need their own complete internal scroll range on iOS. */
+  #view-bible .atlas28-grid>.atlas28-panel:not(.atlas28-details),
+  #view-bible .atlas28-details{
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-y:contain!important;
+    padding-bottom:max(18px,env(safe-area-inset-bottom))!important;
+  }
+
+  #view-bible .atlas28-grid>.atlas28-panel:not(.atlas28-details) .atlas28-panel-body,
+  #view-bible .atlas28-details .atlas28-panel-body{
+    padding-bottom:30px!important;
+  }
+}
+</style>
+
 </body>
 </html>

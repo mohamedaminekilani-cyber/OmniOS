@@ -8,6 +8,9 @@ var APP_ICON_URL='./omnios-user-icon-192.png';
 var APP_ICON_PREVIEW='omnios_app_icon_preview_v1';
 var APP_ICON_MARKER='omnios_custom_app_icon_v1';
 var APP_ICON_REV='omnios_app_icon_rev_v1';
+var APP_ICON_PUBLIC='omnios_app_icon_public_v1';
+var APP_ICON_INSTALL_URL='omnios_app_icon_install_url_v1';
+var ICON_SERVICE='https://omnios-pwa.netlify.app/api/icon';
 var BOOT_ICON_KEY='omnios_loading_icon_v1';
 var DEVICE_KEY='omnios_push_device_v1';
 var PUSH_PUBLIC_KEY='BFspp6Cwz1U5Ewgen29Pyq05WaD15s0VEN6HBA4wo9XiVHZIy6gR_dygjshuOX-lfpE8f3_EwsxtXYoJvPbIqwU';
@@ -100,36 +103,80 @@ async function squareImage(file,size){
   if(!blob)throw new Error('Image conversion failed');
   return {blob:blob,data:cv.toDataURL('image/png')};
 }
+function appIconHref(){
+  try{
+    var qs=new URLSearchParams(location.search);
+    var qid=(qs.get('pwaIcon')||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,120);
+    var qrev=(qs.get('pwaIconRev')||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,80);
+    if(qid)return ICON_SERVICE+'?id='+encodeURIComponent(qid)+(qrev?'&v='+encodeURIComponent(qrev):'');
+    var publicUrl=localStorage.getItem(APP_ICON_PUBLIC)||'';
+    if(publicUrl)return publicUrl;
+  }catch(_){}
+  return './icons/icon-192.png';
+}
 function applyAppIconLink(){
-  var custom=false,rev='';
-  try{custom=localStorage.getItem(APP_ICON_MARKER)==='1';rev=localStorage.getItem(APP_ICON_REV)||''}catch(_){}
-  var link=document.querySelector('link[rel="apple-touch-icon"]');
-  if(link){
-    link.setAttribute('sizes','180x180');
-    link.href=custom?(APP_ICON_URL+(rev?'?v='+encodeURIComponent(rev):'')):'./icons/icon-192.png';
-  }
+  var old=document.querySelector('link[rel="apple-touch-icon"]');
+  if(old)old.remove();
+  var link=document.createElement('link');
+  link.rel='apple-touch-icon';link.setAttribute('sizes','180x180');link.href=appIconHref();
+  document.head.appendChild(link);
+}
+function installUrlForIcon(id,rev){
+  var u=new URL(location.href);
+  u.hash='';
+  u.searchParams.set('pwaIcon',id);
+  u.searchParams.set('pwaIconRev',rev);
+  return u.href;
+}
+async function publishAppIcon(data,rev){
+  var id=deviceId(),url=ICON_SERVICE+'?id='+encodeURIComponent(id);
+  var sameOrigin=false;
+  try{sameOrigin=new URL(url).origin===location.origin}catch(_){}
+  var opts={method:'POST',body:data};
+  if(!sameOrigin)opts.mode='no-cors';
+  var res=await fetch(url,opts);
+  if(sameOrigin&&!res.ok)throw new Error('Could not publish the Home Screen icon');
+  var publicUrl=ICON_SERVICE+'?id='+encodeURIComponent(id)+'&v='+encodeURIComponent(rev);
+  var installUrl=installUrlForIcon(id,rev);
+  try{
+    localStorage.setItem(APP_ICON_PUBLIC,publicUrl);
+    localStorage.setItem(APP_ICON_INSTALL_URL,installUrl);
+  }catch(_){}
+  return {publicUrl:publicUrl,installUrl:installUrl};
 }
 async function saveAppIcon(file){
   var out=await squareImage(file,192);
-  if(!('caches'in window))throw new Error('This browser cannot store a custom PWA icon');
-  var cache=await caches.open(USER_CACHE);
-  var req=new Request(new URL(APP_ICON_URL,location.href).href);
-  await cache.put(req,new Response(out.blob,{headers:{'Content-Type':'image/png','Cache-Control':'no-store'}}));
+  var rev=String(Date.now());
+  if('caches'in window){
+    try{
+      var cache=await caches.open(USER_CACHE);
+      var req=new Request(new URL(APP_ICON_URL,location.href).href);
+      await cache.put(req,new Response(out.blob,{headers:{'Content-Type':'image/png','Cache-Control':'no-store'}}));
+    }catch(_){}
+  }
   try{
     localStorage.setItem(APP_ICON_PREVIEW,out.data);
     localStorage.setItem(APP_ICON_MARKER,'1');
-    localStorage.setItem(APP_ICON_REV,String(Date.now()));
+    localStorage.setItem(APP_ICON_REV,rev);
   }catch(_){}
+  await publishAppIcon(out.data,rev);
   applyAppIconLink();
   renderAssetCard();
-  toast('Home Screen icon ready. On iPhone, remove the old Home Screen copy and add OmniOS again to apply it.');
+  toast('Home Screen icon published. Use the Install in Safari link, then Add to Home Screen.');
 }
 async function resetAppIcon(){
   try{
     var cache=await caches.open(USER_CACHE);
     await cache.delete(new Request(new URL(APP_ICON_URL,location.href).href),{ignoreSearch:true});
   }catch(_){}
-  try{localStorage.removeItem(APP_ICON_PREVIEW);localStorage.removeItem(APP_ICON_MARKER);localStorage.removeItem(APP_ICON_REV)}catch(_){}
+  try{
+    var id=deviceId(),url=ICON_SERVICE+'?id='+encodeURIComponent(id),same=new URL(url).origin===location.origin;
+    var opts={method:'DELETE'};if(!same)opts.mode='no-cors';await fetch(url,opts);
+  }catch(_){}
+  try{
+    localStorage.removeItem(APP_ICON_PREVIEW);localStorage.removeItem(APP_ICON_MARKER);localStorage.removeItem(APP_ICON_REV);
+    localStorage.removeItem(APP_ICON_PUBLIC);localStorage.removeItem(APP_ICON_INSTALL_URL);
+  }catch(_){}
   applyAppIconLink();renderAssetCard();toast('Home Screen icon reset.');
 }
 async function saveBootIcon(file){
@@ -142,13 +189,14 @@ function resetBootIcon(){
   renderAssetCard();toast('Loading screen icon reset.');
 }
 function assetCardHtml(){
-  var app='',boot='';
-  try{app=localStorage.getItem(APP_ICON_PREVIEW)||'';boot=localStorage.getItem(BOOT_ICON_KEY)||''}catch(_){}
+  var app='',boot='',installUrl='';
+  try{app=localStorage.getItem(APP_ICON_PREVIEW)||'';boot=localStorage.getItem(BOOT_ICON_KEY)||'';installUrl=localStorage.getItem(APP_ICON_INSTALL_URL)||''}catch(_){}
   return '<div class="card settings-section" id="omnios-pwa-assets-card">'+
     '<h3 class="card-title mb-4">App & startup icons</h3>'+
     '<div class="settings-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="omni-pwa-preview">'+(app?'<img src="'+esc(app)+'" alt="Home Screen icon preview">':'<img src="./icons/icon-192.png" alt="Default OmniOS icon">')+'</div><div><div class="settings-row-label">Home Screen app icon</div><div class="settings-row-desc">Upload a square icon. This preview is the icon prepared for the next Home Screen installation.</div></div></div><div class="omni-pwa-actions"><input id="omni-pwa-icon-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="omni-pwa-icon-upload">'+(app?'Replace':'Upload')+'</button>'+(app?'<button type="button" class="btn btn-sm" id="omni-pwa-icon-reset">Reset</button>':'')+'</div></div>'+
     '<div class="settings-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="omni-pwa-preview">'+(boot?'<img src="'+esc(boot)+'" alt="Loading icon preview">':'<span>↻</span>')+'</div><div><div class="settings-row-label">Loading screen icon</div><div class="settings-row-desc">Replaces the spinner icon on the single OmniOS loading screen.</div></div></div><div class="omni-pwa-actions"><input id="omni-boot-icon-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="omni-boot-icon-upload">'+(boot?'Replace':'Upload')+'</button>'+(boot?'<button type="button" class="btn btn-sm" id="omni-boot-icon-reset">Reset</button>':'')+'</div></div>'+
-    '<div class="settings-meta-line">'+(app?'✓ Custom Home Screen icon is ready. On iPhone/iPad, remove the old Home Screen copy, open OmniOS in Safari, then Share → Add to Home Screen.':'Upload an icon here before adding OmniOS to the Home Screen.')+'</div>'+
+    '<div class="settings-meta-line">'+(app?'✓ Custom icon uploaded to a real install URL. On iPhone, the existing Home Screen icon cannot change live. Remove the old copy, open the install link in Safari, then Share → Add to Home Screen.':'Upload an icon here before adding OmniOS to the Home Screen.')+'</div>'+
+    (app&&installUrl?'<div class="omni-pwa-actions" style="justify-content:flex-start;margin-top:10px"><a class="btn btn-sm" id="omni-pwa-install-link" href="'+esc(installUrl)+'" target="_blank" rel="noopener">Open install page</a><button type="button" class="btn btn-sm" id="omni-pwa-copy-install">Copy install link</button></div>':'')+
     '</div>';
 }
 function renderAssetCard(){
@@ -162,6 +210,7 @@ function renderAssetCard(){
   card.querySelector('#omni-pwa-icon-upload').onclick=function(){appInput.click()};
   appInput.onchange=async function(){try{if(appInput.files[0])await saveAppIcon(appInput.files[0])}catch(e){toast(e.message||'Could not save app icon')}};
   var ar=card.querySelector('#omni-pwa-icon-reset');if(ar)ar.onclick=resetAppIcon;
+  var copy=card.querySelector('#omni-pwa-copy-install');if(copy)copy.onclick=async function(){try{var u=localStorage.getItem(APP_ICON_INSTALL_URL)||'';if(!u)return;await navigator.clipboard.writeText(u);toast('Install link copied. Open it in Safari, then Add to Home Screen.')}catch(_){toast('Could not copy the install link')}};
   card.querySelector('#omni-boot-icon-upload').onclick=function(){bootInput.click()};
   bootInput.onchange=async function(){try{if(bootInput.files[0])await saveBootIcon(bootInput.files[0])}catch(e){toast(e.message||'Could not save loading icon')}};
   var br=card.querySelector('#omni-boot-icon-reset');if(br)br.onclick=resetBootIcon;

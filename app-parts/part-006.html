@@ -601,7 +601,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   box-shadow:0 20px 60px rgba(0,0,0,.38);
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);display:none
 }
-#v432-header-menu.open{display:block}
+#v432-header-menu[hidden]{display:none!important}#v432-header-menu.open:not([hidden]){display:block!important}
 .v432-menu-status{padding:8px 9px 7px;font-size:.62rem;color:var(--text-muted);border-bottom:1px solid var(--border-color);margin-bottom:4px;display:flex;align-items:center;gap:7px}
 .v432-menu-dot{width:7px;height:7px;border-radius:50%;background:var(--accent-green);flex:none}
 .v432-menu-dot.error{background:var(--accent-red)}
@@ -777,12 +777,12 @@ function openShortcuts(){q('shortcuts-open-btn')?.click()}
 function openNotifications(){const b=q('v55-notif-btn');if(b){b.click();return}try{window.OmniV55?.notifications?.()}catch(_){}}
 
 let menu=null;
-function closeMenu(){menu?.classList.remove('open');q('v432-header-more')?.setAttribute('aria-expanded','false')}
+function closeMenu(){if(menu){menu.classList.remove('open');menu.hidden=true;menu.style.display='none';menu.setAttribute('aria-hidden','true')}q('v432-header-more')?.setAttribute('aria-expanded','false')}
 function positionMenu(){if(!menu)return;const b=q('v432-header-more');if(!b)return;const r=b.getBoundingClientRect(),w=Math.min(270,innerWidth-20);menu.style.left=Math.min(innerWidth-w-8,Math.max(8,r.right-w))+'px';menu.style.right='auto';menu.style.top=(r.bottom+7)+'px'}
 function refreshMenu(){if(!menu)return;const redoBtn=menu.querySelector('[data-v432-action="redo"]'),legacyRedo=q('v35-redo-btn');if(redoBtn)redoBtn.disabled=legacyRedo?legacyRedo.disabled:false;const status=q('save-status'),dot=menu.querySelector('.v432-menu-dot'),text=menu.querySelector('[data-v432-storage]');if(dot)dot.classList.toggle('error',!!status?.classList.contains('error'));if(text)text.textContent=status?.textContent?.trim()||'Local storage ready'}
 function buildMenu(){
   menu=q('v432-header-menu');if(menu)return;
-  menu=document.createElement('div');menu.id='v432-header-menu';menu.setAttribute('role','menu');menu.innerHTML=`
+  menu=document.createElement('div');menu.id='v432-header-menu';menu.setAttribute('role','menu');menu.hidden=true;menu.style.display='none';menu.setAttribute('aria-hidden','true');menu.innerHTML=`
     <div class="v432-menu-status"><span class="v432-menu-dot"></span><span data-v432-storage>Local storage ready</span></div>
     <button class="v432-menu-btn" type="button" data-v432-action="search"><span class="v432-menu-icon">⌕</span><span>Search everything</span><span class="v432-menu-shortcut">Ctrl K</span></button>
     <button class="v432-menu-btn" type="button" data-v432-action="notifications"><span class="v432-menu-icon">♢</span><span>Notifications</span></button>
@@ -811,7 +811,7 @@ function installHeader(){
     const add=q('global-add-btn');actions.insertBefore(assistant,add||actions.firstChild);
     assistant.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();toggleFloatingAssistant()});
   }
-  let more=q('v432-header-more');if(!more){more=document.createElement('button');more.type='button';more.className='btn';more.id='v432-header-more';more.textContent='•••';more.title='More actions';more.setAttribute('aria-label','More actions');more.setAttribute('aria-haspopup','menu');more.setAttribute('aria-expanded','false');actions.appendChild(more);more.addEventListener('click',e=>{e.stopPropagation();const opening=!menu.classList.contains('open');closeMenu();if(opening){refreshMenu();positionMenu();menu.classList.add('open');more.setAttribute('aria-expanded','true')}})}
+  let more=q('v432-header-more');if(!more){more=document.createElement('button');more.type='button';more.className='btn';more.id='v432-header-more';more.textContent='•••';more.title='More actions';more.setAttribute('aria-label','More actions');more.setAttribute('aria-haspopup','menu');more.setAttribute('aria-expanded','false');actions.appendChild(more);more.addEventListener('click',e=>{e.stopPropagation();const opening=!menu.classList.contains('open');closeMenu();if(opening){refreshMenu();positionMenu();menu.hidden=false;menu.style.display='block';menu.setAttribute('aria-hidden','false');menu.classList.add('open');more.setAttribute('aria-expanded','true')}})}
 }
 function setAssistantOpen(open){
   const panel=q('omni-assistant-panel');if(!panel)return false;

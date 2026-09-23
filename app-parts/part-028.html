@@ -2926,5 +2926,68 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 }
 </style>
 
+<style id="omnios-v64-menu-interaction-final">
+@media(max-width:760px){
+  /* Do not trap fixed mobile chrome inside a parent stacking context. */
+  .main-content{
+    z-index:auto!important;
+    isolation:auto!important;
+  }
+  .view-container{
+    z-index:auto!important;
+  }
+
+  /* More occupies only the area ABOVE the bottom navigation.
+     This keeps Menu + the five page buttons physically tappable while open. */
+  #v35-page-launcher{
+    top:0!important;
+    left:0!important;
+    right:0!important;
+    bottom:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom))!important;
+    height:auto!important;
+    z-index:2147481800!important;
+  }
+
+  .mobile-nav{
+    z-index:2147482000!important;
+  }
+
+  /* Menu uses exactly the same canonical SVG box as all other bottom tabs. */
+  #v35-mobile-more > .v48-mobile-icon{
+    width:20px!important;
+    height:20px!important;
+    min-width:20px!important;
+    display:grid!important;
+    place-items:center!important;
+    margin:auto!important;
+    line-height:1!important;
+    flex:0 0 20px!important;
+  }
+  #v35-mobile-more > .v48-mobile-icon svg{
+    width:18px!important;
+    height:18px!important;
+    display:block!important;
+    fill:none!important;
+    stroke:currentColor!important;
+    stroke-width:1.9!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+  }
+
+  /* Preserve the same framed selected state while More is expanded. */
+  #v35-mobile-more[aria-expanded="true"]{
+    color:#f4f7ff!important;
+    background:
+      radial-gradient(circle at 50% 15%,rgba(70,126,255,.24),transparent 64%),
+      linear-gradient(180deg,rgba(66,94,190,.15),rgba(36,43,79,.08))!important;
+    box-shadow:inset 0 0 0 1px rgba(99,139,255,.12)!important;
+  }
+  #v35-mobile-more[aria-expanded="true"] > .v48-mobile-icon{
+    color:#72a5ff!important;
+    filter:drop-shadow(0 0 8px rgba(55,126,255,.65));
+  }
+}
+</style>
+
 </body>
 </html>

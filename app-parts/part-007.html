@@ -325,13 +325,18 @@ const NAV_ICONS48={
  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.7 2.7 0 1 1 4.3 2.2c-1.1.8-1.8 1.2-1.8 2.8M12 18h.01"/>'
 };
 function customIcon48(key){try{return state?.customIcons?.[key]||''}catch(_){return''}}
+function iconSig48(src){
+  let h=2166136261;
+  for(let i=0;i<src.length;i+=97)h=Math.imul(h^src.charCodeAt(i),16777619);
+  return (h>>>0).toString(36)+':'+src.length;
+}
 function paintNavIcon48(item,key,cls){
   if(!item||!key)return;
   const p=NAV_ICONS48[key],custom=customIcon48(key);
   if(!p&&!custom)return;
   let icon=item.querySelector(':scope > .'+cls);
   if(!icon){icon=document.createElement('span');icon.className=cls;icon.setAttribute('aria-hidden','true');item.insertBefore(icon,item.firstChild)}
-  const sig=custom?'custom:'+custom.slice(-48):'svg:'+key;
+  const sig=custom?'custom:'+iconSig48(custom):'svg:'+key;
   if(icon.dataset.v48Sig===sig)return;
   icon.dataset.v48Sig=sig;
   icon.innerHTML=custom?`<img src="${custom}" alt="" style="width:100%;height:100%;display:block;object-fit:contain;border-radius:4px">`:`<svg viewBox="0 0 24 24">${p}</svg>`;

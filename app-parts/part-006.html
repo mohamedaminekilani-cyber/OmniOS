@@ -347,102 +347,120 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .v43-note-reader{padding-top:4px}.v43-note-reader h1{font-size:1.45rem}.v43-note-reader-body{font-size:.83rem;line-height:1.7;margin-top:14px}.v43-note-reader-body h1,.v43-note-reader-body h2,.v43-note-reader-body h3{margin:14px 0 7px}.v43-note-reader-body ul,.v43-note-reader-body ol{padding-left:22px}.v43-note-reader-body blockquote{border-left:3px solid var(--accent-purple);padding-left:10px;color:var(--text-secondary)}.v43-note-meta{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.org-card[data-note-open],.org-row[data-note-open]{cursor:pointer}.org-card[data-note-open]:hover .org-card-title,.org-row[data-note-open]:hover .org-row-title{color:var(--accent-cyan)}.v43-note-edit-btn{margin-left:auto}
 @media(max-width:1100px){.v43-kpis{grid-template-columns:repeat(3,1fr)}.v43-span-8,.v43-span-7,.v43-span-6,.v43-span-5,.v43-span-4{grid-column:span 6}.v43-domain-grid,.v43-record-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.v43-life-shell{grid-template-columns:200px minmax(0,1fr)}}
 @media(max-width:760px){
-  :root{--omni-header-h:60px}
+  :root{--omni-header-h:52px}
+
+  /* One canonical mobile app bar. */
   .topbar{
-    display:flex!important;grid-template-columns:none!important;grid-template-rows:none!important;
+    display:flex!important;
+    grid-template-columns:none!important;
+    grid-template-rows:none!important;
+    align-items:center!important;
     min-height:calc(var(--omni-header-h) + env(safe-area-inset-top))!important;
-    height:calc(var(--omni-header-h) + env(safe-area-inset-top))!important;
-    padding:env(safe-area-inset-top) 10px 0!important;
-    gap:7px!important;
-    border-bottom:1px solid color-mix(in srgb,var(--border-color) 72%,transparent)!important;
-    background:color-mix(in srgb,var(--bg-surface) 94%,transparent)!important;
-    backdrop-filter:blur(20px) saturate(1.15)!important;
-    -webkit-backdrop-filter:blur(20px) saturate(1.15)!important;
-    box-shadow:0 8px 24px rgba(0,0,0,.08)!important
+    height:auto!important;
+    padding:env(safe-area-inset-top) 8px 0!important;
+    gap:5px!important;
+    overflow:visible!important;
+    border-bottom:1px solid color-mix(in srgb,var(--border-color) 68%,transparent)!important;
+    background:color-mix(in srgb,var(--bg-surface) 96%,transparent)!important;
+    backdrop-filter:blur(18px) saturate(1.12)!important;
+    -webkit-backdrop-filter:blur(18px) saturate(1.12)!important;
+    box-shadow:0 5px 18px rgba(0,0,0,.08)!important
   }
+
   .v35-topbar-nav{
     display:flex!important;align-items:center!important;gap:0!important;flex:0 0 auto!important
   }
   #v35-back-btn{
     display:inline-grid!important;place-items:center!important;
-    width:38px!important;min-width:38px!important;height:38px!important;
-    padding:0!important;border-radius:11px!important;
+    width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;
+    padding:0!important;border-radius:10px!important;
     background:transparent!important;border-color:transparent!important;
-    font-size:1.08rem!important
+    font-size:1.05rem!important
   }
-  #v35-back-btn:not(:disabled):hover{background:var(--bg-elevated)!important}
+  #v35-back-btn:not(:disabled):active{background:var(--bg-elevated)!important}
   #v35-forward-btn{display:none!important}
+
   .topbar-title{
-    position:relative!important;
-    display:flex!important;flex-direction:column!important;justify-content:center!important;
+    display:block!important;position:static!important;
     flex:1 1 auto!important;min-width:0!important;max-width:none!important;
-    height:44px!important;padding:0 2px!important;margin:0!important;
-    font-size:.91rem!important;font-weight:790!important;line-height:1.12!important;
-    letter-spacing:-.022em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important
+    height:auto!important;margin:0!important;padding:0 4px!important;
+    font-size:.9rem!important;font-weight:780!important;line-height:1.2!important;
+    letter-spacing:-.018em!important;
+    white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important
   }
-  .topbar-title::before{
-    content:'OmniOS';display:block;margin-bottom:3px;
-    color:var(--text-muted)!important;font-size:.49rem!important;font-weight:760!important;
-    line-height:1!important;letter-spacing:.12em!important;text-transform:uppercase!important
-  }
+  .topbar-title::before,.topbar-title::after{content:none!important;display:none!important}
+
   .topbar-actions{
     display:flex!important;align-items:center!important;justify-content:flex-end!important;
-    flex:0 0 auto!important;min-width:0!important;width:auto!important;gap:4px!important
+    flex:0 0 auto!important;width:auto!important;min-width:0!important;
+    min-height:0!important;gap:3px!important
   }
-  #mobile-search-v33,#v35-undo-btn{display:none!important}
-  #v432-header-assistant,#v432-header-more{
+
+  /* Old mobile action systems must not compete with this bar. */
+  #mobile-search-v33,#v35-undo-btn,#v35-redo-btn,#v35-history-btn,#v35-db-status-btn,
+  #v35-mobile-add,#v35-mobile-actions,#v55-notif-btn,#settings-topbar-btn,#context-view-btn{
+    display:none!important
+  }
+
+  #v432-header-assistant,#v432-header-more,#global-add-btn{
     display:inline-grid!important;place-items:center!important;
-    width:38px!important;min-width:38px!important;height:38px!important;
-    min-height:38px!important;padding:0!important;border-radius:11px!important
+    width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;
+    padding:0!important;border-radius:10px!important;flex:0 0 36px!important
   }
+
   #v432-header-assistant{
     position:relative!important;
     color:var(--accent-cyan)!important;
-    background:color-mix(in srgb,var(--accent-cyan) 10%,var(--bg-elevated))!important;
-    border-color:color-mix(in srgb,var(--accent-cyan) 24%,var(--border-color))!important
+    background:color-mix(in srgb,var(--accent-cyan) 9%,var(--bg-elevated))!important;
+    border-color:color-mix(in srgb,var(--accent-cyan) 22%,var(--border-color))!important
   }
-  #v432-header-assistant svg{width:18px!important;height:18px!important}
+  #v432-header-assistant svg{width:17px!important;height:17px!important}
   #v432-header-assistant::after{
-    content:'';position:absolute;right:6px;top:6px;width:5px;height:5px;border-radius:50%;
+    content:'';position:absolute;right:5px;top:5px;width:5px;height:5px;border-radius:50%;
     background:var(--accent-green);border:1.5px solid var(--bg-surface)
   }
   #v432-header-assistant[aria-expanded="true"]{
     color:var(--text-primary)!important;background:var(--bg-elevated)!important;border-color:var(--border-light)!important
   }
-  #global-add-btn{
-    display:inline-flex!important;align-items:center!important;justify-content:center!important;
-    width:38px!important;min-width:38px!important;height:38px!important;min-height:38px!important;
-    padding:0!important;border-radius:11px!important;font-size:0!important
+
+  #global-add-btn{font-size:0!important}
+  #global-add-btn::before{
+    content:'+'!important;display:block!important;font-size:1.12rem!important;font-weight:720!important;line-height:1!important
   }
-  #global-add-btn::before{content:'+';font-size:1.15rem!important;font-weight:700!important;line-height:1!important}
-  #v432-header-more{font-size:.8rem!important}
+  #global-add-btn::after{content:none!important}
+  #v432-header-more{font-size:.78rem!important}
+
   #v432-header-menu{
-    right:10px!important;left:auto!important;top:calc(var(--omni-header-h) + env(safe-area-inset-top) + 6px)!important;
-    width:min(292px,calc(100vw - 20px))!important
+    right:8px!important;left:auto!important;
+    top:calc(var(--omni-header-h) + env(safe-area-inset-top) + 5px)!important;
+    width:min(292px,calc(100vw - 16px))!important
   }
 
-  /* Assistant is a header action on mobile, never a floating bubble. */
+  /* Mobile Assistant belongs to the header, not a floating FAB. */
   #v432-assistant-fab{display:none!important}
   .omni-assistant-panel{
-    top:calc(var(--omni-header-h) + env(safe-area-inset-top) + 8px)!important;
-    left:8px!important;right:8px!important;bottom:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 8px)!important;
+    top:calc(var(--omni-header-h) + env(safe-area-inset-top) + 6px)!important;
+    left:7px!important;right:7px!important;
+    bottom:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 7px)!important;
     width:auto!important;height:auto!important;max-height:none!important;
-    border-radius:18px!important;transform-origin:top right!important
+    border-radius:17px!important;transform-origin:top right!important
   }
   .omni-assistant-suggestions{
-    display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;
-    max-height:none!important;padding-bottom:2px
+    display:flex!important;flex-wrap:nowrap!important;
+    overflow-x:auto!important;overflow-y:hidden!important;max-height:none!important;padding-bottom:2px
   }
   .omni-assistant-suggestion{flex:none}
 }
-@media(max-width:410px){
-  .topbar{padding-left:7px!important;padding-right:7px!important;gap:4px!important}
+@media(max-width:390px){
+  .topbar{padding-left:6px!important;padding-right:6px!important;gap:2px!important}
   #v35-back-btn,#v432-header-assistant,#v432-header-more,#global-add-btn{
-    width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important
+    width:34px!important;min-width:34px!important;height:34px!important;min-height:34px!important;flex-basis:34px!important
   }
-  .topbar-title{font-size:.86rem!important}
+  .topbar-title{font-size:.86rem!important;padding-inline:2px!important}
 }
-@media(prefers-reduced-motion:reduce){#v432-assistant-fab::before,.omni-assistant-panel{transition:none!important}}}
+@media(prefers-reduced-motion:reduce){
+  #v432-assistant-fab::before,.omni-assistant-panel{transition:none!important}
+}
 </style>
 <script id="omnios-header-assistant-ui-js">
 (function(){
@@ -461,6 +479,7 @@ function openHistory(){return action('history',()=>q('v35-history-btn')?.click()
 function undo(){return action('undo',()=>window.omniUndo?.())}
 function redo(){return action('redo',()=>window.omniRedo?.())}
 function openShortcuts(){q('shortcuts-open-btn')?.click()}
+function openNotifications(){const b=q('v55-notif-btn');if(b){b.click();return}try{window.OmniV55?.notifications?.()}catch(_){}}
 
 let menu=null;
 function closeMenu(){menu?.classList.remove('open');q('v432-header-more')?.setAttribute('aria-expanded','false')}
@@ -471,6 +490,7 @@ function buildMenu(){
   menu=document.createElement('div');menu.id='v432-header-menu';menu.setAttribute('role','menu');menu.innerHTML=`
     <div class="v432-menu-status"><span class="v432-menu-dot"></span><span data-v432-storage>Local storage ready</span></div>
     <button class="v432-menu-btn" type="button" data-v432-action="search"><span class="v432-menu-icon">⌕</span><span>Search everything</span><span class="v432-menu-shortcut">Ctrl K</span></button>
+     <button class="v432-menu-btn" type="button" data-v432-action="notifications"><span class="v432-menu-icon">♢</span><span>Notifications</span></button>
     <div class="v432-menu-sep"></div>
     <button class="v432-menu-btn" type="button" data-v432-action="undo"><span class="v432-menu-icon">↶</span><span>Undo</span><span class="v432-menu-shortcut">Ctrl Z</span></button>
      <button class="v432-menu-btn" type="button" data-v432-action="redo"><span class="v432-menu-icon">↷</span><span>Redo</span><span class="v432-menu-shortcut">Ctrl ⇧ Z</span></button>
@@ -481,7 +501,7 @@ function buildMenu(){
     <button class="v432-menu-btn" type="button" data-v432-action="data"><span class="v432-menu-icon">◈</span><span>Data Center</span></button>
     <button class="v432-menu-btn" type="button" data-v432-action="shortcuts"><span class="v432-menu-icon">⌨</span><span>Keyboard shortcuts</span></button>`;
   document.body.appendChild(menu);
-  const actions={search:openSearch,undo,redo,history:openHistory,view:openCustomize,settings:openSettings,data:openData,shortcuts:openShortcuts};
+  const actions={search:openSearch,notifications:openNotifications,undo,redo,history:openHistory,view:openCustomize,settings:openSettings,data:openData,shortcuts:openShortcuts};
   menu.querySelectorAll('[data-v432-action]').forEach(b=>b.addEventListener('click',()=>{const fn=actions[b.dataset.v432Action];closeMenu();fn?.()}));
 }
 function installHeader(){

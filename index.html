@@ -65,14 +65,25 @@ const PARTS=["./app-parts/part-001.html","./app-parts/part-002.html","./app-part
 const CACHE='omnios-v62.3-stable-startup-r4';
 const fill=document.getElementById('fill'),status=document.getElementById('status');
 
-async function one(url){
+async function fetchFresh(url,timeoutMs){
+  const ctrl=typeof AbortController!=='undefined'?new AbortController():null;
+  const timer=ctrl?setTimeout(()=>ctrl.abort(),timeoutMs):null;
   try{
-    const r=await fetch(url);
+    const r=await fetch(url,{signal:ctrl?.signal,cache:'no-store'});
     if(!r.ok)throw new Error(r.status);
     try{const cache=await caches.open(CACHE);await cache.put(url,r.clone())}catch(_){}
     return await r.text();
+  }finally{
+    if(timer)clearTimeout(timer);
+  }
+}
+async function one(url){
+  const startupCritical=/part-(001|028)\.html(?:$|\?)/.test(url);
+  const cached=await caches.match(url);
+  if(cached&&!startupCritical)return await cached.text();
+  try{
+    return await fetchFresh(url,startupCritical?1800:3200);
   }catch(e){
-    const cached=await caches.match(url);
     if(cached)return await cached.text();
     throw e;
   }

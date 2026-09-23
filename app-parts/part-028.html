@@ -4576,12 +4576,22 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
     z-index:5!important;
     display:grid!important;
     grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-rows:auto auto!important;
     align-items:center!important;
-    gap:8px!important;
+    gap:2px 8px!important;
     padding:10px 12px!important;
     background:color-mix(in srgb,var(--bg-surface) 97%,transparent)!important;
     -webkit-backdrop-filter:blur(18px);
     backdrop-filter:blur(18px);
+  }
+  #view-bible .atlas28-grid>.atlas28-panel:not(.atlas28-details) .atlas28-panel-title{
+    grid-column:1!important;grid-row:1!important;
+  }
+  #view-bible .atlas28-grid>.atlas28-panel:not(.atlas28-details) .atlas28-panel-sub{
+    grid-column:1!important;grid-row:2!important;
+  }
+  #view-bible .atlas28-grid>.atlas28-panel:not(.atlas28-details) .atlas66-sheet-close{
+    grid-column:2!important;grid-row:1/3!important;
   }
   #view-bible .atlas28-grid>.atlas28-panel:not(.atlas28-details) .atlas28-panel-body{
     padding:10px 12px 16px!important;
@@ -4646,12 +4656,22 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
     z-index:5!important;
     display:grid!important;
     grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-rows:auto auto!important;
     align-items:center!important;
-    gap:8px!important;
+    gap:2px 8px!important;
     padding:10px 12px!important;
     background:color-mix(in srgb,var(--bg-surface) 97%,transparent)!important;
     -webkit-backdrop-filter:blur(18px);
     backdrop-filter:blur(18px);
+  }
+  #view-bible .atlas28-details .atlas28-panel-title{
+    grid-column:1!important;grid-row:1!important;
+  }
+  #view-bible .atlas28-details .atlas28-panel-sub{
+    grid-column:1!important;grid-row:2!important;
+  }
+  #view-bible .atlas28-details .atlas66-sheet-close{
+    grid-column:2!important;grid-row:1/3!important;
   }
   #view-bible .atlas28-details .atlas28-panel-body{
     padding:11px 12px 18px!important;
@@ -4926,6 +4946,15 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
     if(!mobile())return;
     const r=e.target.closest('#view-bible .atlas28');
     if(!r)return;
+
+    const selection=e.target.closest(
+      '[data-atlas28-place],[data-atlas28-route],[data-atlas28-event],[data-atlas28-search-kind],#atlas28-map .leaflet-marker-icon,#atlas28-map .leaflet-interactive'
+    );
+    if(selection){
+      pendingDetail=true;
+      detailsOpen=true;
+      filtersOpen=false;
+    }
 
     if(e.target.closest('[data-atlas28-mode]')){
       filtersOpen=true;

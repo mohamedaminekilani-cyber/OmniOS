@@ -371,7 +371,7 @@ function statusPill(text){return `<span class="v35-chip">${esc(text)}</span>`}
 function buildMobileNav35(){
   const nav=document.querySelector('.mobile-nav');if(!nav)return;nav.innerHTML='';
   const specs=[['today','⌂','Today'],['planner','▦','Plan'],['tasks','✓','Tasks'],['routine','↻','Routine'],['master-calendar','□','Calendar']];
-  specs.forEach(([v,i,l])=>{const b=document.createElement('button');b.type='button';b.dataset.v35MobileView=v;b.innerHTML=`<span class="nav-icon">${i}</span><span class="nav-label">${l}</span>`;b.onclick=()=>{closeMore35();window.switchView(v)};nav.appendChild(b)});
+  specs.forEach(([v,i,l])=>{const b=document.createElement('button');b.type='button';b.dataset.v35MobileView=v;b.innerHTML=`<span class="nav-icon">${i}</span><span class="nav-label">${l}</span>`;b.onclick=()=>navigateMobile35(v);nav.appendChild(b)});
   const more=document.createElement('button');
   more.type='button';
   more.id='v35-mobile-more';
@@ -429,9 +429,28 @@ const PAGE_SECTIONS35=[
 ];
 function closeMore35(){
   const m=document.getElementById('v35-page-launcher');
-  if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}
+  if(m){
+    m.classList.remove('open');
+    m.setAttribute('aria-hidden','true');
+    m.style.pointerEvents='none';
+  }
   document.body.style.removeProperty('overflow');
   updateMobileActive35(activeView35());
+}
+function navigateMobile35(view){
+  /* A bottom-tab navigation must never coexist with the More launcher.
+     Close it synchronously, then navigate on the next frame so the closed
+     state is painted before the destination page renders. */
+  closeMore35();
+  requestAnimationFrame(()=>{
+    const m=document.getElementById('v35-page-launcher');
+    if(m){
+      m.classList.remove('open');
+      m.setAttribute('aria-hidden','true');
+      m.style.pointerEvents='none';
+    }
+    window.switchView(view);
+  });
 }
 function renderMore35(m,q=''){
   const body=m.querySelector('.v35-launcher-body'),needle=String(q||'').trim().toLowerCase(),active=activeView35();
@@ -461,6 +480,7 @@ function ensureMore35(){
 function openMore35(){
   const m=ensureMore35(),search=m.querySelector('.v35-launcher-search');
   search.value='';renderMore35(m,'');
+  m.style.removeProperty('pointer-events');
   m.classList.add('open');m.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
   updateMobileActive35(activeView35());
 }

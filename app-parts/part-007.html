@@ -335,7 +335,9 @@ function iconSig48(src){
 }
 function paintNavIcon48(item,key,cls){
   if(!item||!key)return;
-  const p=NAV_ICONS48[key],custom=customIcon48(key);
+  const p=NAV_ICONS48[key];
+  /* Mobile More is SVG-only: never substitute uploaded/custom images there. */
+  const custom=cls==='v48-more-icon'?'':customIcon48(key);
   if(!p&&!custom)return;
   let icon=item.querySelector(':scope > .'+cls);
   if(!icon){icon=document.createElement('span');icon.className=cls;icon.setAttribute('aria-hidden','true');item.insertBefore(icon,item.firstChild)}
@@ -671,8 +673,9 @@ window.omniInteractionDiagnostics53=()=>({version:document.documentElement.datas
 }
 .v35-launcher-item > .v48-more-icon svg{width:18px!important;height:18px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
 /* The v48 SVG is the single authoritative icon in the mobile More menu. */
-[data-v35-more] > .v48-more-icon + .v35-launcher-icon,
-[data-v35-more] > .v48-more-icon + span:not(.v35-launcher-label){display:none!important}
+[data-v35-more] > .v35-launcher-icon,
+[data-v35-more] > .omni-more-custom-icon,
+[data-v35-more] > span:not(.v48-more-icon):not(.v35-launcher-label){display:none!important}
 .v35-launcher-item.active > .v48-more-icon{color:var(--accent-cyan)!important;background:color-mix(in srgb,var(--accent-cyan) 11%,var(--bg-elevated))!important}
 .v35-launcher-item > .omni-more-custom-icon{width:34px!important;height:34px!important;min-width:34px!important;border-radius:10px!important;object-fit:contain!important;flex:0 0 34px!important;padding:4px!important;box-sizing:border-box!important;background:var(--bg-elevated)!important}
 .v35-launcher-item.omni-has-custom-icon > .v48-more-icon,
@@ -814,15 +817,10 @@ function ensureMobileSlot53(button){
   loadImage53(img,button,source53(key,entry.file));
 }
 function ensureMoreSlot53(button){
-  const key=button?.dataset?.v35More;if(!key)return;
-  const entry=entryFor53(key);if(!entry)return;
-  let img=button.querySelector(':scope > .omni-more-custom-icon');
-  if(!img){
-    img=document.createElement('img');img.className='omni-more-custom-icon';img.alt='';
-    button.insertBefore(img,button.firstChild);
-  }
-  img.dataset.iconKey=key;img.dataset.iconFile=entry.file;
-  loadImage53(img,button,source53(key,entry.file));
+  if(!button?.dataset?.v35More)return;
+  /* The mobile More launcher has one icon authority: the v48 SVG. */
+  button.querySelectorAll(':scope > .omni-more-custom-icon').forEach(img=>img.remove());
+  button.classList.remove('omni-has-custom-icon');
 }
 function applyCustomIcons53(){
   ensureLogo53();

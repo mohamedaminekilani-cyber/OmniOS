@@ -324,8 +324,23 @@ const NAV_ICONS48={
  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1-2.9 2.9-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.6v.1h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.8.3l-.1.1-2.9-2.9.1-.1a1.7 1.7 0 0 0 .3-1.8A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1 2.9-2.9.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.5V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1 2.9 2.9-.1.1a1.7 1.7 0 0 0-.3 1.8 1.7 1.7 0 0 0 1.6 1h.1v4H21a1.7 1.7 0 0 0-1.6 1Z"/>',
  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.7 2.7 0 1 1 4.3 2.2c-1.1.8-1.8 1.2-1.8 2.8M12 18h.01"/>'
 };
-function decorateNavIcons(){document.querySelectorAll('.nav-menu .nav-item[data-view]').forEach(item=>{const p=NAV_ICONS48[item.dataset.view];if(!p)return;let icon=item.querySelector(':scope > .v48-nav-icon');if(!icon){icon=document.createElement('span');icon.className='v48-nav-icon';icon.setAttribute('aria-hidden','true');icon.innerHTML=`<svg viewBox="0 0 24 24">${p}</svg>`;item.insertBefore(icon,item.firstChild)}});document.querySelectorAll('.mobile-nav button[data-v35-mobile-view]').forEach(item=>{const p=NAV_ICONS48[item.dataset.v35MobileView];if(!p)return;let icon=item.querySelector(':scope > .v48-mobile-icon');if(!icon){icon=document.createElement('span');icon.className='v48-mobile-icon';icon.setAttribute('aria-hidden','true');icon.innerHTML=`<svg viewBox="0 0 24 24">${p}</svg>`;item.insertBefore(icon,item.firstChild)}})}
-let queued=false;function refresh(){if(queued)return;queued=true;queueMicrotask(()=>{queued=false;decorateNavIcons()})}const navObs48=new MutationObserver(refresh);const side48=document.querySelector('.nav-menu'),mob48=document.querySelector('.mobile-nav');if(side48)navObs48.observe(side48,{childList:true,subtree:true});if(mob48)navObs48.observe(mob48,{childList:true,subtree:true});decorateNavIcons();window.OmniIcons={refresh};
+function customIcon48(key){try{return state?.customIcons?.[key]||''}catch(_){return''}}
+function paintNavIcon48(item,key,cls){
+  if(!item||!key)return;
+  const p=NAV_ICONS48[key],custom=customIcon48(key);
+  if(!p&&!custom)return;
+  let icon=item.querySelector(':scope > .'+cls);
+  if(!icon){icon=document.createElement('span');icon.className=cls;icon.setAttribute('aria-hidden','true');item.insertBefore(icon,item.firstChild)}
+  const sig=custom?'custom:'+custom.slice(-48):'svg:'+key;
+  if(icon.dataset.v48Sig===sig)return;
+  icon.dataset.v48Sig=sig;
+  icon.innerHTML=custom?`<img src="${custom}" alt="" style="width:100%;height:100%;display:block;object-fit:contain;border-radius:4px">`:`<svg viewBox="0 0 24 24">${p}</svg>`;
+}
+function decorateNavIcons(){
+  document.querySelectorAll('.nav-menu .nav-item[data-view]').forEach(item=>paintNavIcon48(item,item.dataset.view,'v48-nav-icon'));
+  document.querySelectorAll('.mobile-nav button[data-v35-mobile-view]').forEach(item=>paintNavIcon48(item,item.dataset.v35MobileView,'v48-mobile-icon'));
+}
+let queued=false;function refresh(){if(queued)return;queued=true;queueMicrotask(()=>{queued=false;decorateNavIcons()})}const navObs48=new MutationObserver(refresh);const side48=document.querySelector('.nav-menu'),mob48=document.querySelector('.mobile-nav');if(side48)navObs48.observe(side48,{childList:true,subtree:true});if(mob48)navObs48.observe(mob48,{childList:true,subtree:true});decorateNavIcons();window.OmniIcons={refresh,decorate:decorateNavIcons,paint:paintNavIcon48};
 })();
 </script>
 

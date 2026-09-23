@@ -10,6 +10,18 @@
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
 <link rel="manifest" href="./manifest.webmanifest">
 <title>OmniOS v62.3 — Personal PWA</title>
+<script id="omnios-accent-early">
+(function(){
+  try{
+    const saved=JSON.parse(localStorage.getItem('omnios_v3_state')||'null');
+    const accent=saved&&saved.settings&&saved.settings.appearance&&saved.settings.appearance.accent;
+    if(typeof accent==='string'&&/^#[0-9a-f]{6}$/i.test(accent)){
+      document.documentElement.style.setProperty('--accent-cyan',accent);
+      document.documentElement.dataset.omniosAccent=accent;
+    }
+  }catch(_){}
+})();
+</script>
 <style>
     :root {
         --bg-base: #0f0f11;

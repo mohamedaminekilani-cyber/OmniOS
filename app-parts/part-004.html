@@ -371,11 +371,30 @@ function statusPill(text){return `<span class="v35-chip">${esc(text)}</span>`}
 function buildMobileNav35(){
   const nav=document.querySelector('.mobile-nav');if(!nav)return;nav.innerHTML='';
   const specs=[['today','⌂','Today'],['planner','▦','Plan'],['tasks','✓','Tasks'],['routine','↻','Routine'],['master-calendar','□','Calendar']];
-  specs.forEach(([v,i,l])=>{const b=document.createElement('button');b.type='button';b.dataset.v35MobileView=v;b.innerHTML=`<span class="nav-icon">${i}</span><span class="nav-label">${l}</span>`;b.onclick=()=>window.switchView(v);nav.appendChild(b)});
-  const more=document.createElement('button');more.type='button';more.id='v35-mobile-more';more.setAttribute('aria-label','Open page menu');more.innerHTML='<span class="nav-icon">☰</span><span class="nav-label">Menu</span>';more.onclick=openMore35;nav.appendChild(more);updateMobileActive35(activeView35());
+  specs.forEach(([v,i,l])=>{const b=document.createElement('button');b.type='button';b.dataset.v35MobileView=v;b.innerHTML=`<span class="nav-icon">${i}</span><span class="nav-label">${l}</span>`;b.onclick=()=>{closeMore35();window.switchView(v)};nav.appendChild(b)});
+  const more=document.createElement('button');
+  more.type='button';
+  more.id='v35-mobile-more';
+  more.setAttribute('aria-label','Open page menu');
+  more.setAttribute('aria-expanded','false');
+  more.innerHTML='<span class="v64-menu-svg" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span><span class="nav-label">Menu</span>';
+  more.onclick=toggleMore35;
+  nav.appendChild(more);
+  updateMobileActive35(activeView35());
 }
 function activeView35(){return document.querySelector('.view.active')?.id?.replace(/^view-/,'')||'today'}
-function updateMobileActive35(v){document.querySelectorAll('.mobile-nav [data-v35-mobile-view]').forEach(b=>b.classList.toggle('active',b.dataset.v35MobileView===v));document.getElementById('v35-mobile-more')?.classList.toggle('active',!['today','planner','tasks','master-calendar','routine'].includes(v))}
+function updateMobileActive35(v){
+  document.querySelectorAll('.mobile-nav [data-v35-mobile-view]').forEach(b=>b.classList.toggle('active',b.dataset.v35MobileView===v));
+  const more=document.getElementById('v35-mobile-more');
+  const launcher=document.getElementById('v35-page-launcher');
+  const menuOpen=!!launcher?.classList.contains('open');
+  const secondary=!['today','planner','tasks','master-calendar','routine'].includes(v);
+  more?.classList.toggle('active',menuOpen||secondary);
+  if(more){
+    more.setAttribute('aria-expanded',menuOpen?'true':'false');
+    more.setAttribute('aria-label',menuOpen?'Close page menu':'Open page menu');
+  }
+}
 const PAGE_SECTIONS35=[
   ['Plan',[
     ['today','⌂','Today'],['dashboard','⌗','Dashboard'],['inbox','⌁','Inbox'],['planner','▦','Planner'],
@@ -398,8 +417,10 @@ const PAGE_SECTIONS35=[
   ]]
 ];
 function closeMore35(){
-  const m=document.getElementById('v35-page-launcher');if(!m)return;
-  m.classList.remove('open');m.setAttribute('aria-hidden','true');document.body.style.removeProperty('overflow');
+  const m=document.getElementById('v35-page-launcher');
+  if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}
+  document.body.style.removeProperty('overflow');
+  updateMobileActive35(activeView35());
 }
 function renderMore35(m,q=''){
   const body=m.querySelector('.v35-launcher-body'),needle=String(q||'').trim().toLowerCase(),active=activeView35();
@@ -430,6 +451,12 @@ function openMore35(){
   const m=ensureMore35(),search=m.querySelector('.v35-launcher-search');
   search.value='';renderMore35(m,'');
   m.classList.add('open');m.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
+  updateMobileActive35(activeView35());
+}
+function toggleMore35(){
+  const m=ensureMore35();
+  if(m.classList.contains('open')){closeMore35();return}
+  openMore35();
 }
 
 /* ---------- browser-like route history ---------- */

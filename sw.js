@@ -1,6 +1,6 @@
 const CACHE='omnios-v62.3-push-personalization-r1';
 const USER_ASSET_CACHE='omnios-user-assets-v1';
-const CORE=['./','./index.html','./manifest.webmanifest','./icons/icon-192.png'];
+const CORE=['./','./index.html','./manifest.webmanifest','./icons/icon-192.png','./pwa-personalization.js'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();

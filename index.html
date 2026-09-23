@@ -48,8 +48,82 @@ html.omnios-has-boot-icon .omnios-boot-mark img{display:block}
 try{const src=localStorage.getItem('omnios_loading_icon_v1'),img=document.getElementById('omnios-index-boot-icon');if(src&&img){img.src=src;document.documentElement.classList.add('omnios-has-boot-icon')}}catch(_){}
 </script>
 <script>
-(()=>{const PARTS=["./app-parts/part-001.html","./app-parts/part-002.html","./app-parts/part-003.html","./app-parts/part-004.html","./app-parts/part-005.html","./app-parts/part-006.html","./app-parts/part-007.html","./app-parts/part-008.html","./app-parts/part-009.html","./app-parts/part-010.html","./app-parts/part-011.html","./app-parts/part-012.html","./app-parts/part-013.html","./app-parts/part-014.html","./app-parts/part-015.html","./app-parts/part-016.html","./app-parts/part-017.html","./app-parts/part-018.html","./app-parts/part-019.html","./app-parts/part-020.html","./app-parts/part-021.html","./app-parts/part-022.html","./app-parts/part-023.html","./app-parts/part-024.html","./app-parts/part-025.html","./app-parts/part-026.html","./app-parts/part-027.html","./app-parts/part-028.html"],CACHE='omnios-v62.3-push-personalization-r2',fill=document.getElementById('fill'),status=document.getElementById('status');
-async function one(url){try{const r=await fetch(url);if(!r.ok)throw new Error(r.status);try{const c=await caches.open(CACHE);await c.put(url,r.clone())}catch{}return await r.text()}catch(e){const c=await caches.match(url);if(c)return await c.text();throw e}}
-(async()=>{try{const texts=new Array(PARTS.length);let next=0,done=0;const worker=async()=>{while(true){const i=next++;if(i>=PARTS.length)return;texts[i]=await one(PARTS[i]);done++;const pct=Math.round((done/PARTS.length)*100);fill.style.width=pct+'%';status.textContent='Loading '+pct+'%'}};await Promise.all(Array.from({length:Math.min(6,PARTS.length)},worker));const html=texts.join('');document.open();document.write(html);document.close()}catch(e){console.error(e);document.querySelector('.boot')?.classList.add('failed');document.getElementById('error').style.display='block';status.textContent='Load failed'}})()})();
+(()=>{
+const PARTS=["./app-parts/part-001.html","./app-parts/part-002.html","./app-parts/part-003.html","./app-parts/part-004.html","./app-parts/part-005.html","./app-parts/part-006.html","./app-parts/part-007.html","./app-parts/part-008.html","./app-parts/part-009.html","./app-parts/part-010.html","./app-parts/part-011.html","./app-parts/part-012.html","./app-parts/part-013.html","./app-parts/part-014.html","./app-parts/part-015.html","./app-parts/part-016.html","./app-parts/part-017.html","./app-parts/part-018.html","./app-parts/part-019.html","./app-parts/part-020.html","./app-parts/part-021.html","./app-parts/part-022.html","./app-parts/part-023.html","./app-parts/part-024.html","./app-parts/part-025.html","./app-parts/part-026.html","./app-parts/part-027.html","./app-parts/part-028.html"];
+const CACHE='omnios-v62.3-stable-startup-r3';
+const fill=document.getElementById('fill'),status=document.getElementById('status');
+
+async function one(url){
+  try{
+    const r=await fetch(url);
+    if(!r.ok)throw new Error(r.status);
+    try{const cache=await caches.open(CACHE);await cache.put(url,r.clone())}catch(_){}
+    return await r.text();
+  }catch(e){
+    const cached=await caches.match(url);
+    if(cached)return await cached.text();
+    throw e;
+  }
+}
+
+function addRootClass(html,className){
+  return html.replace(/<html([^>]*)>/i,(full,attrs)=>{
+    if(/\bclass\s*=/.test(attrs)){
+      return '<html'+attrs.replace(/\bclass\s*=\s*(["'])(.*?)\1/i,(m,q,v)=>'class='+q+v+' '+className+q)+'>';
+    }
+    return '<html'+attrs+' class="'+className+'">';
+  });
+}
+
+function carryLoaderIntoApp(html){
+  const boot=document.getElementById('omnios-boot-screen');
+  const baseStyle=document.querySelector('head style');
+  if(!boot||!baseStyle)return html;
+
+  const hasIcon=document.documentElement.classList.contains('omnios-has-boot-icon');
+  const rootClasses='omnios-startup-gate'+(hasIcon?' omnios-has-boot-icon':'');
+  const gateCss=`
+<style id="omnios-startup-gate-css">
+${baseStyle.textContent}
+html.omnios-startup-gate body{overflow:hidden!important}
+html.omnios-startup-gate body>*:not(#omnios-boot-screen){visibility:hidden!important;pointer-events:none!important}
+#omnios-boot-screen{background:var(--bg-base,#0f0f11);opacity:1;transition:opacity .18s ease}
+#omnios-boot-screen.is-leaving{opacity:0;pointer-events:none}
+</style>`;
+  const bootHtml=boot.outerHTML;
+  let out=addRootClass(html,rootClasses);
+  out=out.replace(/<\/head>/i,gateCss+'\n</head>');
+  out=out.replace(/<body([^>]*)>/i,(m,attrs)=>'<body'+attrs+'>\n'+bootHtml);
+  return out;
+}
+
+(async()=>{
+  try{
+    const texts=new Array(PARTS.length);
+    let next=0,done=0;
+    const worker=async()=>{
+      while(true){
+        const i=next++;
+        if(i>=PARTS.length)return;
+        texts[i]=await one(PARTS[i]);
+        done++;
+        const pct=Math.round((done/PARTS.length)*100);
+        fill.style.width=pct+'%';
+        status.textContent='Loading '+pct+'%';
+      }
+    };
+    await Promise.all(Array.from({length:Math.min(6,PARTS.length)},worker));
+    const html=carryLoaderIntoApp(texts.join(''));
+    document.open();
+    document.write(html);
+    document.close();
+  }catch(e){
+    console.error(e);
+    document.querySelector('.boot')?.classList.add('failed');
+    document.getElementById('error').style.display='block';
+    status.textContent='Load failed';
+  }
+})();
+})();
 </script>
 </body></html>

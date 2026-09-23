@@ -1746,6 +1746,39 @@ window.addEventListener('pageshow',()=>{if(root.dataset.omniosBoot==='ready')roo
 })();
 </script>
 
+<style id="omnios-v622-bible-meditation-clarity-css">
+/* v62.2 merge: clearer Meditation Scripture with distinct verse numbers. */
+#view-bible .bib-med-passage-v633{
+  margin:12px 0 15px;padding:12px 13px;max-height:300px;overflow:auto;
+  border:1px solid var(--border-color);border-radius:12px;background:var(--bg-base);
+  text-align:left;overscroll-behavior:contain
+}
+#view-bible .bib-med-verse-v633{
+  display:grid;grid-template-columns:30px minmax(0,1fr);gap:9px;align-items:start;
+  padding:7px 0;border-bottom:1px solid color-mix(in srgb,var(--border-color) 72%,transparent)
+}
+#view-bible .bib-med-verse-v633:first-child{padding-top:1px}
+#view-bible .bib-med-verse-v633:last-child{padding-bottom:1px;border-bottom:0}
+#view-bible .bib-med-verse-num-v633{
+  width:26px;height:26px;display:grid;place-items:center;margin-top:1px;
+  border:1px solid color-mix(in srgb,var(--bib-accent,var(--accent-cyan)) 38%,var(--border-color));
+  border-radius:8px;background:color-mix(in srgb,var(--bib-accent,var(--accent-cyan)) 11%,var(--bg-elevated));
+  color:var(--bib-accent,var(--accent-cyan));font:800 .67rem/1 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-variant-numeric:tabular-nums
+}
+#view-bible .bib-med-verse-text-v633{
+  color:var(--text-primary);font-family:Georgia,'Times New Roman',serif;
+  font-size:.96rem;line-height:1.7;letter-spacing:.002em
+}
+html[data-theme="light"] #view-bible .bib-med-passage-v633{background:var(--bg-surface)}
+@media(max-width:760px){
+  #view-bible .bib-med-passage-v633{margin:10px 0 13px;padding:11px;max-height:34dvh}
+  #view-bible .bib-med-verse-v633{grid-template-columns:28px minmax(0,1fr);gap:8px;padding:7px 0}
+  #view-bible .bib-med-verse-num-v633{width:24px;height:24px;font-size:.64rem}
+  #view-bible .bib-med-verse-text-v633{font-size:.94rem;line-height:1.68}
+}
+</style>
+
 <script id="omnios-v622-pwa-register">
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('OmniOS service worker',err)),{once:true})}
 </script>

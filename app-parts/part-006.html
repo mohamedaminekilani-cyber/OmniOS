@@ -346,20 +346,325 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 /* Notes reader */
 .v43-note-reader{padding-top:4px}.v43-note-reader h1{font-size:1.45rem}.v43-note-reader-body{font-size:.83rem;line-height:1.7;margin-top:14px}.v43-note-reader-body h1,.v43-note-reader-body h2,.v43-note-reader-body h3{margin:14px 0 7px}.v43-note-reader-body ul,.v43-note-reader-body ol{padding-left:22px}.v43-note-reader-body blockquote{border-left:3px solid var(--accent-purple);padding-left:10px;color:var(--text-secondary)}.v43-note-meta{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.org-card[data-note-open],.org-row[data-note-open]{cursor:pointer}.org-card[data-note-open]:hover .org-card-title,.org-row[data-note-open]:hover .org-row-title{color:var(--accent-cyan)}.v43-note-edit-btn{margin-left:auto}
 @media(max-width:1100px){.v43-kpis{grid-template-columns:repeat(3,1fr)}.v43-span-8,.v43-span-7,.v43-span-6,.v43-span-5,.v43-span-4{grid-column:span 6}.v43-domain-grid,.v43-record-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.v43-life-shell{grid-template-columns:200px minmax(0,1fr)}}
+@media(max-width:760px){.v43-hero{flex-direction:column;padding:16px}.v43-hero-actions{width:100%;justify-content:flex-start}.v43-hero-actions .btn{flex:1}.v43-kpis{grid-template-columns:repeat(2,1fr)}.v43-grid{grid-template-columns:1fr}.v43-span-8,.v43-span-7,.v43-span-6,.v43-span-5,.v43-span-4{grid-column:auto}.v43-life-shell{display:block}.v43-life-rail{position:static;display:none}.v43-life-select{display:block;width:100%;margin-bottom:10px}.v43-domain-grid,.v43-record-grid{grid-template-columns:1fr}.v43-life-toolbar .search-input{min-width:0;width:100%}.v43-mini-grid{grid-template-columns:1fr 1fr}}
+
+/* v43.1 — Dashboard repair: resilient layout, no missing grid spans */
+.v431-dashboard{min-width:0}
+.v431-dashboard .v43-hero{min-width:0}
+.v431-dashboard .v43-kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.v431-dashboard .v43-kpi{min-height:88px;display:flex;flex-direction:column;justify-content:center}
+.v431-dashboard .v43-kpi-value{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+.v431-kpi-good .v43-kpi-value,.v431-good{color:var(--accent-green)!important}
+.v431-kpi-bad .v43-kpi-value,.v431-bad{color:var(--accent-red)!important}
+.v431-attention{margin-bottom:14px;width:100%}
+.v431-board{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,.85fr);gap:14px;align-items:start;min-width:0}
+.v431-main,.v431-side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.v431-main>.v43-card,.v431-side>.v43-card{width:100%;min-width:0}
+.v431-progress-label{display:flex;justify-content:space-between;gap:8px;margin-top:11px;font-size:.64rem;color:var(--text-muted)}
+.v431-card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.v431-inbox-note{margin-top:9px;padding:8px 10px;border-radius:8px;background:var(--bg-base);border:1px solid var(--border-color);font-size:.64rem;color:var(--text-muted)}
+.v431-area-row{padding:8px 2px;cursor:pointer;border-radius:8px}
+.v431-area-row:hover{background:var(--bg-elevated)}
+.v431-area-head{display:flex;justify-content:space-between;gap:10px;font-size:.69rem;font-weight:650}
+.v431-area-meta{font-size:.58rem;color:var(--text-muted);margin-top:4px}
+.v431-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.v431-detail{min-height:92px;padding:13px;border:1px solid var(--border-color);border-radius:11px;background:var(--bg-base);display:flex;flex-direction:column;justify-content:center}
+.v431-detail strong{font-size:1.35rem;line-height:1.15;overflow-wrap:anywhere}.v431-detail span{font-size:.63rem;color:var(--text-muted);margin-top:5px}.v431-detail.good strong{color:var(--accent-green)}.v431-detail.bad strong{color:var(--accent-red)}
+.v43-span-12{grid-column:1/-1} /* repair the missing legacy span too */
+@media(max-width:1050px){.v431-board{grid-template-columns:1fr}.v431-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.v431-side>.v43-card:last-child:nth-child(odd){grid-column:1/-1}}
+@media(max-width:760px){.v431-dashboard .v43-hero{gap:12px}.v431-hero-actions{display:grid!important;grid-template-columns:1fr 1fr;width:100%}.v431-hero-actions .filter-select{grid-column:1/-1;width:100%}.v431-hero-actions .btn{width:100%;min-width:0}.v431-tabs{margin-inline:-2px;padding-bottom:2px}.v431-dashboard .v43-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.v431-side{display:flex}.v431-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.v431-dashboard .v43-card-head{align-items:flex-start}.v431-dashboard .v43-card-head>.btn{flex:none}.v431-dashboard .v43-row{padding:9px}.v431-dashboard .v43-row-title,.v431-dashboard .v43-row-meta{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}.v431-dashboard .v43-row-title{-webkit-line-clamp:2}.v431-dashboard .v43-row-meta{-webkit-line-clamp:2}}
+@media(max-width:420px){.v431-dashboard .v43-kpis{grid-template-columns:1fr 1fr}.v431-dashboard .v43-kpi{padding:11px;min-height:82px}.v431-dashboard .v43-kpi-value{font-size:1.15rem}.v431-detail-grid{grid-template-columns:1fr 1fr}.v431-hero-actions{grid-template-columns:1fr}.v431-hero-actions .filter-select{grid-column:auto}.v431-dashboard .v43-card{padding:13px}}
+</style>
+<script id="omnios-dashboard-lifehub-js">
+(()=>{
+'use strict';
+const V='43';
+const E=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const arr=v=>Array.isArray(v)?v:[];
+const today=()=>localDateString();
+const atNoon=k=>new Date(String(k||today())+'T12:00:00');
+const dayDiff43=k=>Math.ceil((atNoon(k)-atNoon(today()))/86400000);
+const inRange=(k,r)=>!k?false:(!r.start||k>=r.start)&&(!r.end||k<=r.end);
+const money43=v=>typeof currencyLocal==='function'?currencyLocal(Number(v)||0):'$'+(Number(v)||0).toFixed(2);
+function ensure43(){state.settings=state.settings||{};state.settings.v43=state.settings.v43||{};state.settings.v43.dashboard={period:'week',scope:'all',compact:false,showNotes:true,showLife:true,showWellness:true,...(state.settings.v43.dashboard||{})};state.settings.v43.lifeHub={tab:'overview',q:'',layout:'cards',defaultOverview:true,...(state.settings.v43.lifeHub||{})};state.life=state.life||{};['people','home','health','learning','travel','money','documents','journal','importantDates','vehicles','decisions'].forEach(k=>state.life[k]=arr(state.life[k]));}
+function range43(period){const n=new Date();n.setHours(12,0,0,0);if(period==='today'){const k=localDateString(n);return{start:k,end:k,label:'Today'}}if(period==='month'){return{start:localDateString(new Date(n.getFullYear(),n.getMonth(),1,12)),end:localDateString(new Date(n.getFullYear(),n.getMonth()+1,0,12)),label:n.toLocaleDateString(undefined,{month:'long',year:'numeric'})}}if(period==='all')return{start:null,end:null,label:'All time'};const s=new Date(n),mon=getSetting('calendar.weekStart','sunday')==='monday',off=mon?(n.getDay()+6)%7:n.getDay();s.setDate(n.getDate()-off);const e=new Date(s);e.setDate(s.getDate()+6);return{start:localDateString(s),end:localDateString(e),label:`${s.toLocaleDateString(undefined,{month:'short',day:'numeric'})} – ${e.toLocaleDateString(undefined,{month:'short',day:'numeric'})}`}}
+function dates43(r){if(!r.start||!r.end)return[];const out=[],d=atNoon(r.start),e=atNoon(r.end);for(;d<=e;d.setDate(d.getDate()+1))out.push(localDateString(d));return out}
+function done43(t){return t?.status==='completed'}
+function taskArea43(t){return arr(state.life?.areas).find(a=>String(a.id)===String(t.areaId))?.name||t.context||catLabels?.[t.category]||'Task'}
+function project43(id){return arr(state.life?.projects).find(p=>String(p.id)===String(id))}
+function attention43(){const out=[];arr(state.entries).filter(t=>!done43(t)&&t.date&&t.date<today()).slice(0,6).forEach(t=>out.push({icon:'✓',title:t.title,meta:`Overdue · ${t.date}`,tone:'bad',action:()=>{switchView('tasks');window.showPowerSidebarFor?.('task',t.id)}}));arr(state.bills).filter(x=>x.active!==false&&(x.nextDueDate||x.dueDate)&&dayDiff43(x.nextDueDate||x.dueDate)<=7).slice(0,4).forEach(x=>out.push({icon:'🧾',title:x.name,meta:`${dayDiff43(x.nextDueDate||x.dueDate)<0?'Overdue':'Due '+(x.nextDueDate||x.dueDate)} · ${money43(x.amount)}`,tone:dayDiff43(x.nextDueDate||x.dueDate)<0?'bad':'warn',action:()=>switchView('budget')}));arr(state.life?.people).filter(x=>x.nextFollowUp&&dayDiff43(x.nextFollowUp)<=7).slice(0,3).forEach(x=>out.push({icon:'👥',title:`Follow up with ${x.name}`,meta:x.nextFollowUp,tone:'warn',action:()=>openLife43('people')}));arr(state.life?.documents).filter(x=>x.expiry&&dayDiff43(x.expiry)<=30).slice(0,3).forEach(x=>out.push({icon:'📄',title:x.title,meta:`Expires ${x.expiry}`,tone:'warn',action:()=>openLife43('documents')}));arr(state.pantry).filter(x=>!x.archived&&Number(x.qty||0)<=Number(x.minQty||0)).slice(0,3).forEach(x=>out.push({icon:'▧',title:`Restock ${x.name}`,meta:`${x.qty||0} ${x.unit||''} left`,tone:'warn',action:()=>switchView('pantry')}));return out.slice(0,8)}
+function nextSchedule43(r){const out=[];const end=r.end||localDateString(new Date(Date.now()+7*86400000));arr(state.calendarEvents).forEach(e=>{if(e.date>=today()&&e.date<=end)out.push({date:e.date,time:e.startTime||'All day',title:e.title,icon:e.icon||'●',meta:e.location||e.calendar||'Event',action:()=>{switchView('master-calendar');openCalendarEventModal?.(e.id)}})});arr(state.life?.timeBlocks).forEach(b=>{if(b.date>=today()&&b.date<=end)out.push({date:b.date,time:b.startTime||'',title:b.title||'Time block',icon:'▣',meta:`${b.duration||60} min`,action:()=>{switchView('planner');openBlockModal35?.('', '', b.id)}})});return out.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(0,7)}
+function dashboardData43(){ensure43();const u=state.settings.v43.dashboard,r=range43(u.period),ds=dates43(r),habitDays=ds.filter(k=>k<=today()),tasks=arr(state.entries).filter(t=>u.period==='all'||inRange(t.date,r)),completed=tasks.filter(done43),open=tasks.filter(t=>!done43(t)),focus=Object.entries(state.focusDaily||{}).filter(([k])=>u.period==='all'||inRange(k,r)).reduce((s,[,v])=>s+Number(v||0),0),habitChecks=habitDays.length?arr(state.habits).reduce((s,h)=>s+habitDays.filter(k=>h.log?.[k]).length,0):0,habitPossible=habitDays.length*arr(state.habits).length,tx=arr(state.transactions).filter(x=>x.status!=='pending'&&!x.isTransfer&&(u.period==='all'||inRange(x.date,r))),income=tx.filter(x=>x.type==='income').reduce((s,x)=>s+Number(x.amount||0),0),expense=tx.filter(x=>x.type==='expense').reduce((s,x)=>s+Number(x.amount||0),0),workouts=arr(state.workouts).filter(w=>w.status==='completed'&&(u.period==='all'||inRange(w.date,r))),notes=arr(state.notes).filter(n=>!n.archived),goals=arr(state.goals).filter(g=>!g.archived&&g.status!=='completed'),projects=arr(state.life?.projects).filter(p=>p.status!=='completed'&&p.status!=='archived');return{u,r,ds,tasks,completed,open,focus,habitChecks,habitPossible,tx,income,expense,workouts,notes,goals,projects}}
+function kpi43(label,value,meta){return `<div class="v43-kpi"><div class="v43-kpi-label">${E(label)}</div><div class="v43-kpi-value">${E(value)}</div><div class="v43-kpi-meta">${E(meta||'')}</div></div>`}
+function row43(x){return `<div class="v43-row ${x.action?'clickable':''}" ${x.key?`data-v43-row="${E(x.key)}"`:''}><div class="v43-row-icon">${E(x.icon||'•')}</div><div class="v43-row-main"><div class="v43-row-title">${E(x.title)}</div><div class="v43-row-meta">${E(x.meta||'')}</div></div>${x.badge?`<span class="v43-badge ${x.tone||''}">${E(x.badge)}</span>`:''}</div>`}
+function renderDashboard43(){
+    const sec=document.getElementById('view-dashboard'); if(!sec) return;
+    const d=dashboardData43(),u=d.u,scope=u.scope||'all';
+    const taskRate=d.tasks.length?Math.round(d.completed.length/d.tasks.length*100):0;
+    const habitRate=d.habitPossible?Math.round(d.habitChecks/d.habitPossible*100):0;
+    const net=d.income-d.expense;
+    const att=attention43();
+    const sched=nextSchedule43(d.r);
+    const recentNotes=d.notes.slice().sort((a,b)=>new Date(b.updatedAt||b.date||0)-new Date(a.updatedAt||a.date||0)).slice(0,5);
+    const goals=d.goals.slice().sort((a,b)=>String(a.targetDate||'9999').localeCompare(String(b.targetDate||'9999'))).slice(0,5);
+    const projects=d.projects.slice().sort((a,b)=>String(a.targetDate||'9999').localeCompare(String(b.targetDate||'9999'))).slice(0,5);
+    const allAreas=arr(state.life?.areas);
+    const areaStats=allAreas.map(a=>({
+        id:a.id,name:a.name||'Area',icon:a.icon||'◎',
+        tasks:arr(state.entries).filter(t=>!done43(t)&&String(t.areaId)===String(a.id)).length,
+        projects:d.projects.filter(p=>String(p.areaId)===String(a.id)).length
+    })).sort((a,b)=>(b.tasks+b.projects)-(a.tasks+a.projects)).slice(0,6);
+    const show=k=>scope==='all'||scope===k;
+    sec.classList.add('v431-dashboard');
+
+    const kpis=[];
+    const push=(label,value,meta,tone='')=>kpis.push(`<div class="v43-kpi ${tone?'v431-kpi-'+tone:''}"><div class="v43-kpi-label">${E(label)}</div><div class="v43-kpi-value">${E(value)}</div><div class="v43-kpi-meta">${E(meta||'')}</div></div>`);
+    if(scope==='all'||scope==='productivity'){
+        push('Task completion',taskRate+'%',`${d.completed.length}/${d.tasks.length} in period`);
+        push('Focus',d.focus+'m','protected attention');
+        push('Inbox',String(arr(state.life?.inbox).length),'captures to process');
+    }
+    if(scope==='all'||scope==='wellness'){
+        push('Habit consistency',habitRate+'%',d.habitPossible?`${d.habitChecks}/${d.habitPossible} checks`:'no tracked days');
+        push('Workouts',String(d.workouts.length),'completed sessions');
+    }
+    if(scope==='all'||scope==='finance') push('Cash flow',money43(net),`${money43(d.income)} in · ${money43(d.expense)} out`,net<0?'bad':net>0?'good':'');
+    if(scope==='life'){
+        push('Active goals',String(d.goals.length),'outcomes in progress');
+        push('Active projects',String(d.projects.length),'projects in motion');
+        push('Life areas',String(allAreas.length),'responsibility areas');
+        push('Inbox',String(arr(state.life?.inbox).length),'captures to process');
+    }
+
+    const scheduleHtml=sched.length?sched.map((x,i)=>row43({...x,key:'sched-'+i,meta:`${x.date} · ${x.time}${x.meta?' · '+x.meta:''}`})).join(''):'<div class="v43-empty">Nothing scheduled in this period.</div>';
+    const gpItems=[
+        ...goals.map(g=>({kind:'goal',id:g.id,icon:'🎯',title:g.name||'Goal',meta:g.nextAction?'Next: '+g.nextAction:(g.targetDate?'Due '+g.targetDate:'No next action'),badge:g.targetDate&&dayDiff43(g.targetDate)<=14?'Due soon':'Goal',tone:g.targetDate&&dayDiff43(g.targetDate)<=14?'warn':''})),
+        ...projects.map(p=>({kind:'project',id:p.id,icon:'◇',title:p.name||p.title||'Project',meta:`${p.status||'active'}${p.targetDate?' · '+p.targetDate:''}`,badge:'Project'}))
+    ].slice(0,6);
+    const gpHtml=gpItems.length?gpItems.map((x,i)=>row43({...x,key:'gp-'+i})).join(''):'<div class="v43-empty">No active goals or projects.</div>';
+    const lifeAreasHtml=areaStats.length?areaStats.map(a=>{const total=a.tasks+a.projects,m=Math.max(1,...areaStats.map(x=>x.tasks+x.projects));return `<div class="v431-area-row" data-v431-area="${E(a.id)}"><div class="v431-area-head"><span>${E(a.icon)} ${E(a.name)}</span><span>${total}</span></div><div class="v43-progress"><i style="width:${Math.round(total/m*100)}%"></i></div><div class="v431-area-meta">${a.tasks} task${a.tasks===1?'':'s'} · ${a.projects} project${a.projects===1?'':'s'}</div></div>`}).join(''):'<div class="v43-empty">Create Life Areas to see balance across responsibilities.</div>';
+    const notesHtml=recentNotes.length?recentNotes.map(n=>row43({icon:n.pinned?'★':'✎',title:n.title||'Untitled',meta:`Updated ${new Date(n.updatedAt||n.date||Date.now()).toLocaleDateString()}`,key:'note-'+n.id})).join(''):'<div class="v43-empty">No notes yet.</div>';
+
+    sec.innerHTML=`
+    <div class="v43-hero v431-hero">
+      <div class="v431-hero-main"><div class="v43-kicker">SYSTEM OVERVIEW · ${E(d.r.label)}</div><h3>Dashboard</h3><div class="v43-hero-copy">See pressure, progress and balance across OmniOS. Use <strong>Today</strong> for execution; use Dashboard for the bigger picture.</div></div>
+      <div class="v43-hero-actions v431-hero-actions"><select class="filter-select" id="v43-dash-period" aria-label="Dashboard period"><option value="today">Today</option><option value="week">This week</option><option value="month">This month</option><option value="all">All time</option></select><button type="button" class="btn" id="v43-dash-custom">☷ Customize</button><button type="button" class="btn btn-primary" id="v43-dash-today">Open Today</button></div>
+    </div>
+    <div class="v43-tabs v431-tabs" id="v43-dash-scopes" aria-label="Dashboard scope">${[['all','Overview'],['productivity','Productivity'],['wellness','Wellness'],['finance','Finance'],['life','Life']].map(([k,l])=>`<button type="button" class="v43-tab ${scope===k?'active':''}" data-v43-scope="${k}">${l}</button>`).join('')}</div>
+    <div class="v43-kpis v431-kpis">${kpis.join('')}</div>
+    ${att.length&&(scope==='all'||scope==='life'||scope==='productivity')?`<section class="v43-card v43-attention v431-attention"><div class="v43-card-head"><div><div class="v43-card-title">Attention needed</div><div class="v43-card-sub">Overdue and time-sensitive items that deserve a decision</div></div><button type="button" class="btn btn-sm" data-v43-open="reminders">Attention Center</button></div><div class="v43-list">${att.slice(0,6).map((x,i)=>row43({...x,key:'att-'+i,badge:x.tone==='bad'?'Overdue':'Soon'})).join('')}</div></section>`:''}
+    <div class="v431-board">
+      <div class="v431-main">
+        ${show('productivity')?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Upcoming schedule</div><div class="v43-card-sub">Next commitments and protected time</div></div><button type="button" class="btn btn-sm" data-v43-open="master-calendar">Calendar</button></div><div class="v43-list">${scheduleHtml}</div></section>`:''}
+        ${show('life')&&u.showLife!==false?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Goals & projects</div><div class="v43-card-sub">Outcomes that need sustained attention</div></div><button type="button" class="btn btn-sm" data-v43-open="projects">Projects</button></div><div class="v43-list">${gpHtml}</div></section><section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Life areas</div><div class="v43-card-sub">Where active commitments are concentrated</div></div><button type="button" class="btn btn-sm" data-v43-open="life-hub">Life Hub</button></div>${lifeAreasHtml}</section>`:''}
+        ${show('wellness')&&u.showWellness!==false&&scope==='wellness'?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Wellness details</div><div class="v43-card-sub">A focused view of habits, movement, nutrition and deep work</div></div></div><div class="v431-detail-grid"><div class="v431-detail"><strong>${habitRate}%</strong><span>Habit consistency</span></div><div class="v431-detail"><strong>${d.workouts.length}</strong><span>Completed workouts</span></div><div class="v431-detail"><strong>${d.focus}m</strong><span>Focus time</span></div><div class="v431-detail"><strong>${Object.keys(state.dietLog||{}).filter(k=>u.period==='all'||inRange(k,d.r)).length}</strong><span>Nutrition log days</span></div></div></section>`:''}
+        ${show('finance')&&scope==='finance'?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Finance details</div><div class="v43-card-sub">Cash-flow performance for ${E(d.r.label.toLowerCase())}</div></div><button type="button" class="btn btn-sm" data-v43-open="budget">Open Finance Hub</button></div><div class="v431-detail-grid"><div class="v431-detail good"><strong>${E(money43(d.income))}</strong><span>Income</span></div><div class="v431-detail bad"><strong>${E(money43(d.expense))}</strong><span>Expenses</span></div><div class="v431-detail"><strong>${E(money43(net))}</strong><span>Net cash flow</span></div><div class="v431-detail"><strong>${d.income?Math.round(net/d.income*100):0}%</strong><span>Savings rate</span></div></div></section>`:''}
+      </div>
+      <aside class="v431-side">
+        ${show('productivity')?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Execution pulse</div><div class="v43-card-sub">How work is moving</div></div><button type="button" class="btn btn-sm" data-v43-open="tasks">Tasks</button></div><div class="v43-mini-grid"><div class="v43-metric"><strong>${d.open.length}</strong><span>open tasks</span></div><div class="v43-metric"><strong>${d.completed.length}</strong><span>completed</span></div><div class="v43-metric"><strong>${d.open.filter(t=>t.urgency==='urgent').length}</strong><span>urgent</span></div><div class="v43-metric"><strong>${d.projects.length}</strong><span>active projects</span></div></div><div class="v431-progress-label"><span>Completion</span><span>${taskRate}%</span></div><div class="v43-progress"><i style="width:${Math.min(100,taskRate)}%"></i></div></section>`:''}
+        ${show('wellness')&&u.showWellness!==false&&scope!=='wellness'?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Wellness pulse</div><div class="v43-card-sub">Habits, workouts, nutrition and focus</div></div><button type="button" class="btn btn-sm" data-v43-open="habits">Habits</button></div><div class="v43-mini-grid"><div class="v43-metric"><strong>${habitRate}%</strong><span>habit consistency</span></div><div class="v43-metric"><strong>${d.workouts.length}</strong><span>workouts</span></div><div class="v43-metric"><strong>${d.focus}m</strong><span>focus time</span></div><div class="v43-metric"><strong>${Object.keys(state.dietLog||{}).filter(k=>u.period==='all'||inRange(k,d.r)).length}</strong><span>nutrition days</span></div></div><div class="v431-card-actions"><button type="button" class="btn btn-sm" data-v43-open="workout">Workout</button><button type="button" class="btn btn-sm" data-v43-open="diet">Nutrition</button><button type="button" class="btn btn-sm" data-v43-open="focus">Focus</button></div></section>`:''}
+        ${show('finance')&&scope!=='finance'?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Finance pulse</div><div class="v43-card-sub">Cash flow for ${E(d.r.label.toLowerCase())}</div></div><button type="button" class="btn btn-sm" data-v43-open="budget">Finance Hub</button></div><div class="v43-mini-grid"><div class="v43-metric"><strong class="v431-good">${E(money43(d.income))}</strong><span>income</span></div><div class="v43-metric"><strong class="v431-bad">${E(money43(d.expense))}</strong><span>expenses</span></div><div class="v43-metric"><strong>${E(money43(net))}</strong><span>net cash flow</span></div><div class="v43-metric"><strong>${d.income?Math.round(net/d.income*100):0}%</strong><span>savings rate</span></div></div></section>`:''}
+        ${show('life')&&u.showNotes!==false?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Knowledge & capture</div><div class="v43-card-sub">Recent notes and unprocessed ideas</div></div><button type="button" class="btn btn-sm" data-v43-open="notes">Notes</button></div><div class="v43-list">${notesHtml}</div>${arr(state.life?.inbox).length?`<div class="v431-inbox-note">${arr(state.life.inbox).length} Inbox capture${arr(state.life.inbox).length===1?'':'s'} waiting to be processed.</div>`:''}</section>`:''}
+      </aside>
+    </div>`;
+
+    const period=sec.querySelector('#v43-dash-period'); if(period){period.value=u.period;period.onchange=e=>{u.period=e.target.value;persist43();renderDashboard43()}}
+    sec.querySelectorAll('[data-v43-scope]').forEach(b=>b.onclick=()=>{u.scope=b.dataset.v43Scope;persist43();renderDashboard43()});
+    sec.querySelector('#v43-dash-today')?.addEventListener('click',()=>switchView('today'));
+    sec.querySelector('#v43-dash-custom')?.addEventListener('click',openDashboardOptions43);
+    sec.querySelectorAll('[data-v43-open]').forEach(b=>b.onclick=()=>switchView(b.dataset.v43Open));
+    sec.querySelectorAll('[data-v43-row]').forEach(r=>{
+        const k=r.dataset.v43Row||'';
+        if(k.startsWith('att-')) r.onclick=att[Number(k.slice(4))]?.action;
+        else if(k.startsWith('sched-')) r.onclick=sched[Number(k.slice(6))]?.action;
+        else if(k.startsWith('note-')) r.onclick=()=>openNoteReader43(k.slice(5));
+        else if(k.startsWith('gp-')){
+            const item=gpItems[Number(k.slice(3))];
+            if(item?.kind==='goal') r.onclick=()=>switchView('goals');
+            if(item?.kind==='project') r.onclick=()=>{switchView('projects');openProjectDetail35?.(item.id)};
+        }
+    });
+    sec.querySelectorAll('[data-v431-area]').forEach(r=>r.onclick=()=>openLife43('overview'));
+} 
+function persist43(){try{storage.setItem('omnios_v3_state',JSON.stringify(state))}catch(e){}}
+function openDashboardOptions43(){const u=state.settings.v43.dashboard;const m=modal35('Customize Dashboard',`<div class="settings-row"><div><div class="settings-row-label">Wellness card</div><div class="settings-row-desc">Habits, workouts, nutrition and focus.</div></div><button class="settings-toggle ${u.showWellness!==false?'on':''}" data-v43-opt="showWellness"></button></div><div class="settings-row"><div><div class="settings-row-label">Recent notes</div><div class="settings-row-desc">Knowledge and Inbox snapshot.</div></div><button class="settings-toggle ${u.showNotes!==false?'on':''}" data-v43-opt="showNotes"></button></div><div class="settings-row"><div><div class="settings-row-label">Life overview</div><div class="settings-row-desc">Goals, projects and life areas.</div></div><button class="settings-toggle ${u.showLife!==false?'on':''}" data-v43-opt="showLife"></button></div>`);m.querySelectorAll('[data-v43-opt]').forEach(b=>b.onclick=()=>{const k=b.dataset.v43Opt;u[k]=u[k]===false?true:false;b.classList.toggle('on',u[k]!==false);persist43();renderDashboard43()})}
+/* ---------- Notes: canonical IDs + reading-first UX ---------- */
+let currentOpenNote43=window.openNoteModal;
+function installNoteIdFix43(){const base=currentOpenNote43||window.openNoteModal;if(typeof base!=='function')return;const fixed=function(id=null){if(id!==null&&id!==undefined&&id!==''){const n=arr(state.notes).find(x=>String(x.id)===String(id));if(n)return base(n.id);return base(null)}return base(null)};window.openNoteModal=fixed;try{openNoteModal=fixed}catch(e){};currentOpenNote43=fixed}
+function openNoteReader43(id){const n=arr(state.notes).find(x=>String(x.id)===String(id));if(!n)return window.toast?.('That note is no longer available.');const panel=document.getElementById('inspector-panel'),back=document.getElementById('inspector-backdrop'),content=document.getElementById('inspector-content');if(!panel||!content)return window.openNoteModal(n.id);const links=typeof noteLinks40==='function'?noteLinks40(n):[],backs=typeof backlinks40==='function'?backlinks40(n):[];const plain=n.content||((typeof text40==='function')?text40(n.contentHtml||''):'');content.innerHTML=`<div class="v43-note-reader"><div class="v43-kicker">${E((typeof NOTE_TYPES!=='undefined'&&NOTE_TYPES[n.type])||n.type||'Note')}</div><h1>${E(n.title||'Untitled')}</h1><div class="v43-note-meta">${n.pinned?'<span class="v43-badge warn">★ Pinned</span>':''}${n.favorite?'<span class="v43-badge good">♥ Favorite</span>':''}${arr(n.tags).map(t=>`<span class="v43-badge">#${E(t)}</span>`).join('')}</div><div class="v43-row-meta">Updated ${new Date(n.updatedAt||n.date||Date.now()).toLocaleString()} · ${plain.split(/\s+/).filter(Boolean).length} words</div><div class="v43-note-reader-body">${typeof sanitizeNoteHtml==='function'?sanitizeNoteHtml(n.contentHtml||`<p>${E(n.content||'')}</p>`):(n.contentHtml||`<p>${E(n.content||'')}</p>`)}</div>${links.length||backs.length?`<div class="v43-card" style="margin-top:16px"><div class="v43-card-title">Connections</div>${links.length?`<div class="v43-row-meta" style="margin-top:7px">Links to: ${links.map(x=>E(x.title)).join(', ')}</div>`:''}${backs.length?`<div class="v43-row-meta" style="margin-top:5px">Backlinks: ${backs.map(x=>E(x.title)).join(', ')}</div>`:''}</div>`:''}<div class="calendar-preview-actions" style="margin-top:18px"><button class="btn btn-primary" id="v43-note-edit">✎ Edit note</button><button class="btn" id="v43-note-close">Close</button></div></div>`;panel.classList.add('open');back?.classList.add('active');content.querySelector('#v43-note-edit').onclick=()=>{closeInspector();window.openNoteModal(n.id)};content.querySelector('#v43-note-close').onclick=closeInspector}
+function decorateNotes43(){const sec=document.getElementById('view-notes');if(!sec)return;sec.querySelectorAll('[data-note-open]').forEach(x=>{if(x.dataset.v43Decorated)return;x.dataset.v43Decorated='1';if(x.classList.contains('org-card')){let a=x.querySelector('.org-card-actions');if(a&&!a.querySelector('[data-v43-note-edit]')){const b=document.createElement('button');b.type='button';b.className='btn btn-sm v43-note-edit-btn';b.dataset.v43NoteEdit=x.dataset.noteOpen;b.textContent='✎ Edit';a.appendChild(b)}}});sec.querySelectorAll('[data-v43-note-edit]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();window.openNoteModal(b.dataset.v43NoteEdit)})}
+document.addEventListener('click',e=>{const card=e.target.closest('#view-notes [data-note-open]');if(!card||e.target.closest('button,input,select,textarea,a'))return;let view='cards';try{view=state.organizeV40?.prefs?.notes?.view||'cards'}catch(_){ }if(view==='split')return;e.preventDefault();e.stopImmediatePropagation();openNoteReader43(card.dataset.noteOpen)},true);
+/* ---------- Life Hub ---------- */
+const LIFE43={
+ people:{label:'People',icon:'👥',group:'Relationships',copy:'Contacts, birthdays and follow-ups that keep relationships from becoming passive.'},
+ health:{label:'Health',icon:'♥',group:'Wellbeing',copy:'A lightweight timeline of sleep, mood, energy, hydration and body measurements.'},
+ home:{label:'Home',icon:'⌂',group:'Home & Admin',copy:'Maintenance, appliances, warranties, services and household responsibilities.'},
+ documents:{label:'Documents',icon:'▤',group:'Home & Admin',copy:'Important records, references, expiry and renewal dates.'},
+ admin:{label:'Administration',icon:'⌘',group:'Home & Admin',copy:'Important dates, vehicles and decision history.'},
+ learning:{label:'Education',icon:'🎓',group:'Growth',copy:'Courses, books, certifications and skills currently moving forward.'},
+ travel:{label:'Travel',icon:'✈',group:'Growth',copy:'Upcoming trips, budgets, packing and itinerary information.'},
+ money:{label:'Money',icon:'$',group:'Money',copy:'Assets, debt and subscriptions that sit outside day-to-day transactions.'},
+ journal:{label:'Journal',icon:'✎',group:'Reflection',copy:'Personal reflections and life timeline entries.'},
+ automations:{label:'Automations',icon:'⚙',group:'System',copy:'Local rules connecting parts of your personal operating system.'}
+};
+const groups43=['Relationships','Wellbeing','Home & Admin','Growth','Money','Reflection','System'];
+function lifeCount43(k){if(k==='admin')return arr(state.life?.importantDates).length+arr(state.life?.vehicles).length+arr(state.life?.decisions).length;if(k==='automations')return Object.values(state.life?.automation||{}).filter(Boolean).length;return arr(state.life?.[k]).length}
+function lifeAttention43(k){if(k==='people')return arr(state.life.people).filter(x=>x.nextFollowUp&&dayDiff43(x.nextFollowUp)<=7).length;if(k==='home')return arr(state.life.home).filter(x=>(x.maintenanceDue&&dayDiff43(x.maintenanceDue)<=30)||(x.warrantyExpiry&&dayDiff43(x.warrantyExpiry)<=30)).length;if(k==='documents')return arr(state.life.documents).filter(x=>x.expiry&&dayDiff43(x.expiry)<=60).length;if(k==='learning')return arr(state.life.learning).filter(x=>String(x.status).toLowerCase()==='in progress'&&x.targetDate&&dayDiff43(x.targetDate)<=30).length;if(k==='travel')return arr(state.life.travel).filter(x=>x.startDate&&dayDiff43(x.startDate)>=0&&dayDiff43(x.startDate)<=60).length;if(k==='money')return arr(state.life.money).filter(x=>x.renewalDate&&dayDiff43(x.renewalDate)<=14).length;if(k==='admin')return [...arr(state.life.importantDates),...arr(state.life.vehicles)].filter(x=>{const d=x.date||x.maintenanceDue||x.insuranceExpiry||x.registrationExpiry;return d&&dayDiff43(d)<=30}).length;return 0}
+function lifeRecordText43(type,x){return [recordTitle35?.(type,x),recordMeta35?.(type,x),x.notes,x.body,x.location,x.type,x.status,x.category].filter(Boolean).join(' ').toLowerCase()}
+function lifeMeta43(type,x){if(type==='people')return [x.email||x.phone,x.nextFollowUp?'Follow-up '+x.nextFollowUp:'',x.birthday?'Birthday '+x.birthday:''].filter(Boolean).join(' · ');if(type==='home')return [x.type,x.location,x.maintenanceDue?'Maintenance '+x.maintenanceDue:'',x.warrantyExpiry?'Warranty '+x.warrantyExpiry:''].filter(Boolean).join(' · ');if(type==='health')return [x.date,x.mood,x.sleep?`${x.sleep}h sleep`:'',x.energy?`Energy ${x.energy}/10`:'',x.weight?`${x.weight} kg`:''].filter(Boolean).join(' · ');if(type==='learning')return [x.type,x.status,x.progress!==''&&x.progress!=null?`${x.progress}%`:'',x.targetDate?`Target ${x.targetDate}`:''].filter(Boolean).join(' · ');if(type==='travel')return [x.startDate&&x.endDate?`${x.startDate} → ${x.endDate}`:x.startDate,x.budget?money43(x.budget):''].filter(Boolean).join(' · ');if(type==='money')return [x.kind,x.amount!==''&&x.amount!=null?money43(x.amount):'',x.renewalDate?`Due ${x.renewalDate}`:''].filter(Boolean).join(' · ');if(type==='documents')return [x.category,x.expiry?`Expires ${x.expiry}`:'',x.reference].filter(Boolean).join(' · ');if(type==='journal')return [x.date,x.mood].filter(Boolean).join(' · ');return recordMeta35?.(type,x)||''}
+function lifeRecords43(tab){if(tab==='admin')return[];if(tab==='automations')return[];const q=(state.settings.v43.lifeHub.q||'').trim().toLowerCase();let a=arr(state.life?.[tab]);if(q)a=a.filter(x=>lifeRecordText43(tab,x).includes(q));return a.slice().sort((a,b)=>String(b.date||b.startDate||b.targetDate||b.nextFollowUp||b.createdAt||'').localeCompare(String(a.date||a.startDate||a.targetDate||a.nextFollowUp||a.createdAt||'')))}
+let lifeDirect43=null;function openLife43(tab){ensure43();lifeDirect43=tab;state.settings.v43.lifeHub.tab=tab;state.settings.v35=state.settings.v35||{};if(tab!=='overview')state.settings.v35.lifeTab=tab;persist43();switchView('life-hub');setTimeout(renderLife43,0)}
+function lifeRail43(tab){return `<aside class="v43-life-rail"><button class="v43-life-btn ${tab==='overview'?'active':''}" data-v43-life="overview"><span>◎</span><span>Overview</span></button>${groups43.map(g=>`<div class="v43-life-rail-title">${E(g)}</div>${Object.entries(LIFE43).filter(([,v])=>v.group===g).map(([k,v])=>`<button class="v43-life-btn ${tab===k?'active':''}" data-v43-life="${k}"><span>${v.icon}</span><span>${E(v.label)}</span>${lifeAttention43(k)?'<span class="alert" title="Needs attention"></span>':`<span class="count">${lifeCount43(k)}</span>`}</button>`).join('')}`).join('')}</aside>`}
+function lifeSelect43(tab){return `<select class="form-select v43-life-select" id="v43-life-select"><option value="overview">Overview</option>${Object.entries(LIFE43).map(([k,v])=>`<option value="${k}" ${tab===k?'selected':''}>${E(v.label)}</option>`).join('')}</select>`}
+function renderLifeOverview43(host){const cards=Object.entries(LIFE43).filter(([k])=>k!=='automations').map(([k,v])=>{const count=lifeCount43(k),a=lifeAttention43(k);let meta=`${count} record${count===1?'':'s'}`;if(k==='health'){const x=arr(state.life.health).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];if(x)meta=`Latest: ${x.mood||'—'}${x.sleep?' · '+x.sleep+'h sleep':''}`;}if(k==='money'){const assets=arr(state.life.money).filter(x=>['Account','Asset'].includes(x.kind)).reduce((s,x)=>s+Number(x.amount||0),0),debt=arr(state.life.money).filter(x=>x.kind==='Debt').reduce((s,x)=>s+Number(x.amount||0),0);meta=`Net ${money43(assets-debt)} · ${count} records`}if(k==='journal'){const x=arr(state.life.journal)[0];if(x)meta=`Latest ${x.date||''} · ${x.mood||''}`;}return `<article class="v43-domain" data-v43-life="${k}"><div class="v43-domain-icon">${v.icon}</div><div class="v43-domain-title">${E(v.label)}</div><div class="v43-domain-meta">${E(v.copy)}</div><div class="v43-domain-foot"><span class="v43-badge">${E(meta)}</span>${a?`<span class="v43-badge warn">${a} need attention</span>`:''}</div></article>`}).join('');const urgent=[];Object.keys(LIFE43).forEach(k=>{if(lifeAttention43(k))urgent.push({k,n:lifeAttention43(k),...LIFE43[k]})});host.innerHTML=`${urgent.length?`<div class="v43-card v43-attention" style="margin-bottom:12px"><div class="v43-card-head"><div><div class="v43-card-title">Life administration needing attention</div><div class="v43-card-sub">Follow-ups, renewals and upcoming responsibilities</div></div></div><div class="v43-list">${urgent.map(x=>`<div class="v43-row clickable" data-v43-life="${x.k}"><div class="v43-row-icon">${x.icon}</div><div class="v43-row-main"><div class="v43-row-title">${E(x.label)}</div><div class="v43-row-meta">${x.n} upcoming item${x.n===1?'':'s'}</div></div><span class="v43-badge warn">Review</span></div>`).join('')}</div></div>`:''}<div class="v43-domain-grid">${cards}</div>`}
+function renderAdmin43(host){
+  const defs=[['importantDates','Important dates','⏳'],['vehicles','Vehicles','🚗'],['decisions','Decision log','◆']];
+  host.innerHTML=`<div class="v43-record-grid">${defs.map(([k,l,i])=>`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">${i} ${l}</div><div class="v43-card-sub">${arr(state.life[k]).length} records</div></div><button class="btn btn-sm" data-v43-admin-add="${k}">+ Add</button></div><div class="v43-list">${arr(state.life[k]).map(x=>`<div class="v43-row v35-admin-row" data-v35-record="${k}|${E(x.id)}"><div class="v43-row-main"><div class="v43-row-title">${E(recordTitle35(k,x))}</div><div class="v43-row-meta">${E(lifeMeta43(k,x)||x.date||'')}</div></div><div class="v35-record-actions"><button class="btn btn-sm" type="button" data-v43-record-open="${k}|${E(x.id)}">Open</button><button class="icon-btn" type="button" data-v43-record-edit="${k}|${E(x.id)}" aria-label="Edit">✎</button><button class="icon-btn v35-life-delete" type="button" data-v43-record-delete="${k}|${E(x.id)}" aria-label="Delete">✕</button></div></div>`).join('')||'<div class="v43-empty">Nothing recorded.</div>'}</div></section>`).join('')}</div>`;
+  host.querySelectorAll('[data-v43-admin-add]').forEach(b=>b.onclick=()=>openRecordModal35(b.dataset.v43AdminAdd));
+  host.querySelectorAll('[data-v35-record]').forEach(c=>c.onclick=e=>{if(e.target.closest('button'))return;const[t,id]=c.dataset.v35Record.split('|');openRecordDetail35(t,id)});
+  host.querySelectorAll('[data-v43-record-open]').forEach(b=>b.onclick=e=>{e.stopPropagation();const[t,id]=b.dataset.v43RecordOpen.split('|');openRecordDetail35(t,id)});
+  host.querySelectorAll('[data-v43-record-edit]').forEach(b=>b.onclick=e=>{e.stopPropagation();const[t,id]=b.dataset.v43RecordEdit.split('|');openRecordModal35(t,id)});
+  host.querySelectorAll('[data-v43-record-delete]').forEach(b=>b.onclick=e=>{e.stopPropagation();const[t,id]=b.dataset.v43RecordDelete.split('|');deleteLifeRecord35(t,id)});
+}
+function renderAuto43(host){
+  if(typeof window.renderAutomations35==='function')return window.renderAutomations35(host);
+  const a=state.life.automation||{};
+  host.innerHTML=`<div class="v43-card"><div class="v43-card-title">Automations</div><div class="v43-card-sub">Automation editor is unavailable.</div></div>`;
+}
+function renderLifeSection43(host,tab){const def=LIFE43[tab],records=lifeRecords43(tab);if(tab==='admin')return renderAdmin43(host);if(tab==='automations')return renderAuto43(host);let lead='';if(tab==='health'){const latest=records[0];lead=`<div class="v43-kpis">${kpi43('Logs',records.length,'health check-ins')}${kpi43('Latest mood',latest?.mood||'—',latest?.date||'no recent log')}${kpi43('Sleep',latest?.sleep?latest.sleep+'h':'—','latest entry')}${kpi43('Energy',latest?.energy?latest.energy+'/10':'—','latest entry')}</div>`}else if(tab==='people'){lead=`<div class="v43-kpis">${kpi43('People',records.length,'saved contacts')}${kpi43('Follow-ups',lifeAttention43('people'),'next 7 days')}${kpi43('With email',records.filter(x=>x.email).length,'reachable contacts')}${kpi43('Birthdays',records.filter(x=>x.birthday).length,'tracked')}</div>`}else if(tab==='learning'){lead=`<div class="v43-kpis">${kpi43('Items',records.length,'learning records')}${kpi43('In progress',records.filter(x=>String(x.status).toLowerCase()==='in progress').length,'active')}${kpi43('Completed',records.filter(x=>String(x.status).toLowerCase()==='completed').length,'finished')}${kpi43('Due soon',lifeAttention43('learning'),'next 30 days')}</div>`}else if(tab==='money'){const assets=records.filter(x=>['Account','Asset'].includes(x.kind)).reduce((s,x)=>s+Number(x.amount||0),0),debt=records.filter(x=>x.kind==='Debt').reduce((s,x)=>s+Number(x.amount||0),0);lead=`<div class="v43-kpis">${kpi43('Net worth',money43(assets-debt),'hub records')}${kpi43('Assets',money43(assets),'accounts + assets')}${kpi43('Debt',money43(debt),'recorded debt')}${kpi43('Renewals',lifeAttention43('money'),'next 14 days')}</div>`}else{lead=`<div class="v43-kpis">${kpi43(def.label,records.length,'records')}${kpi43('Needs attention',lifeAttention43(tab),'upcoming')}${kpi43('With notes',records.filter(x=>x.notes||x.body).length,'documented')}${kpi43('Recently added',records.filter(x=>x.createdAt&&Date.now()-new Date(x.createdAt)<30*86400000).length,'last 30 days')}</div>`}
+host.innerHTML=`${lead}<div class="v43-section-head"><div><div class="v43-section-title">${def.icon} ${E(def.label)}</div><div class="v43-section-copy">${E(def.copy)}</div></div><button class="btn btn-primary" id="v43-life-add">+ Add ${E(def.label.replace(/s$/,''))}</button></div><div class="v43-record-grid">${records.map(x=>`<article class="v43-record v35-record-card" data-v35-record="${tab}|${E(x.id)}"><div class="v35-record-card-main"><div class="v43-record-top"><div class="v43-record-icon">${def.icon}</div><div class="v43-record-main"><div class="v43-record-title">${E(recordTitle35(tab,x))}</div><div class="v43-record-meta">${E(lifeMeta43(tab,x)||'')}</div></div></div>${x.notes||x.body?`<div class="v43-record-note">${E(x.notes||x.body)}</div>`:''}</div><div class="v35-record-actions"><button type="button" class="btn btn-sm" data-v43-record-open="${tab}|${E(x.id)}">Open</button><button type="button" class="icon-btn" data-v43-record-edit="${tab}|${E(x.id)}" aria-label="Edit ${E(recordTitle35(tab,x))}">✎</button><button type="button" class="icon-btn v35-life-delete" data-v43-record-delete="${tab}|${E(x.id)}" aria-label="Delete ${E(recordTitle35(tab,x))}">✕</button></div></article>`).join('')||`<div class="v43-empty" style="grid-column:1/-1">No ${E(def.label.toLowerCase())} records match this view.</div>`}</div>`;
+host.querySelector('#v43-life-add').onclick=()=>openRecordModal35(tab);
+host.querySelectorAll('[data-v35-record]').forEach(c=>c.onclick=e=>{if(e.target.closest('button'))return;const[t,id]=c.dataset.v35Record.split('|');openRecordDetail35(t,id)});
+host.querySelectorAll('[data-v43-record-open]').forEach(b=>b.onclick=e=>{e.stopPropagation();const[t,id]=b.dataset.v43RecordOpen.split('|');openRecordDetail35(t,id)});
+host.querySelectorAll('[data-v43-record-edit]').forEach(b=>b.onclick=e=>{e.stopPropagation();const[t,id]=b.dataset.v43RecordEdit.split('|');openRecordModal35(t,id)});
+host.querySelectorAll('[data-v43-record-delete]').forEach(b=>b.onclick=e=>{e.stopPropagation();const[t,id]=b.dataset.v43RecordDelete.split('|');deleteLifeRecord35(t,id)});
+}
+function renderLife43(){ensure43();const el=document.getElementById('view-life-hub');if(!el)return;const u=state.settings.v43.lifeHub,tab=u.tab||'overview';el.innerHTML=`<div class="v43-hero"><div><div class="v43-kicker">PERSONAL OPERATING SYSTEM</div><h3>Life Hub</h3><div class="v43-hero-copy">Lower-frequency parts of life deserve structure without crowding daily planning. Review the overview, then work inside a focused domain when something needs attention.</div></div><div class="v43-hero-actions"><button class="btn" id="v43-life-overview">◎ Overview</button>${tab!=='overview'?`<button class="btn btn-primary" id="v43-life-quick-add">+ Add</button>`:''}</div></div>${lifeSelect43(tab)}<div class="v43-life-shell">${lifeRail43(tab)}<main class="v43-life-main"><div class="v43-life-toolbar"><input class="search-input" id="v43-life-search" placeholder="Search current life domain…" value="${E(u.q||'')}">${tab!=='overview'?`<span class="v43-badge">${lifeCount43(tab)} records</span>${lifeAttention43(tab)?`<span class="v43-badge warn">${lifeAttention43(tab)} need attention</span>`:''}`:''}</div><div id="v43-life-content"></div></main></div>`;const host=el.querySelector('#v43-life-content');if(tab==='overview')renderLifeOverview43(host);else renderLifeSection43(host,tab);el.querySelectorAll('[data-v43-life]').forEach(b=>b.onclick=()=>{u.tab=b.dataset.v43Life;u.q='';if(u.tab!=='overview'){state.settings.v35=state.settings.v35||{};state.settings.v35.lifeTab=u.tab}persist43();renderLife43()});el.querySelector('#v43-life-select')?.addEventListener('change',e=>{u.tab=e.target.value;u.q='';persist43();renderLife43()});el.querySelector('#v43-life-overview').onclick=()=>{u.tab='overview';u.q='';persist43();renderLife43()};el.querySelector('#v43-life-quick-add')?.addEventListener('click',()=>lifeAdd35(tab));const search=el.querySelector('#v43-life-search');search.oninput=e=>{u.q=e.target.value;if(tab!=='overview')renderLifeSection43(host,tab)};if(tab==='overview'){search.placeholder='Filter life domains…';search.oninput=e=>{const q=e.target.value.trim().toLowerCase();el.querySelectorAll('.v43-domain').forEach(c=>c.style.display=!q||c.textContent.toLowerCase().includes(q)?'':'none')}};}
+function openLifeOptions43(){const u=state.settings.v43.lifeHub;const m=modal35('Customize Life Hub',`<div class="settings-row"><div><div class="settings-row-label">Default section</div><div class="settings-row-desc">Where Life Hub opens after launch.</div></div><select class="form-select" id="v43-life-default"><option value="overview">Overview</option>${Object.entries(LIFE43).map(([k,v])=>`<option value="${k}">${E(v.label)}</option>`).join('')}</select></div><div class="settings-row"><div><div class="settings-row-label">Overview first</div><div class="settings-row-desc">Use Overview as the default high-level life administration screen.</div></div><button class="settings-toggle ${u.defaultOverview!==false?'on':''}" id="v43-life-overview-default"></button></div>`);const sel=m.querySelector('#v43-life-default');sel.value=u.defaultOverview===false?(u.defaultTab||'people'):'overview';sel.onchange=()=>{if(sel.value==='overview'){u.defaultOverview=true}else{u.defaultOverview=false;u.defaultTab=sel.value}persist43()};m.querySelector('#v43-life-overview-default').onclick=e=>{u.defaultOverview=u.defaultOverview===false?true:false;e.currentTarget.classList.toggle('on',u.defaultOverview!==false);persist43()}}
+const prevV34Customizer43=window.openViewCustomizerV34;window.openViewCustomizerV34=function(view){if(view==='dashboard')return openDashboardOptions43();return typeof prevV34Customizer43==='function'?prevV34Customizer43(view):undefined};
+const prevV35Customizer43=typeof openV35Customizer==='function'?openV35Customizer:null;const customV35_43=function(view){if(view==='life-hub')return openLifeOptions43();return prevV35Customizer43?prevV35Customizer43(view):undefined};try{openV35Customizer=customV35_43;window.openV35Customizer=customV35_43}catch(e){window.openV35Customizer=customV35_43}
+/* expose/override */
+ensure43();installNoteIdFix43();
+const baseRenderNotes43=typeof renderNotes40==='function'?renderNotes40:null;if(baseRenderNotes43){const wrapped=function(){const r=baseRenderNotes43.apply(this,arguments);setTimeout(decorateNotes43,0);return r};try{renderNotes40=wrapped}catch(e){};}
+try{renderDashboard=renderDashboard43;window.renderDashboard=renderDashboard43}catch(e){window.renderDashboard=renderDashboard43}
+try{renderLife35=renderLife43;window.renderLife35=renderLife43}catch(e){window.renderLife35=renderLife43}
+const prevSwitch43=window.switchView;window.switchView=function(target){const before=document.querySelector('.view.active')?.id?.replace(/^view-/,'')||'';if(target==='life-hub'&&before!=='life-hub'){ensure43();const u=state.settings.v43.lifeHub;if(lifeDirect43){u.tab=lifeDirect43;lifeDirect43=null}else u.tab=u.defaultOverview===false?(u.defaultTab||'people'):'overview'}const r=prevSwitch43.apply(this,arguments);setTimeout(()=>{if(target==='dashboard')renderDashboard43();if(target==='life-hub')renderLife43();if(target==='notes')decorateNotes43()},0);return r};
+function init43(){ensure43();installNoteIdFix43();renderDashboard43();if(document.getElementById('view-life-hub')?.classList.contains('active'))renderLife43();decorateNotes43();document.documentElement.dataset.omniosVersion='43'}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init43,{once:true});else queueMicrotask(init43);
+})();
+</script>
+
+
+<style id="omnios-header-assistant-ui-css">
+/* Canonical OmniOS header + Assistant */
+:root{--omni-header-h:56px}
+.topbar{
+  box-sizing:border-box!important;
+  min-height:var(--omni-header-h)!important;height:var(--omni-header-h)!important;
+  display:flex!important;align-items:center!important;gap:8px!important;
+  padding:0 16px!important;
+  background:color-mix(in srgb,var(--bg-surface) 96%,transparent)!important;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)
+}
+.v35-topbar-nav{display:flex!important;align-items:center!important;gap:3px!important;flex:0 0 auto!important}
+.v35-topbar-icon{
+  width:34px!important;min-width:34px!important;height:34px!important;padding:0!important;
+  justify-content:center!important;border-radius:9px!important
+}
+.topbar-title{
+  flex:1 1 auto!important;min-width:0!important;max-width:none!important;
+  font-size:.98rem!important;font-weight:720!important;white-space:nowrap!important;
+  overflow:hidden!important;text-overflow:ellipsis!important;letter-spacing:-.015em!important
+}
+.topbar-actions{
+  display:flex!important;align-items:center!important;justify-content:flex-end!important;
+  gap:5px!important;flex:0 0 auto!important;width:auto!important;min-width:0!important
+}
+#settings-topbar-btn,#context-view-btn,#v35-redo-btn,#v35-history-btn,#v35-db-status-btn,
+#power-search-wrap,#save-status,#omni-assistant-launcher,#v35-mobile-add,#v35-mobile-actions,
+#v432-header-assistant{display:none!important}
+#v35-undo-btn,#mobile-search-v33,#global-add-btn,#v432-header-more{display:inline-flex!important}
+#v35-undo-btn,#mobile-search-v33,#v432-header-more{
+  width:36px!important;min-width:36px!important;height:36px!important;padding:0!important;
+  justify-content:center!important;border-radius:9px!important
+}
+#global-add-btn{
+  height:36px!important;min-height:36px!important;padding:0 12px!important;
+  border-radius:9px!important;font-size:.75rem!important;white-space:nowrap!important
+}
+#global-add-btn::after{content:none!important}
+
+#v432-header-menu{
+  position:fixed;z-index:1960;width:270px;max-width:calc(100vw - 20px);padding:7px;
+  background:color-mix(in srgb,var(--bg-surface) 97%,transparent);
+  border:1px solid var(--border-light);border-radius:14px;
+  box-shadow:0 20px 60px rgba(0,0,0,.38);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);display:none
+}
+#v432-header-menu.open{display:block}
+.v432-menu-status{padding:8px 9px 7px;font-size:.62rem;color:var(--text-muted);border-bottom:1px solid var(--border-color);margin-bottom:4px;display:flex;align-items:center;gap:7px}
+.v432-menu-dot{width:7px;height:7px;border-radius:50%;background:var(--accent-green);flex:none}
+.v432-menu-dot.error{background:var(--accent-red)}
+.v432-menu-btn{width:100%;min-height:38px;display:flex;align-items:center;gap:10px;padding:7px 9px;border:0;border-radius:9px;background:transparent;color:var(--text-primary);font:inherit;font-size:.73rem;cursor:pointer;text-align:left}
+.v432-menu-btn:hover{background:var(--bg-elevated)}
+.v432-menu-btn:disabled{opacity:.38;cursor:not-allowed;background:transparent}
+.v432-menu-icon{width:20px;text-align:center;color:var(--text-secondary);font-size:.9rem}
+.v432-menu-shortcut{margin-left:auto;color:var(--text-muted);font-size:.58rem}
+.v432-menu-sep{height:1px;background:var(--border-color);margin:4px 5px}
+
+#v432-assistant-fab{
+  position:fixed;right:18px;bottom:18px;width:52px!important;height:52px!important;
+  min-width:52px!important;min-height:52px!important;max-width:52px!important;max-height:52px!important;
+  padding:0!important;margin:0!important;border:0!important;background:transparent!important;
+  box-shadow:none!important;border-radius:50%!important;box-sizing:border-box!important;
+  display:grid!important;place-items:center!important;overflow:visible!important;pointer-events:auto!important;
+  touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important;
+  appearance:none!important;isolation:isolate!important;z-index:2147483000!important
+}
+#v432-assistant-fab::before{
+  content:"";position:absolute;inset:5px;border-radius:50%;
+  border:1px solid color-mix(in srgb,var(--accent-cyan) 62%,transparent);
+  background:linear-gradient(145deg,color-mix(in srgb,var(--accent-cyan) 96%,white 4%),color-mix(in srgb,var(--accent-cyan) 72%,#0f172a 28%));
+  box-shadow:0 9px 26px rgba(6,182,212,.24),0 3px 12px rgba(0,0,0,.28);
+  z-index:-1;pointer-events:none;transition:transform .16s ease,box-shadow .16s ease,background .16s ease
+}
+#v432-assistant-fab:hover::before{transform:translateY(-1px) scale(1.025);box-shadow:0 12px 32px rgba(6,182,212,.3),0 4px 14px rgba(0,0,0,.3)}
+#v432-assistant-fab:active::before{transform:scale(.95)}
+#v432-assistant-fab[aria-expanded="true"]::before{background:var(--bg-elevated);border-color:var(--border-light);box-shadow:0 8px 24px rgba(0,0,0,.32)}
+#v432-assistant-fab>*{pointer-events:none!important}
+#v432-assistant-fab svg{position:relative;z-index:2;width:17px!important;height:17px!important}
+#v432-assistant-fab .v432-fab-dot{position:absolute;z-index:3;right:7px;top:7px;width:8px;height:8px;border-radius:50%;background:var(--accent-green);border:1.5px solid var(--bg-base)}
+
+#omni-assistant-backdrop{display:none!important}
+.omni-assistant-panel{
+  z-index:2147482990!important;top:auto!important;left:auto!important;right:22px!important;bottom:74px!important;
+  width:min(420px,calc(100vw - 44px))!important;height:min(640px,calc(100dvh - 118px))!important;
+  border:1px solid var(--border-light)!important;border-radius:19px!important;overflow:hidden!important;
+  box-shadow:0 24px 72px rgba(0,0,0,.42)!important;
+  transform:translateY(14px) scale(.975)!important;transform-origin:bottom right!important;
+  opacity:0!important;pointer-events:none!important;transition:transform .18s ease,opacity .18s ease!important
+}
+.omni-assistant-panel.open{transform:translateY(0) scale(1)!important;opacity:1!important;pointer-events:auto!important}
+.omni-assistant-head{padding:13px 14px!important;background:color-mix(in srgb,var(--bg-elevated) 65%,var(--bg-surface))}
+.omni-assistant-mark{width:31px!important;height:31px!important;border-radius:9px!important}
+.omni-assistant-head h3{font-size:.86rem!important}
+.omni-assistant-head p{font-size:.62rem!important}
+.omni-assistant-messages{padding:14px!important;gap:10px!important}
+.omni-assistant-composer{padding:10px!important}
+.omni-assistant-input-wrap{border-radius:13px!important}
+.omni-assistant-suggestions{max-height:72px;overflow:auto;scrollbar-width:thin}
+
 @media(max-width:760px){
   :root{--omni-header-h:52px}
 
-  /* One canonical mobile app bar. */
   .topbar{
-    display:flex!important;
-    grid-template-columns:none!important;
-    grid-template-rows:none!important;
+    box-sizing:border-box!important;
+    display:flex!important;grid-template-columns:none!important;grid-template-rows:none!important;
     align-items:center!important;
     min-height:calc(var(--omni-header-h) + env(safe-area-inset-top))!important;
-    height:auto!important;
+    height:calc(var(--omni-header-h) + env(safe-area-inset-top))!important;
     padding:env(safe-area-inset-top) 8px 0!important;
-    gap:5px!important;
-    overflow:visible!important;
+    gap:4px!important;overflow:visible!important;
     border-bottom:1px solid color-mix(in srgb,var(--border-color) 68%,transparent)!important;
     background:color-mix(in srgb,var(--bg-surface) 96%,transparent)!important;
     backdrop-filter:blur(18px) saturate(1.12)!important;
@@ -367,36 +672,30 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     box-shadow:0 5px 18px rgba(0,0,0,.08)!important
   }
 
-  .v35-topbar-nav{
-    display:flex!important;align-items:center!important;gap:0!important;flex:0 0 auto!important
-  }
+  .v35-topbar-nav{display:flex!important;align-items:center!important;gap:0!important;flex:0 0 auto!important}
   #v35-back-btn{
     display:inline-grid!important;place-items:center!important;
     width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;
-    padding:0!important;border-radius:10px!important;
-    background:transparent!important;border-color:transparent!important;
-    font-size:1.05rem!important
+    padding:0!important;border-radius:10px!important;background:transparent!important;
+    border-color:transparent!important;font-size:1.04rem!important
   }
-  #v35-back-btn:not(:disabled):active{background:var(--bg-elevated)!important}
   #v35-forward-btn{display:none!important}
 
   .topbar-title{
     display:block!important;position:static!important;
-    flex:1 1 auto!important;min-width:0!important;max-width:none!important;
-    height:auto!important;margin:0!important;padding:0 4px!important;
-    font-size:.9rem!important;font-weight:780!important;line-height:1.2!important;
-    letter-spacing:-.018em!important;
-    white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important
+    flex:1 1 auto!important;min-width:0!important;max-width:none!important;height:auto!important;
+    margin:0!important;padding:0 3px!important;
+    font-size:.89rem!important;font-weight:780!important;line-height:1.2!important;
+    letter-spacing:-.018em!important;white-space:nowrap!important;
+    overflow:hidden!important;text-overflow:ellipsis!important
   }
   .topbar-title::before,.topbar-title::after{content:none!important;display:none!important}
 
   .topbar-actions{
     display:flex!important;align-items:center!important;justify-content:flex-end!important;
-    flex:0 0 auto!important;width:auto!important;min-width:0!important;
-    min-height:0!important;gap:3px!important
+    flex:0 0 auto!important;width:auto!important;min-width:0!important;min-height:0!important;gap:3px!important
   }
 
-  /* Old mobile action systems must not compete with this bar. */
   #mobile-search-v33,#v35-undo-btn,#v35-redo-btn,#v35-history-btn,#v35-db-status-btn,
   #v35-mobile-add,#v35-mobile-actions,#v55-notif-btn,#settings-topbar-btn,#context-view-btn{
     display:none!important
@@ -409,8 +708,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }
 
   #v432-header-assistant{
-    position:relative!important;
-    color:var(--accent-cyan)!important;
+    position:relative!important;color:var(--accent-cyan)!important;
     background:color-mix(in srgb,var(--accent-cyan) 9%,var(--bg-elevated))!important;
     border-color:color-mix(in srgb,var(--accent-cyan) 22%,var(--border-color))!important
   }
@@ -430,13 +728,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   #global-add-btn::after{content:none!important}
   #v432-header-more{font-size:.78rem!important}
 
-  #v432-header-menu{
-    right:8px!important;left:auto!important;
-    top:calc(var(--omni-header-h) + env(safe-area-inset-top) + 5px)!important;
-    width:min(292px,calc(100vw - 16px))!important
-  }
+  #v432-header-menu{width:min(292px,calc(100vw - 16px))!important}
 
-  /* Mobile Assistant belongs to the header, not a floating FAB. */
   #v432-assistant-fab{display:none!important}
   .omni-assistant-panel{
     top:calc(var(--omni-header-h) + env(safe-area-inset-top) + 6px)!important;
@@ -446,18 +739,20 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     border-radius:17px!important;transform-origin:top right!important
   }
   .omni-assistant-suggestions{
-    display:flex!important;flex-wrap:nowrap!important;
-    overflow-x:auto!important;overflow-y:hidden!important;max-height:none!important;padding-bottom:2px
+    display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;
+    max-height:none!important;padding-bottom:2px
   }
   .omni-assistant-suggestion{flex:none}
 }
+
 @media(max-width:390px){
   .topbar{padding-left:6px!important;padding-right:6px!important;gap:2px!important}
   #v35-back-btn,#v432-header-assistant,#v432-header-more,#global-add-btn{
     width:34px!important;min-width:34px!important;height:34px!important;min-height:34px!important;flex-basis:34px!important
   }
-  .topbar-title{font-size:.86rem!important;padding-inline:2px!important}
+  .topbar-title{font-size:.85rem!important;padding-inline:2px!important}
 }
+
 @media(prefers-reduced-motion:reduce){
   #v432-assistant-fab::before,.omni-assistant-panel{transition:none!important}
 }
@@ -490,10 +785,10 @@ function buildMenu(){
   menu=document.createElement('div');menu.id='v432-header-menu';menu.setAttribute('role','menu');menu.innerHTML=`
     <div class="v432-menu-status"><span class="v432-menu-dot"></span><span data-v432-storage>Local storage ready</span></div>
     <button class="v432-menu-btn" type="button" data-v432-action="search"><span class="v432-menu-icon">⌕</span><span>Search everything</span><span class="v432-menu-shortcut">Ctrl K</span></button>
-     <button class="v432-menu-btn" type="button" data-v432-action="notifications"><span class="v432-menu-icon">♢</span><span>Notifications</span></button>
+    <button class="v432-menu-btn" type="button" data-v432-action="notifications"><span class="v432-menu-icon">♢</span><span>Notifications</span></button>
     <div class="v432-menu-sep"></div>
     <button class="v432-menu-btn" type="button" data-v432-action="undo"><span class="v432-menu-icon">↶</span><span>Undo</span><span class="v432-menu-shortcut">Ctrl Z</span></button>
-     <button class="v432-menu-btn" type="button" data-v432-action="redo"><span class="v432-menu-icon">↷</span><span>Redo</span><span class="v432-menu-shortcut">Ctrl ⇧ Z</span></button>
+    <button class="v432-menu-btn" type="button" data-v432-action="redo"><span class="v432-menu-icon">↷</span><span>Redo</span><span class="v432-menu-shortcut">Ctrl ⇧ Z</span></button>
     <button class="v432-menu-btn" type="button" data-v432-action="history"><span class="v432-menu-icon">↺</span><span>Change history</span></button>
     <button class="v432-menu-btn" type="button" data-v432-action="view"><span class="v432-menu-icon">☷</span><span>Customize this view</span></button>
     <div class="v432-menu-sep"></div>

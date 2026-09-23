@@ -11,10 +11,15 @@
 <script id="omnios-pwa-icon-early">
 (function(){
   try{
-    if(localStorage.getItem('omnios_custom_app_icon_v1')==='1'){
-      var rev=localStorage.getItem('omnios_app_icon_rev_v1')||'1';
-      var link=document.getElementById('omnios-apple-touch-icon');
-      if(link)link.href='./omnios-user-icon-192.png?v='+encodeURIComponent(rev);
+    var qs=new URLSearchParams(location.search);
+    var id=(qs.get('pwaIcon')||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,120);
+    var rev=(qs.get('pwaIconRev')||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,80);
+    var href='';
+    if(id)href='https://omnios-pwa.netlify.app/api/icon?id='+encodeURIComponent(id)+(rev?'&v='+encodeURIComponent(rev):'');
+    if(!href)href=localStorage.getItem('omnios_app_icon_public_v1')||'';
+    if(href){
+      var old=document.getElementById('omnios-apple-touch-icon');if(old)old.remove();
+      var link=document.createElement('link');link.id='omnios-apple-touch-icon';link.rel='apple-touch-icon';link.setAttribute('sizes','180x180');link.href=href;document.head.appendChild(link);
     }
   }catch(_){}
 })();

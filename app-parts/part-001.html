@@ -7,12 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="OmniOS">
-<meta name="description" content="OmniOS — a local-first personal operating system for iPhone.">
-<meta name="apple-touch-fullscreen" content="yes">
-<meta name="color-scheme" content="dark light">
-<meta name="format-detection" content="telephone=no">
-<meta name="mobile-web-app-capable" content="yes">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="manifest" href="./manifest.webmanifest">
 <title>OmniOS v62.2 — Clean Startup</title>
 <script id="omnios-v622-boot-early">
 (function(){
@@ -1022,3 +1018,2414 @@ html[data-theme="light"] .form-textarea { background:var(--bg-base); }
 
 /* ---- One empty-state look everywhere (was 3 slightly different ones) ---- */
 .empty-state, .list-empty, .power-empty {
+    text-align: center;
+    padding: 30px 16px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    border: 1px dashed var(--border-light);
+    border-radius: var(--radius-md);
+    line-height: 1.5;
+}
+.empty-state::before, .list-empty::before, .power-empty::before {
+    content: '';
+}
+
+/* ---- Consistent focus-visible ring for keyboard users (was inconsistent/missing) ---- */
+.btn:focus-visible, .icon-btn:focus-visible, .view-btn:focus-visible,
+.form-input:focus-visible, .form-select:focus-visible, .form-textarea:focus-visible,
+.nav-item:focus-visible, .list-item:focus-visible, .kanban-card:focus-visible,
+.gallery-card:focus-visible, .power-item:focus-visible, .power-command-row:focus-visible {
+    outline: 2px solid var(--accent-cyan);
+    outline-offset: 2px;
+}
+
+/* ---- Toast: upgraded to support an inline action (e.g. Undo) ---- */
+.power-toast {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    max-width: min(420px, calc(100vw - 36px));
+}
+.power-toast.show { display: flex; }
+.power-toast-msg { flex: 1; }
+.power-toast-action {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid var(--accent-cyan);
+    color: var(--accent-cyan);
+    font-weight: 600;
+    font-size: 0.7rem;
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+.power-toast-action:hover { background: rgba(6,182,212,0.12); }
+
+/* ---- Shortcuts help panel ---- */
+.shortcuts-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1550;
+    display: none; align-items: center; justify-content: center; padding: 24px;
+}
+.shortcuts-overlay.open { display: flex; }
+.shortcuts-box {
+    width: min(480px, 100%); background: var(--bg-surface); border: 1px solid var(--border-light);
+    border-radius: 16px; box-shadow: 0 24px 70px rgba(0,0,0,.42); padding: 20px;
+}
+.shortcuts-box h3 { font-size: 1rem; margin-bottom: 4px; }
+.shortcuts-box .text-muted { margin-bottom: 14px; }
+.shortcuts-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 9px 0; border-bottom: 1px solid var(--border-color); font-size: 0.8rem;
+}
+.shortcuts-row:last-of-type { border-bottom: none; }
+.shortcuts-keys kbd {
+    display: inline-block; padding: 2px 7px; border-radius: 5px; background: var(--bg-elevated);
+    border: 1px solid var(--border-light); font-size: 0.7rem; font-family: inherit; margin-left: 4px;
+}
+.shortcuts-box .modal-footer { margin-top: 14px; }
+
+/* ---- Sidebar footer: make room for the new Shortcuts trigger, keep buttons even width ---- */
+.sidebar-footer { flex-wrap: wrap; }
+.sidebar-footer .btn { min-width: 0; }
+
+/* ---- Custom icon slots (nav + logo): hidden by default, shown only once the setting is on AND the file loads ---- */
+.nav-icon-img { width: 16px; height: 16px; object-fit: contain; border-radius: 3px; flex-shrink: 0; display: none; }
+@media (max-width: 900px) { .nav-icon-img { width: 18px; height: 18px; } }
+.icon-list-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 0.8rem; }
+.icon-list-row:last-child { border-bottom: none; }
+.icon-list-row code { background: var(--bg-elevated); padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; }
+</style>
+
+
+<style id="omnios-ux-v20">
+/* ============================================================
+   OmniOS v20 — spacing, hierarchy and fluid interaction layer
+   ============================================================ */
+:root{
+  --ux-space-1:4px;
+  --ux-space-2:8px;
+  --ux-space-3:12px;
+  --ux-space-4:16px;
+  --ux-space-5:20px;
+  --ux-space-6:24px;
+  --ux-space-7:32px;
+  --ux-content-max:1600px;
+}
+
+/* A single rhythm for the desktop workspace. */
+.view-container{
+  width:100%;
+  max-width:var(--ux-content-max);
+  margin:0 auto;
+  padding:24px 28px 32px;
+}
+.card{padding:20px}
+.card-header{margin-bottom:16px}
+.grid-2{gap:20px}
+.stats-row{gap:12px;margin-bottom:20px}
+.toolbar{gap:10px;margin-bottom:20px;padding:12px 16px}
+.form-group{margin-bottom:14px}
+.form-row,.form-grid{gap:12px}
+.modal{padding:24px}
+.inspector-panel{padding:24px}
+.empty-state,.list-empty,.power-empty{padding:36px 20px}
+
+/* Avoid layout jumps from hover effects and make clickable surfaces feel intentional. */
+.card,.kanban-card,.gallery-card,.list-item,.note-card,.workout-item-card,.workout-session-card,
+.master-agenda-item,.habit-week-day,.budget-progress{transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease}
+html[data-hover-lift="false"] .card:hover,
+html[data-hover-lift="false"] .kanban-card:hover,
+html[data-hover-lift="false"] .gallery-card:hover,
+html[data-hover-lift="false"] .note-card:hover,
+html[data-hover-lift="false"] .habit-week-day:hover{transform:none;box-shadow:none}
+
+/* Density affects the whole system, not just a couple of cards. */
+html[data-density="compact"] .view-container{padding:18px 20px 24px}
+html[data-density="compact"] .card{padding:15px}
+html[data-density="compact"] .toolbar{padding:9px 12px;margin-bottom:14px}
+html[data-density="compact"] .grid-2{gap:14px}
+html[data-density="compact"] .stats-row{gap:8px;margin-bottom:14px}
+html[data-density="compact"] .form-group{margin-bottom:10px}
+
+html[data-spacing="compact"]{
+  --ux-space-1:3px;--ux-space-2:6px;--ux-space-3:9px;--ux-space-4:12px;--ux-space-5:16px;--ux-space-6:20px;--ux-space-7:26px;
+}
+html[data-spacing="spacious"]{
+  --ux-space-1:6px;--ux-space-2:10px;--ux-space-3:15px;--ux-space-4:20px;--ux-space-5:26px;--ux-space-6:32px;--ux-space-7:40px;
+}
+html[data-spacing="compact"] .view-container{padding:18px 20px 24px}
+html[data-spacing="compact"] .card{padding:16px}
+html[data-spacing="compact"] .toolbar{padding:10px 12px}
+html[data-spacing="spacious"] .view-container{padding:30px 34px 40px}
+html[data-spacing="spacious"] .card{padding:24px}
+html[data-spacing="spacious"] .toolbar{padding:14px 18px}
+html[data-spacing="spacious"] .grid-2{gap:24px}
+
+html[data-content-width="comfortable"]{--ux-content-max:1380px}
+html[data-content-width="focused"]{--ux-content-max:1120px}
+html[data-sidebar-mode="wide"] .sidebar{width:280px}
+html[data-sidebar-mode="wide"] .nav-item{padding-left:14px;padding-right:14px}
+html[data-sticky-topbar="true"] .topbar{position:sticky;top:0;z-index:400}
+
+/* Better form rhythm and action hierarchy. */
+.settings-section + .settings-section{margin-top:16px}
+.settings-row{min-height:52px;padding:10px 0}
+.settings-row + .settings-row{border-top:1px solid var(--border-color)}
+.settings-row-control{min-width:130px}
+.settings-row-control .form-input,.settings-row-control .filter-select{min-height:40px}
+.quick-add-grid{gap:10px}
+.quick-add-choice{min-height:76px;border-radius:12px}
+.btn,.view-btn,.tab-btn,.filter-select,.search-input{transition:background .15s ease,border-color .15s ease,color .15s ease,transform .1s ease}
+
+/* Reduce motion globally when requested. */
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after{
+  animation-duration:.001ms !important;
+  animation-iteration-count:1 !important;
+  transition-duration:.001ms !important;
+  scroll-behavior:auto !important;
+}
+
+/* Mobile: use the extra width available without making controls cramped. */
+@media(max-width:760px){
+  .view-container{max-width:none;padding:14px 12px calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 16px)}
+  html[data-density="compact"] .view-container,
+  html[data-spacing="compact"] .view-container{padding:12px 10px calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 12px)}
+  html[data-spacing="spacious"] .view-container{padding:18px 14px calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 18px)}
+  .card{padding:16px}
+  .toolbar{padding:10px}
+  .settings-row{align-items:flex-start}
+  .settings-row-control{min-width:120px}
+  .quick-add-grid{grid-template-columns:1fr}
+}
+@media(min-width:1200px){
+  .view-container > .view{width:100%}
+}
+</style>
+
+
+<style id="omnios-grouped-cards-v21">
+.group-parent-card{
+  border:1px solid var(--border-color,rgba(148,163,184,.16));
+  border-radius:var(--radius,16px);
+  background:var(--card-bg,rgba(15,23,42,.55));
+  overflow:hidden;
+  margin-bottom:var(--ux-space-4,16px);
+}
+.group-parent-head{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 16px;
+  min-height:54px;
+  cursor:pointer;
+  user-select:none;
+}
+.group-parent-head:hover{background:rgba(148,163,184,.05)}
+.group-parent-main{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.group-parent-title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.group-parent-meta{font-size:.78rem;opacity:.62;white-space:nowrap}
+.group-parent-actions{display:flex;align-items:center;gap:6px}
+.group-parent-body{padding:0 12px 12px}
+.group-parent-body.is-collapsed{display:none}
+.group-child-card{
+  position:relative;
+  margin-top:8px;
+  border:1px solid var(--border-color,rgba(148,163,184,.12));
+  border-radius:12px;
+  background:rgba(148,163,184,.035);
+}
+.group-child-card .group-child-indent{
+  padding-left:10px;
+}
+.group-drop-zone{
+  border:1px dashed var(--accent-cyan,#06b6d4);
+  border-radius:12px;
+  min-height:46px;
+  display:flex;align-items:center;justify-content:center;
+  opacity:.7;
+  margin:8px 0;
+}
+.group-toolbar{
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  padding:8px 12px 0;
+}
+.group-toolbar .btn,.group-toolbar button{min-height:34px}
+.group-drag-handle{cursor:grab;opacity:.5}
+.group-drag-handle:active{cursor:grabbing}
+@media(max-width:700px){
+  .group-parent-head{padding:12px}
+  .group-parent-meta{display:none}
+  .group-parent-actions .btn span,.group-parent-actions button span{display:none}
+}
+</style>
+
+
+<style id="omnios-grouping-v22-css">
+.group-selectable{transition:transform .16s ease,box-shadow .16s ease,opacity .16s ease}
+.group-selectable.group-dragging{opacity:.45;transform:scale(.985)}
+.group-drop-target{
+  outline:2px dashed var(--accent-cyan,#06b6d4)!important;
+  outline-offset:3px;
+  background:rgba(6,182,212,.08)!important;
+}
+.group-drop-target::after{
+  content:"Drop here to group";
+  display:block;
+  font-size:.75rem;
+  color:var(--accent-cyan,#06b6d4);
+  padding:6px 10px;
+  text-align:center;
+  font-weight:700;
+}
+.group-selection-bar{
+  position:sticky;bottom:12px;z-index:80;
+  display:none;align-items:center;gap:10px;flex-wrap:wrap;
+  margin:12px auto;max-width:900px;padding:10px 12px;
+  border:1px solid rgba(6,182,212,.35);
+  border-radius:14px;
+  background:rgba(15,23,42,.94);
+  box-shadow:0 12px 35px rgba(0,0,0,.28);
+  backdrop-filter:blur(14px);
+}
+.group-selection-bar.is-visible{display:flex}
+.group-selection-count{font-weight:700;margin-right:auto}
+.group-create-drop{
+  border:1px dashed rgba(6,182,212,.45);
+  border-radius:12px;padding:8px 12px;
+  font-size:.8rem;opacity:.75;
+}
+.group-parent-card.group-drop-target .group-parent-head{background:rgba(6,182,212,.1)}
+.group-inline-check{
+  width:17px;height:17px;accent-color:var(--accent-cyan,#06b6d4);
+  cursor:pointer;flex:none;
+}
+@media(max-width:700px){
+  .group-selection-bar{bottom:6px;margin:8px}
+  .group-selection-bar .btn{flex:1}
+}
+</style>
+
+
+<style id="omnios-v23-fixes-css">
+.omnios-group-modal-backdrop{
+  position:fixed;inset:0;z-index:10000;display:none;
+  align-items:center;justify-content:center;padding:18px;
+  background:rgba(2,6,23,.68);backdrop-filter:blur(8px)
+}
+.omnios-group-modal-backdrop.is-open{display:flex}
+.omnios-group-modal{
+  width:min(480px,100%);border:1px solid rgba(148,163,184,.18);
+  border-radius:18px;background:var(--card-bg,#0f172a);
+  box-shadow:0 24px 70px rgba(0,0,0,.4);overflow:hidden
+}
+.omnios-group-modal-head{padding:18px 20px;border-bottom:1px solid rgba(148,163,184,.12)}
+.omnios-group-modal-head h3{margin:0 0 4px;font-size:1.05rem}
+.omnios-group-modal-head p{margin:0;opacity:.62;font-size:.82rem}
+.omnios-group-modal-body{padding:18px 20px}
+.omnios-group-modal-body label{display:block;font-size:.78rem;font-weight:700;margin-bottom:7px}
+.omnios-group-modal-body input,.omnios-group-modal-body select{
+  width:100%;min-height:42px;padding:9px 12px;border-radius:10px;
+  border:1px solid rgba(148,163,184,.2);background:rgba(148,163,184,.06);
+  color:inherit
+}
+.omnios-group-modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid rgba(148,163,184,.12)}
+.habit-week-grid-v23{
+  display:grid;grid-template-columns:170px repeat(7,minmax(52px,1fr));
+  gap:6px;min-width:640px
+}
+.habit-week-scroll-v23{overflow-x:auto;padding-bottom:6px}
+.habit-week-head-v23{font-size:.72rem;text-align:center;opacity:.7;padding:6px 3px}
+.habit-week-name-v23{display:flex;align-items:center;gap:8px;font-size:.84rem;font-weight:650;padding:8px}
+.habit-day-v23{
+  min-height:42px;border:1px solid rgba(148,163,184,.12);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:transform .12s ease,background .12s ease,border-color .12s ease
+}
+.habit-day-v23:hover{transform:translateY(-1px);border-color:rgba(6,182,212,.45)}
+.habit-day-v23.is-done{background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.35)}
+.habit-day-v23.is-today{box-shadow:inset 0 0 0 2px rgba(6,182,212,.45)}
+.habit-day-v23 .habit-mark{font-weight:800;font-size:.9rem}
+.habit-week-summary-v23{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.habit-week-stat-v23{padding:8px 10px;border-radius:10px;background:rgba(148,163,184,.06);font-size:.75rem}
+@media(max-width:700px){
+  .habit-week-grid-v23{grid-template-columns:130px repeat(7,minmax(48px,1fr));min-width:470px}
+}
+</style>
+
+
+<style id="omnios-v24-ux-css">
+/* V24: grouping + interaction polish */
+.v24-group-toolbar{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin:0 0 12px;
+}
+.v24-group-toolbar .group-spacer{flex:1}
+.v24-group-card{
+  grid-column:1/-1;
+  border:1px solid rgba(148,163,184,.17);
+  border-radius:16px;
+  background:rgba(148,163,184,.035);
+  overflow:hidden;
+  margin-bottom:10px;
+}
+.v24-group-card-head{
+  display:flex;align-items:center;gap:9px;padding:12px 14px;
+  border-bottom:1px solid rgba(148,163,184,.11);
+  cursor:pointer;
+}
+.v24-group-card-head:hover{background:rgba(148,163,184,.045)}
+.v24-group-card-title{font-weight:750;flex:1;min-width:0}
+.v24-group-card-count{font-size:.72rem;opacity:.58}
+.v24-group-card-body{padding:10px}
+.v24-group-card-body.is-collapsed{display:none}
+.v24-group-item{position:relative}
+.v24-group-check{
+  position:absolute;top:9px;left:9px;z-index:4;width:18px;height:18px;
+  margin:0;cursor:pointer;accent-color:var(--accent-cyan,#06b6d4);
+}
+.v24-group-selected{outline:2px solid var(--accent-cyan,#06b6d4);outline-offset:2px}
+.v24-selection-bar{
+  position:sticky;bottom:10px;z-index:90;
+  display:none;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:9px 11px;margin:10px 0;
+  border:1px solid rgba(6,182,212,.35);border-radius:14px;
+  background:rgba(15,23,42,.94);backdrop-filter:blur(14px);
+  box-shadow:0 14px 40px rgba(0,0,0,.3)
+}
+.v24-selection-bar.is-visible{display:flex}
+.v24-selection-count{font-weight:750;margin-right:auto}
+.v24-habit-week-wrap{overflow:auto}
+.v24-habit-week{
+  min-width:700px;
+  display:grid;grid-template-columns:minmax(170px,1.4fr) repeat(7,minmax(62px,1fr));
+  gap:5px;
+}
+.v24-habit-cell{
+  min-height:48px;border:1px solid var(--border-color);
+  border-radius:10px;background:var(--bg-elevated);
+}
+.v24-habit-head{
+  min-height:46px;padding:7px 5px;text-align:center;
+  background:var(--bg-hover);font-size:.68rem;font-weight:700;
+}
+.v24-habit-name{display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:.78rem;font-weight:700}
+.v24-habit-day{
+  width:100%;height:100%;min-height:48px;border:0;border-radius:9px;
+  background:transparent;color:inherit;cursor:pointer;
+}
+.v24-habit-day:hover{background:rgba(6,182,212,.08)}
+.v24-habit-day.is-done{background:rgba(16,185,129,.13);color:var(--accent-green,#10b981)}
+.v24-habit-day.is-today{box-shadow:inset 0 0 0 2px rgba(6,182,212,.5)}
+.v24-habit-mark{font-size:1rem;font-weight:800}
+.v24-habit-progress{font-size:.64rem;opacity:.58;font-weight:600}
+@media(max-width:700px){
+  .v24-habit-week{min-width:610px;grid-template-columns:130px repeat(7,minmax(55px,1fr))}
+  .v24-selection-bar{bottom:6px}
+}
+</style>
+
+
+<style id="omnios-v24-layout-fix">
+#notes-grid .v24-generated-group,
+#grocery-grid .v24-generated-group{grid-column:1/-1}
+#tasks-content .v24-generated-group{width:100%}
+.v24-group-card .v24-group-item{margin-bottom:7px}
+.v24-group-card .v24-group-item:last-child{margin-bottom:0}
+</style>
+
+
+<style id="omnios-v25-stabilization-css">
+/* OmniOS v25 — stabilization: one grouping system, clear selection mode, reliable mobile navigation. */
+.v25-selectable{position:relative}
+.v25-selection-mode .v25-selectable{padding-left:42px!important}
+.v25-group-check{position:absolute;left:11px;top:12px;z-index:8;width:19px;height:19px;margin:0;accent-color:var(--accent-cyan);cursor:pointer}
+.v25-group-selected{outline:2px solid var(--accent-cyan)!important;outline-offset:2px}
+.v25-selection-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:1450;display:none;align-items:center;gap:8px;flex-wrap:wrap;max-width:min(760px,calc(100vw - 32px));padding:10px 12px;border:1px solid rgba(6,182,212,.4);border-radius:14px;background:color-mix(in srgb,var(--bg-surface) 94%,transparent);box-shadow:0 16px 50px rgba(0,0,0,.38);backdrop-filter:blur(16px)}
+.v25-selection-bar.is-visible{display:flex}.v25-selection-count{font-weight:750;margin-right:auto;white-space:nowrap}.v25-selection-context{font-size:.7rem;color:var(--text-muted)}
+.v25-group-card{grid-column:1/-1;width:100%;border:1px solid var(--border-color);border-radius:var(--radius-lg);background:var(--bg-surface);overflow:hidden;margin-bottom:12px}
+.v25-group-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border-color);min-height:52px}.v25-group-head-main{display:flex;align-items:center;gap:8px;min-width:0;flex:1;cursor:pointer}.v25-group-title{font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v25-group-count{font-size:.68rem;color:var(--text-muted);white-space:nowrap}.v25-group-actions{display:flex;gap:5px;align-items:center}.v25-group-body{padding:10px}.v25-group-body.is-collapsed{display:none}.v25-group-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}.v25-group-body .v25-selectable{margin:0}
+.v25-group-empty{padding:16px;color:var(--text-muted);font-size:.76rem;text-align:center}
+.v25-manager-list{display:flex;flex-direction:column;gap:8px}.v25-manager-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-elevated)}.v25-manager-main{display:flex;align-items:center;gap:8px;min-width:0}.v25-manager-name{min-width:0;flex:1}.v25-manager-actions{display:flex;gap:5px;flex-wrap:wrap}.v25-manager-meta{font-size:.65rem;color:var(--text-muted);margin-top:3px}
+.v25-mobile-more-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.v25-mobile-more-section{grid-column:1/-1;color:var(--text-muted);font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-top:6px}.v25-mobile-destination{justify-content:flex-start;min-height:48px}
+@media(max-width:760px){.v25-selection-bar{left:10px;right:10px;transform:none;bottom:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 8px);max-width:none}.v25-selection-bar .btn{flex:1}.v25-group-head{padding:10px}.v25-group-actions .v25-action-label{display:none}.v25-group-grid{grid-template-columns:1fr}.v25-mobile-more-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:420px){.v25-mobile-more-grid{grid-template-columns:1fr}.v25-selection-context{display:none}}
+</style>
+
+
+<style id="omnios-v33-uiux-css">
+/* ============================================================
+   OmniOS v33 — UI/UX stabilization
+   Reachable controls, no clipped actions, cleaner navigation.
+   ============================================================ */
+:root{--ui-mobile-topbar-h:62px}
+
+/* Keep surfaces and child flex/grid content shrinkable. */
+.view,.card,.finance-card,.finance-hub,.toolbar,.toolbar-group,.settings-row,.workout-hero,.master-calendar-shell{min-width:0}
+img,svg{max-width:100%}
+
+/* Database belongs to Dashboard, not every module. */
+#database-panel{margin:0 0 18px!important;border-color:color-mix(in srgb,var(--accent-cyan) 18%,var(--border-color));}
+#database-panel .db-panel-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#database-panel .db-panel-copy{min-width:220px;flex:1}
+#database-panel .db-panel-actions{display:flex;gap:7px;flex-wrap:wrap}
+
+/* Navigation hierarchy and hit targets. */
+.nav-menu .nav-section{margin-top:4px}
+.nav-item[role="button"]{outline:none}
+.nav-item[role="button"]:focus-visible{outline:2px solid var(--accent-cyan);outline-offset:2px}
+
+/* Generic modal close controls were visually inconsistent in older modules. */
+.modal-close-btn:not(.btn):not(.icon-btn){
+  width:36px;height:36px;display:inline-grid;place-items:center;flex:0 0 36px;
+  border:1px solid var(--border-color);border-radius:var(--radius-sm);
+  background:var(--bg-elevated);color:var(--text-primary);cursor:pointer;font:inherit;
+}
+.modal-close-btn:not(.btn):not(.icon-btn):hover{background:var(--bg-hover)}
+
+/* Make horizontal strips visibly interactive and consistent. */
+.workout-tabs,.help-nav,.toolbar-group{scrollbar-width:thin;scrollbar-color:var(--bg-hover) transparent}
+.workout-tabs::-webkit-scrollbar,.help-nav::-webkit-scrollbar,.toolbar-group::-webkit-scrollbar{height:4px}
+.workout-tabs::-webkit-scrollbar-thumb,.help-nav::-webkit-scrollbar-thumb,.toolbar-group::-webkit-scrollbar-thumb{background:var(--bg-hover);border-radius:99px}
+
+/* Finance cards must never force the whole page wider than the viewport. */
+#view-budget,#view-budget .finance-hub,#view-budget .finance-card,#view-budget .grid-2,#view-budget .card{min-width:0;max-width:100%}
+#view-budget .finance-toolbar{min-width:0}
+#view-budget .finance-toolbar>div{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
+#view-budget .finance-item{min-width:0;max-width:100%}
+#view-budget .finance-item-main{min-width:0;overflow-wrap:anywhere}
+#view-budget .finance-amount{max-width:42%;white-space:normal;text-align:right;overflow-wrap:anywhere}
+#view-budget .goal-grid,#view-budget .custom-list-grid{min-width:0}
+
+/* Grouping should look like an intentional mode, not an invisible checkbox overlay. */
+.v25-selection-mode .v25-selectable{padding-left:46px!important}
+.v25-group-check{
+  width:21px!important;height:21px!important;left:12px!important;top:12px!important;
+  border-radius:5px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25));
+}
+.v25-selection-mode .v25-selectable::before{
+  content:'';position:absolute;left:5px;top:5px;bottom:5px;width:32px;border-radius:8px;
+  background:color-mix(in srgb,var(--accent-cyan) 8%,transparent);pointer-events:none;
+}
+.v25-selection-bar{max-height:calc(100dvh - 24px);overflow:auto}
+.v25-selection-bar [data-v25-bar-create],.v25-selection-bar [data-v25-bar-move],.v25-selection-bar [data-v25-bar-ungroup]{white-space:nowrap}
+
+
+/* Shared v25/v23 modal shell must remain fully reachable on small screens. */
+.omnios-group-modal{max-height:calc(100dvh - 36px);display:flex;flex-direction:column;min-height:0}
+.omnios-group-modal-head,.omnios-group-modal-foot{flex:0 0 auto}
+.omnios-group-modal-body{overflow-y:auto;min-height:0;overscroll-behavior:contain}
+@media(max-width:760px){
+  .omnios-group-modal-backdrop{align-items:flex-end;padding:0}
+  .omnios-group-modal{width:100%;max-height:92dvh;border-radius:18px 18px 0 0;border-bottom:0}
+  .omnios-group-modal-head{padding:15px 16px}
+  .omnios-group-modal-body{padding:14px 16px}
+  .omnios-group-modal-foot{padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--bg-surface);position:sticky;bottom:0}
+  .v25-mobile-more-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+
+/* Toasts must sit above bottom navigation on phones. */
+@media(max-width:760px){
+  .power-toast{left:10px;right:10px;bottom:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 10px);max-width:none}
+}
+
+@media(max-width:760px){
+  /* Mobile topbar: page title remains readable; utility actions are compact. */
+  .topbar{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:7px;min-height:var(--ui-mobile-topbar-h);padding:8px 8px 8px 12px!important}
+  .topbar-title{max-width:none!important;min-width:0;font-size:.95rem!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar-actions{display:flex;align-items:center;gap:5px;min-width:0}
+  #settings-topbar-btn{display:none!important}
+  #power-search-wrap{display:none!important}
+  #mobile-search-v33{width:40px;min-width:40px;height:42px;padding:0;justify-content:center;font-size:1rem}
+  #omni-assistant-launcher{width:40px;min-width:40px;height:42px;padding:0;justify-content:center}
+  #omni-assistant-launcher span{display:none}
+  #global-add-btn{min-width:64px!important;height:42px;padding:0 10px!important;font-size:0!important;justify-content:center}
+  #global-add-btn::after{content:'+ Add';font-size:.76rem;font-weight:700}
+  #save-status{width:9px!important;min-width:9px!important;height:9px;display:block;border-radius:50%;overflow:hidden;font-size:0!important;padding:0;margin:0 1px;background:var(--accent-yellow);flex:0 0 9px}
+  #save-status.saved{background:var(--accent-green)}
+  #save-status.error{background:var(--accent-red)}
+
+  /* The bottom bar always owns exactly six equal destinations. */
+  .mobile-nav{grid-template-columns:repeat(6,minmax(0,1fr))!important;overflow:hidden!important}
+  .mobile-nav>button{min-width:0!important}
+
+  /* Database card is useful on Dashboard, but no longer dominates the screen. */
+  #database-panel{padding:12px!important;margin-bottom:14px!important}
+  #database-panel .db-panel-inner{gap:9px}
+  #database-panel .db-panel-copy{min-width:0;width:100%}
+  #database-panel .db-panel-description{display:none}
+  #database-panel .db-panel-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  #database-panel .db-panel-actions .btn{width:100%;min-width:0;justify-content:center;font-size:.68rem}
+
+  /* Tasks: every view/filter/group control is visible without hidden horizontal actions. */
+  #view-tasks>.toolbar{display:grid;grid-template-columns:1fr;gap:9px;overflow:visible}
+  #view-tasks>.toolbar>.toolbar-divider{display:none}
+  #view-tasks>.toolbar>.toolbar-group{overflow:visible!important;width:100%;gap:6px}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(1){display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(1) .view-btn{width:100%;padding:8px 5px;font-size:.66rem;white-space:normal;text-align:center;justify-content:center}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(2){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(2) .filter-select{width:100%;min-width:0}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(3){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(3) #sort-by{width:100%;min-width:0}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(3) #search-input{grid-column:1/-1;width:100%;min-width:0}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(3) [data-v25-select="task"]{width:100%;justify-content:center;display:inline-flex!important}
+  #view-tasks>.toolbar>.task-view-group-v33{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible!important}
+  #view-tasks>.toolbar>.task-filter-group-v33{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible!important}
+  #view-tasks>.toolbar>.task-action-group-v33{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible!important}
+  #view-tasks>.toolbar>.task-action-group-v33 #sort-by{width:100%;min-width:0}
+  #view-tasks>.toolbar>.task-action-group-v33 #search-input{grid-column:1/-1;width:100%;min-width:0}
+  #view-tasks>.toolbar>.task-action-group-v33 [data-v25-select="task"]{width:100%;min-width:0;justify-content:center;display:inline-flex!important}
+
+  /* Settings and Workout tabs must not hide half their destinations off-screen. */
+  #settings-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible!important;gap:5px}
+  #settings-tabs .view-btn{width:100%;padding:8px 4px;font-size:.64rem;white-space:normal;text-align:center}
+  #view-workout>.workout-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible!important;gap:5px}
+  #view-workout>.workout-tabs .view-btn{width:100%;padding:8px 5px;font-size:.66rem;white-space:normal;text-align:center}
+
+  /* Help manual destinations are all visible; no mystery horizontal overflow. */
+  #view-help .help-nav{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;overflow:visible!important;position:static!important}
+  #view-help .help-nav .help-group{display:block!important;grid-column:1/-1;margin:9px 3px 1px}
+  #view-help .help-nav button{width:100%!important;min-width:0!important;white-space:normal;text-align:left;padding:8px 9px;font-size:.7rem}
+
+  /* Finance controls wrap instead of forcing 450+px content widths. */
+  #view-budget .finance-toolbar{align-items:flex-start}
+  #view-budget .finance-toolbar>div{width:100%}
+  #view-budget .finance-toolbar>div .btn{flex:1 1 120px;justify-content:center}
+  #view-budget .finance-amount{max-width:38%;font-size:.7rem}
+  #view-budget .goal-grid,#view-budget .custom-list-grid{grid-template-columns:1fr!important}
+  #finance-forecast .power-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+  /* Extension list/search controls fit the phone viewport. */
+  .list-controls{display:grid!important;grid-template-columns:1fr 1fr;gap:7px}
+  .list-controls .search-input{grid-column:1/-1;width:100%!important;min-width:0}
+  .list-controls .filter-select,.list-controls .btn{width:100%;min-width:0}
+
+  /* Action rows should never disappear beyond the edge of a card. */
+  .custom-item-actions,.exercise-actions,.modal-actions{display:flex;flex-wrap:wrap;gap:6px}
+  .custom-item-actions .btn,.exercise-actions .btn{flex:1 1 auto;justify-content:center}
+
+  /* Tables retain their own scrolling instead of enlarging the entire page. */
+  .transaction-list,.habit-calendar-wrap,.v24-habit-week-wrap,.master-cal-shell-wrap,.workout-session-card{max-width:100%}
+}
+
+@media(max-width:420px){
+  #settings-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(1),#view-tasks>.toolbar>.task-view-group-v33{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #view-help .help-nav{grid-template-columns:1fr}
+  #view-workout>.workout-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .v25-mobile-more-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+</style>
+
+
+<style id="omnios-v47-rhythm-css">
+/* ===== OmniOS v47 — coherent spacing + connection-first cleanup ===== */
+:root{
+  --om-page-x:clamp(18px,2.15vw,30px);
+  --om-page-y:22px;
+  --om-page-bottom:38px;
+  --om-section-gap:16px;
+  --om-grid-gap:12px;
+  --om-card-pad:16px;
+  --om-control-gap:8px;
+  --om-tight-gap:6px;
+}
+/* Remove the v46 UI layer even if stale DOM survives a hot reload. */
+.v46-family-nav,.v46-drag-handle,.v46-inline-drag,.v46-drop-hint,.v46-area-dropbar,
+.v46-area-target,.v46-family-link,.v46-family-label{display:none!important}
+.v46-drag-source,.v46-dragging,.v46-drop-target{outline:0!important;box-shadow:none!important;transform:none!important}
+
+/* One page rhythm. Specialized modules keep their internal layouts. */
+.view-container{padding:var(--om-page-y) var(--om-page-x) var(--om-page-bottom)!important}
+.view,.view>*{min-width:0}
+.view>.v44-page-cover-shell{margin-bottom:var(--om-section-gap)}
+.view>:is(.toolbar,.dashboard-toolbar,.habit-toolbar,.notes-toolbar,.v35-page-head,.v43-hero,.org-hero,.workout-hero,.nut-hero,.v38-finance-head,.v36-cal-top,.master-cal-toolbar){margin-bottom:var(--om-section-gap)!important}
+.view>:is(.stats-row,.kpi-grid,.org-kpis,.v43-kpis,.workout-kpi-grid,.habit-summary-grid,.nut-kpis){margin-bottom:var(--om-section-gap)!important}
+
+/* Shared surface rhythm. */
+.card,.stat-card,.kpi-card,.workout-kpi,.workout-session-card,.workout-item-card,.habit-week-card,
+.note-card,.org-card,.v35-card,.v43-card,.nut-surface,.finance-card,.v38-card,.eq-box,.calendar-container,
+.master-calendar-shell,.diet-card{padding:var(--om-card-pad)}
+.grid-2,.stats-row,.kpi-grid,.analytics-grid,.org-grid,.org-kpis,.v43-kpis,.v43-grid,.v43-domain-grid,
+.workout-kpi-grid,.template-grid,.exercise-library-grid,.history-grid,.workout-analytics-grid,.habit-summary-grid,
+.nut-kpis,.nut-today-grid,.v35-grid,.v35-kpis{gap:var(--om-grid-gap)!important}
+.card-header,.v35-card-head,.v43-card-head,.org-card-head{margin-bottom:12px}
+
+/* Toolbars and actions use the same control spacing. */
+.toolbar,.dashboard-toolbar,.habit-toolbar,.notes-toolbar,.v35-page-actions,.v43-hero-actions,.org-hero-actions,
+.org-toolbar,.nut-toolbar,.workout-hero-actions,.workout-session-head,.topbar-actions,.modal-footer{gap:var(--om-control-gap)!important}
+.toolbar{padding:10px 12px!important}
+.toolbar-group{gap:var(--om-control-gap)!important}
+
+/* Forms and modal rhythm. */
+.form-group{margin-bottom:12px!important}
+.form-row,.form-grid,.nut-form-grid,.power-form-grid{gap:10px!important}
+.modal{padding:20px!important}
+.modal-header{margin-bottom:14px!important}
+.modal-footer{margin-top:16px!important}
+.settings-row{padding:10px 0!important}
+
+/* Lists: enough air without oversized rows. */
+.list-item,.org-row,.v43-row,.v35-row,.master-agenda-item{padding:10px 12px}
+.org-list,.v43-list,.v35-list,.mini-list{gap:7px!important}
+
+/* Sidebar/header rhythm. */
+.sidebar{padding-top:14px;padding-bottom:12px}
+.logo{padding-bottom:14px;margin-bottom:10px}
+.nav-menu{padding-inline:9px}
+.nav-section{padding:11px 11px 5px}
+.nav-item{padding:8px 10px;margin-bottom:2px;min-height:36px}
+.sidebar-footer{padding:9px 10px;gap:6px}
+.topbar{padding-inline:18px}
+
+/* Empty states should not produce giant dead zones. */
+.empty-state,.list-empty,.power-empty,.org-empty,.master-empty,.workout-session-empty{padding:26px 16px!important}
+
+/* Content-heavy module specifics. */
+#view-tasks .toolbar{margin-bottom:14px!important}
+#view-master-calendar .master-calendar-shell{padding:0}
+#view-workout .workout-tabs,#view-settings .workout-tabs{margin-bottom:12px}
+#view-notes .notes-toolbar{margin-bottom:12px!important}
+#view-life-hub .v43-life-toolbar{margin-bottom:12px}
+#view-budget .v38-finance-head{padding:0}
+/* Empty cover affordance should not create a fake banner-sized top gap. */
+.v44-page-cover-shell:has(.v44-page-cover-empty){margin-bottom:6px!important}
+.v44-page-cover-empty{height:22px!important}
+
+@media(max-width:760px){
+  :root{--om-page-x:10px;--om-page-y:12px;--om-page-bottom:calc(var(--mobile-nav-h,72px) + env(safe-area-inset-bottom) + 16px);--om-section-gap:12px;--om-grid-gap:9px;--om-card-pad:13px;--om-control-gap:7px}
+  .view-container{padding:var(--om-page-y) var(--om-page-x) var(--om-page-bottom)!important}
+  .card,.stat-card,.kpi-card,.workout-kpi,.workout-session-card,.workout-item-card,.habit-week-card,
+  .note-card,.org-card,.v35-card,.v43-card,.nut-surface,.finance-card,.v38-card,.eq-box,.calendar-container,.diet-card{padding:var(--om-card-pad)!important}
+  .toolbar{padding:8px!important}
+  .modal{padding:16px 13px calc(16px + env(safe-area-inset-bottom))!important}
+  .topbar{padding-inline:9px!important}
+  .org-hero,.v43-hero,.v35-page-head,.workout-hero{gap:10px!important}
+  .list-item,.org-row,.v43-row,.v35-row{padding:10px!important}
+  .empty-state,.list-empty,.power-empty,.org-empty,.master-empty,.workout-session-empty{padding:22px 12px!important}
+}
+</style>
+
+
+<style id="omnios-ui-refinements-css">
+
+/* ===== OmniOS v48 — Nutrition rhythm, icon hierarchy, editor-owned covers ===== */
+:root{
+  --v48-space-1:6px;--v48-space-2:8px;--v48-space-3:10px;--v48-space-4:12px;--v48-space-5:16px;
+  --v48-icon-sm:28px;--v48-icon-md:32px;--v48-icon-lg:38px;
+}
+/* Nutrition: one spacing system, no stacked legacy margins. */
+#view-diet .nut-shell{gap:12px!important}
+#view-diet #nut-content{display:flex!important;flex-direction:column!important;gap:11px!important;min-width:0}
+#view-diet #nut-content>*,#view-diet #nut-content>.nut-library-grid,#view-diet #nut-content>.nut-prep-grid{margin-top:0!important;margin-bottom:0!important}
+#view-diet .nut-hero{gap:10px!important;margin:0!important}
+#view-diet .nut-surface{padding:14px!important}
+#view-diet .nut-hero-main{padding:16px!important}
+#view-diet .nut-hero-actions{margin-top:11px!important;gap:7px!important}
+#view-diet .nut-tabs{margin:0!important;padding:3px!important;gap:3px!important}
+#view-diet .nut-tab{min-height:36px!important;padding:6px 11px!important}
+#view-diet .nut-toolbar{margin:0!important;gap:8px!important;min-height:36px}
+#view-diet .nut-kpis{margin:0!important;gap:8px!important}
+#view-diet .nut-kpi{padding:10px 11px!important}
+#view-diet .nut-today-grid{gap:10px!important}
+#view-diet .nut-stack{gap:8px!important}
+#view-diet .nut-slot-head{padding:9px 11px!important}
+#view-diet .nut-slot-col{padding:8px 9px!important}
+#view-diet .nut-item{padding:6px 0!important;gap:7px!important}
+#view-diet .nut-side-list{gap:6px!important}
+#view-diet .nut-side-row{padding:8px 9px!important}
+#view-diet .nut-library-toolbar{gap:7px!important;margin:0!important}
+#view-diet #nut-library-body{margin-top:0!important}
+#view-diet .nut-library-grid,#view-diet .nut-prep-grid{gap:9px!important}
+#view-diet .nut-card-top{padding:10px 10px 0!important;gap:9px!important}
+#view-diet .nut-card-body{padding:9px 10px 10px!important}
+#view-diet .nut-prep{padding:11px!important}
+#view-diet .nut-week{gap:6px!important}
+#view-diet .nut-day-card{padding:9px!important}
+#view-diet .nut-insights-grid{gap:10px!important}
+#view-diet .nut-chart{padding:9px!important}
+#view-diet .nut-modal-wide{max-width:780px}
+#view-diet .nut-photo-strip{margin-top:7px}
+/* Consistent icon hierarchy: page/section, cards, rows. */
+.org-hero-icon{width:var(--v48-icon-lg)!important;height:var(--v48-icon-lg)!important;border-radius:10px!important;font-size:1rem!important;line-height:1!important}
+.org-card-icon,.v43-record-icon,.v38-account-icon{width:var(--v48-icon-md)!important;height:var(--v48-icon-md)!important;min-width:var(--v48-icon-md)!important;border-radius:9px!important;font-size:.92rem!important;display:grid!important;place-items:center!important;line-height:1!important}
+.org-row-icon,.v35-row-icon,.v43-row-icon,.v38-txn-icon,.master-agenda-icon,.v36-agenda-icon,.v36-event-icon,.calendar-preview-icon{width:var(--v48-icon-sm)!important;height:var(--v48-icon-sm)!important;min-width:var(--v48-icon-sm)!important;border-radius:8px!important;font-size:.82rem!important;display:grid!important;place-items:center!important;line-height:1!important}
+.v43-domain-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--bg-elevated);font-size:.96rem!important;line-height:1}
+.v37-empty-icon,.v37-membership-icon{line-height:1!important}
+/* One sidebar icon language. Legacy SVG/emoji icons are visually replaced, labels/data stay intact. */
+.nav-menu .nav-item{gap:10px!important;align-items:center!important}
+.nav-menu .nav-item>.nav-icon-img,.nav-menu .nav-item>.icon-fallback,.nav-menu .nav-item>.v35-nav-emoji,.nav-menu .nav-item>.nav-icon,.nav-menu .nav-item>span[style*="width:16px"]{display:none!important}
+.v48-nav-icon{width:18px;height:18px;min-width:18px;display:grid;place-items:center;color:currentColor;opacity:.88;line-height:1}
+.v48-nav-icon svg{width:17px;height:17px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav-menu .nav-item.active .v48-nav-icon{opacity:1}
+.mobile-nav .v48-mobile-icon{width:20px;height:20px;display:grid;place-items:center;margin:auto;line-height:1}
+.mobile-nav .v48-mobile-icon svg{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.mobile-nav button[data-v35-mobile-view]>.nav-icon{display:none!important}
+#v35-mobile-more>.nav-icon{font-size:14px!important;letter-spacing:1px;line-height:20px!important;height:20px!important}
+@media(max-width:760px){#view-diet #nut-content{gap:9px!important}}
+@media(max-width:760px){#view-diet .nut-shell{gap:10px!important}#view-diet .nut-surface{padding:12px!important}#view-diet .nut-hero-main{padding:13px!important}#view-diet .nut-kpis{gap:7px!important}#view-diet .nut-kpi{padding:9px!important}#view-diet .nut-today-grid,#view-diet .nut-stack{gap:8px!important}#view-diet .nut-slot-head{padding:8px 9px!important}#view-diet .nut-slot-col{padding:8px!important}#view-diet .nut-card-top{padding:9px 9px 0!important}#view-diet .nut-card-body{padding:8px 9px 9px!important}}
+</style>
+
+
+<style id="omnios-grocery-checkout-v56-css">
+/* Grocery → Pantry → Finance: explicit, step-based purchase flow */
+.gpf-flow{display:flex;flex-direction:column;gap:14px}
+.gpf-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.gpf-step{padding:8px 9px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);font-size:.66rem;color:var(--text-muted);text-align:center}
+.gpf-step.active{border-color:var(--accent-cyan);color:var(--accent-cyan);background:rgba(6,182,212,.08);font-weight:700}
+.gpf-step.done{border-color:rgba(16,185,129,.35);color:var(--accent-green);background:rgba(16,185,129,.07)}
+.gpf-review{border:1px solid var(--border-color);border-radius:12px;overflow:hidden}
+.gpf-review-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 11px;border-bottom:1px solid var(--border-color);font-size:.72rem}
+.gpf-review-row:last-child{border-bottom:0}
+.gpf-review-main{min-width:0}
+.gpf-review-title{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gpf-review-meta{font-size:.62rem;color:var(--text-muted);margin-top:2px}
+.gpf-section{border:1px solid var(--border-color);border-radius:12px;padding:12px;background:var(--bg-base)}
+.gpf-section-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:9px}
+.gpf-section-title{font-size:.8rem;font-weight:800}
+.gpf-section-copy{font-size:.62rem;color:var(--text-muted);margin-top:2px;line-height:1.4}
+.gpf-pantry-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(145px,.9fr);gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--border-color)}
+.gpf-pantry-row:first-of-type{border-top:0}
+.gpf-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.gpf-summary-card{padding:9px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-elevated)}
+.gpf-summary-card span{display:block;font-size:.58rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em}
+.gpf-summary-card strong{display:block;margin-top:4px;font-size:.9rem}
+.gpf-checkline{display:flex;align-items:flex-start;gap:8px;font-size:.72rem;line-height:1.4}
+.gpf-checkline input{margin-top:2px;accent-color:var(--accent-cyan)}
+.gpf-receipt-note{padding:10px;border:1px solid rgba(16,185,129,.25);background:rgba(16,185,129,.06);border-radius:10px;font-size:.68rem;color:var(--text-secondary)}
+@media(max-width:700px){
+  .gpf-steps{grid-template-columns:repeat(2,1fr)}
+  .gpf-pantry-row{grid-template-columns:1fr}
+  .gpf-summary{grid-template-columns:1fr}
+}
+</style>
+
+<style id="omnios-v5734-uiux-connections-css">
+/* ===== OmniOS v57.34 — final UI/UX + connections stabilization ===== */
+:root{--rel-accent:var(--accent-cyan)}
+
+/* Settings: remove double separators created by stacked legacy style layers. */
+#settings-content .settings-row + .settings-row{border-top:0!important}
+#settings-content .settings-row:last-child{border-bottom:0}
+
+/* All switch-like controls share the same keyboard-visible affordance. */
+.settings-toggle[role="switch"]:focus-visible,
+.nav-item[data-view]:focus-visible,
+[data-open-linked]:focus-visible{outline:2px solid var(--accent-cyan)!important;outline-offset:2px!important}
+.settings-toggle[role="switch"]{border:1px solid var(--border-color)}
+
+/* Connections settings workspace. */
+.conn34-shell{display:flex;flex-direction:column;gap:12px}
+.conn34-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:16px;border:1px solid color-mix(in srgb,var(--accent-cyan) 24%,var(--border-color));border-radius:var(--radius-lg);background:linear-gradient(145deg,color-mix(in srgb,var(--accent-cyan) 7%,var(--bg-surface)),var(--bg-surface))}
+.conn34-hero-main{min-width:0;flex:1}.conn34-kicker{font-size:.61rem;letter-spacing:.11em;text-transform:uppercase;font-weight:800;color:var(--accent-cyan)}
+.conn34-hero h3{font-size:1.05rem;margin:4px 0}.conn34-hero p{margin:0;color:var(--text-secondary);font-size:.72rem;line-height:1.5;max-width:760px}
+.conn34-hero-actions{display:flex;gap:6px;flex-wrap:wrap}
+.conn34-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.conn34-node{position:relative;padding:12px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-surface);min-width:0}
+.conn34-node strong{display:block;font-size:.76rem}.conn34-node span{display:block;margin-top:3px;font-size:.61rem;line-height:1.4;color:var(--text-muted)}
+.conn34-node:not(:last-child)::after{content:'→';position:absolute;right:-9px;top:50%;transform:translate(50%,-50%);z-index:2;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--accent-cyan);font-size:.7rem;font-weight:900}
+.conn34-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(260px,.7fr);gap:12px;align-items:start}
+.conn34-card{border:1px solid var(--border-color);border-radius:var(--radius-lg);background:var(--bg-surface);padding:16px}
+.conn34-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}.conn34-card-title{font-size:.86rem;font-weight:750}.conn34-card-sub{font-size:.65rem;color:var(--text-muted);line-height:1.45;margin-top:2px}
+.conn34-status{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border-radius:999px;background:rgba(16,185,129,.10);color:var(--accent-green);font-size:.59rem;font-weight:800;white-space:nowrap}.conn34-status::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.conn34-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.conn34-kpi{padding:10px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base)}.conn34-kpi span{display:block;font-size:.57rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.045em}.conn34-kpi strong{display:block;margin-top:4px;font-size:1rem}
+.conn34-log{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow:auto}.conn34-log-row{padding:8px 9px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base)}.conn34-log-row strong{display:block;font-size:.69rem}.conn34-log-row span{display:block;font-size:.59rem;color:var(--text-muted);margin-top:2px;line-height:1.4}.conn34-empty{padding:14px;text-align:center;color:var(--text-muted);font-size:.68rem;border:1px dashed var(--border-light);border-radius:10px}
+.conn34-managed{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-color)}.conn34-managed:last-child{border-bottom:0}.conn34-managed strong{font-size:.78rem}.conn34-managed span{display:block;color:var(--text-muted);font-size:.65rem;line-height:1.45;margin-top:2px}.conn34-badge{padding:4px 7px;border-radius:999px;background:var(--bg-elevated);color:var(--text-secondary);font-size:.58rem;font-weight:800;white-space:nowrap}
+
+/* Task relations: distinguish true related-item actions from plain text. */
+#linked-list [data-open-linked]{display:inline-flex;align-items:center;min-height:30px;padding:3px 7px;margin-left:-7px;border-radius:7px;text-decoration:none}
+#linked-list [data-open-linked]:hover{background:rgba(6,182,212,.09)}
+
+/* Better narrow-layout behavior without hiding actions. */
+@media(max-width:900px){.conn34-flow{grid-template-columns:repeat(2,minmax(0,1fr))}.conn34-node::after{display:none}.conn34-grid{grid-template-columns:1fr}}
+@media(max-width:760px){
+  .conn34-hero{flex-direction:column;padding:13px}.conn34-hero-actions{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.conn34-hero-actions .btn{width:100%;justify-content:center}
+  .conn34-flow{grid-template-columns:1fr}.conn34-card{padding:13px}.conn34-kpis{grid-template-columns:1fr 1fr}
+  /* Never let an uninitialized legacy mobile nav silently clip extra destinations. */
+  .mobile-nav{overflow-x:auto!important;overflow-y:hidden!important}
+}
+@media(max-width:420px){.conn34-hero-actions,.conn34-kpis{grid-template-columns:1fr}}
+</style>
+
+
+<style id="omnios-v582-bible365-mood-spacing-css">
+/* ===== OmniOS v58.2 — Bible 365, Mood controls, spacing normalization ===== */
+#view-bible{--bib-space-1:4px;--bib-space-2:8px;--bib-space-3:12px;--bib-space-4:16px;--bib-space-5:20px;--bib-space-6:24px}
+#view-bible .bib-shell{gap:var(--bib-space-3)!important}
+#view-bible .bib-top{gap:var(--bib-space-4)!important;padding:var(--bib-space-5)!important}
+#view-bible .bib-title{margin:var(--bib-space-1) 0 var(--bib-space-1)!important}
+#view-bible .bib-source-chip{margin-top:var(--bib-space-2)!important;padding:6px 10px!important;gap:6px!important}
+#view-bible .bib-top-actions{gap:var(--bib-space-2)!important}
+#view-bible .bib-tabs{gap:var(--bib-space-1)!important;padding:var(--bib-space-1)!important}
+#view-bible .bib-tab{padding:9px 12px!important}
+#view-bible .bib-kpis{gap:var(--bib-space-3)!important}
+#view-bible .bib-kpi{padding:var(--bib-space-3)!important}
+#view-bible .bib-card{padding:var(--bib-space-4)!important}
+#view-bible .bib-card-head{gap:var(--bib-space-3)!important;margin-bottom:var(--bib-space-3)!important}
+#view-bible .bib-two,#view-bible .bib-study-layout,#view-bible .bib-timer-layout,#view-bible .bib-journal-layout{gap:var(--bib-space-3)!important}
+#view-bible .bib-actions{gap:var(--bib-space-2)!important}
+#view-bible .bib-progress{margin-top:var(--bib-space-3)!important}
+
+/* 365 plan */
+#view-bible .bib-plan-head{gap:var(--bib-space-4)!important}
+#view-bible .bib-plan-calnav{gap:var(--bib-space-2)!important;margin:var(--bib-space-4) 0 var(--bib-space-3)!important}
+#view-bible .bib-plan-calendar-wrap{border-radius:14px!important}
+#view-bible .bib-plan-cell{min-height:132px!important;padding:var(--bib-space-3)!important}
+#view-bible .bib-plan-cell.selected:not(.today){box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bib-accent) 58%,transparent)!important}
+#view-bible .bib-plan-cell-head{gap:var(--bib-space-2)!important;margin-bottom:var(--bib-space-2)!important}
+#view-bible .bib-plan-ref{font-size:.72rem!important;line-height:1.38!important}
+#view-bible .bib-plan-sub{margin-top:var(--bib-space-2)!important;line-height:1.42!important}
+#view-bible .bib-plan-daynum{margin-top:var(--bib-space-2)!important}
+#view-bible .bib-plan-detail{margin-top:var(--bib-space-3);padding:var(--bib-space-4);border:1px solid var(--border-color);border-radius:14px;background:var(--bg-base)}
+#view-bible .bib-plan-detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--bib-space-3);margin-bottom:var(--bib-space-3)}
+#view-bible .bib-plan-detail-title{font-family:Georgia,'Times New Roman',serif;font-size:1rem;font-weight:800}
+#view-bible .bib-plan-detail-meta{font-size:.62rem;color:var(--text-muted);margin-top:4px}
+#view-bible .bib-plan-readings{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--bib-space-2)}
+#view-bible .bib-plan-reading{display:flex;align-items:center;justify-content:space-between;gap:var(--bib-space-2);padding:10px 12px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-surface)}
+#view-bible .bib-plan-reading span{font-family:Georgia,'Times New Roman',serif;font-size:.7rem;font-weight:700}
+#view-bible .bib-plan-note{margin-top:var(--bib-space-3);font-size:.62rem;line-height:1.5;color:var(--text-muted)}
+
+/* Mood — use the same outlined SVG language as menu/navigation icons. */
+#view-bible .bib-mood-intro{margin-bottom:var(--bib-space-3)!important}
+#view-bible .bib-mood-layout{grid-template-columns:minmax(300px,340px) minmax(0,1fr)!important;gap:var(--bib-space-3)!important}
+#view-bible .bib-all-moods{grid-template-columns:1fr 1fr!important;gap:var(--bib-space-2)!important}
+#view-bible .bib-mood{display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:10px;min-height:48px;padding:9px 10px!important;border-radius:10px!important;text-align:left!important}
+#view-bible .bib-mood-icon{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:var(--bg-elevated);color:var(--text-secondary);margin:0!important;font-size:0!important}
+#view-bible .bib-mood-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#view-bible .bib-mood-name{margin:0!important;font-size:.64rem!important;line-height:1.25!important}
+#view-bible .bib-mood:hover .bib-mood-icon,#view-bible .bib-mood.active .bib-mood-icon{color:var(--bib-accent);background:color-mix(in srgb,var(--bib-accent) 12%,var(--bg-elevated))}
+#view-bible .bib-mood.active{box-shadow:inset 3px 0 0 var(--bib-accent)}
+#view-bible .bib-mood-card-v573{padding:var(--bib-space-3)!important;margin-top:var(--bib-space-2)!important;border-radius:12px!important}
+#view-bible .bib-mood-excerpt{margin:var(--bib-space-2) 0 var(--bib-space-3)!important;line-height:1.62!important}
+#view-bible .bib-mood-history-note{display:flex;align-items:center;gap:var(--bib-space-2);margin-top:var(--bib-space-3);padding:9px 10px;border-radius:9px;background:var(--bg-elevated);font-size:.58rem;color:var(--text-muted)}
+
+@media(max-width:1100px){#view-bible .bib-mood-layout{grid-template-columns:1fr!important}#view-bible .bib-all-moods{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(max-width:760px){
+  #view-bible .bib-top{padding:var(--bib-space-4)!important}
+  #view-bible .bib-card{padding:var(--bib-space-3)!important}
+  #view-bible .bib-plan-cell{min-height:120px!important;padding:10px!important}
+  #view-bible .bib-all-moods{grid-template-columns:1fr 1fr!important}
+  #view-bible .bib-mood{grid-template-columns:30px minmax(0,1fr);min-height:46px;padding:8px!important}
+  #view-bible .bib-mood-icon{width:28px;height:28px}
+  #view-bible .bib-plan-detail-head{flex-direction:column}
+}
+@media(max-width:430px){#view-bible .bib-all-moods{grid-template-columns:1fr!important}}
+</style>
+
+
+<style id="omnios-v583-bible-lifehub-css">
+/* ===== OmniOS v58.3 — Bible Today verse hierarchy + Life Hub complete CRUD ===== */
+#view-bible .bib-today-scripture-v5717{font-size:.96rem;line-height:1.78}
+#view-bible .bib-today-verse-v583{display:inline}
+#view-bible .bib-today-verse-num-v583{
+  display:inline-block;margin:0 4px 0 7px;vertical-align:super;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:.52rem;line-height:1;font-weight:750;color:var(--bib-accent);
+  opacity:.78;letter-spacing:0;font-variant-numeric:tabular-nums;
+}
+#view-bible .bib-today-verse-v583:first-child .bib-today-verse-num-v583{margin-left:0}
+#view-bible .bib-med-passage-v633{margin:12px 0 14px;padding:13px 14px;border:1px solid var(--border-color);border-radius:12px;background:color-mix(in srgb,var(--bg-base) 90%,var(--bib-accent) 10%);max-height:250px;overflow:auto;text-align:left}
+#view-bible .bib-med-verse-v633{display:grid;grid-template-columns:24px minmax(0,1fr);gap:9px;align-items:start;padding:5px 0}
+#view-bible .bib-med-verse-num-v633{font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.66rem;line-height:1.7;font-weight:800;color:var(--bib-accent);font-variant-numeric:tabular-nums;text-align:right}
+#view-bible .bib-med-verse-text-v633{font-family:Georgia,'Times New Roman',serif;font-size:.93rem;line-height:1.72;color:var(--text-primary)}
+@media(max-width:760px){#view-bible .bib-med-passage-v633{max-height:220px;padding:11px 12px}#view-bible .bib-med-verse-v633{grid-template-columns:22px minmax(0,1fr);gap:8px}#view-bible .bib-med-verse-text-v633{font-size:.9rem}}
+
+#view-life-hub .v35-life-sectionbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:10px 12px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-surface);font-size:.72rem;color:var(--text-muted)}
+#view-life-hub .v35-life-sectionbar strong{color:var(--text-primary)}
+#view-life-hub .v35-record-card{display:flex;flex-direction:column;gap:12px;min-width:0}
+#view-life-hub .v35-record-card-main{min-width:0;flex:1}
+#view-life-hub .v35-record-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:auto;padding-top:10px;border-top:1px solid var(--border-color)}
+#view-life-hub .v35-record-actions .btn{min-height:34px}
+#view-life-hub .v35-life-delete{color:var(--accent-red)}
+#view-life-hub .v35-life-delete:hover{border-color:color-mix(in srgb,var(--accent-red) 55%,var(--border-color));background:color-mix(in srgb,var(--accent-red) 10%,var(--bg-elevated));color:var(--accent-red)}
+#view-life-hub .v35-admin-group{margin-bottom:12px}
+#view-life-hub .v35-admin-row{gap:10px;align-items:center}
+#view-life-hub .v35-admin-row .v35-record-actions{border-top:0;padding-top:0;margin-top:0;flex:none}
+#view-life-hub .v35-auto-row{gap:10px;align-items:center}
+#view-life-hub .v35-auto-row .v35-record-actions{border-top:0;padding-top:0;margin-top:0;flex:none}
+#view-life-hub .v35-auto-state{padding:3px 7px;border-radius:999px;font-size:.6rem;font-weight:700;white-space:nowrap}
+#view-life-hub .v35-auto-state.on{background:rgba(16,185,129,.13);color:var(--accent-green)}
+#view-life-hub .v35-auto-state.off{background:var(--bg-elevated);color:var(--text-muted)}
+.v35-life-detail-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-color)}
+.v35-life-detail-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--bg-elevated);font-size:1.2rem;flex:none}
+.v35-life-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.v35-life-detail-field{padding:11px 12px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base);min-width:0}
+.v35-life-detail-field.wide{grid-column:1/-1}
+.v35-life-detail-field>span{display:block;margin-bottom:5px;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)}
+.v35-life-detail-field>div{font-size:.8rem;line-height:1.5;color:var(--text-primary);overflow-wrap:anywhere}
+@media(max-width:760px){
+  #view-life-hub .v35-life-sectionbar{align-items:stretch;flex-direction:column}
+  #view-life-hub .v35-life-sectionbar .btn{width:100%;justify-content:center}
+  #view-life-hub .v35-record-actions{justify-content:stretch}
+  #view-life-hub .v35-record-actions .btn{flex:1;justify-content:center}
+  #view-life-hub .v35-admin-row,#view-life-hub .v35-auto-row{align-items:flex-start;flex-wrap:wrap}
+  #view-life-hub .v35-admin-row .v35-record-actions,#view-life-hub .v35-auto-row .v35-record-actions{width:100%}
+  .v35-life-detail-grid{grid-template-columns:1fr}.v35-life-detail-field.wide{grid-column:auto}
+}
+</style>
+
+
+</head>
+<body>
+<div id="omnios-boot-screen" role="status" aria-live="polite" aria-label="Loading OmniOS">
+  <div class="omnios-boot-card">
+    <div class="omnios-boot-mark" aria-hidden="true"></div>
+    <div class="omnios-boot-brand">Omni<span>OS</span></div>
+    <div class="omnios-boot-copy">Preparing your workspace…</div>
+    <div class="omnios-boot-track" aria-hidden="true"><i></i></div>
+  </div>
+</div>
+
+<aside class="sidebar">
+    <div class="logo">
+        <img class="nav-icon-img logo-icon-img" data-icon-file="Logo.png" alt="" style="width:28px;height:28px;border-radius:7px;margin-bottom:4px">
+        <h1>Omni<span>OS</span></h1>
+        <p>Ultimate Life Planner</p>
+    </div>
+    <nav class="nav-menu" aria-label="Main navigation">
+        <div class="nav-section v35-nav-section" data-v35-section="Plan">Plan</div>
+        <button type="button" class="nav-item" data-view="today">Today</button>
+        <button type="button" class="nav-item active" data-view="dashboard">Dashboard</button>
+        <button type="button" class="nav-item" data-view="inbox">Inbox</button>
+        <button type="button" class="nav-item" data-view="planner">Planner</button>
+        <button type="button" class="nav-item" data-view="projects">Projects</button>
+        <button type="button" class="nav-item" data-view="routine">Routine</button>
+        <button type="button" class="nav-item" data-view="master-calendar">Calendar</button>
+        <button type="button" class="nav-item" data-view="tasks">Tasks</button>
+
+        <div class="nav-section v35-nav-section" data-v35-section="Wellbeing">Wellbeing</div>
+        <button type="button" class="nav-item" data-view="habits">Habits</button>
+        <button type="button" class="nav-item" data-view="bible">Bible</button>
+        <button type="button" class="nav-item" data-view="workout">Workout</button>
+        <button type="button" class="nav-item" data-view="diet">Nutrition</button>
+        <button type="button" class="nav-item" data-view="focus">Focus</button>
+
+        <div class="nav-section v35-nav-section" data-v35-section="Life">Life</div>
+        <button type="button" class="nav-item" data-view="budget">Finance</button>
+        <button type="button" class="nav-item" data-view="life-hub">Life Hub</button>
+
+        <div class="nav-section v35-nav-section" data-v35-section="Organize">Organize</div>
+        <button type="button" class="nav-item" data-view="notes">Notes</button>
+        <button type="button" class="nav-item" data-view="grocery">Grocery</button>
+        <button type="button" class="nav-item" data-view="wishlist">Wishlist</button>
+        <button type="button" class="nav-item" data-view="goals">Goals</button>
+        <button type="button" class="nav-item" data-view="pantry">Pantry</button>
+        <button type="button" class="nav-item" data-view="reminders">Reminders</button>
+
+        <div class="nav-section v35-nav-section" data-v35-section="System">System</div>
+        <button type="button" class="nav-item" data-view="data-center">Data Center</button>
+        <button type="button" class="nav-item" data-view="activity">Activity</button>
+        <button type="button" class="nav-item" data-view="templates">Templates</button>
+        <button type="button" class="nav-item" data-view="relations">Relations</button>
+        <button type="button" class="nav-item" data-view="automations">Automations</button>
+        <button type="button" class="nav-item" data-view="studio">Studio</button>
+        <button type="button" class="nav-item" data-view="passwords">Passwords</button>
+        <button type="button" class="nav-item" data-view="settings">Settings</button>
+        <button type="button" class="nav-item" data-view="help">Help</button>
+    </nav>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+</aside>
+
+<div class="shortcuts-overlay" id="shortcuts-overlay" aria-hidden="true">
+    <div class="shortcuts-box">
+        <h3>Keyboard shortcuts</h3>
+        <p class="text-muted text-sm">These work anywhere in OmniOS, even while a form is focused (except where noted).</p>
+        <div class="shortcuts-row"><span>Search everything</span><span class="shortcuts-keys"><kbd>Ctrl/⌘</kbd><kbd>K</kbd></span></div>
+        <div class="shortcuts-row"><span>Open the Assistant</span><span class="shortcuts-keys"><kbd>Ctrl/⌘</kbd><kbd>J</kbd></span></div>
+        <div class="shortcuts-row"><span>Undo the last saved change</span><span class="shortcuts-keys"><kbd>Ctrl/⌘</kbd><kbd>Z</kbd></span></div>
+        <div class="shortcuts-row"><span>Close a modal, panel, or the sidebar</span><span class="shortcuts-keys"><kbd>Esc</kbd></span></div>
+        <div class="shortcuts-row"><span>Show this panel</span><span class="shortcuts-keys"><kbd>?</kbd></span></div>
+        <div class="modal-footer"><button type="button" class="btn btn-primary" id="shortcuts-close-btn">Got it</button></div>
+    </div>
+</div>
+
+<nav class="mobile-nav" aria-label="Primary navigation">
+    <button type="button" class="active" data-mobile-view="dashboard"><span class="nav-icon">⌂</span><span class="nav-label">Home</span></button>
+    <button type="button" data-mobile-view="master-calendar"><span class="nav-icon">▦</span><span class="nav-label">Calendar</span></button>
+    <button type="button" data-mobile-view="tasks"><span class="nav-icon">✓</span><span class="nav-label">Tasks</span></button>
+    <button type="button" data-mobile-view="habits"><span class="nav-icon">⚡</span><span class="nav-label">Habits</span></button>
+    <button type="button" data-mobile-view="workout"><span class="nav-icon">🏋️</span><span class="nav-label">Workout</span></button>
+    <button type="button" data-mobile-view="focus"><span class="nav-icon">◷</span><span class="nav-label">Focus</span></button>
+    <button type="button" data-mobile-view="notes"><span class="nav-icon">▤</span><span class="nav-label">Notes</span></button>
+</nav>
+
+<main class="main-content">
+    <header class="topbar">
+        <h2 class="topbar-title" id="view-title">Dashboard</h2>
+        <div class="topbar-actions">
+            <button type="button" class="btn" id="settings-topbar-btn" title="Settings" aria-label="Settings">⚙️</button>
+            <span id="save-status" class="save-status" aria-live="polite">Ready</span><button type="button" class="btn btn-primary" id="global-add-btn">+ Quick Add</button>
+        </div>
+    </header>
+
+    <div class="view-container">
+
+        <!-- DASHBOARD -->
+        <section id="view-dashboard" class="view active">
+            <div class="dashboard-toolbar">
+                <div>
+                    <h3 style="margin:0 0 3px;">Command Center</h3>
+                    <div class="text-muted text-sm">One view for tasks, habits, focus and finances.</div>
+                </div>
+                <div class="toolbar-group">
+                    <select class="filter-select" id="dash-period">
+                        <option value="today">Today</option><option value="week" selected>This Week</option><option value="month">This Month</option><option value="all">All Time</option>
+                    </select>
+                    <select class="filter-select" id="dash-domain">
+                        <option value="all">All Areas</option><option value="tasks">Tasks</option><option value="habits">Habits</option><option value="focus">Focus</option><option value="finance">Finance</option>
+                    </select>
+                    <button type="button" class="btn btn-sm" id="dash-refresh">↻ Refresh</button>
+                </div>
+            </div>
+            <div id="dash-kpis" class="kpi-grid"></div>
+            <div id="dash-attention"></div>
+            <div class="analytics-grid">
+                <div class="card" data-widget="progress"><div class="card-header"><h3 class="card-title">📈 Progress Overview</h3></div><div id="dash-progress"></div></div>
+                <div class="card" data-widget="priorities"><div class="card-header"><h3 class="card-title">🎯 Today's Priorities</h3></div><div id="dash-priorities" class="mini-list"></div></div>
+                <div class="card" data-widget="insights"><div class="card-header"><h3 class="card-title">💡 Insights</h3></div><div id="dash-insights"></div></div>
+            </div>
+            <div class="analytics-grid">
+                <div class="card" data-widget="habits"><div class="card-header"><h3 class="card-title">⚡ Habit Performance</h3><button type="button" class="btn btn-sm" onclick="document.querySelector('[data-view=habits]').click()">Open Habits</button></div><div id="dash-habits"></div></div>
+                <div class="card" data-widget="focus"><div class="card-header"><h3 class="card-title">⏱ Focus</h3><button type="button" class="btn btn-sm" onclick="document.querySelector('[data-view=focus]').click()">Focus</button></div><div id="dash-focus"></div></div>
+                <div class="card" data-widget="finance"><div class="card-header"><h3 class="card-title">💰 Finance Snapshot</h3><button type="button" class="btn btn-sm" onclick="document.querySelector('[data-view=budget]').click()">Open Budget</button></div><div id="dash-finance"></div></div>
+            </div>
+            <div class="grid-2">
+                <div class="card"><div class="card-header"><h3 class="card-title">🔥 Q1: Do First</h3></div><div id="dash-q1" class="eq-box-content"></div></div>
+                <div class="card"><div class="card-header"><h3 class="card-title">📅 Q2: Schedule</h3></div><div id="dash-q2" class="eq-box-content"></div></div>
+                <div class="card"><div class="card-header"><h3 class="card-title">⚡ Q3: Delegate</h3></div><div id="dash-q3" class="eq-box-content"></div></div>
+                <div class="card"><div class="card-header"><h3 class="card-title">📥 Q4: Eliminate</h3></div><div id="dash-q4" class="eq-box-content"></div></div>
+            </div>
+        </section>
+
+        <!-- ROUTINE -->
+        <section id="view-routine" class="view" aria-labelledby="view-title">
+            <div class="rt611-shell">
+                <div class="rt-empty">Loading routines…</div>
+            </div>
+        </section>
+
+        <!-- MASTER CALENDAR -->
+        <section id="view-master-calendar" class="view">
+            <div class="flex-between mb-6">
+                <div><h3 style="margin-bottom:4px;">Calendar</h3><div class="text-muted text-sm">Everything in your planner, organized by date. Tap any item to jump straight to it.</div></div>
+                <button type="button" class="btn btn-primary" id="master-calendar-quick-add">+ Add</button>
+            </div>
+            <div id="master-calendar-content"></div>
+        </section>
+
+        <!-- TASKS -->
+        <section id="view-tasks" class="view">
+            <div class="toolbar">
+                <div class="toolbar-group">
+                    <button type="button" class="view-btn active" data-taskview="kanban">📋 Kanban</button>
+                    <button type="button" class="view-btn" data-taskview="matrix">⚡ Matrix</button>
+                    <button type="button" class="view-btn" data-taskview="list">📝 List</button>
+                    <button type="button" class="view-btn" data-taskview="gallery">🖼️ Gallery</button>
+                    <button type="button" class="view-btn" data-taskview="calendar">📅 Calendar View</button>
+                    <button type="button" class="view-btn" data-taskview="groups">🗂 Groups</button>
+                </div>
+                <div class="toolbar-divider"></div>
+                <div class="toolbar-group">
+                    <select class="filter-select" id="filter-importance">
+                        <option value="all">All Importance</option>
+                        <option value="high">Important (High)</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Not Important (Low)</option>
+                    </select>
+                    <select class="filter-select" id="filter-urgency">
+                        <option value="all">All Urgency</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="not-urgent">Not Urgent</option>
+                    </select>
+                    <select class="filter-select" id="filter-status">
+                        <option value="all">All Statuses</option>
+                        <option value="todo">To Do</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                    <select class="filter-select" id="filter-category">
+                        <option value="all">All Categories</option>
+                        <option value="work">💼 Work</option>
+                        <option value="hobby">🎨 Hobbies</option>
+                        <option value="routine">🔄 Routine</option>
+                        <option value="gym">🏋️ Gym</option>
+                        <option value="meal">🥗 Meals</option>
+                    </select>
+                </div>
+                <div class="toolbar-divider"></div>
+                <div class="toolbar-group">
+                    <select class="filter-select" id="sort-by">
+                        <option value="date-asc">Date (Earliest)</option>
+                        <option value="date-desc">Date (Latest)</option>
+                        <option value="importance">Importance</option>
+                        <option value="title">Title</option>
+                    </select>
+                    <input type="text" class="search-input" id="search-input" placeholder="🔍 Search..."><button type="button" class="btn btn-sm" data-v25-select="task">☑ Select</button>
+                </div>
+            </div>
+            <div id="tasks-content"></div>
+        </section>
+
+        <!-- BUDGET -->
+        <section id="view-budget" class="view">
+            <div class="stats-row" id="budget-stats"></div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Budget Categories</h3>
+                        <div style="display:flex;gap:6px">
+                            <button type="button" class="btn btn-sm" onclick="openBudgetCatModal(null,'expense')">+ Expense</button>
+                            <button type="button" class="btn btn-sm" onclick="openBudgetCatModal(null,'income')">+ Income</button>
+                        </div>
+                    </div>
+                    <div id="budget-limits-list"></div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Transactions</h3>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="openTxnModal()">+ Add Transaction</button>
+                    </div>
+                    <div class="tab-btns">
+                        <button type="button" class="tab-btn active" data-txnfilter="all">All</button>
+                        <button type="button" class="tab-btn" data-txnfilter="expense">Expenses</button>
+                        <button type="button" class="tab-btn" data-txnfilter="income">Income</button>
+                    </div>
+                    <div class="transaction-list" id="transaction-list"></div>
+                </div>
+            </div>
+            <div class="card" style="margin-top:16px">
+                <div class="card-header">
+                    <h3 class="card-title">Wallets</h3>
+                    <button type="button" class="btn btn-sm" onclick="openWalletModal()">+ Add Wallet</button>
+                </div>
+                <div class="text-muted text-sm" style="margin-bottom:8px">Where your money lives — pick one when logging a transaction. Click a wallet to rename or remove it.</div>
+                <div id="wallet-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+            </div>
+        </section>
+
+        <!-- HABITS -->
+        <section id="view-habits" class="view">
+            <div class="habit-toolbar">
+                <div><h3 style="margin:0 0 3px;">Habits</h3><div class="text-muted text-sm">Weekly execution first. Switch to calendar for long-term consistency.</div></div>
+                <div class="toolbar-group">
+                    <button type="button" class="view-btn active" data-habitview="week">▦ Weekly</button>
+                    <button type="button" class="view-btn" data-habitview="calendar">▦ Monthly</button>
+                    <button type="button" class="btn btn-primary" onclick="openHabitModal()">+ New Habit</button>
+                </div>
+            </div>
+            <div id="habit-summary" class="habit-summary-grid"></div>
+            <div id="habits-container"></div>
+        </section>
+
+        <!-- WORKOUT -->
+        <section id="view-workout" class="view">
+            <div class="workout-hero">
+                <div>
+                    <div class="eyebrow">TRAINING HQ</div>
+                    <h3>Workout Command Center</h3>
+                    <p>Build sessions, log every set, chase performance, and keep your entire training history in one place.</p>
+                </div>
+                <div class="workout-hero-actions">
+                    <button type="button" class="btn" id="workout-open-history-btn">History</button>
+                    <button type="button" class="btn btn-primary" id="workout-start-btn">Start Workout</button>
+                </div>
+            </div>
+            <div id="gym-membership-card" style="cursor:pointer;margin-bottom:14px"></div>
+            <div id="workout-kpis" class="workout-kpi-grid"></div>
+            <div class="workout-tabs">
+                <button type="button" class="view-btn active" data-workout-tab="session">Current Session</button>
+                <button type="button" class="view-btn" data-workout-tab="templates">Templates</button>
+                <button type="button" class="view-btn" data-workout-tab="exercises">Exercises</button>
+                <button type="button" class="view-btn" data-workout-tab="analytics">Analytics</button>
+                <button type="button" class="view-btn" data-workout-tab="history">History</button>
+            </div>
+            <div id="workout-content"></div>
+        </section>
+
+        <!-- FOCUS -->
+        <section id="view-focus" class="view">
+            <div class="card" style="max-width: 520px; margin: 0 auto; text-align: center;">
+                <h3 class="card-title mb-4">Pomodoro Focus</h3>
+                <div class="timer-mode-btns">
+                    <button type="button" class="tab-btn active" data-timermode="focus">Focus</button>
+                    <button type="button" class="tab-btn" data-timermode="short">Short Break</button>
+                    <button type="button" class="tab-btn" data-timermode="long">Long Break</button>
+                </div>
+                <div class="timer-display" id="timer-display">25:00</div>
+                <div class="timer-controls mb-6">
+                    <button type="button" class="btn btn-primary" id="timer-start-btn">Start</button>
+                    <button type="button" class="btn" id="timer-reset-btn">Reset</button>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Focus (mins)</label>
+                        <input type="number" class="form-input" id="timer-focus" value="25" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Short Break</label>
+                        <input type="number" class="form-input" id="timer-short-break" value="5" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Long Break</label>
+                        <input type="number" class="form-input" id="timer-long-break" value="15" min="1">
+                    </div>
+                </div>
+                <p class="text-muted text-sm" style="margin-top:10px;">Total focused today: <strong id="total-focus-time">0 min</strong> &nbsp;|&nbsp; Sessions: <strong id="total-sessions">0</strong></p>
+            </div>
+        </section>
+
+        <!-- NOTES -->
+        <section id="view-notes" class="view">
+            <div class="flex-between mb-6">
+                <div><h3 style="margin-bottom:4px;">Notes</h3><div class="text-muted text-sm">Capture ideas, write freely, and organize everything in cards.</div></div>
+                <button type="button" class="btn btn-primary" onclick="openNoteModal()">+ New Note</button>
+            </div>
+            <div class="notes-toolbar">
+                <button type="button" class="btn btn-sm" data-v25-select="note">☑ Select</button>
+                <button type="button" class="btn btn-sm" data-v25-manage="note">🗂 Groups</button>
+                <input id="notes-search" class="search-input" type="search" placeholder="Search notes…" aria-label="Search notes">
+                <select id="notes-sort" class="filter-select" aria-label="Sort notes">
+                    <option value="updated">Recently updated</option><option value="created">Recently created</option><option value="title">Title A–Z</option><option value="pinned">Pinned first</option>
+                </select>
+            </div>
+            <div class="notes-grid" id="notes-grid"></div>
+        </section>
+
+        <!-- PASSWORDS -->
+        <section id="view-passwords" class="view">
+            <div class="flex-between mb-4">
+                <div><h3 style="margin-bottom:4px;">Password Manager</h3><div class="text-muted text-sm">Stored locally on this device only — not encrypted, same as the rest of OmniOS's data. Don't sync this file anywhere you don't fully trust.</div></div>
+                <button type="button" class="btn btn-primary" onclick="openPasswordModal()">+ Add Password</button>
+            </div>
+            <input id="password-search" class="search-input" type="search" placeholder="Search by site or username…" aria-label="Search passwords" style="margin-bottom:14px;max-width:360px">
+            <div id="password-list" class="notes-grid"></div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="view-settings" class="view">
+            <div class="workout-tabs" id="settings-tabs">
+                <button type="button" class="view-btn active" data-settings-tab="appearance">Appearance</button>
+                <button type="button" class="view-btn" data-settings-tab="calendar">Calendar</button>
+                <button type="button" class="view-btn" data-settings-tab="tasks">Tasks</button>
+                <button type="button" class="view-btn" data-settings-tab="habits">Habits</button>
+                <button type="button" class="view-btn" data-settings-tab="workout">Workout</button>
+                <button type="button" class="view-btn" data-settings-tab="focus">Focus</button>
+                <button type="button" class="view-btn" data-settings-tab="notifications">Notifications</button>
+                <button type="button" class="view-btn" data-settings-tab="data">Data</button>
+            </div>
+            <div id="settings-content"></div>
+        </section>
+
+    </div>
+</main>
+
+<!-- INSPECTOR -->
+<div class="inspector-backdrop" id="inspector-backdrop"></div>
+<div class="inspector-panel" id="inspector-panel">
+    <button type="button" class="inspector-close" id="inspector-close-btn">✕</button>
+    <div id="inspector-content"></div>
+</div>
+
+<!-- QUICK ADD MENU -->
+<div class="modal-overlay" id="quick-add-modal" aria-hidden="true">
+  <div class="modal quick-add-modal" role="dialog" aria-modal="true" aria-labelledby="quick-add-title">
+    <div class="modal-header"><h3 class="modal-title" id="quick-add-title">Quick Add</h3><button type="button" class="modal-close-btn" aria-label="Close">✕</button></div>
+    <div class="quick-add-grid">
+      <button type="button" class="btn quick-add-choice" data-quick-type="task"><span>✓</span><span><strong>Task</strong><small>Plan an action or reminder</small></span></button>
+      <button type="button" class="btn quick-add-choice" data-quick-type="event"><span>●</span><span><strong>Event</strong><small>Add a dated calendar item</small></span></button>
+      <button type="button" class="btn quick-add-choice" data-quick-type="habit"><span>⚡</span><span><strong>Habit</strong><small>Track a recurring habit</small></span></button>
+      <button type="button" class="btn quick-add-choice" data-quick-type="workout"><span>🏋️</span><span><strong>Workout</strong><small>Start a workout session</small></span></button>
+      <button type="button" class="btn quick-add-choice" data-quick-type="note"><span>▤</span><span><strong>Note</strong><small>Capture a note or idea</small></span></button>
+      <button type="button" class="btn quick-add-choice" data-quick-type="transaction"><span>↗</span><span><strong>Transaction</strong><small>Log income or expense</small></span></button>
+      <button type="button" class="btn quick-add-choice" data-quick-type="expense"><span>↘</span><span><strong>Expense</strong><small>Log a purchase in one tap</small></span></button>
+      <button type="button" class="btn quick-add-choice" data-quick-type="income"><span>↗</span><span><strong>Income</strong><small>Log money received quickly</small></span></button>
+    </div>
+  </div>
+</div>
+<!-- MODALS -->
+<div class="modal-overlay" id="task-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="task-modal-title">Add New Entry</h3>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Title</label>
+            <input type="text" class="form-input" id="task-title" placeholder="What needs to be done?">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <select class="form-select" id="task-category">
+                    <option value="work">💼 Work</option>
+                    <option value="hobby">🎨 Hobbies</option>
+                    <option value="routine">🔄 Routine / Habit</option>
+                    <option value="gym">🏋️ Gym / Fitness</option>
+                    <option value="meal">🥗 Meal / Grocery</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-select" id="task-status">
+                    <option value="todo">To Do</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Importance</label>
+                <select class="form-select" id="task-importance">
+                    <option value="high">High (Important)</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low (Not Important)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Urgency</label>
+                <select class="form-select" id="task-urgency">
+                    <option value="urgent">Urgent</option>
+                    <option value="not-urgent">Not Urgent</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Scheduled Date</label>
+            <input type="date" class="form-input" id="task-date">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Notes / Details</label>
+            <textarea class="form-textarea" id="task-notes" placeholder="Additional details..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="task-save-btn">Save Entry</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="txn-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Add Transaction</h3>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="txn-type">
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Amount ($)</label>
+                <input type="number" class="form-input" id="txn-amount" placeholder="0.00" step="0.01">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="form-select" id="txn-category"></select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Wallet</label>
+            <select class="form-select" id="txn-wallet"></select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            <input type="text" class="form-input" id="txn-desc" placeholder="e.g., Grocery shopping">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="txn-date">
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="txn-save-btn">Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="budget-cat-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="bcat-modal-title">Add Budget Category</h3>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Category Name</label>
+            <input type="text" class="form-input" id="bcat-name" placeholder="e.g., Groceries, Rent">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="bcat-type">
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Icon (Emoji)</label>
+                <input type="text" class="form-input" id="bcat-icon" placeholder="e.g., 🛒" maxlength="2">
+            </div>
+        </div>
+        <div class="form-group" id="bcat-limit-group">
+            <label class="form-label">Monthly Limit ($)</label>
+            <input type="number" class="form-input" id="bcat-limit" placeholder="0.00" step="0.01">
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger btn-sm" id="bcat-delete-btn" style="margin-right:auto; display:none;">Delete</button>
+            <button type="button" class="btn modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="bcat-save-btn">Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="habit-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="habit-modal-title">New Habit</h3>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Habit Name</label>
+            <input type="text" class="form-input" id="habit-name" placeholder="e.g., Read 20 pages">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Icon (Emoji)</label>
+            <input type="text" class="form-input" id="habit-icon" placeholder="e.g., 📚" maxlength="2">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Goal (optional)</label>
+            <input type="text" class="form-input" id="habit-goal" placeholder="e.g., 30 days streak">
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger btn-sm" id="habit-delete-btn" style="margin-right:auto; display:none;">Delete</button>
+            <button type="button" class="btn modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="habit-save-btn">Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="workout-modal">
+    <div class="modal workout-modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Start Workout</h3>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Workout name</label>
+            <input type="text" class="form-input" id="workout-name" placeholder="e.g., Upper Body A">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Choose template</label>
+            <select class="form-select" id="workout-template-select"></select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea class="form-textarea" id="workout-notes" placeholder="Session goal, technique notes, anything worth remembering..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="workout-create-btn">Create Session</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="exercise-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Add Exercise</h3>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Exercise</label>
+            <select class="form-select" id="exercise-select"></select>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Sets</label><input type="number" class="form-input" id="exercise-sets" value="3" min="1" max="20"></div>
+            <div class="form-group"><label class="form-label">Rest (sec)</label><input type="number" class="form-input" id="exercise-rest" value="90" min="0"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="exercise-add-btn">Add Exercise</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="note-modal">
+    <div class="modal note-modal">
+        <div class="modal-header">
+            <div><h3 class="modal-title" id="note-modal-title">New Note</h3><div class="text-muted text-sm" id="note-updated-label"></div></div>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Title</label>
+            <input type="text" class="form-input" id="note-title" placeholder="Untitled">
+        </div>
+        <div class="note-editor-wrap">
+            <div class="note-editor-toolbar" role="toolbar" aria-label="Note formatting">
+                <select id="note-block-format" class="filter-select" style="min-height:36px;" aria-label="Text style">
+                    <option value="p">Text</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option>
+                </select>
+                <button type="button" class="note-tool" data-note-cmd="bold"><b>B</b></button>
+                <button type="button" class="note-tool" data-note-cmd="italic"><i>I</i></button>
+                <button type="button" class="note-tool" data-note-cmd="underline"><u>U</u></button>
+                <button type="button" class="note-tool" data-note-cmd="strikeThrough"><s>S</s></button>
+                <button type="button" class="note-tool" data-note-cmd="insertUnorderedList">•</button>
+                <button type="button" class="note-tool" data-note-cmd="insertOrderedList">1.</button>
+                <button type="button" class="note-tool" data-note-cmd="formatBlock" data-note-value="blockquote">❝</button>
+                <button type="button" class="note-tool" data-note-action="todo">☑</button>
+                <button type="button" class="note-tool" data-note-action="link">↗</button>
+                <button type="button" class="note-tool" data-note-cmd="removeFormat">Tx</button>
+            </div>
+            <div id="note-content" class="note-editor" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" data-placeholder="Start writing…"></div>
+        </div>
+        <div class="note-meta-row">
+            <button type="button" class="btn note-pin-toggle" id="note-pin-btn">☆ Pin note</button>
+            <span class="text-muted text-sm" id="note-save-status">Saved automatically</span>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger btn-sm" id="note-delete-btn" style="margin-right:auto;display:none;">Delete</button>
+            <button type="button" class="btn modal-close-btn">Done</button>
+            <button type="button" class="btn btn-primary" id="note-save-btn">Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="edit-txn-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Edit Transaction</h3>
+            <button type="button" class="icon-btn modal-close-btn">✕</button>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="edit-txn-type">
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Amount ($)</label>
+                <input type="number" class="form-input" id="edit-txn-amount" step="0.01">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="form-select" id="edit-txn-category"></select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Wallet</label>
+            <select class="form-select" id="edit-txn-wallet"></select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            <input type="text" class="form-input" id="edit-txn-desc">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="edit-txn-date">
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger" id="edit-txn-delete-btn">Delete</button>
+            <button type="button" class="btn modal-close-btn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="edit-txn-save-btn">Update</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="calendar-event-modal">
+  <div class="modal" style="max-width:680px;width:100%;max-height:92vh;overflow:auto">
+    <div class="modal-header"><h2 id="calendar-event-modal-title">New Calendar Event</h2><button type="button" class="modal-close-btn">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label>Event title</label><input id="calendar-event-title" class="form-input" placeholder="e.g. Team meeting, study block, appointment"></div>
+        <div class="form-group"><label>Date</label><input id="calendar-event-date" type="date" class="form-input"></div>
+        <div class="form-group"><label>Start time</label><input id="calendar-event-start-time" type="time" class="form-input"></div>
+        <div class="form-group"><label>Duration (min)</label><input id="calendar-event-duration" type="number" min="0" max="1440" class="form-input"></div>
+        <div class="form-group"><label>Reminder (min before)</label><input id="calendar-event-reminder" type="number" min="0" max="1440" class="form-input"></div>
+        <div class="form-group"><label>Icon</label><input id="calendar-event-icon" class="form-input" value="●" maxlength="3"></div>
+        <div class="form-group full"><label>Description</label><textarea id="calendar-event-description" class="form-input" rows="3" placeholder="Optional details..."></textarea></div>
+        <div class="form-group full"><label>Repeat</label><select id="calendar-event-recurrence" class="form-select"><option value="none">Does not repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></div>
+      </div>
+      <div id="calendar-event-recurrence-fields" class="recurrence-box" style="display:none">
+        <div class="recurrence-row"><label>Every</label><input id="calendar-event-interval" type="number" min="1" max="365" value="1" class="form-input recurrence-number"><span id="calendar-event-interval-label">period</span></div>
+        <div id="calendar-event-weekdays-wrap" class="recurrence-subsection" style="display:none"><div class="inspector-section-title">Repeat on</div><div class="event-weekdays"><label><input type="checkbox" data-event-weekday="0"><span>Sun</span></label><label><input type="checkbox" data-event-weekday="1"><span>Mon</span></label><label><input type="checkbox" data-event-weekday="2"><span>Tue</span></label><label><input type="checkbox" data-event-weekday="3"><span>Wed</span></label><label><input type="checkbox" data-event-weekday="4"><span>Thu</span></label><label><input type="checkbox" data-event-weekday="5"><span>Fri</span></label><label><input type="checkbox" data-event-weekday="6"><span>Sat</span></label></div></div>
+        <div id="calendar-event-monthly-wrap" class="recurrence-subsection" style="display:none"><div class="inspector-section-title">Monthly pattern</div><select id="calendar-event-monthly-mode" class="form-select"><option value="day">Specific day of month</option><option value="weekday">Nth weekday of the month</option></select><div id="calendar-event-month-day-wrap" style="margin-top:8px"><input id="calendar-event-month-day" type="number" min="1" max="31" class="form-input" placeholder="Day of month"></div><div id="calendar-event-nth-wrap" class="form-grid" style="margin-top:8px"><select id="calendar-event-nth" class="form-select"><option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">5th</option></select><select id="calendar-event-weekday-month" class="form-select"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></div></div>
+        <div class="recurrence-subsection"><div class="inspector-section-title">Ends</div><div class="form-grid"><select id="calendar-event-end" class="form-select"><option value="never">Never</option><option value="count">After a number of occurrences</option><option value="until">On a date</option></select><div id="calendar-event-count-wrap"><input id="calendar-event-count" type="number" min="1" max="9999" value="10" class="form-input" placeholder="Occurrences"></div><div id="calendar-event-until-wrap"><input id="calendar-event-until" type="date" class="form-input"></div></div></div>
+        <div class="recurrence-preview" id="calendar-event-recurrence-preview">One-time event</div>
+      </div>
+      <div class="modal-actions"><button type="button" class="btn btn-danger" id="calendar-event-delete">Delete</button><span style="flex:1"></span><button type="button" class="btn modal-close-btn">Cancel</button><button type="button" class="btn btn-primary" id="calendar-event-save">Save Event</button></div>
+    </div>
+  </div>
+</div>
+<script>
+// ================= STATE =================
+let state = {
+    entries: [],
+    transactions: [],
+    budgetCategories: [
+        { id: 1, name: 'Groceries', icon: '🛒', limit: 400, type: 'expense' },
+        { id: 2, name: 'Entertainment', icon: '🎬', limit: 150, type: 'expense' },
+        { id: 3, name: 'Transport', icon: '🚗', limit: 100, type: 'expense' },
+        { id: 4, name: 'Bills & Utilities', icon: '🏠', limit: 800, type: 'expense' },
+        { id: 5, name: 'Rent / Housing', icon: '🏡', limit: 1000, type: 'expense' },
+        { id: 6, name: 'Health & Fitness', icon: '💊', limit: 100, type: 'expense' },
+        { id: 7, name: 'Dining Out', icon: '🍽️', limit: 150, type: 'expense' },
+        { id: 8, name: 'Shopping', icon: '🛍️', limit: 150, type: 'expense' },
+        { id: 9, name: 'Subscriptions', icon: '📱', limit: 60, type: 'expense' },
+        { id: 10, name: 'Education', icon: '🎓', limit: 100, type: 'expense' },
+        { id: 11, name: 'Travel', icon: '✈️', limit: 200, type: 'expense' },
+        { id: 12, name: 'Insurance', icon: '🛡️', limit: 150, type: 'expense' },
+        { id: 13, name: 'Personal Care', icon: '💆', limit: 60, type: 'expense' },
+        { id: 14, name: 'Kids & Family', icon: '👨‍👩‍👧', limit: 150, type: 'expense' },
+        { id: 15, name: 'Pets', icon: '🐾', limit: 60, type: 'expense' },
+        { id: 16, name: 'Gifts & Donations', icon: '🎁', limit: 60, type: 'expense' },
+        { id: 17, name: 'Savings & Investments', icon: '💹', limit: 200, type: 'expense' },
+        { id: 18, name: 'Other Expense', icon: '📁', limit: 100, type: 'expense' },
+        { id: 19, name: 'Salary', icon: '💼', limit: 0, type: 'income' },
+        { id: 20, name: 'Freelance / Business', icon: '🧾', limit: 0, type: 'income' },
+        { id: 21, name: 'Investments', icon: '📈', limit: 0, type: 'income' },
+        { id: 22, name: 'Gifts Received', icon: '🎉', limit: 0, type: 'income' },
+        { id: 23, name: 'Refunds', icon: '↩️', limit: 0, type: 'income' },
+        { id: 24, name: 'Other Income', icon: '💰', limit: 0, type: 'income' }
+    ],
+    wallets: [
+        { id: 1, name: 'Cash', icon: '💵' },
+        { id: 2, name: 'Bank Account', icon: '🏦' },
+        { id: 3, name: 'Credit Card', icon: '💳' },
+        { id: 4, name: 'Savings', icon: '🏛️' }
+    ],
+    passwords: [],
+    gymMembership: { name: '', startDate: '', durationDays: 0 },
+    habits: [
+        { id: 1, name: 'Drink Water', icon: '💧', goal: '8 glasses/day', log: {} },
+        { id: 2, name: 'Read', icon: '📚', goal: '20 pages', log: {} },
+        { id: 3, name: 'Exercise', icon: '🏋️', goal: '30 min', log: {} }
+    ],
+    routines: [],
+    notes: [],
+    focusTime: 0,
+    focusSessions: 0,
+    workouts: [],
+    workoutTemplates: [],
+    workoutExercises: [],
+    calendarEvents: [],
+    settings: {
+        groups: { enabled: true, defaultCollapsed: false },
+    appearance: { theme:'dark', accent:'#06b6d4', density:'comfortable', radius:'rounded',
+            widgets: { progress:true, priorities:true, insights:true, habits:true, focus:true, finance:true } },
+        calendar: { defaultView:'month', weekStart:'sunday', workStart:'09:00', workEnd:'17:00', defaultDuration:60, defaultReminder:15 },
+        tasks: { defaultPriority:'medium', defaultUrgency:'not-urgent', defaultCategory:'work', autoArchive:false, overdueBehavior:'keep' },
+        habits: { defaultTarget:7, scoring:'percent', reminderTime:'08:00' },
+        workout: { defaultRest:90, weightUnit:'kg', distanceUnit:'km', autoStartRest:true },
+        focus: { focusMin:25, shortBreak:5, longBreak:15, autoStartBreaks:false, dailyGoal:120 },
+        notifications: { taskReminders:true, habitReminders:true, workoutReminders:true, eventReminders:true, dailySummary:true, weeklyReview:true }
+    }
+};
+
+// Safe storage: iOS/Safari may restrict localStorage for local HTML files.
+let storageIsPersistent = true;
+const storage = (() => {
+    try {
+        const testKey = '__omnios_storage_test__';
+        localStorage.setItem(testKey, '1');
+        localStorage.removeItem(testKey);
+        return localStorage;
+    } catch (e) {
+        storageIsPersistent = false;
+        const memory = {};
+        return {
+            getItem: key => Object.prototype.hasOwnProperty.call(memory, key) ? memory[key] : null,
+            setItem: (key, value) => { memory[key] = String(value); },
+            removeItem: key => { delete memory[key]; }
+        };
+    }
+})();
+
+const saved = storage.getItem('omnios_v3_state');
+if (saved) { try { state = { ...state, ...JSON.parse(saved) }; } catch(e){} }
+
+// Normalize persisted data so an old/corrupt backup cannot break the UI.
+state.entries = Array.isArray(state.entries) ? state.entries : [];
+state.transactions = Array.isArray(state.transactions) ? state.transactions : [];
+state.budgetCategories = Array.isArray(state.budgetCategories) ? state.budgetCategories : [];
+state.habits = Array.isArray(state.habits) ? state.habits : [];
+state.routines = Array.isArray(state.routines) ? state.routines : [];
+state.notes = Array.isArray(state.notes) ? state.notes : [];
+state.notes = state.notes.map(n => ({ ...n, title: n.title || 'Untitled', contentHtml: n.contentHtml || (n.content ? '<p>' + escapeHtml(n.content).replace(/\n/g,'<br>') + '</p>' : ''), updatedAt: n.updatedAt || n.date || new Date().toISOString(), pinned: !!n.pinned }));
+state.focusTime = Number.isFinite(Number(state.focusTime)) ? Number(state.focusTime) : 0;
+state.focusSessions = Number.isFinite(Number(state.focusSessions)) ? Number(state.focusSessions) : 0;
+state.workouts = Array.isArray(state.workouts) ? state.workouts : [];
+state.workoutTemplates = Array.isArray(state.workoutTemplates) ? state.workoutTemplates : [];
+state.workoutExercises = Array.isArray(state.workoutExercises) ? state.workoutExercises : [];
+state.calendarEvents = Array.isArray(state.calendarEvents) ? state.calendarEvents : [];
+state.calendarEvents = state.calendarEvents.map(e => ({ ...e, id: e.id || Date.now()+Math.random(), title: e.title || 'Untitled Event', date: e.date || localDateString(), recurrence: e.recurrence && typeof e.recurrence === 'object' ? e.recurrence : null }));
+state.focusDaily = state.focusDaily && typeof state.focusDaily === 'object' ? state.focusDaily : {};
+
+// Deep-merge saved settings over defaults so old backups / partial saves never break the UI.
+function deepMergeDefaults(defaults, saved) {
+    if (typeof defaults !== 'object' || defaults === null || Array.isArray(defaults)) return saved !== undefined ? saved : defaults;
+    const out = { ...defaults };
+    if (saved && typeof saved === 'object') {
+        Object.keys(saved).forEach(k => { out[k] = deepMergeDefaults(defaults[k], saved[k]); });
+    }
+    return out;
+}
+const defaultSettings = {
+    groups: { enabled:true, defaultCollapsed:false },
+    appearance: { theme:'dark', accent:'#06b6d4', density:'comfortable', spacing:'comfortable', radius:'rounded',
+        contentWidth:'wide', sidebarMode:'standard', reducedMotion:false, hoverLift:true, stickyTopbar:true, confirmDestructive:true,
+        startView:'dashboard', autoFocusSearch:false,
+        customIconsEnabled:false, widgets: { progress:true, priorities:true, insights:true, habits:true, focus:true, finance:true } },
+    calendar: { defaultView:'month', weekStart:'sunday', workStart:'09:00', workEnd:'17:00', defaultDuration:60, defaultReminder:15 },
+    tasks: { defaultPriority:'medium', defaultUrgency:'not-urgent', defaultCategory:'work', autoArchive:false, overdueBehavior:'keep' },
+    habits: { defaultTarget:7, scoring:'percent', reminderTime:'08:00' },
+    workout: { defaultRest:90, weightUnit:'kg', distanceUnit:'km', autoStartRest:true },
+    focus: { focusMin:25, shortBreak:5, longBreak:15, autoStartBreaks:false, dailyGoal:120 },
+    notifications: { taskReminders:true, habitReminders:true, workoutReminders:true, eventReminders:true, dailySummary:true, weeklyReview:true }
+};
+state.settings = deepMergeDefaults(defaultSettings, state.settings);
+
+function normalizeState(){
+    state.entries = Array.isArray(state.entries) ? state.entries : [];
+    state.transactions = Array.isArray(state.transactions) ? state.transactions : [];
+    state.budgetCategories = Array.isArray(state.budgetCategories) ? state.budgetCategories : [];
+    state.habits = Array.isArray(state.habits) ? state.habits : [];
+    state.routines = Array.isArray(state.routines) ? state.routines : [];
+    state.notes = Array.isArray(state.notes) ? state.notes : [];
+    state.workouts = Array.isArray(state.workouts) ? state.workouts : [];
+    state.workoutTemplates = Array.isArray(state.workoutTemplates) ? state.workoutTemplates : [];
+    state.workoutExercises = Array.isArray(state.workoutExercises) ? state.workoutExercises : [];
+    state.calendarEvents = Array.isArray(state.calendarEvents) ? state.calendarEvents : [];
+    state.focusDaily = state.focusDaily && typeof state.focusDaily === 'object' ? state.focusDaily : {};
+    state.settings = deepMergeDefaults(defaultSettings, state.settings);
+    state.calendarEvents = state.calendarEvents.map(e=>({ ...e, id:e.id||Date.now()+Math.random(), title:e.title||'Untitled Event', date:e.date||localDateString(), recurrence:e.recurrence&&typeof e.recurrence==='object'?e.recurrence:null }));
+    migrateV19Additions();
+}
+
+// Budget categories gained income/expense types; wallets and a password manager were added; the
+// workout page gained a gym-membership tracker. This backfills anyone's existing saved data so
+// nothing has to be re-entered, and is safe to run repeatedly (it only adds what's missing).
+function migrateV19Additions(){
+    const defaultCats = [
+        { id: 1, name: 'Groceries', icon: '🛒', limit: 400, type: 'expense' },
+        { id: 2, name: 'Entertainment', icon: '🎬', limit: 150, type: 'expense' },
+        { id: 3, name: 'Transport', icon: '🚗', limit: 100, type: 'expense' },
+        { id: 4, name: 'Bills & Utilities', icon: '🏠', limit: 800, type: 'expense' },
+        { id: 5, name: 'Rent / Housing', icon: '🏡', limit: 1000, type: 'expense' },
+        { id: 6, name: 'Health & Fitness', icon: '💊', limit: 100, type: 'expense' },
+        { id: 7, name: 'Dining Out', icon: '🍽️', limit: 150, type: 'expense' },
+        { id: 8, name: 'Shopping', icon: '🛍️', limit: 150, type: 'expense' },
+        { id: 9, name: 'Subscriptions', icon: '📱', limit: 60, type: 'expense' },
+        { id: 10, name: 'Education', icon: '🎓', limit: 100, type: 'expense' },
+        { id: 11, name: 'Travel', icon: '✈️', limit: 200, type: 'expense' },
+        { id: 12, name: 'Insurance', icon: '🛡️', limit: 150, type: 'expense' },
+        { id: 13, name: 'Personal Care', icon: '💆', limit: 60, type: 'expense' },
+        { id: 14, name: 'Kids & Family', icon: '👨‍👩‍👧', limit: 150, type: 'expense' },
+        { id: 15, name: 'Pets', icon: '🐾', limit: 60, type: 'expense' },
+        { id: 16, name: 'Gifts & Donations', icon: '🎁', limit: 60, type: 'expense' },
+        { id: 17, name: 'Savings & Investments', icon: '💹', limit: 200, type: 'expense' },
+        { id: 18, name: 'Other Expense', icon: '📁', limit: 100, type: 'expense' },
+        { id: 19, name: 'Salary', icon: '💼', limit: 0, type: 'income' },
+        { id: 20, name: 'Freelance / Business', icon: '🧾', limit: 0, type: 'income' },
+        { id: 21, name: 'Investments', icon: '📈', limit: 0, type: 'income' },
+        { id: 22, name: 'Gifts Received', icon: '🎉', limit: 0, type: 'income' },
+        { id: 23, name: 'Refunds', icon: '↩️', limit: 0, type: 'income' },
+        { id: 24, name: 'Other Income', icon: '💰', limit: 0, type: 'income' }
+    ];
+    state.budgetCategories.forEach(c => { if (!c.type) c.type = 'expense'; });
+    const existingNames = new Set(state.budgetCategories.map(c => String(c.name).toLowerCase().trim()));
+    let nextId = state.budgetCategories.reduce((m, c) => Math.max(m, Number(c.id) || 0), 0) + 1;
+    defaultCats.forEach(dc => {
+        if (!existingNames.has(dc.name.toLowerCase())) {
+            state.budgetCategories.push({ ...dc, id: nextId++ });
+            existingNames.add(dc.name.toLowerCase());
+        }
+    });
+    state.wallets = Array.isArray(state.wallets) && state.wallets.length ? state.wallets : [
+        { id: 1, name: 'Cash', icon: '💵' },
+        { id: 2, name: 'Bank Account', icon: '🏦' },
+        { id: 3, name: 'Credit Card', icon: '💳' },
+        { id: 4, name: 'Savings', icon: '🏛️' }
+    ];
+    state.passwords = Array.isArray(state.passwords) ? state.passwords : [];
+    state.gymMembership = state.gymMembership && typeof state.gymMembership === 'object' ? state.gymMembership : { name: '', startDate: '', durationDays: 0 };
+    state.customIcons = state.customIcons && typeof state.customIcons === 'object' ? state.customIcons : {};
+}
+
+function getSetting(path, fallback) {
+    const parts = path.split('.');
+    let cur = state.settings;
+    for (const p of parts) { if (cur == null) return fallback; cur = cur[p]; }
+    return cur === undefined ? fallback : cur;
+}
+function setSetting(path, value) {
+    const parts = path.split('.');
+    let cur = state.settings;
+    for (let i = 0; i < parts.length - 1; i++) { cur[parts[i]] = cur[parts[i]] || {}; cur = cur[parts[i]]; }
+    cur[parts[parts.length - 1]] = value;
+}
+
+function localDateString(date = new Date()) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+function formatDateKeyLocal(key, options) {
+    if (!key) return '';
+    const d = new Date(String(key).slice(0,10) + 'T12:00:00');
+    return Number.isNaN(d.getTime()) ? String(key) : d.toLocaleDateString(undefined, options);
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// Global currency formatter shared by core finance renderers and extensions.
+function currencyLocal(value) {
+    const currency = state?.settings?.finance?.currency || '$';
+    const amount = Number(value);
+    return `${currency}${Number.isFinite(amount) ? amount.toFixed(2) : '0.00'}`;
+}
+
+function setSaveStatus(text, type='') { const el=document.getElementById('save-status'); if(!el)return; el.textContent=text; el.classList.remove('saved','error'); if(type)el.classList.add(type); }
+function saveState() {
+    const active = document.activeElement;
+    const activeId = active?.id || '';
+    const selectionStart = typeof active?.selectionStart === 'number' ? active.selectionStart : null;
+    const selectionEnd = typeof active?.selectionEnd === 'number' ? active.selectionEnd : null;
+    try {
+        normalizeState();
+        storage.setItem('omnios_v3_state', JSON.stringify(state));
+        storage.setItem('omnios_v3_backup', JSON.stringify({ version:3, savedAt: new Date().toISOString(), state }));
+        setSaveStatus(storageIsPersistent ? 'Saved locally' : 'Session only', storageIsPersistent ? 'saved' : 'error');
+    } catch (e) { console.error('OmniOS save failed:', e); setSaveStatus('Storage issue','error'); }
+    applyAppearance();
+    renderAll();
+    // Full renders used to steal focus from the control being edited. Restore it
+    // when the same control survives the render, including text caret position.
+    if (activeId) {
+        const restored = document.getElementById(activeId);
+        if (restored && typeof restored.focus === 'function') {
+            restored.focus();
+            if (selectionStart !== null && typeof restored.setSelectionRange === 'function') {
+                try { restored.setSelectionRange(selectionStart, selectionEnd ?? selectionStart); } catch (e) {}
+            }
+        }
+    }
+}
+
+// ================= APPEARANCE =================
+let systemThemeQuery = null;
+function applyAppearance() {
+    const a = state.settings.appearance;
+    let theme = a.theme;
+    if (theme === 'system') {
+        if (!systemThemeQuery) {
+            systemThemeQuery = window.matchMedia('(prefers-color-scheme: light)');
+            systemThemeQuery.addEventListener?.('change', () => { if (state.settings.appearance.theme === 'system') applyAppearance(); });
+        }
+        theme = systemThemeQuery.matches ? 'light' : 'dark';
+    }
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-density', a.density || 'comfortable');
+    document.documentElement.setAttribute('data-spacing', a.spacing || 'comfortable');
+    document.documentElement.setAttribute('data-radius', a.radius || 'rounded');
+    document.documentElement.setAttribute('data-content-width', a.contentWidth || 'wide');
+    document.documentElement.setAttribute('data-sidebar-mode', a.sidebarMode || 'standard');
+    document.documentElement.setAttribute('data-reduced-motion', a.reducedMotion ? 'true' : 'false');
+    document.documentElement.setAttribute('data-hover-lift', a.hoverLift === false ? 'false' : 'true');
+    document.documentElement.setAttribute('data-sticky-topbar', a.stickyTopbar === false ? 'false' : 'true');
+    document.documentElement.style.setProperty('--accent-cyan', a.accent || '#06b6d4');
+    applyDashboardWidgets();
+}
+function applyDashboardWidgets() {
+    const widgets = state.settings.appearance.widgets || {};
+    document.querySelectorAll('#view-dashboard [data-widget]').forEach(card => {
+        const key = card.dataset.widget;
+        card.style.display = widgets[key] === false ? 'none' : '';
+    });
+}
+function applyFocusDefaultsToTimer() {
+    if (isRunning) return;
+    document.getElementById('timer-focus').value = getSetting('focus.focusMin',25);
+    document.getElementById('timer-short-break').value = getSetting('focus.shortBreak',5);
+    document.getElementById('timer-long-break').value = getSetting('focus.longBreak',15);
+    resetTimer();
+}
+
+// ================= NAVIGATION =================
+function switchView(target) {
+    const desktopItem = document.querySelector(`.nav-item[data-view="${target}"]`);
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.view === target));
+    document.querySelectorAll('.mobile-nav button').forEach(i => i.classList.toggle('active', i.dataset.mobileView === target));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    const view = document.getElementById(`view-${target}`);
+    if (view) view.classList.add('active');
+    document.getElementById('view-title').textContent = desktopItem ? desktopItem.textContent.trim() : ({'master-calendar':'Calendar'}[target] || target);
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => switchView(item.dataset.view));
+});
+
+document.querySelectorAll('.mobile-nav button').forEach(item => {
+    item.addEventListener('click', () => switchView(item.dataset.mobileView));
+});
+
+document.getElementById('global-add-btn').addEventListener('click',()=>openModal('quick-add-modal'));
+document.querySelectorAll('[data-quick-type]').forEach(btn=>btn.addEventListener('click',()=>{
+    closeModal('quick-add-modal');
+    const t=btn.dataset.quickType;
+    if(t==='task') resetTaskForm(),openModal('task-modal');
+    else if(t==='event') openCalendarEventModal();
+    else if(t==='habit') openHabitModal();
+    else if(t==='workout') openWorkoutModal();
+    else if(t==='note') openNoteModal();
+    else if(t==='transaction') openTxnModal();
+    else if(t==='expense') { openTxnModal(); setTimeout(()=>{ const x=document.getElementById('txn-type'); if(x)x.value='expense'; x?.dispatchEvent(new Event('change')); },0); }
+    else if(t==='income') { openTxnModal(); setTimeout(()=>{ const x=document.getElementById('txn-type'); if(x)x.value='income'; x?.dispatchEvent(new Event('change')); },0); }
+}));
+
+// ================= MODALS =================
+function openModal(id) { const el=document.getElementById(id);if(!el)return;el.classList.add('active');requestAnimationFrame(()=>window.OmniItemImages?.refresh?.()); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+document.querySelectorAll('.modal-close-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const overlay = e.target.closest('.modal-overlay');
+        if (overlay) overlay.classList.remove('active');
+    });
+});
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('active');
+    });
+});
+
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const m=document.querySelector('.modal-overlay.active');if(m){m.classList.remove('active');return;}const p=document.getElementById('inspector-panel');if(p?.classList.contains('open'))closeInspector();});
+
+// ================= MASTER CALENDAR =================
+let masterCalendarDate = new Date();
+let masterCalendarMode = getSetting('calendar.defaultView','workspace');
+let masterCalendarFilters = {task:true, habit:true, workout:true, note:true, focus:true, finance:true, event:true};
+let editingCalendarEventId = null;
+
+const MASTER_CAL_TYPES = [
+    ['task','Tasks','✓'],['habit','Habits','⚡'],['workout','Workouts','🏋️'],['note','Notes','▤'],['focus','Focus','◷'],['finance','Finance','↗'],['event','Events','●']
+];
+
+function dateAtNoon(key){ return new Date(key+'T12:00:00'); }
+function daysInMonth(year, month){ return new Date(year, month+1, 0).getDate(); }
+function addDaysKey(key,n){ const d=dateAtNoon(key); d.setDate(d.getDate()+n); return localDateString(d); }
+function isoWeekday(key){ const d=dateAtNoon(key); return d.getDay(); }
+function nthWeekdayOfMonth(year,month,weekday,n){
+    const first=new Date(year,month,1,12); const offset=(weekday-first.getDay()+7)%7; const day=1+offset+(n-1)*7;
+    return day<=daysInMonth(year,month)?localDateString(new Date(year,month,day,12)):null;
+}
+function recurrenceLabel(r){
+    if(!r) return 'One-time';
+    if(r.freq==='daily') return `Every ${r.interval||1} day${(r.interval||1)>1?'s':''}`;
+    if(r.freq==='weekly'){
+        const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; const ds=(r.weekdays||[]).map(Number).sort((a,b)=>a-b).map(i=>names[i]).join(', ');
+        return `Every ${r.interval||1} week${(r.interval||1)>1?'s':''}${ds?' · '+ds:''}`;
+    }
+    if(r.freq==='monthly') return r.monthlyMode==='weekday'
+        ? `Every ${r.interval||1} month${(r.interval||1)>1?'s':''} · ${['1st','2nd','3rd','4th','5th'][((r.nth||1)-1)]||'1st'} ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][Number(r.weekday||0)]}`
+        : `Every ${r.interval||1} month${(r.interval||1)>1?'s':''} · day ${r.day||1}`;
+    if(r.freq==='yearly') return `Every ${r.interval||1} year${(r.interval||1)>1?'s':''}`;
+    return 'Recurring';
+}
+function recurrenceOccursOn(r,startKey,key){
+    if(!r) return key===startKey;
+    if(key<startKey) return false;
+    const start=dateAtNoon(startKey), d=dateAtNoon(key);
+    const endMode=r.endMode||'never';
+    if(endMode==='until' && key>(r.until||'9999-12-31')) return false;
+    if(!recurrenceOccursRaw(r,start,d)) return false;
+    if(endMode!=='count') return true;
+    const target=Math.max(1,Number(r.count)||1);
+    let occurrences=0, guard=0;
+    for(let cur=new Date(start);cur<=d&&guard<5000;cur.setDate(cur.getDate()+1),guard++){
+        if(recurrenceOccursRaw(r,start,cur)) occurrences++;
+        if(occurrences>target) return false;
+    }
+    return occurrences<=target;
+}
+function monthsBetween(a,b){ return (b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth()); }
+function recurrenceOccursRaw(r,start,d){
+    const interval=Math.max(1,Number(r.interval||1));
+    // Compare civil calendar days through UTC serials so DST changes cannot skip/repeat recurrences.
+    const daySerial=x=>Math.floor(Date.UTC(x.getFullYear(),x.getMonth(),x.getDate())/86400000);
+    if(r.freq==='daily') return (daySerial(d)-daySerial(start))%interval===0;
+    if(r.freq==='weekly'){
+        const diffDays=daySerial(d)-daySerial(start); if(diffDays<0) return false;
+        const weeks=Math.floor(diffDays/7); if(weeks%interval!==0) return false;
+        const days=(r.weekdays&&r.weekdays.length)?r.weekdays.map(Number):[start.getDay()]; return days.includes(d.getDay());
+    }
+    if(r.freq==='monthly'){
+        const diff=monthsBetween(start,d); if(diff<0||diff%interval!==0) return false;
+        if(r.monthlyMode==='weekday') return d.getDay()===Number(r.weekday||0) && Math.ceil(d.getDate()/7)===Number(r.nth||1);
+        return d.getDate()===Math.min(Number(r.day||start.getDate()),daysInMonth(d.getFullYear(),d.getMonth()));
+    }
+    if(r.freq==='yearly'){
+        const years=d.getFullYear()-start.getFullYear(); if(years<0||years%interval!==0) return false;
+        return d.getMonth()===start.getMonth() && d.getDate()===Math.min(start.getDate(),daysInMonth(d.getFullYear(),d.getMonth()));
+    }
+    return false;
+}
+function expandCalendarEvent(e,rangeStart,rangeEnd){
+    const out=[]; const startKey=e.date; if(!startKey) return out;
+    if(!e.recurrence){ if(startKey>=rangeStart&&startKey<=rangeEnd) out.push({...e}); return out; }
+    const r=e.recurrence, start=dateAtNoon(startKey), end=dateAtNoon(rangeEnd);
+    // Count-based recurrences must be scanned from the series start, otherwise a later
+    // calendar window incorrectly resets the occurrence counter.
+    const cursor=(r.endMode==='count')?new Date(start):dateAtNoon(rangeStart<startKey?startKey:rangeStart);
+    const target=Math.max(1,Number(r.count)||1); let seen=0, guard=0;
+    for(;cursor<=end && guard<5000;cursor.setDate(cursor.getDate()+1),guard++){
+        const key=localDateString(cursor);
+        if(r.endMode==='until'&&key>(r.until||'9999-12-31')) break;
+        if(!recurrenceOccursRaw(r,start,cursor)) continue;
+        if(r.endMode==='count' && ++seen>target) break;
+        if(key>=rangeStart && key<=rangeEnd) out.push({...e,id:`event-${e.id}-${key}`,date:key,occurrence:true,sourceEventId:e.id});
+    }
+    return out;
+}
+function masterCalendarEvents(){
+    const events=[]; const rangeStart=localDateString(new Date(masterCalendarDate.getFullYear(),masterCalendarDate.getMonth()-1,1,12)); const rangeEnd=localDateString(new Date(masterCalendarDate.getFullYear(),masterCalendarDate.getMonth()+2,0,12));
+    state.entries.forEach(e=>{ if(e.date) events.push({id:`task-${e.id}`,date:e.date,type:'task',icon:'✓',label:'Task',title:e.title||'Untitled',meta:`${statusLabels[e.status]||e.status} · ${catLabels[e.category]||e.category}`,fullAction:()=>{switchView('tasks');openInspector(e.id)}}); });
+    state.habits.forEach(h=>Object.keys(h.log||{}).forEach(date=>{ if(h.log[date]) events.push({id:`habit-${h.id}-${date}`,date,type:'habit',icon:h.icon||'⚡',label:'Habit',title:h.name||'Habit',meta:`Completed · ${h.goal||'Daily'}`,fullAction:()=>{switchView('habits');habitWeekStart=dateAtNoon(date);{const dow=habitWeekStart.getDay(),mon=getSetting('calendar.weekStart','sunday')==='monday',off=mon?(dow+6)%7:dow;habitWeekStart.setDate(habitWeekStart.getDate()-off)}renderHabits();}}); }));
+    state.workouts.forEach(w=>{if(w.date)events.push({id:`workout-${w.id}`,date:w.date,type:'workout',icon:'🏋️',label:'Workout',title:w.name||'Workout',meta:`${w.status==='completed'?'Completed':'Active'} · ${workoutCompletedSets(w)} sets`,fullAction:()=>{switchView('workout');workoutTab=w.status==='completed'?'history':'session';renderWorkout();}})});
+    state.notes.forEach(n=>{const d=new Date(n.updatedAt||n.date||Date.now());events.push({id:`note-${n.id}`,date:localDateString(d),type:'note',icon:'▤',label:'Note',title:n.title||'Untitled',meta:'Updated note',fullAction:()=>{switchView('notes');openNoteModal(n.id);}})});
+    state.transactions.forEach(t=>{if(t.date)events.push({id:`txn-${t.id}`,date:t.date,type:'finance',icon:t.type==='income'?'↗':'↘',label:t.type==='income'?'Income':'Expense',title:t.desc||'Transaction',meta:`${t.type==='income'?'+':'-'}${Number(t.amount||0).toFixed(2)}`,fullAction:()=>{switchView('budget');editTransaction(t.id);}})});
+    Object.keys(state.focusDaily||{}).forEach(date=>{const mins=Number(state.focusDaily[date]||0);if(mins>0)events.push({id:`focus-${date}`,date,type:'focus',icon:'◷',label:'Focus',title:`${mins} min focused`,meta:`${state.focusSessions||0} total sessions`,fullAction:()=>switchView('focus')})});
+    state.calendarEvents.forEach(e=>expandCalendarEvent(e,rangeStart,rangeEnd).forEach(o=>{o.type='event';o.label='Event';o.icon=e.icon||'●';o.meta=(e.startTime?e.startTime+(e.duration?` · ${e.duration} min`:''):'')+(e.reminder?` · ⏰ ${e.reminder}m`:'')+(recurrenceLabel(e.recurrence)!=='One-time'?` · ${recurrenceLabel(e.recurrence)}`:'')+(e.description?' · '+e.description:'');o.fullAction=()=>openCalendarEventModal(e.id);o.action=()=>openCalendarItemPreview({...o,fullAction:o.fullAction});events.push(o);}));
+    return events;
+}
+function masterCalendarFilteredEvents(){return masterCalendarEvents().filter(e=>!!masterCalendarFilters[e.type]);}
+function masterMonthTitle(){return masterCalendarDate.toLocaleDateString(undefined,{month:'long',year:'numeric'});}
+function masterDateKey(d){return localDateString(d);}
+function masterEventColor(type){return ({task:'var(--accent-blue)',habit:'var(--accent-green)',workout:'var(--accent-red)',note:'var(--accent-purple)',finance:'var(--accent-yellow)',focus:'var(--accent-cyan)',event:'var(--accent-pink)'})[type]||'var(--text-secondary)';}
+function calWeekdayIndex(date){ const dow=date.getDay(); return getSetting('calendar.weekStart','sunday')==='monday' ? (dow+6)%7 : dow; }
+function renderMasterCalendar(){
+    const c=document.getElementById('master-calendar-content');if(!c)return; const all=masterCalendarFilteredEvents(); const y=masterCalendarDate.getFullYear(),m=masterCalendarDate.getMonth();
+    const first=new Date(y,m,1);first.setDate(first.getDate()-calWeekdayIndex(first));const last=new Date(y,m+1,0);last.setDate(last.getDate()+(6-calWeekdayIndex(last)));const days=[];for(let d=new Date(first);d<=last;d.setDate(d.getDate()+1))days.push(new Date(d));
+    const activeCount=Object.values(masterCalendarFilters).filter(Boolean).length;
+    const eventMap={};all.forEach(e=>(eventMap[e.date]??=[]).push(e)); const weekdays=getSetting('calendar.weekStart','sunday')==='monday'?['Mon','Tue','Wed','Thu','Fri','Sat','Sun']:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    c.innerHTML=`<div class="master-cal-shell-wrap"><div class="master-calendar-shell"><div class="master-cal-toolbar"><div class="master-cal-nav"><button type="button" class="btn btn-sm" id="master-cal-prev">◀</button><button type="button" class="btn btn-sm" id="master-cal-today">Today</button><button type="button" class="btn btn-sm" id="master-cal-next">▶</button><div class="master-cal-title">${masterMonthTitle()}</div></div><div class="master-cal-filters"><button type="button" class="btn btn-sm" id="master-cal-filter-toggle">Filters <span class="master-filter-count">${activeCount}/${MASTER_CAL_TYPES.length}</span></button><select class="filter-select" id="master-cal-mode"><option value="month">Month</option><option value="agenda">Agenda</option></select><button type="button" class="btn btn-primary btn-sm" id="master-cal-add-event">+ Event</button></div></div><div class="master-filter-panel" id="master-filter-panel">${MASTER_CAL_TYPES.map(([v,l,ic])=>`<label class="master-filter-chip"><input type="checkbox" data-master-filter="${v}" ${masterCalendarFilters[v]?'checked':''}><span class="master-filter-dot" style="background:${masterEventColor(v)}"></span><span>${ic} ${l}</span></label>`).join('')}<button type="button" class="btn btn-sm" id="master-filter-all">All</button><button type="button" class="btn btn-sm" id="master-filter-none">None</button></div><div class="master-cal-legend">${MASTER_CAL_TYPES.filter(x=>masterCalendarFilters[x[0]]).map(([v,l])=>`<span class="master-cal-dot" style="color:${masterEventColor(v)}"><i></i>${l}</span>`).join('')||'<span class="text-muted">No calendar types selected.</span>'}</div><div id="master-cal-body"></div></div></div>`;
+    document.getElementById('master-filter-panel').style.display='none'; const body=document.getElementById('master-cal-body');
+    if(masterCalendarMode==='agenda') renderMasterAgenda(body,all); else body.innerHTML=`<div class="master-cal-grid">${weekdays.map(d=>`<div class="master-cal-weekday">${d}</div>`).join('')}${days.map(d=>{const k=masterDateKey(d),events=(eventMap[k]||[]).slice(0,7),more=(eventMap[k]||[]).length-events.length;return `<div class="master-cal-day ${d.getMonth()!==m?'other-month':''} ${k===localDateString()?'today':''}" data-master-date="${k}"><div class="master-cal-day-num">${d.getDate()}</div>${events.map(e=>`<button type="button" class="master-cal-event" data-master-event="${escapeHtml(e.id)}" style="color:${masterEventColor(e.type)}"><span class="master-cal-event-dot"></span><span>${escapeHtml(e.title)}</span></button>`).join('')}${more>0?`<button type="button" class="master-more-btn" data-master-more="${k}">+${more} more</button>`:''}</div>`}).join('')}</div>`;
+    bindMasterCalendar();
+}
+function renderMasterAgenda(body,events){const dates=[];const base=new Date(masterCalendarDate.getFullYear(),masterCalendarDate.getMonth(),1);const end=new Date(masterCalendarDate.getFullYear(),masterCalendarDate.getMonth()+1,0);for(let d=new Date(base);d<=end;d.setDate(d.getDate()+1)){const k=localDateString(d),dayEvents=events.filter(e=>e.date===k);if(dayEvents.length)dates.push({d:new Date(d),events:dayEvents});}body.innerHTML=dates.length?`<div class="master-cal-agenda">${dates.map(x=>`<div class="card master-agenda-day"><div class="card-header"><h4 class="card-title">${x.d.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}</h4><span class="text-muted" style="font-size:.65rem">${x.events.length} item${x.events.length===1?'':'s'}</span></div><div class="master-agenda-list">${x.events.map(e=>`<div class="master-agenda-item" data-master-event="${escapeHtml(e.id)}"><div class="master-agenda-icon" style="color:${masterEventColor(e.type)}">${escapeHtml(e.icon)}</div><div class="master-agenda-main"><div class="master-agenda-title">${escapeHtml(e.title)}</div><div class="master-agenda-meta">${escapeHtml(e.label)} · ${escapeHtml(e.meta)}</div></div></div>`).join('')}</div></div>`).join('')}</div>`:'<div class="master-empty">Nothing scheduled in this month with the current filters.</div>';}
+function bindMasterCalendar(){
+    document.getElementById('master-cal-prev').onclick=()=>{masterCalendarDate.setMonth(masterCalendarDate.getMonth()-1);renderMasterCalendar()};
+    document.getElementById('master-cal-next').onclick=()=>{masterCalendarDate.setMonth(masterCalendarDate.getMonth()+1);renderMasterCalendar()};
+    document.getElementById('master-cal-today').onclick=()=>{masterCalendarDate=new Date();renderMasterCalendar()};
+    document.getElementById('master-cal-mode').value=masterCalendarMode;
+    document.getElementById('master-cal-mode').onchange=e=>{masterCalendarMode=e.target.value;renderMasterCalendar()};
+    document.getElementById('master-cal-filter-toggle').onclick=()=>{const p=document.getElementById('master-filter-panel');p.style.display=p.style.display==='none'?'flex':'none'};
+    document.querySelectorAll('[data-master-filter]').forEach(el=>el.onchange=()=>{masterCalendarFilters[el.dataset.masterFilter]=el.checked;renderMasterCalendar()});
+    document.getElementById('master-filter-all').onclick=()=>{MASTER_CAL_TYPES.forEach(x=>masterCalendarFilters[x[0]]=true);renderMasterCalendar()};
+    document.getElementById('master-filter-none').onclick=()=>{MASTER_CAL_TYPES.forEach(x=>masterCalendarFilters[x[0]]=false);renderMasterCalendar()};
+    document.getElementById('master-cal-add-event').onclick=()=>openCalendarEventModal();
+    document.querySelectorAll('[data-master-event]').forEach(el=>el.addEventListener('click',ev=>{ev.stopPropagation();const event=masterCalendarEvents().find(x=>String(x.id)===String(el.dataset.masterEvent));if(event)openCalendarItemPreview(event)}));
+    document.querySelectorAll('[data-master-more]').forEach(el=>el.addEventListener('click',ev=>{ev.stopPropagation();masterCalendarDate=dateAtNoon(el.dataset.masterMore);masterCalendarMode='agenda';renderMasterCalendar()}));
+    document.querySelectorAll('[data-master-date]').forEach(el=>el.addEventListener('click',e=>{if(e.target.closest('[data-master-event]')||e.target.closest('[data-master-more]'))return;masterCalendarDate=dateAtNoon(el.dataset.masterDate);masterCalendarMode='agenda';renderMasterCalendar()}));
+}
+document.getElementById('master-calendar-quick-add')?.addEventListener('click',()=>openCalendarEventModal());
+
+function calendarEventDefault(date){return {title:'',date:date||localDateString(masterCalendarDate),startTime:'',duration:Number(getSetting('calendar.defaultDuration',60))||60,reminder:Number(getSetting('calendar.defaultReminder',15))||0,description:'',icon:'●',recurrence:null};}
+function openCalendarEventModal(id){
+    editingCalendarEventId=id||null; const ev=id?state.calendarEvents.find(x=>String(x.id)===String(id)):calendarEventDefault(localDateString(masterCalendarDate)); if(!ev)return;
+    document.getElementById('calendar-event-modal-title').textContent=id?'Edit Event':'New Calendar Event';
+    document.getElementById('calendar-event-title').value=ev.title||'';document.getElementById('calendar-event-date').value=ev.date||localDateString();document.getElementById('calendar-event-start-time').value=ev.startTime||'';document.getElementById('calendar-event-duration').value=Number(ev.duration ?? getSetting('calendar.defaultDuration',60));document.getElementById('calendar-event-reminder').value=Number(ev.reminder ?? getSetting('calendar.defaultReminder',15));document.getElementById('calendar-event-icon').value=ev.icon||'●';document.getElementById('calendar-event-description').value=ev.description||'';
+    const r=ev.recurrence||{freq:'none',interval:1,weekdays:[new Date((ev.date||localDateString())+'T12:00:00').getDay()],monthlyMode:'day',day:Number((ev.date||localDateString()).slice(8,10)),nth:1,weekday:new Date((ev.date||localDateString())+'T12:00:00').getDay(),endMode:'never',count:10,until:''};
+    document.getElementById('calendar-event-recurrence').value=r.freq||'none';document.getElementById('calendar-event-interval').value=r.interval||1;document.getElementById('calendar-event-monthly-mode').value=r.monthlyMode||'day';document.getElementById('calendar-event-month-day').value=r.day||Number((ev.date||localDateString()).slice(8,10));document.getElementById('calendar-event-nth').value=r.nth||1;document.getElementById('calendar-event-weekday-month').value=r.weekday??0;document.getElementById('calendar-event-end').value=r.endMode||'never';document.getElementById('calendar-event-count').value=r.count||10;document.getElementById('calendar-event-until').value=r.until||'';
+    document.querySelectorAll('[data-event-weekday]').forEach(cb=>cb.checked=(r.weekdays||[]).map(Number).includes(Number(cb.dataset.eventWeekday)));
+    toggleCalendarRecurrenceFields(); openModal('calendar-event-modal');
+}
+function toggleCalendarRecurrenceFields(){const freq=document.getElementById('calendar-event-recurrence').value;document.getElementById('calendar-event-recurrence-fields').style.display=freq==='none'?'none':'block';document.getElementById('calendar-event-weekdays-wrap').style.display=freq==='weekly'?'block':'none';document.getElementById('calendar-event-monthly-wrap').style.display=freq==='monthly'?'block':'none';document.getElementById('calendar-event-until-wrap').style.display=document.getElementById('calendar-event-end').value==='until'?'block':'none';document.getElementById('calendar-event-count-wrap').style.display=document.getElementById('calendar-event-end').value==='count'?'block':'none';if(freq==='monthly')toggleCalendarMonthlyMode();}
+function toggleCalendarMonthlyMode(){const m=document.getElementById('calendar-event-monthly-mode').value;document.getElementById('calendar-event-month-day-wrap').style.display=m==='day'?'block':'none';document.getElementById('calendar-event-nth-wrap').style.display=m==='weekday'?'grid':'none';}
+function collectCalendarRecurrence(){const freq=document.getElementById('calendar-event-recurrence').value;if(freq==='none')return null;return {freq,interval:Math.max(1,Number(document.getElementById('calendar-event-interval').value)||1),weekdays:[...document.querySelectorAll('[data-event-weekday]:checked')].map(x=>Number(x.dataset.eventWeekday)),monthlyMode:document.getElementById('calendar-event-monthly-mode').value,day:Math.max(1,Math.min(31,Number(document.getElementById('calendar-event-month-day').value)||1)),nth:Number(document.getElementById('calendar-event-nth').value)||1,weekday:Number(document.getElementById('calendar-event-weekday-month').value)||0,endMode:document.getElementById('calendar-event-end').value,count:Math.max(1,Number(document.getElementById('calendar-event-count').value)||1),until:document.getElementById('calendar-event-until').value||''};}
+document.getElementById('calendar-event-recurrence').addEventListener('change',toggleCalendarRecurrenceFields);document.getElementById('calendar-event-end').addEventListener('change',toggleCalendarRecurrenceFields);document.getElementById('calendar-event-monthly-mode').addEventListener('change',toggleCalendarMonthlyMode);
+document.getElementById('calendar-event-save').addEventListener('click',()=>{const title=document.getElementById('calendar-event-title').value.trim();if(!title){window.toast('Please enter an event title');return;}const data={title,date:document.getElementById('calendar-event-date').value||localDateString(),startTime:document.getElementById('calendar-event-start-time').value||'',duration:Math.max(0,Number(document.getElementById('calendar-event-duration').value)||0),reminder:Math.max(0,Number(document.getElementById('calendar-event-reminder').value)||0),description:document.getElementById('calendar-event-description').value.trim(),icon:document.getElementById('calendar-event-icon').value.trim()||'●',recurrence:collectCalendarRecurrence(),updatedAt:new Date().toISOString()};if(editingCalendarEventId){const i=state.calendarEvents.findIndex(x=>String(x.id)===String(editingCalendarEventId));if(i>=0)state.calendarEvents[i]={...state.calendarEvents[i],...data};}else state.calendarEvents.push({id:Date.now(),createdAt:new Date().toISOString(),...data});closeModal('calendar-event-modal');saveState();});
+document.getElementById('calendar-event-delete').addEventListener('click',()=>{if(!editingCalendarEventId)return;if(!confirm('Delete this event and its recurrence?'))return;state.calendarEvents=state.calendarEvents.filter(x=>String(x.id)!==String(editingCalendarEventId));editingCalendarEventId=null;closeModal('calendar-event-modal');saveState();});
+
+function openCalendarItemPreview(event){
+    if(!event)return;
+    const panel=document.getElementById('inspector-panel'),backdrop=document.getElementById('inspector-backdrop'),content=document.getElementById('inspector-content');
+    const colors={task:'var(--accent-blue)',habit:'var(--accent-green)',workout:'var(--accent-red)',note:'var(--accent-purple)',finance:'var(--accent-yellow)',focus:'var(--accent-cyan)',event:'var(--accent-pink)'};
+    const detailLabel=event.type==='finance'?'Amount':event.type==='focus'?'Summary':event.type==='event'?'Schedule':'Details';
+    const eventExtra=event.type==='event'?`<div style="margin-top:8px;color:var(--accent-pink);font-weight:700">${escapeHtml(event.occurrence?'Recurring occurrence':'Calendar event')}</div>`:'';
+    const schedule=event.startTime?`${escapeHtml(event.startTime)}${event.duration?` · ${escapeHtml(event.duration)} min`:''}${event.reminder?` · ⏰ ${escapeHtml(event.reminder)}m`:''}`:'';
+    content.innerHTML=`<div class="calendar-item-preview"><div class="calendar-preview-icon" style="color:${colors[event.type]||'var(--text-primary)'}">${escapeHtml(event.icon||'•')}</div><div class="calendar-preview-type" style="color:${colors[event.type]||'var(--text-secondary)'}">${escapeHtml(event.label||event.type)}</div><h2 class="calendar-preview-title">${escapeHtml(event.title||'Untitled')}</h2><div class="calendar-preview-meta"><span>📅</span>${event.date?dateAtNoon(event.date).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}):'No date'}${schedule?' · '+schedule:''}</div><div class="calendar-preview-card"><div class="inspector-section-title">${detailLabel}</div><div class="calendar-preview-detail">${escapeHtml(event.meta||'No additional details')}</div>${eventExtra}</div><div class="calendar-preview-actions"><button type="button" class="btn btn-primary" id="calendar-preview-full">Open full</button>${event.type==='event'?'<button type="button" class="btn" id="calendar-preview-edit-event">Edit event</button>':''}<button type="button" class="btn" id="calendar-preview-close">Close</button></div></div>`;
+    panel.classList.add('open');backdrop.classList.add('active');
+    document.getElementById('calendar-preview-full').onclick=()=>{closeInspector();event.fullAction?.()};
+    document.getElementById('calendar-preview-close').onclick=closeInspector;
+    if(event.type==='event'){document.getElementById('calendar-preview-edit-event').onclick=()=>{closeInspector();event.fullAction?.();};}
+}
+
+function closeInspector() {
+    document.getElementById('inspector-panel').classList.remove('open');
+    document.getElementById('inspector-backdrop').classList.remove('active');
+}
+
+document.getElementById('inspector-close-btn').addEventListener('click', closeInspector);
+document.getElementById('inspector-backdrop').addEventListener('click', closeInspector);
+
+// ================= TASKS & CALENDAR ENGINE =================
+let editingTaskId = null;
+let currentTaskView = 'kanban';
+let calMode = 'month'; // 'month' | 'week' | 'day'
+let calendarDate = new Date(); // Anchor date for calendar nav
+
+document.querySelectorAll('[data-taskview]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-taskview]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTaskView = btn.dataset.taskview;
+        renderTasks();
+    });
+});
+
+['filter-importance','filter-urgency','filter-status','filter-category','sort-by','search-input'].forEach(id => {
+    document.getElementById(id).addEventListener('change', renderTasks);
+    document.getElementById(id).addEventListener('input', renderTasks);
+});
+
+function getFilteredEntries() {
+    let entries = [...state.entries];
+    const imp = document.getElementById('filter-importance').value;
+    const urg = document.getElementById('filter-urgency').value;
+    const stat = document.getElementById('filter-status').value;
+    const cat = document.getElementById('filter-category').value;
+    const sort = document.getElementById('sort-by').value;
+    const search = document.getElementById('search-input').value.toLowerCase();
+
+    if (imp !== 'all') entries = entries.filter(e => e.importance === imp);
+    if (urg !== 'all') entries = entries.filter(e => e.urgency === urg);
+    if (stat !== 'all') entries = entries.filter(e => e.status === stat);
+    if (cat !== 'all') entries = entries.filter(e => e.category === cat);
+    if (search) entries = entries.filter(e => String(e.title || '').toLowerCase().includes(search) || String(e.notes || '').toLowerCase().includes(search));
+    if(getSetting('tasks.autoArchive',false)) entries=entries.filter(e=>e.status!=='completed');
+
+    const impOrder = { high: 0, medium: 1, low: 2 };
+    switch(sort) {
+        case 'date-asc': entries.sort((a,b) => new Date(a.date||0) - new Date(b.date||0)); break;
+        case 'date-desc': entries.sort((a,b) => new Date(b.date||0) - new Date(a.date||0)); break;
+        case 'importance': entries.sort((a,b) => impOrder[a.importance] - impOrder[b.importance]); break;
+        case 'title': entries.sort((a,b) => a.title.localeCompare(b.title)); break;
+    }
+    return entries;
+}
+
+function resetTaskForm() {
+    editingTaskId=null;
+    document.getElementById('task-modal-title').textContent='Add New Entry';
+    document.getElementById('task-title').value='';
+    document.getElementById('task-category').value=getSetting('tasks.defaultCategory','work');
+    document.getElementById('task-status').value='todo';
+    document.getElementById('task-importance').value=getSetting('tasks.defaultPriority','medium');
+    document.getElementById('task-urgency').value=getSetting('tasks.defaultUrgency','not-urgent');
+    document.getElementById('task-date').value=localDateString();
+    document.getElementById('task-notes').value='';
+}
+
+document.getElementById('task-save-btn').addEventListener('click', () => {
+    const title = document.getElementById('task-title').value.trim();
+    if (!title) { window.toast('Please enter a title'); return; }
+
+    const data = {
+        title,
+        category: document.getElementById('task-category').value,
+        status: document.getElementById('task-status').value,
+        importance: document.getElementById('task-importance').value,
+        urgency: document.getElementById('task-urgency').value,
+        date: document.getElementById('task-date').value,
+        notes: document.getElementById('task-notes').value
+    };
+
+    if (editingTaskId) {
+        const idx = state.entries.findIndex(e => String(e.id) === String(editingTaskId));
+        if (idx !== -1) state.entries[idx] = { ...state.entries[idx], ...data };
+    } else {
+        state.entries.push({
+            id: Date.now(),
+            ...data,
+            subtasks: [],
+            linkedIds: [],
+            createdAt: new Date().toISOString()
+        });
+    }
+
+    closeModal('task-modal');
+    saveState();
+});
+
+function editTask(id) {
+    const entry = state.entries.find(e => String(e.id) === String(id));
+    if (!entry) return;
+    editingTaskId = id;
+    document.getElementById('task-modal-title').textContent = 'Edit Entry';
+    document.getElementById('task-title').value = entry.title;
+    document.getElementById('task-category').value = entry.category;
+    document.getElementById('task-status').value = entry.status;
+    document.getElementById('task-importance').value = entry.importance;
+    document.getElementById('task-urgency').value = entry.urgency;
+    document.getElementById('task-date').value = entry.date || '';
+    document.getElementById('task-notes').value = entry.notes || '';
+    openModal('task-modal');
+}
+
+function deleteTask(id) {
+    if (!confirm('Delete this entry?')) return;
+    state.entries = state.entries.filter(e => String(e.id) !== String(id));
+    closeInspector();
+    saveState();
+    window.toastUndo && window.toastUndo('Task deleted');
+}
+
+function toggleTaskStatus(id) {
+    const entry = state.entries.find(e => String(e.id) === String(id));
+    if (!entry) return;
+    if (entry.status === 'completed') entry.status = 'todo';
+    else if (entry.status === 'todo') entry.status = 'in-progress';
+    else entry.status = 'completed';
+    saveState();
+}
+
+function getQuadrant(entry) {
+    const isImp = entry.importance === 'high';
+    const isUrg = entry.urgency === 'urgent';
+    if (isImp && isUrg) return 'q1';
+    if (isImp && !isUrg) return 'q2';
+    if (!isImp && isUrg) return 'q3';
+    return 'q4';
+}
+
+const catLabels = { work: '💼 Work', hobby: '🎨 Hobby', routine: '🔄 Routine', gym: '🏋️ Gym', meal: '🥗 Meal' };
+const statusLabels = { 'todo': 'To Do', 'in-progress': 'In Progress', 'completed': 'Completed' };
+const impLabels = { high: 'High', medium: 'Med', low: 'Low' };
+
+function renderTaskCard(entry, compact = false) {
+    const importance = ['high','medium','low'].includes(entry.importance) ? entry.importance : 'medium';
+    const urgency = ['urgent','not-urgent'].includes(entry.urgency) ? entry.urgency : 'not-urgent';
+    const impClass = importance === 'high' ? 'tag-high' : importance === 'medium' ? 'tag-med' : 'tag-low';
+    const urgClass = urgency === 'urgent' ? 'tag-urgent' : 'tag-not-urgent';
+    return `
+        <div class="kanban-card v24-group-item" data-entry-id="${entry.id}" data-group-item-id="${entry.id}" data-group-type="task">
+            <div class="kanban-card-title">${escapeHtml(entry.title)}</div>
+            <div class="kanban-card-meta">
+                <span class="tag ${impClass}">${escapeHtml(impLabels[importance] || importance)}</span>
+                <span class="tag ${urgClass}">${urgency === 'urgent' ? 'Urgent' : 'Not Urgent'}</span>
+                <span class="tag tag-cat">${escapeHtml(catLabels[entry.category] || entry.category)}</span>
+            </div>
+            ${!compact && entry.date ? `<div style="font-size:0.68rem; color:var(--text-muted); margin-top:5px;">📅 ${formatDateKeyLocal(entry.date)}</div>` : ''}
+        </div>
+    `;
+}
+
+function renderTasks() {
+    const entries = getFilteredEntries();
+    const container = document.getElementById('tasks-content');
+
+    if (entries.length === 0 && currentTaskView !== 'calendar') {
+        container.innerHTML = '<div class="empty-state">No entries found. Click "+ Quick Add" to create one.</div>';
+        return;
+    }
+
+    switch(currentTaskView) {
+        case 'kanban': renderKanban(entries, container); break;
+        case 'matrix': renderMatrix(entries, container); break;
+        case 'list': renderList(entries, container); break;
+        case 'gallery': renderGallery(entries, container); break;
+        case 'calendar': renderCalendarMaster(entries, container); break;
+        case 'groups': if (typeof window.renderTaskGroupsV25 === 'function') window.renderTaskGroupsV25(entries, container); break;
+    }
+    attachCardClicks();
+    setTimeout(()=>window.omniosV25RefreshGrouping?.(),0);
+}
+
+function attachCardClicks() {
+    document.querySelectorAll('[data-entry-id]').forEach(el => {
+        if (el.dataset.cardClickBound === '1') return;
+        el.dataset.cardClickBound = '1';
+        el.addEventListener('click', (e) => {
+            if (e.target.closest('[data-no-open]')) return;
+            // Task IDs can be plain integers (Date.now()) or decimals (Date.now()+Math.random(),
+            // used by templates and the Assistant) — parseInt used to truncate the latter and
+            // silently fail to find the entry, so the card looked clickable but did nothing.
+            openInspector(el.dataset.entryId);
+        });
+    });
+}
+
+function renderKanban(entries, container) {
+    const cols = { 'todo': [], 'in-progress': [], 'completed': [] };
+    entries.forEach(e => { if(cols[e.status]) cols[e.status].push(e); });
+
+    container.innerHTML = `
+        <div class="kanban-board">
+            <div class="kanban-col">
+                <div class="kanban-col-header">📋 To Do <span class="count">${cols.todo.length}</span></div>
+                <div class="kanban-cards">${cols.todo.map(e => renderTaskCard(e)).join('')}</div>
+            </div>
+            <div class="kanban-col">
+                <div class="kanban-col-header">⏳ In Progress <span class="count">${cols['in-progress'].length}</span></div>
+                <div class="kanban-cards">${cols['in-progress'].map(e => renderTaskCard(e)).join('')}</div>
+            </div>
+            <div class="kanban-col">
+                <div class="kanban-col-header">✅ Completed <span class="count">${cols.completed.length}</span></div>
+                <div class="kanban-cards">${cols.completed.map(e => renderTaskCard(e)).join('')}</div>
+            </div>
+        </div>
+    `;
+}
+
+function renderMatrix(entries, container) {
+    const boxes = { q1: [], q2: [], q3: [], q4: [] };
+    entries.forEach(e => boxes[getQuadrant(e)].push(e));
+
+    container.innerHTML = `
+        <div class="eisenhower-grid">
+            <div class="eq-box" style="border-top: 3px solid var(--accent-red);">
+                <div class="eq-box-header">🔥 Q1: Do First <span class="tag tag-high">Urgent & Important</span></div>
+                <div class="eq-box-content">${boxes.q1.map(e => renderTaskCard(e, true)).join('') || '<div class="empty-state" style="padding:15px;">Empty</div>'}</div>
+            </div>
+            <div class="eq-box" style="border-top: 3px solid var(--accent-cyan);">
+                <div class="eq-box-header">📅 Q2: Schedule <span class="tag tag-med">Not Urgent & Important</span></div>
+                <div class="eq-box-content">${boxes.q2.map(e => renderTaskCard(e, true)).join('') || '<div class="empty-state" style="padding:15px;">Empty</div>'}</div>
+            </div>
+            <div class="eq-box" style="border-top: 3px solid var(--accent-yellow);">
+                <div class="eq-box-header">⚡ Q3: Delegate <span class="tag tag-low">Urgent & Not Important</span></div>
+                <div class="eq-box-content">${boxes.q3.map(e => renderTaskCard(e, true)).join('') || '<div class="empty-state" style="padding:15px;">Empty</div>'}</div>
+            </div>
+            <div class="eq-box" style="border-top: 3px solid var(--text-muted);">
+                <div class="eq-box-header">📥 Q4: Eliminate <span class="tag" style="background:var(--bg-hover); color:var(--text-muted);">Not Urgent & Not Important</span></div>
+                <div class="eq-box-content">${boxes.q4.map(e => renderTaskCard(e, true)).join('') || '<div class="empty-state" style="padding:15px;">Empty</div>'}</div>
+            </div>
+        </div>
+    `;
+}
+
+function renderList(entries, container) {
+    container.innerHTML = `
+        <div class="list-view">
+            ${entries.map(e => `
+                <div class="list-item ${e.status === 'completed' ? 'completed' : ''}" data-entry-id="${e.id}">
+                    <div class="list-item-check ${e.status === 'completed' ? 'checked' : ''}" data-no-open data-toggle-status="${e.id}">${e.status === 'completed' ? '✓' : ''}</div>
+                    <span class="list-item-title">${escapeHtml(e.title)}</span>
+                    <span class="tag ${e.importance === 'high' ? 'tag-high' : e.importance === 'medium' ? 'tag-med' : 'tag-low'}">${impLabels[e.importance] || 'Med'}</span>
+                    <span class="tag tag-cat">${catLabels[e.category] || '💼 Work'}</span>
+                    <span class="list-item-date">${e.date ? formatDateKeyLocal(e.date) : ''}</span>

@@ -1912,5 +1912,157 @@ html[data-theme="light"] #view-bible .bib-med-passage-v633{background:var(--bg-s
 <script id="omnios-v623-pwa-register">
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(reg=>reg.update().catch(()=>{})).catch(err=>console.warn('OmniOS service worker',err)),{once:true})}
 </script>
+
+<style id="omnios-v624-mobile-calendar-fit-css">
+/* Mobile Calendar: fit every view to the device width while keeping the timeline vertically scrollable. */
+@media(max-width:760px){
+  #view-master-calendar,
+  #view-master-calendar .v36-cal-shell,
+  #view-master-calendar .v36-cal-body,
+  #view-master-calendar .v603-calendar-layout,
+  #view-master-calendar .v603-calendar-stage,
+  #view-master-calendar .v603-calendar-stage-inner,
+  #view-master-calendar #v603-mode-host,
+  #view-master-calendar #v602-week-host{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+
+  #view-master-calendar{overflow-x:hidden!important}
+  #view-master-calendar .v603-calendar-stage{overflow:hidden!important}
+  #view-master-calendar .v603-calendar-stage-inner{overflow:hidden!important}
+
+  /* Week, Workspace and Day: seven days really fit the phone instead of keeping 120px desktop columns. */
+  #view-master-calendar .v36-time-wrap{
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+  #view-master-calendar .v36-all-day,
+  #view-master-calendar .v36-time-head{
+    grid-template-columns:38px repeat(var(--v36-visible-days,1),minmax(0,1fr))!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  #view-master-calendar .v36-time-body{
+    grid-template-columns:38px minmax(0,1fr)!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  #view-master-calendar .v36-time-days{
+    grid-template-columns:repeat(var(--v36-visible-days,1),minmax(0,1fr))!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  #view-master-calendar .v36-time-axis{min-width:0!important}
+  #view-master-calendar .v36-time-label,
+  #view-master-calendar .v36-time-end-label{
+    padding-inline:2px!important;
+    font-size:.47rem!important;
+    text-align:right!important;
+  }
+  #view-master-calendar .v36-time-day-head{min-width:0!important;padding:5px 1px!important}
+  #view-master-calendar .v36-time-day-head .dow{
+    font-size:.47rem!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  #view-master-calendar .v36-time-day-head .num{
+    width:21px!important;height:21px!important;font-size:.66rem!important;margin-top:1px!important;
+  }
+  #view-master-calendar .v36-all-day-label{
+    padding:4px 2px!important;
+    font-size:.43rem!important;
+    line-height:1.05!important;
+    text-align:center!important;
+    justify-content:center!important;
+  }
+  #view-master-calendar .v36-all-day-cell{padding:2px!important;min-width:0!important;min-height:38px!important}
+  #view-master-calendar .v36-all-day-event{
+    padding:3px 2px!important;
+    font-size:.49rem!important;
+    border-left-width:2px!important;
+  }
+  #view-master-calendar .v36-timed-event{
+    min-width:0!important;
+    padding:3px 2px!important;
+    border-left-width:2px!important;
+    border-radius:5px!important;
+  }
+  #view-master-calendar .v36-timed-title{font-size:.51rem!important}
+  #view-master-calendar .v36-timed-meta{font-size:.43rem!important}
+
+  /* Month: no 700px forced canvas on phones. */
+  #view-master-calendar .v603-calendar-stage-inner>.v36-month-grid,
+  #view-master-calendar .v36-month-grid{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    grid-template-columns:repeat(7,minmax(0,1fr))!important;
+  }
+  #view-master-calendar .v36-month-weekday{
+    min-width:0!important;
+    padding:6px 1px!important;
+    font-size:.48rem!important;
+  }
+  #view-master-calendar .v36-month-day{
+    min-width:0!important;
+    min-height:72px!important;
+    padding:3px!important;
+  }
+  #view-master-calendar .v36-month-date{
+    width:19px!important;height:19px!important;font-size:.57rem!important;
+  }
+  #view-master-calendar .v36-month-event{
+    min-width:0!important;
+    min-height:17px!important;
+    height:auto!important;
+    padding:2px!important;
+    gap:1px!important;
+    border-left-width:2px!important;
+    font-size:.48rem!important;
+  }
+  #view-master-calendar .v36-month-event .v36-event-time,
+  #view-master-calendar .v36-month-event .v36-event-icon{display:none!important}
+  #view-master-calendar .v36-month-event .v36-event-title{
+    display:block!important;
+    min-width:0!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  #view-master-calendar .v36-more{font-size:.48rem!important;padding:2px!important}
+
+  /* Header controls stay inside the viewport. */
+  #view-master-calendar .v36-cal-toolbar{width:100%!important;max-width:100%!important}
+  #view-master-calendar .v36-cal-nav{width:100%!important;min-width:0!important}
+  #view-master-calendar .v36-cal-period{
+    min-width:0!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  #view-master-calendar .v36-cal-modes{
+    width:100%!important;
+    display:flex!important;
+    overflow-x:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+  #view-master-calendar .v36-cal-actions{
+    width:100%!important;
+    min-width:0!important;
+  }
+}
+@media(max-width:430px){
+  #view-master-calendar .v36-timed-meta{display:none!important}
+  #view-master-calendar .v36-month-day{min-height:66px!important}
+}
+</style>
+
 </body>
 </html>

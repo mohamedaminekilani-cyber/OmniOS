@@ -1720,10 +1720,10 @@ function renderPageCover(view){
   const key=view.id.replace(/^view-/,'');
   let shell=view.querySelector(':scope > .v44-page-cover-shell');
   if(!shell){shell=document.createElement('div');shell.className='v44-page-cover-shell';shell.dataset.v44Page=key;view.insertBefore(shell,view.firstChild)}
-  const c=getPage(key),sig=c?\`${c.src}|${Number(c.x??50)}|${Number(c.y??50)}\`:'0';
+  const c=getPage(key),sig=c?`${c.src}|${Number(c.x??50)}|${Number(c.y??50)}`:'0';
   if(shell.dataset.v44Sig===sig)return;
   shell.dataset.v44Sig=sig;
-  shell.innerHTML=c?\`<div class="v44-page-cover" data-cover-controls tabindex="0" role="button" aria-expanded="false" aria-label="Cover image. Open cover controls"><img src="${E(c.src)}" alt="" style="object-position:${Number(c.x??50)}% ${Number(c.y??50)}%"><span class="v44-cover-hint">Click cover to edit</span><div class="v44-cover-tools" role="group" aria-label="Cover controls"><button class="v44-cover-tool" data-act="change">Change</button><button class="v44-cover-tool" data-act="reposition">Reposition</button><button class="v44-cover-tool" data-act="remove">Delete</button></div></div>\`:\`<div class="v44-page-cover-empty"><button class="v44-add-cover">🖼 Add cover</button></div>\`;
+  shell.innerHTML=c?`<div class="v44-page-cover" data-cover-controls tabindex="0" role="button" aria-expanded="false" aria-label="Cover image. Open cover controls"><img src="${E(c.src)}" alt="" style="object-position:${Number(c.x??50)}% ${Number(c.y??50)}%"><span class="v44-cover-hint">Click cover to edit</span><div class="v44-cover-tools" role="group" aria-label="Cover controls"><button class="v44-cover-tool" data-act="change">Change</button><button class="v44-cover-tool" data-act="reposition">Reposition</button><button class="v44-cover-tool" data-act="remove">Delete</button></div></div>`:`<div class="v44-page-cover-empty"><button class="v44-add-cover">🖼 Add cover</button></div>`;
   shell.querySelector('.v44-add-cover')?.addEventListener('click',()=>openCoverDialog(key));
   const cover=shell.querySelector('[data-cover-controls]');
   const toggle=()=>{const opening=!cover.classList.contains('controls-open');closeCoverControls(cover);cover.classList.toggle('controls-open',opening);cover.setAttribute('aria-expanded',opening?'true':'false')};

@@ -1,0 +1,13 @@
+{
+  "name": "omnios-pwa",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "latest",
+    "web-push": "latest"
+  },
+  "devDependencies": {
+    "@netlify/functions": "latest",
+    "@types/web-push": "latest"
+  }
+}

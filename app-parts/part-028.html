@@ -4367,5 +4367,607 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 })();
 </script>
 
+<style id="omnios-v66-atlas-ux">
+/* Bible Atlas UX authority — map first, controls contextual, evidence readable. */
+#view-bible .atlas28{
+  --atlas66-radius:16px;
+  --atlas66-sheet-z:2147481750;
+}
+#view-bible .atlas28-hero{
+  border-radius:18px!important;
+  background:
+    radial-gradient(560px 220px at 0% 0%,rgba(65,110,205,.10),transparent 64%),
+    radial-gradient(420px 200px at 100% 0%,rgba(15,118,110,.07),transparent 68%),
+    var(--bg-surface)!important;
+}
+#view-bible .atlas28-panel,
+#view-bible .atlas28-map-card,
+#view-bible .atlas28-timeline{
+  border-radius:var(--atlas66-radius)!important;
+}
+#view-bible .atlas28-mapbar{
+  min-height:58px;
+}
+#view-bible .atlas28-mapbar-actions .btn{
+  min-height:36px;
+}
+#view-bible .atlas28-panel-body>.atlas28-field:last-of-type{
+  margin-bottom:0;
+}
+#view-bible .atlas28-source{
+  align-items:start!important;
+}
+#view-bible .atlas33-source-actions{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+#view-bible .atlas28-related button,
+#view-bible .atlas28-stop{
+  transition:background .12s ease,border-color .12s ease;
+}
+#view-bible .atlas28-related button:hover,
+#view-bible .atlas28-stop:hover{
+  border-color:color-mix(in srgb,var(--accent-blue) 30%,var(--border-color));
+}
+#view-bible .atlas66-mobile-only,
+#view-bible .atlas66-sheet-close,
+#view-bible .atlas66-sheet-backdrop{display:none}
+
+@media(max-width:760px){
+  #view-bible .atlas28{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  /* Compact context header. The map is the primary content, not the introduction. */
+  #view-bible .atlas28-hero{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:8px!important;
+    padding:11px 12px!important;
+    border-radius:15px!important;
+    box-shadow:none!important;
+  }
+  #view-bible .atlas28-kicker{
+    font-size:.48rem!important;
+  }
+  #view-bible .atlas28-hero h3{
+    margin:2px 0!important;
+    font-size:1.03rem!important;
+    line-height:1.18!important;
+  }
+  #view-bible .atlas28-hero p{
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+    overflow:hidden;
+    font-size:.6rem!important;
+    line-height:1.42!important;
+  }
+  #view-bible .atlas28-hero-actions{
+    width:100%!important;
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    justify-content:flex-start!important;
+    gap:6px!important;
+    overflow-x:auto!important;
+    scrollbar-width:none!important;
+  }
+  #view-bible .atlas28-hero-actions::-webkit-scrollbar{display:none}
+  #view-bible .atlas28-basemap{
+    flex:0 0 auto;
+    width:auto!important;
+  }
+  #view-bible .atlas28-basemap button{
+    min-height:36px!important;
+    padding:6px 10px!important;
+  }
+  #view-bible .atlas28-hero-actions>.btn{
+    flex:0 0 auto!important;
+    min-height:36px!important;
+  }
+
+  /* Map first. Side panels become sheets instead of pushing the map down. */
+  #view-bible .atlas28-grid{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  #view-bible .atlas28-map-card{
+    width:100%!important;
+    min-width:0!important;
+    overflow:hidden!important;
+    border-radius:15px!important;
+  }
+  #view-bible .atlas28-mapbar{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:7px!important;
+    padding:9px!important;
+    min-height:0!important;
+  }
+  #view-bible .atlas28-mapbar-title{
+    font-size:.7rem!important;
+  }
+  #view-bible .atlas28-mapbar-sub{
+    font-size:.52rem!important;
+  }
+  #view-bible .atlas28-mapbar-actions{
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:5px!important;
+  }
+  #view-bible .atlas28-mapbar-actions .btn{
+    width:100%!important;
+    min-width:0!important;
+    min-height:40px!important;
+    padding:5px 4px!important;
+    justify-content:center!important;
+    font-size:.56rem!important;
+  }
+  #view-bible .atlas66-mobile-only{display:inline-flex!important}
+
+  #view-bible .atlas28-map{
+    width:100%!important;
+    height:min(54dvh,520px)!important;
+    min-height:390px!important;
+    touch-action:pan-x pan-y!important;
+  }
+  #view-bible .atlas28-map .leaflet-control-zoom{
+    margin-left:8px!important;
+    margin-top:8px!important;
+  }
+  #view-bible .atlas28-map .leaflet-control-zoom a{
+    width:34px!important;
+    height:34px!important;
+    line-height:34px!important;
+  }
+  #view-bible .atlas28-map-note{
+    align-items:flex-start!important;
+    padding:7px 9px!important;
+    font-size:.49rem!important;
+    line-height:1.38!important;
+  }
+  #view-bible .atlas29-filter-strip{
+    min-height:34px!important;
+    padding:6px 8px!important;
+    gap:4px!important;
+  }
+  #view-bible .atlas29-filter-caption{display:none!important}
+  #view-bible .atlas29-filter-chip{
+    padding:4px 7px!important;
+    font-size:.48rem!important;
+  }
+  #view-bible .atlas31-live-count{
+    flex:0 0 auto!important;
+    font-size:.47rem!important;
+  }
+
+  /* Filters = one intentional bottom sheet. */
+  #view-bible .atlas28-grid>.atlas28-panel:not(.atlas28-details){
+    display:none!important;
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:calc(var(--mobile-nav-h,64px) + env(safe-area-inset-bottom))!important;
+    z-index:var(--atlas66-sheet-z)!important;
+    width:100%!important;
+    max-width:none!important;
+    max-height:min(76dvh,720px)!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain;
+    border:1px solid var(--border-light)!important;
+    border-bottom:0!important;
+    border-radius:22px 22px 0 0!important;
+    background:var(--bg-surface)!important;
+    box-shadow:0 -28px 80px rgba(0,0,0,.48)!important;
+  }
+  #view-bible .atlas28.v66-atlas-filters-open .atlas28-grid>.atlas28-panel:not(.atlas28-details){
+    display:block!important;
+  }
+  #view-bible .atlas28-grid>.atlas28-panel:not(.atlas28-details) .atlas28-panel-head{
+    position:sticky!important;
+    top:0!important;
+    z-index:5!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    align-items:center!important;
+    gap:8px!important;
+    padding:10px 12px!important;
+    background:color-mix(in srgb,var(--bg-surface) 97%,transparent)!important;
+    -webkit-backdrop-filter:blur(18px);
+    backdrop-filter:blur(18px);
+  }
+  #view-bible .atlas28-grid>.atlas28-panel:not(.atlas28-details) .atlas28-panel-body{
+    padding:10px 12px 16px!important;
+  }
+  #view-bible .atlas28-field{
+    margin-bottom:9px!important;
+  }
+  #view-bible .atlas28-label{
+    margin-bottom:4px!important;
+    font-size:.5rem!important;
+  }
+  #view-bible .atlas28-panel .form-select,
+  #view-bible .atlas28-panel .form-input{
+    min-height:42px!important;
+  }
+  #view-bible .atlas28-seg button{
+    min-height:38px!important;
+    font-size:.58rem!important;
+  }
+  #view-bible .atlas28-toggle{
+    padding:9px!important;
+    border-radius:10px!important;
+  }
+  #view-bible .atlas28-quick{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:5px!important;
+  }
+  #view-bible .atlas28-quick .btn{
+    min-height:40px!important;
+    justify-content:center!important;
+  }
+  #view-bible .atlas28-method{
+    margin-top:8px!important;
+    padding-top:8px!important;
+  }
+
+  /* Details = separate sheet, opened only when requested/selected. */
+  #view-bible .atlas28-details{
+    display:none!important;
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:calc(var(--mobile-nav-h,64px) + env(safe-area-inset-bottom))!important;
+    z-index:calc(var(--atlas66-sheet-z) + 2)!important;
+    width:100%!important;
+    max-width:none!important;
+    max-height:min(76dvh,720px)!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain;
+    border:1px solid var(--border-light)!important;
+    border-bottom:0!important;
+    border-radius:22px 22px 0 0!important;
+    background:var(--bg-surface)!important;
+    box-shadow:0 -28px 80px rgba(0,0,0,.50)!important;
+  }
+  #view-bible .atlas28.v66-atlas-details-open .atlas28-details{
+    display:block!important;
+  }
+  #view-bible .atlas28-details .atlas28-panel-head{
+    position:sticky!important;
+    top:0!important;
+    z-index:5!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    align-items:center!important;
+    gap:8px!important;
+    padding:10px 12px!important;
+    background:color-mix(in srgb,var(--bg-surface) 97%,transparent)!important;
+    -webkit-backdrop-filter:blur(18px);
+    backdrop-filter:blur(18px);
+  }
+  #view-bible .atlas28-details .atlas28-panel-body{
+    padding:11px 12px 18px!important;
+  }
+  #view-bible .atlas28-detail-title{
+    font-size:1.03rem!important;
+  }
+  #view-bible .atlas28-detail-copy{
+    font-size:.66rem!important;
+    line-height:1.58!important;
+  }
+  #view-bible .atlas28-badges{
+    flex-wrap:nowrap!important;
+    overflow-x:auto!important;
+    scrollbar-width:none!important;
+    padding-bottom:2px;
+  }
+  #view-bible .atlas28-badges::-webkit-scrollbar{display:none}
+  #view-bible .atlas28-badge{flex:0 0 auto!important}
+  #view-bible .atlas28-itinerary{
+    max-height:none!important;
+  }
+  #view-bible .atlas28-stop{
+    min-height:44px!important;
+  }
+  #view-bible .atlas28-related button{
+    min-height:44px!important;
+  }
+  #view-bible .atlas28-source{
+    grid-template-columns:1fr!important;
+    gap:6px!important;
+    padding:9px!important;
+  }
+  #view-bible .atlas33-source-actions{
+    justify-content:flex-start!important;
+  }
+
+  #view-bible .atlas66-sheet-close{
+    display:grid!important;
+    place-items:center!important;
+    width:36px!important;
+    height:36px!important;
+    min-width:36px!important;
+    min-height:36px!important;
+    padding:0!important;
+    border:1px solid var(--border-color)!important;
+    border-radius:10px!important;
+    background:var(--bg-base)!important;
+    color:var(--text-primary)!important;
+    font:800 1rem/1 system-ui!important;
+  }
+  #view-bible .atlas66-sheet-backdrop{
+    display:none;
+    position:fixed;
+    inset:0 0 calc(var(--mobile-nav-h,64px) + env(safe-area-inset-bottom)) 0;
+    z-index:calc(var(--atlas66-sheet-z) - 1);
+    border:0!important;
+    padding:0!important;
+    margin:0!important;
+    background:rgba(2,5,10,.54);
+    -webkit-backdrop-filter:blur(5px);
+    backdrop-filter:blur(5px);
+  }
+  #view-bible .atlas28:is(.v66-atlas-filters-open,.v66-atlas-details-open)>.atlas66-sheet-backdrop{
+    display:block!important;
+  }
+
+  /* Timeline is related to the map, so it stays directly below it and scrolls horizontally. */
+  #view-bible .atlas28-timeline{
+    margin-top:8px!important;
+    padding:10px!important;
+    border-radius:15px!important;
+  }
+  #view-bible .atlas28-timeline-head{
+    align-items:flex-start!important;
+    gap:7px!important;
+    margin-bottom:7px!important;
+  }
+  #view-bible .atlas28-timeline-title{font-size:.68rem!important}
+  #view-bible .atlas28-timeline-sub{
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:1;
+    overflow:hidden;
+    font-size:.5rem!important;
+  }
+  #view-bible .atlas28-mini-stats{
+    flex-wrap:nowrap!important;
+    overflow-x:auto!important;
+    scrollbar-width:none!important;
+  }
+  #view-bible .atlas28-mini-stats::-webkit-scrollbar{display:none}
+  #view-bible .atlas28-event{
+    flex-basis:min(78vw,280px)!important;
+    min-height:96px!important;
+  }
+
+  /* Search results are comfortable touch targets inside the filters sheet. */
+  #view-bible .atlas28-search-results{
+    position:static!important;
+    margin-top:5px!important;
+    max-height:280px!important;
+    box-shadow:none!important;
+  }
+  #view-bible .atlas28-search-item{
+    min-height:46px!important;
+  }
+
+  /* Leaflet labels: prevent excessive permanent text from obscuring a phone map. */
+  #view-bible .atlas30-place-label{
+    max-width:130px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+}
+
+@media(max-width:390px){
+  #view-bible .atlas28-map{
+    height:min(51dvh,470px)!important;
+    min-height:360px!important;
+  }
+  #view-bible .atlas28-mapbar-actions{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  #view-bible .atlas28-hero p{-webkit-line-clamp:1}
+}
+</style>
+
+<script id="omnios-v66-atlas-ux-js">
+(function(){
+  if(window.__omniAtlasUX66)return;
+  window.__omniAtlasUX66=true;
+
+  const mobile=()=>matchMedia('(max-width:760px)').matches;
+  let filtersOpen=false;
+  let detailsOpen=false;
+  let pendingDetail=false;
+
+  function root(){
+    return document.querySelector('#view-bible .atlas28');
+  }
+
+  function closeSheets(){
+    filtersOpen=false;
+    detailsOpen=false;
+    const r=root();
+    r?.classList.remove('v66-atlas-filters-open','v66-atlas-details-open');
+  }
+
+  function openFilters(){
+    if(!mobile())return;
+    filtersOpen=true;
+    detailsOpen=false;
+    const r=root();
+    r?.classList.add('v66-atlas-filters-open');
+    r?.classList.remove('v66-atlas-details-open');
+    setTimeout(()=>r?.querySelector('#atlas28-search')?.focus({preventScroll:true}),80);
+  }
+
+  function openDetails(){
+    if(!mobile())return;
+    detailsOpen=true;
+    filtersOpen=false;
+    const r=root();
+    r?.classList.add('v66-atlas-details-open');
+    r?.classList.remove('v66-atlas-filters-open');
+  }
+
+  function ensureSheetClose(panel,type){
+    const head=panel?.querySelector('.atlas28-panel-head');
+    if(!head||head.querySelector('.atlas66-sheet-close'))return;
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='atlas66-sheet-close';
+    b.setAttribute('aria-label',type==='filters'?'Close Atlas filters':'Close Atlas details');
+    b.textContent='×';
+    b.onclick=closeSheets;
+    head.appendChild(b);
+  }
+
+  function hasMeaningfulDetails(r){
+    const body=r?.querySelector('.atlas28-details .atlas28-panel-body');
+    if(!body)return false;
+    return !!body.querySelector(
+      '.atlas28-detail-head,.atlas30-detail-hero,.atlas28-related,.atlas28-itinerary,.atlas30-connections'
+    );
+  }
+
+  function enhance(){
+    const r=root();
+    if(!r)return;
+
+    if(!mobile()){
+      r.classList.remove('v66-atlas-filters-open','v66-atlas-details-open');
+      return;
+    }
+
+    const mapActions=r.querySelector('.atlas28-mapbar-actions');
+    if(mapActions&&!mapActions.querySelector('[data-atlas66-filters]')){
+      const filters=document.createElement('button');
+      filters.type='button';
+      filters.className='btn btn-sm atlas66-mobile-only';
+      filters.dataset.atlas66Filters='1';
+      filters.textContent='Filters';
+      filters.onclick=openFilters;
+
+      const details=document.createElement('button');
+      details.type='button';
+      details.className='btn btn-sm atlas66-mobile-only';
+      details.dataset.atlas66Details='1';
+      details.textContent='Details';
+      details.disabled=!hasMeaningfulDetails(r);
+      details.onclick=openDetails;
+
+      mapActions.prepend(details);
+      mapActions.prepend(filters);
+    }else{
+      const d=mapActions?.querySelector('[data-atlas66-details]');
+      if(d)d.disabled=!hasMeaningfulDetails(r);
+    }
+
+    const filterPanel=r.querySelector('.atlas28-grid>.atlas28-panel:not(.atlas28-details)');
+    const detailPanel=r.querySelector('.atlas28-details');
+    ensureSheetClose(filterPanel,'filters');
+    ensureSheetClose(detailPanel,'details');
+
+    if(!r.querySelector(':scope > .atlas66-sheet-backdrop')){
+      const bd=document.createElement('button');
+      bd.type='button';
+      bd.className='atlas66-sheet-backdrop';
+      bd.setAttribute('aria-label','Close Atlas panel');
+      bd.onclick=closeSheets;
+      r.appendChild(bd);
+    }
+
+    /* Accuracy notes are available, but they should not dominate the first mobile view. */
+    filterPanel?.querySelectorAll('details.atlas28-method[open]').forEach(d=>d.removeAttribute('open'));
+
+    r.classList.toggle('v66-atlas-filters-open',filtersOpen);
+    r.classList.toggle('v66-atlas-details-open',detailsOpen);
+
+    if(pendingDetail&&hasMeaningfulDetails(r)){
+      pendingDetail=false;
+      openDetails();
+    }
+  }
+
+  /* Selection from map, search, timeline or connections opens the resulting context sheet. */
+  document.addEventListener('pointerdown',e=>{
+    if(!mobile()||!e.target.closest('#view-bible .atlas28'))return;
+    const selection=e.target.closest(
+      '[data-atlas28-place],[data-atlas28-route],[data-atlas28-event],[data-atlas28-search-kind],#atlas28-map .leaflet-marker-icon,#atlas28-map .leaflet-interactive'
+    );
+    if(selection){
+      pendingDetail=true;
+      detailsOpen=true;
+      filtersOpen=false;
+    }
+  },true);
+
+  /* Preserve the filter sheet while applying filters that re-render the Atlas. */
+  document.addEventListener('change',e=>{
+    if(!mobile())return;
+    const p=e.target.closest('#view-bible .atlas28-grid>.atlas28-panel:not(.atlas28-details)');
+    if(!p)return;
+    filtersOpen=true;
+    detailsOpen=false;
+  },true);
+
+  document.addEventListener('click',e=>{
+    if(!mobile())return;
+    const r=e.target.closest('#view-bible .atlas28');
+    if(!r)return;
+
+    if(e.target.closest('[data-atlas28-mode]')){
+      filtersOpen=true;
+      detailsOpen=false;
+      return;
+    }
+    if(e.target.closest('[data-atlas28-quick]')){
+      filtersOpen=false;
+      detailsOpen=false;
+      return;
+    }
+    if(e.target.closest('[data-atlas28-reset]')){
+      filtersOpen=false;
+      detailsOpen=false;
+      return;
+    }
+  },true);
+
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&(filtersOpen||detailsOpen))closeSheets();
+  },true);
+
+  const mo=new MutationObserver(records=>{
+    let relevant=false;
+    for(const rec of records){
+      if(rec.type==='childList'&&rec.addedNodes.length){
+        if(rec.target.closest?.('#bib-content')||[...rec.addedNodes].some(n=>n.nodeType===1&&n.querySelector?.('.atlas28'))){
+          relevant=true;break;
+        }
+      }
+    }
+    if(relevant)requestAnimationFrame(enhance);
+  });
+  mo.observe(document.documentElement,{subtree:true,childList:true});
+
+  addEventListener('resize',()=>requestAnimationFrame(enhance),{passive:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>requestAnimationFrame(enhance),{once:true});
+  else requestAnimationFrame(enhance);
+
+  window.OmniAtlasUX66={refresh:enhance,openFilters,openDetails,close:closeSheets};
+})();
+</script>
+
 </body>
 </html>

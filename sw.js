@@ -1,4 +1,4 @@
-const CACHE='omnios-v62.3-push-personalization-r1';
+const CACHE='omnios-v62.3-push-personalization-r2';
 const USER_ASSET_CACHE='omnios-user-assets-v1';
 const CORE=['./','./index.html','./manifest.webmanifest','./icons/icon-192.png','./pwa-personalization.js'];
 

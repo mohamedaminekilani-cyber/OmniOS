@@ -7,7 +7,18 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="OmniOS">
-<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link id="omnios-apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="./icons/icon-192.png">
+<script id="omnios-pwa-icon-early">
+(function(){
+  try{
+    if(localStorage.getItem('omnios_custom_app_icon_v1')==='1'){
+      var rev=localStorage.getItem('omnios_app_icon_rev_v1')||'1';
+      var link=document.getElementById('omnios-apple-touch-icon');
+      if(link)link.href='./omnios-user-icon-192.png?v='+encodeURIComponent(rev);
+    }
+  }catch(_){}
+})();
+</script>
 <link rel="manifest" href="./manifest.webmanifest">
 <title>OmniOS</title>
 <script id="omnios-accent-early">

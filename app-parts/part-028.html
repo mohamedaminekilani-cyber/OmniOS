@@ -2887,5 +2887,44 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 })();
 </script>
 
+<style id="omnios-v64-menu-svg-state">
+@media(max-width:760px){
+  #v35-mobile-more > .v64-menu-svg{
+    width:20px!important;
+    height:20px!important;
+    min-width:20px!important;
+    display:grid!important;
+    place-items:center!important;
+    flex:0 0 20px!important;
+    line-height:1!important;
+  }
+  #v35-mobile-more > .v64-menu-svg svg{
+    width:20px!important;
+    height:20px!important;
+    display:block!important;
+    fill:none!important;
+    stroke:currentColor!important;
+    stroke-width:1.8!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+  }
+
+  /* While the sheet is open, Menu uses exactly the same framed active treatment. */
+  html:not([data-theme="light"]) #v35-mobile-more[aria-expanded="true"],
+  #v35-mobile-more[aria-expanded="true"]{
+    color:#f4f7ff!important;
+    background:
+      radial-gradient(circle at 50% 15%,rgba(70,126,255,.24),transparent 64%),
+      linear-gradient(180deg,rgba(66,94,190,.15),rgba(36,43,79,.08))!important;
+    box-shadow:inset 0 0 0 1px rgba(99,139,255,.12)!important;
+  }
+  html:not([data-theme="light"]) #v35-mobile-more[aria-expanded="true"] .v64-menu-svg,
+  #v35-mobile-more[aria-expanded="true"] .v64-menu-svg{
+    color:#72a5ff!important;
+    filter:drop-shadow(0 0 8px rgba(55,126,255,.65));
+  }
+}
+</style>
+
 </body>
 </html>

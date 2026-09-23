@@ -1604,6 +1604,19 @@ function prepareCustomIcon(file){
         img.src=url;
     });
 }
+function persistCustomIcons(){
+    try{
+        const raw=JSON.stringify(state);
+        if(typeof storage!=='undefined'&&storage?.setItem)storage.setItem('omnios_v3_state',raw);
+        else localStorage.setItem('omnios_v3_state',raw);
+        try{setSaveStatus?.('Saved locally','saved')}catch(_){}
+        return true;
+    }catch(e){
+        console.warn('Custom icon save failed',e);
+        window.toast?.('The icon is applied for this session, but browser storage is full.');
+        return false;
+    }
+}
 async function uploadCustomIcon(key, input){
     const file=input.files?.[0];
     if(!file)return;
@@ -1614,7 +1627,7 @@ async function uploadCustomIcon(key, input){
         state.settings=state.settings||{};
         state.settings.appearance=state.settings.appearance||{};
         state.settings.appearance.customIconsEnabled=true;
-        saveState();
+        persistCustomIcons();
         try{applyCustomIcons()}catch(_){}
         try{window.OmniIcons?.refresh?.()}catch(_){}
         window.toast?.('Custom icon applied');
@@ -1627,7 +1640,7 @@ async function uploadCustomIcon(key, input){
 function clearCustomIcon(key){
     if(!state.customIcons?.[key])return;
     delete state.customIcons[key];
-    saveState();
+    persistCustomIcons();
     try{applyCustomIcons()}catch(_){}
     try{window.OmniIcons?.refresh?.()}catch(_){}
     window.toast?.('Reverted to default icon');

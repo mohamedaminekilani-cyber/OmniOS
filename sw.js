@@ -1,4 +1,4 @@
-const CACHE='omnios-v62.2-clean-startup-upload-pwa';
+const CACHE='omnios-v62.2-clean-startup-merged-r1';
 const CORE=['./','./index.html','./manifest.webmanifest','./icons/icon-192.png'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)))});
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{for(const k of await caches.keys())if(k!==CACHE)await caches.delete(k);await self.clients.claim()})())});

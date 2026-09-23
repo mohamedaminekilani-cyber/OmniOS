@@ -1,43 +1,4 @@
-window.OmniCovers={add:(kind,key)=>{if(kind==='page')openCoverDialog(key)},reposition:(kind,key)=>{if(kind==='page')openReposition(key)},remove:(kind,key)=>{if(kind==='page'){setPage(key,null);persist()}},get:(kind,key)=>kind==='page'?getPage(key):null,decorate:requestDecorate};
-const host=document.querySelector('.view-container');if(host)new MutationObserver(requestDecorate).observe(host,{childList:true,subtree:true});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.querySelector('.v44-cover-dialog'))closeDialog()});if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{ensure();requestDecorate()},250));else setTimeout(()=>{ensure();requestDecorate()},250);
-})();
-</script>
 
-
-<style id="omnios-stability-css">
-/* v45: final interaction/UI consistency layer */
-:root{--v45-focus:0 0 0 3px color-mix(in srgb,var(--accent-cyan) 22%,transparent)}
-html,body,.main-content,.view-container,.view{min-width:0}
-button{font:inherit}
-button:disabled,[aria-disabled="true"]{opacity:.46!important;cursor:not-allowed!important;transform:none!important}
-.nav-item,.sidebar button.nav-item,.sidebar .nav-item button{appearance:none;-webkit-appearance:none;background:transparent;border:0;color:inherit;font:inherit}
-.nav-item.active{background:color-mix(in srgb,var(--accent-cyan) 12%,transparent);color:var(--accent-cyan)}
-.btn:focus-visible,.icon-btn:focus-visible,.view-btn:focus-visible,.tab-btn:focus-visible,.nav-item:focus-visible,
-[role="button"]:focus-visible,.org-card:focus-visible,.v43-row:focus-visible{outline:2px solid var(--accent-cyan)!important;outline-offset:2px!important;box-shadow:var(--v45-focus)}
-.modal-overlay.active{overflow:auto;overscroll-behavior:contain}
-.modal-overlay.active>.modal{margin:auto;max-height:min(92dvh,900px);overflow:auto}
-#v45-modal{z-index:22000}
-.v45-modal-copy{font-size:.73rem;color:var(--text-muted);line-height:1.5;margin:-7px 0 14px}
-.v45-settings-list{display:flex;flex-direction:column}
-.v45-setting-row{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-color)}
-.v45-setting-row:last-child{border-bottom:0}.v45-setting-main{min-width:0}.v45-setting-title{font-size:.8rem;font-weight:700}.v45-setting-desc{font-size:.68rem;color:var(--text-muted);margin-top:3px;line-height:1.45}
-.v45-status-banner{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border:1px solid rgba(245,158,11,.28);background:rgba(245,158,11,.07);border-radius:10px;font-size:.7rem;color:var(--text-secondary);line-height:1.45;margin:10px 0}
-.v45-status-banner strong{color:var(--text-primary)}
-/* Normalize legacy native-looking controls that survive in older pages. */
-#view-help button,.help-nav button,.sidebar-footer button{font:inherit;color:inherit}
-html[data-theme="dark"] #view-help button:not(.btn),html[data-theme="dark"] .help-nav button:not(.btn){background:var(--bg-base);border-color:var(--border-color);color:var(--text-secondary)}
-/* Safer content/card overflow across newer workspaces. */
-.v43-card,.v35-card,.org-card,.nut-card,.finance-card,.workout-item-card,.workout-session-card{min-width:0;overflow-wrap:anywhere}
-.org-card-title,.v43-row-title,.v35-row-title,.note-title{min-width:0}
-/* Notes library navigation: keep horizontal scrolling intentional and obvious on phones. */
-@media(max-width:760px){
-  .org-rail{scroll-snap-type:x proximity;padding-bottom:9px!important;mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 24px),transparent 100%);-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 24px),transparent 100%)}
-  .org-rail-btn{scroll-snap-align:start}
-  .topbar{overflow:visible}
-  .modal-overlay.active>.modal{max-height:94dvh}
-  .v45-setting-row{align-items:flex-start}.v45-setting-row .settings-toggle{margin-top:2px}
-}
-</style>
 
 
 <script id="omnios-stability-js">

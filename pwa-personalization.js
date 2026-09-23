@@ -7,6 +7,7 @@ var USER_CACHE='omnios-user-assets-v1';
 var APP_ICON_URL='./omnios-user-icon-192.png';
 var APP_ICON_PREVIEW='omnios_app_icon_preview_v1';
 var APP_ICON_MARKER='omnios_custom_app_icon_v1';
+var APP_ICON_REV='omnios_app_icon_rev_v1';
 var BOOT_ICON_KEY='omnios_loading_icon_v1';
 var DEVICE_KEY='omnios_push_device_v1';
 var PUSH_PUBLIC_KEY='BFspp6Cwz1U5Ewgen29Pyq05WaD15s0VEN6HBA4wo9XiVHZIy6gR_dygjshuOX-lfpE8f3_EwsxtXYoJvPbIqwU';
@@ -100,10 +101,13 @@ async function squareImage(file,size){
   return {blob:blob,data:cv.toDataURL('image/png')};
 }
 function applyAppIconLink(){
-  var custom=false;
-  try{custom=localStorage.getItem(APP_ICON_MARKER)==='1'}catch(_){}
+  var custom=false,rev='';
+  try{custom=localStorage.getItem(APP_ICON_MARKER)==='1';rev=localStorage.getItem(APP_ICON_REV)||''}catch(_){}
   var link=document.querySelector('link[rel="apple-touch-icon"]');
-  if(link)link.href=custom?APP_ICON_URL:'./icons/icon-192.png';
+  if(link){
+    link.setAttribute('sizes','180x180');
+    link.href=custom?(APP_ICON_URL+(rev?'?v='+encodeURIComponent(rev):'')):'./icons/icon-192.png';
+  }
 }
 async function saveAppIcon(file){
   var out=await squareImage(file,192);
@@ -114,17 +118,18 @@ async function saveAppIcon(file){
   try{
     localStorage.setItem(APP_ICON_PREVIEW,out.data);
     localStorage.setItem(APP_ICON_MARKER,'1');
+    localStorage.setItem(APP_ICON_REV,String(Date.now()));
   }catch(_){}
   applyAppIconLink();
   renderAssetCard();
-  toast('Home Screen icon saved. Re-add OmniOS to the Home Screen to refresh an already installed icon.');
+  toast('Home Screen icon ready. On iPhone, remove the old Home Screen copy and add OmniOS again to apply it.');
 }
 async function resetAppIcon(){
   try{
     var cache=await caches.open(USER_CACHE);
     await cache.delete(new Request(new URL(APP_ICON_URL,location.href).href),{ignoreSearch:true});
   }catch(_){}
-  try{localStorage.removeItem(APP_ICON_PREVIEW);localStorage.removeItem(APP_ICON_MARKER)}catch(_){}
+  try{localStorage.removeItem(APP_ICON_PREVIEW);localStorage.removeItem(APP_ICON_MARKER);localStorage.removeItem(APP_ICON_REV)}catch(_){}
   applyAppIconLink();renderAssetCard();toast('Home Screen icon reset.');
 }
 async function saveBootIcon(file){
@@ -141,9 +146,9 @@ function assetCardHtml(){
   try{app=localStorage.getItem(APP_ICON_PREVIEW)||'';boot=localStorage.getItem(BOOT_ICON_KEY)||''}catch(_){}
   return '<div class="card settings-section" id="omnios-pwa-assets-card">'+
     '<h3 class="card-title mb-4">App & startup icons</h3>'+
-    '<div class="settings-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="omni-pwa-preview">'+(app?'<img src="'+esc(app)+'" alt="Home Screen icon preview">':'<img src="./icons/icon-192.png" alt="Default OmniOS icon">')+'</div><div><div class="settings-row-label">Home Screen app icon</div><div class="settings-row-desc">Upload a square icon for the installed PWA. OmniOS automatically crops and resizes it.</div></div></div><div class="omni-pwa-actions"><input id="omni-pwa-icon-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="omni-pwa-icon-upload">'+(app?'Replace':'Upload')+'</button>'+(app?'<button type="button" class="btn btn-sm" id="omni-pwa-icon-reset">Reset</button>':'')+'</div></div>'+
+    '<div class="settings-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="omni-pwa-preview">'+(app?'<img src="'+esc(app)+'" alt="Home Screen icon preview">':'<img src="./icons/icon-192.png" alt="Default OmniOS icon">')+'</div><div><div class="settings-row-label">Home Screen app icon</div><div class="settings-row-desc">Upload a square icon. This preview is the icon prepared for the next Home Screen installation.</div></div></div><div class="omni-pwa-actions"><input id="omni-pwa-icon-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="omni-pwa-icon-upload">'+(app?'Replace':'Upload')+'</button>'+(app?'<button type="button" class="btn btn-sm" id="omni-pwa-icon-reset">Reset</button>':'')+'</div></div>'+
     '<div class="settings-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="omni-pwa-preview">'+(boot?'<img src="'+esc(boot)+'" alt="Loading icon preview">':'<span>↻</span>')+'</div><div><div class="settings-row-label">Loading screen icon</div><div class="settings-row-desc">Replaces the spinner icon on the single OmniOS loading screen.</div></div></div><div class="omni-pwa-actions"><input id="omni-boot-icon-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="omni-boot-icon-upload">'+(boot?'Replace':'Upload')+'</button>'+(boot?'<button type="button" class="btn btn-sm" id="omni-boot-icon-reset">Reset</button>':'')+'</div></div>'+
-    '<div class="settings-meta-line">On iPhone/iPad, an icon that is already installed is cached by iOS. After changing it, remove the existing Home Screen copy and add OmniOS again to see the new icon.</div>'+
+    '<div class="settings-meta-line">'+(app?'✓ Custom Home Screen icon is ready. On iPhone/iPad, remove the old Home Screen copy, open OmniOS in Safari, then Share → Add to Home Screen.':'Upload an icon here before adding OmniOS to the Home Screen.')+'</div>'+
     '</div>';
 }
 function renderAssetCard(){

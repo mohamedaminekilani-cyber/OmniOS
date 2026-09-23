@@ -5052,5 +5052,234 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 }
 </style>
 
+<style id="omnios-v67-bible-scroll-authority">
+@media(max-width:760px){
+  /* One and only one page scroller for normal Bible screens. */
+  .view-container{
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-y:contain!important;
+    touch-action:pan-y!important;
+    scroll-behavior:auto!important;
+    scroll-padding-top:8px!important;
+    scroll-padding-bottom:calc(var(--mobile-nav-h,64px) + env(safe-area-inset-bottom) + 20px)!important;
+  }
+
+  #view-bible,
+  #view-bible .bib-shell,
+  #view-bible #bib-content,
+  #view-bible .bib-today-v5717,
+  #view-bible .bib-study-layout,
+  #view-bible .bib-study-main,
+  #view-bible .bib-study-side,
+  #view-bible .bib-timer-layout,
+  #view-bible .bib-mood-layout,
+  #view-bible .bib-journal-layout,
+  #view-bible .bib-library-grid,
+  #view-bible .bib-library-grid.v573,
+  #view-bible .bib-plan-calendar-wrap,
+  #view-bible .bib-plan-calendar{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow-y:visible!important;
+    overscroll-behavior:auto!important;
+  }
+
+  /* Remove legacy nested vertical scrollers from Bible content. */
+  #view-bible .bib-study-passage,
+  #view-bible .bib-word-results,
+  #view-bible .bib-passage-preview.v573,
+  #view-bible .bib-journal-list,
+  #view-bible .bib-reader-scroll-v5814,
+  #view-bible .bib-reader-pane-v5814,
+  #view-bible .bib-native-chapter.v573,
+  #view-bible .bib-verses.v573{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow-y:visible!important;
+    overscroll-behavior:auto!important;
+    -webkit-overflow-scrolling:auto!important;
+  }
+
+  /* Reader follows the page scroll naturally. */
+  #view-bible .bib-read-v5814,
+  #view-bible .bib-read-grid-v5814{
+    overflow:visible!important;
+    height:auto!important;
+    max-height:none!important;
+  }
+  #view-bible .bib-toolbar-v5814{
+    position:sticky!important;
+    top:0!important;
+    z-index:75!important;
+  }
+  #view-bible .bib-reader-copy-v5814 .bib-verse-row.v573{
+    scroll-margin-top:154px!important;
+  }
+
+  /* Study/map canvas remains an intentional interactive surface.
+     It may pan internally, but it must not steal ordinary page swipes outside the canvas. */
+  #view-bible .bib-map-board-wrap-v5721,
+  #view-bible .bib-map-board-wrap-v5720{
+    overscroll-behavior:contain!important;
+  }
+
+  /* Horizontal controls remain horizontal only. */
+  #view-bible :is(
+    .bib-tabs,
+    .bib-actions,
+    .bib-presets,
+    .bib-library-toolbar,
+    .bib-badges,
+    .atlas29-filter-strip,
+    .atlas28-timeline-track,
+    .atlas28-badges,
+    .atlas28-hero-actions
+  ){
+    overflow-y:hidden!important;
+  }
+
+  /* Fixed reader / Atlas sheets are the only independent vertical scrollers. */
+  #view-bible .bib-side-v5814,
+  #view-bible .atlas28-grid>.atlas28-panel:not(.atlas28-details),
+  #view-bible .atlas28-details{
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-y:contain!important;
+    touch-action:pan-y!important;
+  }
+
+  /* Do not reserve the mobile-nav height twice inside Atlas.
+     .view-container already clears the persistent bottom navigation. */
+  #view-bible .atlas28{
+    padding-bottom:10px!important;
+  }
+
+  /* Keep a small real end-space so the last control is always reachable. */
+  #view-bible #bib-content{
+    padding-bottom:14px!important;
+  }
+
+  /* While a Bible sheet is open, freeze the page beneath it without losing scroll position. */
+  .view-container.bib-scroll-locked-v67{
+    overflow-y:hidden!important;
+    overscroll-behavior:none!important;
+    touch-action:none!important;
+  }
+  .view-container.bib-scroll-locked-v67 #view-bible .bib-side-v5814,
+  .view-container.bib-scroll-locked-v67 #view-bible .atlas28-grid>.atlas28-panel:not(.atlas28-details),
+  .view-container.bib-scroll-locked-v67 #view-bible .atlas28-details{
+    touch-action:pan-y!important;
+  }
+}
+</style>
+
+<script id="omnios-v67-bible-scroll-js">
+(function(){
+  if(window.__omniBibleScroll67)return;
+  window.__omniBibleScroll67=true;
+
+  const mobile=()=>matchMedia('(max-width:760px)').matches;
+  const scroller=()=>document.querySelector('.view-container');
+
+  function bibleTop(){
+    const s=scroller(),v=document.getElementById('view-bible');
+    if(!s||!v)return 0;
+    return Math.max(0,v.offsetTop-6);
+  }
+
+  function scrollBibleTop(){
+    if(!mobile())return;
+    const s=scroller();
+    if(!s)return;
+    s.scrollTo({top:bibleTop(),behavior:'auto'});
+  }
+
+  function sheetOpen(){
+    if(!mobile())return false;
+    return !!document.querySelector(
+      '#view-bible .bib-read-v5814.v66-tools-open,'+
+      '#view-bible .atlas28.v66-atlas-filters-open,'+
+      '#view-bible .atlas28.v66-atlas-details-open'
+    );
+  }
+
+  function syncLock(){
+    const s=scroller();
+    if(!s)return;
+    s.classList.toggle('bib-scroll-locked-v67',sheetOpen());
+  }
+
+  /* A Bible destination should begin at the top of that destination,
+     not at the old vertical position from the previous tab. */
+  document.addEventListener('click',e=>{
+    if(!mobile())return;
+    if(e.target.closest('#view-bible .bib-tab')){
+      requestAnimationFrame(()=>requestAnimationFrame(scrollBibleTop));
+    }
+  },true);
+
+  /* Same behavior for actions that change Bible tab indirectly. */
+  document.addEventListener('click',e=>{
+    if(!mobile())return;
+    if(e.target.closest(
+      '#view-bible [data-read],'+
+      '#view-bible [data-med],'+
+      '#view-bible [data-bib-open-atlas],'+
+      '#view-bible [data-atlas28-read],'+
+      '#view-bible [data-lib-study]'
+    )){
+      requestAnimationFrame(()=>requestAnimationFrame(scrollBibleTop));
+    }
+  },true);
+
+  const mo=new MutationObserver(records=>{
+    let needsLock=false,needsScroll=false;
+    for(const r of records){
+      if(r.type==='attributes'){
+        const el=r.target;
+        if(el.matches?.('#view-bible .bib-read-v5814,#view-bible .atlas28')){
+          needsLock=true;
+        }
+      }
+      if(r.type==='childList'&&r.addedNodes.length){
+        if(r.target.closest?.('#view-bible')||[...r.addedNodes].some(n=>n.nodeType===1&&n.id==='bib-content')){
+          needsLock=true;
+        }
+      }
+    }
+    if(needsLock)requestAnimationFrame(syncLock);
+    if(needsScroll)requestAnimationFrame(scrollBibleTop);
+  });
+  mo.observe(document.documentElement,{
+    subtree:true,
+    childList:true,
+    attributes:true,
+    attributeFilter:['class']
+  });
+
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape')requestAnimationFrame(syncLock);
+  },true);
+
+  addEventListener('resize',()=>{
+    requestAnimationFrame(()=>{
+      syncLock();
+      if(!mobile())scroller()?.classList.remove('bib-scroll-locked-v67');
+    });
+  },{passive:true});
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',syncLock,{once:true});
+  }else requestAnimationFrame(syncLock);
+
+  window.OmniBibleScroll67={sync:syncLock,toTop:scrollBibleTop};
+})();
+</script>
+
 </body>
 </html>

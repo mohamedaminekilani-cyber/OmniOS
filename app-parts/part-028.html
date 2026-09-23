@@ -1046,11 +1046,52 @@ html[data-theme="light"] .omni-msg{box-shadow:0 3px 12px rgba(0,0,0,.05)}
   .omni-msg{max-width:88%!important;font-size:13px!important}
   .omni-msg.assistant{margin-left:31px}.omni-msg.assistant::before{left:-31px;width:24px;height:24px;border-radius:8px}
   .omni-tool-card{width:calc(100% - 31px);margin-left:31px!important}
-  .omni-assistant-composer{padding:8px 10px calc(9px + env(safe-area-inset-bottom))!important}
-  .omni-assistant-suggestions{margin-bottom:7px!important}
+
+  /* Native-feeling mobile chat composer. 16px prevents Safari focus zoom. */
+  .omni-assistant-composer{
+    position:sticky!important;bottom:0!important;z-index:12!important;
+    padding:7px 9px max(8px,env(safe-area-inset-bottom))!important;
+    border-top:1px solid color-mix(in srgb,var(--border-color,#27272a) 72%,transparent)!important;
+    background:color-mix(in srgb,var(--bg-surface,#18181b) 97%,transparent)!important;
+    backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important;
+    box-shadow:0 -8px 22px rgba(0,0,0,.10)!important
+  }
+  .omni-assistant-input-wrap{
+    display:grid!important;grid-template-columns:minmax(0,1fr) 42px!important;
+    align-items:end!important;gap:6px!important;
+    min-height:50px!important;padding:4px 4px 4px 12px!important;
+    border:1px solid var(--border-light,#3f3f46)!important;border-radius:18px!important;
+    background:var(--bg-base,#0f0f11)!important;
+    box-shadow:none!important
+  }
+  .omni-assistant-input-wrap:focus-within{
+    border-color:color-mix(in srgb,var(--chat-accent,#06b6d4) 55%,var(--border-light,#3f3f46))!important;
+    box-shadow:0 0 0 2px color-mix(in srgb,var(--chat-accent,#06b6d4) 10%,transparent)!important;
+    background:var(--bg-base,#0f0f11)!important
+  }
+  #omni-assistant-input{
+    box-sizing:border-box!important;width:100%!important;min-width:0!important;
+    min-height:42px!important;max-height:120px!important;
+    margin:0!important;padding:10px 2px 7px!important;
+    border:0!important;border-radius:0!important;background:transparent!important;
+    font-size:16px!important;line-height:1.35!important;font-family:inherit!important;
+    color:var(--text-primary,#f4f4f5)!important;
+    resize:none!important;outline:none!important;box-shadow:none!important;
+    -webkit-appearance:none!important;appearance:none!important
+  }
+  #omni-assistant-input::placeholder{font-size:16px!important;color:var(--text-muted,#71717a)!important;opacity:.76}
+  .omni-assistant-send{
+    width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;
+    margin:0!important;padding:0!important;align-self:end!important;
+    border-radius:14px!important;box-shadow:none!important
+  }
+  .omni-assistant-send svg{width:17px!important;height:17px!important}
+  .omni-chat-composer-meta{min-height:14px!important;margin-top:3px!important;padding:0 4px!important}
+  .omni-assistant-status{font-size:9px!important;line-height:1.15!important}
+  .omni-assistant-suggestions{margin-bottom:6px!important;padding-inline:2px!important}
   .omni-assistant-suggestion{max-width:225px;padding:6px 9px!important}
   .omni-chat-keyhint{display:none}
-  .omni-chat-scroll-latest{right:14px;bottom:calc(118px + env(safe-area-inset-bottom))}
+  .omni-chat-scroll-latest{right:14px;bottom:calc(108px + env(safe-area-inset-bottom))}
 }
 @media(max-width:390px){
   .omni-assistant-brand{gap:8px}.omni-assistant-mark{width:34px;height:34px;flex-basis:34px}

@@ -33,10 +33,16 @@ function safeId(value: unknown) {
   return id;
 }
 
-function sameOrigin(req: Request) {
+function allowedOrigin(req: Request) {
   const origin = req.headers.get("origin");
   if (!origin) return true;
-  try { return new URL(origin).host === new URL(req.url).host; } catch { return false; }
+  try {
+    const source = new URL(origin);
+    const target = new URL(req.url);
+    if (source.host === target.host) return true;
+    if (source.origin === "https://mohamedaminekilani-cyber.github.io") return true;
+    return source.hostname === "omnios-pwa.netlify.app";
+  } catch { return false; }
 }
 
 function configureWebPush() {
@@ -59,7 +65,7 @@ async function sendTest(subscription: any) {
 
 export default async (req: Request, _context: Context) => {
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
-  if (!sameOrigin(req)) return new Response("Forbidden", { status: 403 });
+  if (!allowedOrigin(req)) return new Response("Forbidden", { status: 403 });
 
   try {
     const body = await req.json();

@@ -2692,5 +2692,86 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 }
 </style>
 
+<style id="omnios-v64-mobile-bars-placement-fix">
+@media(max-width:760px){
+  :root{
+    --omni-header-h:52px;
+    --mobile-nav-h:64px;
+  }
+
+  /* Top banner: flush to the viewport/safe area, no accidental floating gap. */
+  html:not([data-theme="light"]) .topbar,
+  .topbar{
+    position:relative!important;
+    top:auto!important;
+    left:auto!important;
+    right:auto!important;
+    width:100%!important;
+    margin:0!important;
+    border-left:0!important;
+    border-right:0!important;
+    border-top:0!important;
+    border-radius:0 0 16px 16px!important;
+    min-height:calc(var(--omni-header-h) + env(safe-area-inset-top))!important;
+    height:calc(var(--omni-header-h) + env(safe-area-inset-top))!important;
+    padding:env(safe-area-inset-top) 10px 0!important;
+    flex:0 0 auto!important;
+  }
+
+  /* Give the actual controls a consistent optical center below the status bar. */
+  .topbar>.v35-topbar-nav,
+  .topbar>.topbar-title,
+  .topbar>.topbar-actions{
+    align-self:center!important;
+  }
+
+  /* Bottom banner: one safe-area calculation only.
+     The old visual pass added a bottom offset while the base nav already had
+     safe-area padding, which pushed the dock too high on iPhone. */
+  html:not([data-theme="light"]) .mobile-nav,
+  .mobile-nav{
+    box-sizing:border-box!important;
+    position:fixed!important;
+    left:8px!important;
+    right:8px!important;
+    bottom:0!important;
+    width:auto!important;
+    height:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom))!important;
+    min-height:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom))!important;
+    padding:5px 4px max(5px,env(safe-area-inset-bottom))!important;
+    margin:0!important;
+    border-radius:20px 20px 0 0!important;
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:2px!important;
+    overflow:hidden!important;
+  }
+
+  .mobile-nav button{
+    height:54px!important;
+    min-height:54px!important;
+    margin:0!important;
+    padding:4px 1px!important;
+    border-radius:14px!important;
+  }
+
+  /* Content clears the real dock height instead of the previous floating offset. */
+  .view-container{
+    padding-bottom:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 14px)!important;
+  }
+
+  /* Assistant panel follows the corrected top and bottom bars. */
+  .omni-assistant-panel{
+    top:calc(var(--omni-header-h) + env(safe-area-inset-top) + 6px)!important;
+    bottom:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 6px)!important;
+  }
+}
+
+@media(max-width:390px){
+  .topbar{padding-left:7px!important;padding-right:7px!important}
+  .mobile-nav{left:5px!important;right:5px!important}
+  .mobile-nav button{min-width:0!important}
+}
+</style>
+
 </body>
 </html>

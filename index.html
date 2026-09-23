@@ -7,19 +7,30 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="OmniOS">
-<link id="omnios-apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="./icons/icon-192.png">
+<link id="omnios-apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
 <script id="omnios-pwa-icon-early">
 (function(){
+  function safeImageSrc(value,allowData){
+    value=String(value||'').trim();
+    if(!value)return '';
+    if(allowData&&/^data:image\/(?:png|jpeg|webp);base64,[a-z0-9+/=\s]+$/i.test(value))return value;
+    try{
+      var u=new URL(value,location.href);
+      if(u.origin===location.origin||u.origin==='https://omnios-pwa.netlify.app')return u.href;
+    }catch(_){}
+    return '';
+  }
+  window.__omniSafeImageSrc=safeImageSrc;
   try{
     var qs=new URLSearchParams(location.search);
     var id=(qs.get('pwaIcon')||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,120);
     var rev=(qs.get('pwaIconRev')||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,80);
     var href='';
     if(id)href='https://omnios-pwa.netlify.app/api/icon?id='+encodeURIComponent(id)+(rev?'&v='+encodeURIComponent(rev):'');
-    if(!href)href=localStorage.getItem('omnios_app_icon_public_v1')||'';
+    if(!href)href=safeImageSrc(localStorage.getItem('omnios_app_icon_public_v1')||'',false);
     if(href){
       var old=document.getElementById('omnios-apple-touch-icon');if(old)old.remove();
-      var link=document.createElement('link');link.id='omnios-apple-touch-icon';link.rel='apple-touch-icon';link.setAttribute('sizes','180x180');link.href=href;document.head.appendChild(link);
+      var link=document.createElement('link');link.id='omnios-apple-touch-icon';link.rel='apple-touch-icon';link.href=href;document.head.appendChild(link);
     }
   }catch(_){}
 })();
@@ -56,7 +67,7 @@ html.omnios-has-boot-icon .omnios-boot-mark img{display:block;animation:omniosBo
 .omnios-boot-track i{display:block;width:38%;height:100%;border-radius:inherit;background:var(--accent-cyan);animation:omniosBootBar 1.05s ease-in-out infinite}
 #fill,#status{display:none}
 .error{display:none;width:min(330px,100%);margin-top:4px;padding:12px;border:1px solid var(--border-light);border-radius:12px;text-align:left;font-size:.75rem}
-.boot.failed .error{display:block}.error p{margin:5px 0 0;color:var(--text-muted);line-height:1.4}.error button{margin-top:10px;width:100%;min-height:40px;border:0;border-radius:10px;font-weight:700}
+.boot.failed .error{display:block}.error p{margin:5px 0 0;color:var(--text-muted);line-height:1.4}.error-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.error button{width:100%;min-height:40px;border:0;border-radius:10px;font-weight:700}.error button.secondary{background:var(--bg-elevated);color:var(--text-primary);border:1px solid var(--border-light)}
 @keyframes omniosBootSpin{to{transform:rotate(360deg)}}@keyframes omniosBootBar{0%{transform:translateX(-115%)}55%{transform:translateX(155%)}100%{transform:translateX(300%)}}@keyframes omniosBootIconPulse{0%,100%{transform:scale(.9);opacity:.82}50%{transform:scale(1);opacity:1}}
 @media(prefers-reduced-motion:reduce){.omnios-boot-mark:before,.omnios-boot-mark img,.omnios-boot-track i{animation:none}.omnios-boot-track i{width:100%}}
 </style>
@@ -69,89 +80,199 @@ html.omnios-has-boot-icon .omnios-boot-mark img{display:block;animation:omniosBo
   <div class="omnios-boot-copy">Preparing your workspace…</div>
   <div class="omnios-boot-track" aria-hidden="true"><i></i></div>
   <div id="fill"></div><div id="status">Loading 0%</div>
-  <div class="error" id="error"><strong>OmniOS couldn't finish loading.</strong><p>Check your connection once, then retry. After the first successful load OmniOS can work offline.</p><button onclick="location.reload()">Retry</button></div>
+  <div class="error" id="error"><strong>OmniOS couldn't finish loading.</strong><p id="omnios-load-error-copy">Check your connection, then retry. A validated offline snapshot will be used automatically when available.</p><div class="error-actions"><button onclick="location.reload()">Retry</button><button class="secondary" onclick="window.resetOmniAppCache&&window.resetOmniAppCache()">Reset app cache</button></div></div>
 </div>
 </main>
 <script>
-try{const src=localStorage.getItem('omnios_loading_icon_v1'),img=document.getElementById('omnios-index-boot-icon');if(src&&img){img.src=src;document.documentElement.classList.add('omnios-has-boot-icon')}}catch(_){}
+try{const raw=localStorage.getItem('omnios_loading_icon_v1')||'',src=window.__omniSafeImageSrc?window.__omniSafeImageSrc(raw,true):'',img=document.getElementById('omnios-index-boot-icon');if(src&&img){img.src=src;document.documentElement.classList.add('omnios-has-boot-icon')}}catch(_){}
 </script>
 <script>
 (()=>{
-const PARTS=["./app-parts/part-001.html","./app-parts/part-002.html?v=mobile-personalization-r5","./app-parts/part-003.html","./app-parts/part-004.html?v=mobile-pages-launcher-r1","./app-parts/part-005.html","./app-parts/part-006.html?v=mobile-pages-launcher-r1","./app-parts/part-007.html?v=mobile-more-svg-r2","./app-parts/part-008.html","./app-parts/part-009.html","./app-parts/part-010.html","./app-parts/part-011.html","./app-parts/part-012.html","./app-parts/part-013.html","./app-parts/part-014.html","./app-parts/part-015.html","./app-parts/part-016.html","./app-parts/part-017.html","./app-parts/part-018.html","./app-parts/part-019.html","./app-parts/part-020.html","./app-parts/part-021.html","./app-parts/part-022.html","./app-parts/part-023.html","./app-parts/part-024.html","./app-parts/part-025.html","./app-parts/part-026.html","./app-parts/part-027.html","./app-parts/part-028.html?v=assistant-composer-r4"];
-const CACHE='omnios-v62.3-runtime-recovery-r2';
+const PARTS=Array.from({length:28},function(_,i){return './app-parts/part-'+String(i+1).padStart(3,'0')+'.html'});
+const SNAPSHOT_PREFIX='omnios-app-snapshot-v1-';
+const SNAPSHOT_SLOT_KEY='omnios_app_snapshot_slot_v1';
+const SNAPSHOT_META='./__omnios_snapshot_meta__';
+const USER_ASSET_CACHE='omnios-user-assets-v1';
+const MIN_PART_LENGTH=120000;
 const fill=document.getElementById('fill'),status=document.getElementById('status');
 
-async function fetchFresh(url,timeoutMs){
+function setProgress(done,label){
+  const pct=Math.round((done/PARTS.length)*100);
+  if(fill)fill.style.width=pct+'%';
+  if(status)status.textContent=(label||'Loading')+' '+pct+'%';
+}
+function hashText(text){
+  let h=2166136261;
+  for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),16777619);
+  return (h>>>0).toString(36);
+}
+function validatePart(text,index){
+  if(typeof text!=='string'||text.length<MIN_PART_LENGTH)return false;
+  if(index===0&&!/^\s*<!doctype html>/i.test(text.slice(0,300)))return false;
+  if(index===PARTS.length-1&&!/<\/html>\s*$/i.test(text))return false;
+  const head=text.slice(0,4000).toLowerCase();
+  if(head.includes('<title>sign in')||head.includes('captive portal')||head.includes('network login'))return false;
+  return true;
+}
+async function fetchAttempt(url,index,timeoutMs){
   const ctrl=typeof AbortController!=='undefined'?new AbortController():null;
-  const timer=ctrl?setTimeout(()=>ctrl.abort(),timeoutMs):null;
+  const timer=ctrl?setTimeout(function(){ctrl.abort()},timeoutMs):null;
   try{
-    const r=await fetch(url,{signal:ctrl?.signal,cache:'no-store'});
-    if(!r.ok)throw new Error(r.status);
-    try{const cache=await caches.open(CACHE);await cache.put(url,r.clone())}catch(_){}
-    return await r.text();
+    const response=await fetch(url,{signal:ctrl&&ctrl.signal,cache:'no-cache',credentials:'same-origin'});
+    if(!response.ok)throw new Error('HTTP '+response.status+' for '+url);
+    const finalUrl=new URL(response.url||url,location.href);
+    if(finalUrl.origin!==location.origin)throw new Error('Unexpected redirect for '+url);
+    const type=(response.headers.get('content-type')||'').toLowerCase();
+    if(type&&!type.includes('text/html')&&!type.includes('text/plain'))throw new Error('Unexpected content type for '+url);
+    const text=await response.text();
+    if(!validatePart(text,index))throw new Error('Content validation failed for '+url);
+    return text;
   }finally{
     if(timer)clearTimeout(timer);
   }
 }
-async function one(url){
-  const startupCritical=/part-(001|028)\.html(?:$|\?)/.test(url);
-  const cached=await caches.match(url);
-  if(cached&&!startupCritical)return await cached.text();
+async function fetchPart(url,index){
+  let lastError=null;
+  for(const timeoutMs of [10000,20000]){
+    try{return await fetchAttempt(url,index,timeoutMs)}catch(e){lastError=e}
+  }
+  throw lastError||new Error('Could not load '+url);
+}
+async function fetchFreshSet(){
+  const texts=new Array(PARTS.length);
+  const errors=[];
+  let next=0,done=0;
+  async function worker(){
+    while(true){
+      const index=next++;
+      if(index>=PARTS.length)return;
+      try{texts[index]=await fetchPart(PARTS[index],index)}
+      catch(e){errors.push({index:index,error:e})}
+      finally{done++;setProgress(done,'Checking')}
+    }
+  }
+  await Promise.all(Array.from({length:Math.min(6,PARTS.length)},worker));
+  if(errors.length){
+    const first=errors[0];
+    throw new Error((first.error&&first.error.message?first.error.message:'Part load failed')+' ('+errors.length+' part'+(errors.length===1?'':'s')+')');
+  }
+  return texts;
+}
+async function readSlot(slot){
+  if(!('caches'in window))return null;
   try{
-    return await fetchFresh(url,startupCritical?1800:3200);
+    const cache=await caches.open(SNAPSHOT_PREFIX+slot);
+    const metaResponse=await cache.match(SNAPSHOT_META);
+    if(!metaResponse)return null;
+    const meta=await metaResponse.json();
+    if(!meta||meta.version!==1||!Array.isArray(meta.parts)||meta.parts.length!==PARTS.length)return null;
+    const texts=new Array(PARTS.length);
+    for(let i=0;i<PARTS.length;i++){
+      const response=await cache.match(PARTS[i]);
+      if(!response)return null;
+      const text=await response.text();
+      const expected=meta.parts[i]||{};
+      if(!validatePart(text,i)||text.length!==expected.length||hashText(text)!==expected.hash)return null;
+      texts[i]=text;
+    }
+    return texts;
   }catch(e){
-    if(cached)return await cached.text();
-    throw e;
+    console.warn('OmniOS snapshot read failed',e);
+    return null;
   }
 }
+async function readSnapshot(){
+  let active='';
+  try{active=localStorage.getItem(SNAPSHOT_SLOT_KEY)||''}catch(_){}
+  const order=active==='a'?['a','b']:active==='b'?['b','a']:['a','b'];
+  for(const slot of order){
+    const texts=await readSlot(slot);
+    if(texts){
+      try{localStorage.setItem(SNAPSHOT_SLOT_KEY,slot)}catch(_){}
+      return texts;
+    }
+  }
+  return null;
+}
+async function writeSnapshot(texts){
+  if(!('caches'in window))return false;
+  let active='';
+  try{active=localStorage.getItem(SNAPSHOT_SLOT_KEY)||''}catch(_){}
+  const target=active==='a'?'b':'a';
+  const name=SNAPSHOT_PREFIX+target;
+  try{
+    await caches.delete(name);
+    const cache=await caches.open(name);
+    const meta={version:1,savedAt:new Date().toISOString(),parts:[]};
+    for(let i=0;i<PARTS.length;i++){
+      const text=texts[i];
+      meta.parts.push({length:text.length,hash:hashText(text)});
+      await cache.put(PARTS[i],new Response(text,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}}));
+    }
+    await cache.put(SNAPSHOT_META,new Response(JSON.stringify(meta),{headers:{'Content-Type':'application/json','Cache-Control':'no-store'}}));
+    const verified=await readSlot(target);
+    if(!verified)throw new Error('Snapshot verification failed');
+    try{localStorage.setItem(SNAPSHOT_SLOT_KEY,target)}catch(_){}
+    return true;
+  }catch(e){
+    console.warn('OmniOS snapshot write failed',e);
+    try{await caches.delete(name)}catch(_){}
+    return false;
+  }
+}
+window.resetOmniAppCache=async function(){
+  try{
+    if('caches'in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.filter(function(k){return k!==USER_ASSET_CACHE&&(k.indexOf('omnios-')===0||k.indexOf('omnios-app-')===0)}).map(function(k){return caches.delete(k)}));
+    }
+    try{localStorage.removeItem(SNAPSHOT_SLOT_KEY)}catch(_){}
+    try{
+      const reg=await navigator.serviceWorker?.getRegistration?.();
+      await reg?.update?.();
+    }catch(_){}
+  }finally{
+    location.reload();
+  }
+};
 
 function addRootClass(html,className){
-  return html.replace(/<html([^>]*)>/i,(full,attrs)=>{
+  return html.replace(/<html([^>]*)>/i,function(full,attrs){
     if(/\bclass\s*=/.test(attrs)){
-      return '<html'+attrs.replace(/\bclass\s*=\s*(["'])(.*?)\1/i,(m,q,v)=>'class='+q+v+' '+className+q)+'>';
+      return '<html'+attrs.replace(/\bclass\s*=\s*(["'])(.*?)\1/i,function(m,q,v){return 'class='+q+v+' '+className+q})+'>';
     }
     return '<html'+attrs+' class="'+className+'">';
   });
 }
-
 function carryLoaderIntoApp(html){
   const boot=document.getElementById('omnios-boot-screen');
   const baseStyle=document.querySelector('head style');
   if(!boot||!baseStyle)return html;
-
   const hasIcon=document.documentElement.classList.contains('omnios-has-boot-icon');
   const rootClasses='omnios-startup-gate'+(hasIcon?' omnios-has-boot-icon':'');
-  const gateCss=`
-<style id="omnios-startup-gate-css">
-${baseStyle.textContent}
-html.omnios-startup-gate body{overflow:hidden!important}
-html.omnios-startup-gate body>*:not(#omnios-boot-screen){visibility:hidden!important;pointer-events:none!important}
-#omnios-boot-screen{background:var(--bg-base,#0f0f11);opacity:1;transition:opacity .18s ease}
-#omnios-boot-screen.is-leaving{opacity:0;pointer-events:none}
-</style>`;
+  const gateCss='\n<style id="omnios-startup-gate-css">\n'+baseStyle.textContent+'\nhtml.omnios-startup-gate body{overflow:hidden!important}\nhtml.omnios-startup-gate body>*:not(#omnios-boot-screen){visibility:hidden!important;pointer-events:none!important}\n#omnios-boot-screen{background:var(--bg-base,#0f0f11);opacity:1;transition:opacity .18s ease}\n#omnios-boot-screen.is-leaving{opacity:0;pointer-events:none}\n</style>';
   const bootHtml=boot.outerHTML;
   let out=addRootClass(html,rootClasses);
   out=out.replace(/<\/head>/i,gateCss+'\n</head>');
-  out=out.replace(/<body([^>]*)>/i,(m,attrs)=>'<body'+attrs+'>\n'+bootHtml);
+  out=out.replace(/<body([^>]*)>/i,function(m,attrs){return '<body'+attrs+'>\n'+bootHtml});
   return out;
 }
 
 (async()=>{
   try{
-    const texts=new Array(PARTS.length);
-    let next=0,done=0;
-    const worker=async()=>{
-      while(true){
-        const i=next++;
-        if(i>=PARTS.length)return;
-        texts[i]=await one(PARTS[i]);
-        done++;
-        const pct=Math.round((done/PARTS.length)*100);
-        fill.style.width=pct+'%';
-        status.textContent='Loading '+pct+'%';
-      }
-    };
-    await Promise.all(Array.from({length:Math.min(6,PARTS.length)},worker));
+    let texts=null;
+    let freshError=null;
+    try{
+      texts=await fetchFreshSet();
+      setProgress(PARTS.length,'Validated');
+      await writeSnapshot(texts);
+    }catch(e){
+      freshError=e;
+      console.warn('Fresh OmniOS load failed; trying complete snapshot',e);
+      if(status)status.textContent='Opening saved snapshot…';
+      texts=await readSnapshot();
+    }
+    if(!texts)throw freshError||new Error('No validated app snapshot is available');
     const html=carryLoaderIntoApp(texts.join(''));
     document.open();
     document.write(html);
@@ -159,10 +280,13 @@ html.omnios-startup-gate body>*:not(#omnios-boot-screen){visibility:hidden!impor
   }catch(e){
     console.error(e);
     document.querySelector('.boot')?.classList.add('failed');
-    document.getElementById('error').style.display='block';
-    status.textContent='Load failed';
+    const copy=document.getElementById('omnios-load-error-copy');
+    if(copy)copy.textContent='Startup could not validate a complete fresh build or a complete saved snapshot. Retry, or reset only the app cache. Your OmniOS data is not deleted.';
+    const error=document.getElementById('error');if(error)error.style.display='block';
+    if(status)status.textContent='Load failed';
   }
 })();
 })();
 </script>
+
 </body></html>

@@ -490,6 +490,38 @@ function download35(name,text,type='application/json'){const blob=new Blob([text
 function exportBackup35(){const payload={format:'OmniOS Portable Backup',version:35,exportedAt:new Date().toISOString(),state:clone(state)};download35(`OmniOS_Backup_${todayKey()}.json`,JSON.stringify(payload,null,2));window.toast?.('Portable backup exported')}
 function importBackup35(){const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.onchange=async()=>{const f=inp.files?.[0];if(!f)return;try{const p=JSON.parse(await f.text());const imported=p.state||p;if(!imported||!Array.isArray(imported.entries))throw new Error('Not an OmniOS backup');if(!confirm('Restore this backup? Your current state is added to Undo history first.'))return;undo35.push(clone(state));state=clone(imported);ensureV35State();lastCommitted35=clone(state);window.saveState();await makeSnapshot35('Imported backup');renderAll?.();renderNewView35(activeView35());window.toast?.('Backup restored')}catch(e){alert('Could not import backup: '+e.message)}};inp.click()}
 async function storageInfo35(){let usage=0,quota=0,persisted=false;try{const e=await navigator.storage?.estimate?.();usage=e?.usage||0;quota=e?.quota||0;persisted=await navigator.storage?.persisted?.()}catch(_){}return{usage,quota,persisted}}
+let idbRecovered35=false;
+function time35(v){const n=Date.parse(String(v||''));return Number.isFinite(n)?n:0}
+async function recoverLatestIDB35(){
+  try{
+    const latest=await idbGet35(STORE_STATE,'latest');
+    if(!latest?.state||typeof latest.state!=='object')return false;
+    let localAt=0,resetAt=0;
+    try{
+      const backup=JSON.parse(storage.getItem('omnios_v3_backup')||'null');
+      localAt=time35(backup?.savedAt);
+      resetAt=time35(storage.getItem('omnios_v35_full_reset_at'));
+    }catch(_){}
+    const idbAt=time35(latest.savedAt);
+    if(!idbAt||idbAt<=localAt||resetAt>=idbAt)return false;
+    state=clone(latest.state);
+    if(typeof normalizeState==='function')normalizeState();else ensureV35State();
+    ensureV35State();
+    lastCommitted35=clone(state);
+    try{
+      const raw=JSON.stringify(state);
+      storage.setItem('omnios_v3_state',raw);
+      storage.setItem('omnios_v3_backup',JSON.stringify({version:3,savedAt:latest.savedAt,state}));
+    }catch(e){
+      console.warn('Recovered IndexedDB state, but localStorage is still unavailable or full',e);
+    }
+    idbRecovered35=true;
+    return true;
+  }catch(e){
+    console.warn('IndexedDB recovery check failed',e);
+    return false;
+  }
+}
 function formatBytes35(n){if(!n)return '0 B';const u=['B','KB','MB','GB'];let i=0;while(n>=1024&&i<u.length-1){n/=1024;i++}return `${n.toFixed(i?1:0)} ${u[i]}`}
 function updateDBStatus35(){const b=document.getElementById('v35-db-status-btn');if(!b)return;const err=state.core?.localDB?.status==='error';b.textContent=err?'◈ Basic local':'◈ Local';b.title=err?'Basic local storage is active; IndexedDB snapshots are unavailable in this browser context.':`Local browser database active${state.core.localDB.lastSavedAt?' · '+new Date(state.core.localDB.lastSavedAt).toLocaleTimeString():''}`}
 function dataInventory35(){
@@ -759,8 +791,8 @@ window.OmniLifeCRUD35={
 };
 
 /* ---------- initialization ---------- */
-function init35(){
-  ensureV35State();if(!storage.getItem('omnios_v35_migrated')){storage.setItem('omnios_v35_migrated','1');if(getSetting('appearance.startView','dashboard')==='dashboard')setSetting('appearance.startView','today')}installRouteHistory35();installUndo35();installTopbar35();installMobileTopbar35();buildMobileNav35();installTaskAdvanced35();patchMasterCalendar35();ensureDrawer35();patchViewButton35();enrichSettings35();installHelp35();processRecurringTasks35();loadBackupFolder35().then(()=>updateDBStatus35());persistIDB35('init');renderNewView35(activeView35());document.documentElement.dataset.omniosVersion='35';
+async function init35(){
+  ensureV35State();await recoverLatestIDB35();ensureV35State();if(!storage.getItem('omnios_v35_migrated')){storage.setItem('omnios_v35_migrated','1');if(getSetting('appearance.startView','dashboard')==='dashboard')setSetting('appearance.startView','today')}installRouteHistory35();installUndo35();installTopbar35();installMobileTopbar35();buildMobileNav35();installTaskAdvanced35();patchMasterCalendar35();ensureDrawer35();patchViewButton35();enrichSettings35();installHelp35();processRecurringTasks35();loadBackupFolder35().then(()=>updateDBStatus35());if(idbRecovered35)renderAll?.();persistIDB35('init');renderNewView35(activeView35());document.documentElement.dataset.omniosVersion='35';if(idbRecovered35)setTimeout(()=>window.toast?.('Recovered newer OmniOS data from the local recovery database.'),0);
   // The old dashboard database card is superseded by Data Center.
   const legacy=document.getElementById('database-panel');if(legacy)legacy.style.display='none';
   // Make Today the first-run landing page while respecting an explicit saved start view.

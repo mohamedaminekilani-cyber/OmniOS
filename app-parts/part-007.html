@@ -863,7 +863,7 @@ window.OmniCustomIcons53={
 .brand54-upload-preview{width:72px;height:48px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);display:grid;place-items:center;overflow:hidden;flex:none}
 .brand54-upload-preview img{max-width:100%;max-height:100%;object-fit:contain}
 .brand54-help{font-size:.69rem;color:var(--text-muted);line-height:1.45;margin-top:5px}
-@media(max-width:760px){.brand54-grid,.brand54-grid-3{grid-template-columns:1fr}.brand54-mode{grid-template-columns:1fr 1fr}}
+.omni-mobile-title-group{display:flex;align-items:center;min-width:0;gap:8px}.omni-mobile-brand-logo{display:none;max-width:78px;max-height:30px;object-fit:contain;flex:none}\n@media(max-width:760px){.brand54-grid,.brand54-grid-3{grid-template-columns:1fr}.brand54-mode{grid-template-columns:1fr 1fr}.omni-mobile-brand-logo:not([hidden]){display:block}.omni-mobile-title-group{flex:1;overflow:hidden}.omni-mobile-title-group .topbar-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 </style>
 
 <script id="omnios-v54-branding-js">
@@ -965,6 +965,24 @@ function applyBranding54(){
   }
   const name=(b.title||'OmniOS').trim();
   document.title=(name||'OmniOS')+' — Personal OS';
+  const viewTitle=document.getElementById('view-title');
+  if(viewTitle){
+    let group=viewTitle.closest('.omni-mobile-title-group');
+    if(!group){
+      group=document.createElement('div');group.className='omni-mobile-title-group';
+      viewTitle.parentNode?.insertBefore(group,viewTitle);group.appendChild(viewTitle);
+    }
+    let mobileLogo=group.querySelector('.omni-mobile-brand-logo');
+    if(!mobileLogo){
+      mobileLogo=document.createElement('img');mobileLogo.className='omni-mobile-brand-logo';mobileLogo.alt='';
+      group.insertBefore(mobileLogo,viewTitle);
+    }
+    const mobileSrc=currentLogo54();
+    const showMobile=b.mode==='logo'&&!!mobileSrc;
+    mobileLogo.hidden=!showMobile;
+    if(showMobile&&mobileLogo.getAttribute('src')!==mobileSrc)mobileLogo.src=mobileSrc;
+    if(!showMobile)mobileLogo.removeAttribute('src');
+  }
 }
 function previewBrand54(){
   const box=document.getElementById('brand54-preview');if(!box)return;
@@ -980,10 +998,31 @@ function saveBrand54(){saveState();applyBranding54();previewBrand54()}
 window.brand54Set=function(key,value){const b=brand54();b[key]=value;saveBrand54();renderBrandControls54()};
 window.brand54Input=function(key,value,type){const b=brand54();b[key]=type==='number'?Number(value):value;saveBrand54()};
 window.brand54Toggle=function(key,checked){const b=brand54();b[key]=!!checked;saveBrand54();renderBrandControls54()};
-window.brand54Upload=function(input){
+async function brand54ImageData(file){
+  if(!file||!/^image\//i.test(file.type||''))throw new Error('Choose an image file');
+  const url=URL.createObjectURL(file),img=new Image();
+  try{
+    await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Could not read that image'));img.src=url});
+    const iw=img.naturalWidth||1,ih=img.naturalHeight||1,scale=Math.min(1,1000/iw,500/ih);
+    const w=Math.max(1,Math.round(iw*scale)),h=Math.max(1,Math.round(ih*scale));
+    const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+    const ctx=cv.getContext('2d');if(!ctx)throw new Error('Image canvas is unavailable');
+    ctx.clearRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
+    const png=cv.toDataURL('image/png');
+    if(png.length<=900000)return png;
+    const webp=cv.toDataURL('image/webp',.82);
+    return webp.startsWith('data:image/webp')?webp:cv.toDataURL('image/jpeg',.84);
+  }finally{try{URL.revokeObjectURL(url)}catch(_){}}
+}
+window.brand54Upload=async function(input){
   const f=input.files?.[0];if(!f)return;
-  if(!/^image\//.test(f.type)){window.toast?.('Choose an image file');input.value='';return}
-  const reader=new FileReader();reader.onload=e=>{state.brandingLogo=e.target.result;brand54().mode='logo';saveState();applyBranding54();renderBrandControls54();window.toast?.('Brand logo saved')};reader.readAsDataURL(f);input.value='';
+  try{
+    state.brandingLogo=await brand54ImageData(f);
+    brand54().mode='logo';
+    saveState();applyBranding54();renderBrandControls54();
+    window.toast?.('Brand logo saved');
+  }catch(e){console.warn(e);window.toast?.(e.message||'Could not save brand logo')}
+  finally{input.value=''}
 };
 window.brand54RemoveLogo=function(){delete state.brandingLogo;if(state.customIcons?.logo)delete state.customIcons.logo;brand54().mode='text';saveState();applyBranding54();renderBrandControls54();try{window.applyCustomIcons?.()}catch(e){}window.toast?.('Brand logo removed')};
 window.brand54Reset=function(){state.settings.appearance.branding={...BRAND54_DEFAULTS};delete state.brandingLogo;saveState();applyBranding54();renderBrandControls54();window.toast?.('Branding reset')};
@@ -1028,7 +1067,7 @@ function renderBrandSettings54(){
       </div>`:`
       <div class="settings-row" style="align-items:center">
         <div class="brand54-inline" style="min-width:0"><div class="brand54-upload-preview">${logo?`<img src="${logo}" alt="Current logo">`:'<span class="text-muted text-sm">No logo</span>'}</div><div><div class="settings-row-label">Brand logo</div><div class="settings-row-desc">PNG, JPG, WebP, SVG, or another browser-supported image.</div></div></div>
-        <div class="brand54-inline"><input id="brand54-logo-upload" type="file" accept="image/*" style="display:none" onchange="brand54Upload(this)"><button class="btn btn-sm" type="button" onclick="document.getElementById('brand54-logo-upload').click()">${logo?'Replace':'Upload'}</button>${logo?'<button class="btn btn-sm btn-danger" type="button" onclick="brand54RemoveLogo()">Remove</button>':''}</div>
+        <div class="brand54-inline"><input id="brand54-logo-upload" type="file" accept="image/*" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:.001" onchange="brand54Upload(this)"><label class="btn btn-sm" for="brand54-logo-upload">${logo?'Replace':'Upload'}</label>${logo?'<button class="btn btn-sm btn-danger" type="button" onclick="brand54RemoveLogo()">Remove</button>':''}</div>
       </div>
       <div class="brand54-grid">
         <div class="form-group"><label class="form-label">Logo height (px)</label><input type="number" min="24" max="88" class="form-input" value="${b.logoHeight}" oninput="brand54Input('logoHeight',this.value,'number')"></div>

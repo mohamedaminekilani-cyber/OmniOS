@@ -670,6 +670,9 @@ window.omniInteractionDiagnostics53=()=>({version:document.documentElement.datas
   border-radius:10px!important;background:var(--bg-elevated)!important;color:var(--text-secondary)!important;flex:0 0 34px!important
 }
 .v35-launcher-item > .v48-more-icon svg{width:18px!important;height:18px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+/* The v48 SVG is the single authoritative icon in the mobile More menu. */
+[data-v35-more] > .v48-more-icon + .v35-launcher-icon,
+[data-v35-more] > .v48-more-icon + span:not(.v35-launcher-label){display:none!important}
 .v35-launcher-item.active > .v48-more-icon{color:var(--accent-cyan)!important;background:color-mix(in srgb,var(--accent-cyan) 11%,var(--bg-elevated))!important}
 .v35-launcher-item > .omni-more-custom-icon{width:34px!important;height:34px!important;min-width:34px!important;border-radius:10px!important;object-fit:contain!important;flex:0 0 34px!important;padding:4px!important;box-sizing:border-box!important;background:var(--bg-elevated)!important}
 .v35-launcher-item.omni-has-custom-icon > .v48-more-icon,

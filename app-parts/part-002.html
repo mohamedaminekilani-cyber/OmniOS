@@ -1672,7 +1672,7 @@ function renderSettings() {
             ${settingsNumberHtml('focus.dailyGoal','Daily focus goal (min)','Drives the Focus goal bar on your dashboard.',{min:5,max:1440})}
         </div>`;
     } else if (currentSettingsTab === 'notifications') {
-        html += `<div class="card settings-section"><h3 class="card-title mb-4">Notifications</h3><div class="settings-row-desc" style="margin-bottom:6px">OmniOS is a local, offline-first app, so these control what appears inside the app rather than push notifications.</div>
+        html += `<div class="card settings-section"><h3 class="card-title mb-4">Reminder sources</h3><div class="settings-row-desc" style="margin-bottom:6px">Choose which OmniOS sources can create in-app alerts and system push reminders when push is enabled.</div>
             ${settingsToggleHtml('notifications.taskReminders','Task reminders')}
             ${settingsToggleHtml('notifications.habitReminders','Habit reminders')}
             ${settingsToggleHtml('notifications.eventReminders','Event reminders')}

@@ -347,6 +347,7 @@ function paintNavIcon48(item,key,cls){
 function decorateNavIcons(){
   document.querySelectorAll('.nav-menu .nav-item[data-view]').forEach(item=>paintNavIcon48(item,item.dataset.view,'v48-nav-icon'));
   document.querySelectorAll('.mobile-nav button[data-v35-mobile-view]').forEach(item=>paintNavIcon48(item,item.dataset.v35MobileView,'v48-mobile-icon'));
+  document.querySelectorAll('[data-v35-more]').forEach(item=>paintNavIcon48(item,item.dataset.v35More,'v48-more-icon'));
 }
 let queued=false;function refresh(){if(queued)return;queued=true;queueMicrotask(()=>{queued=false;decorateNavIcons()})}const navObs48=new MutationObserver(refresh);const side48=document.querySelector('.nav-menu'),mob48=document.querySelector('.mobile-nav');if(side48)navObs48.observe(side48,{childList:true,subtree:true});if(mob48)navObs48.observe(mob48,{childList:true,subtree:true});decorateNavIcons();window.OmniIcons={refresh,decorate:decorateNavIcons,paint:paintNavIcon48};
 })();
@@ -664,6 +665,15 @@ window.omniInteractionDiagnostics53=()=>({version:document.documentElement.datas
 .mobile-nav button.omni-has-custom-icon > .omni-mobile-custom-icon.omni-custom-icon-active{display:block!important}
 .mobile-nav button.omni-has-custom-icon > .v48-mobile-icon,
 .mobile-nav button.omni-has-custom-icon > .nav-icon{display:none!important}
+.v35-launcher-item > .v48-more-icon{
+  width:34px!important;height:34px!important;min-width:34px!important;display:grid!important;place-items:center!important;
+  border-radius:10px!important;background:var(--bg-elevated)!important;color:var(--text-secondary)!important;flex:0 0 34px!important
+}
+.v35-launcher-item > .v48-more-icon svg{width:18px!important;height:18px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+.v35-launcher-item.active > .v48-more-icon{color:var(--accent-cyan)!important;background:color-mix(in srgb,var(--accent-cyan) 11%,var(--bg-elevated))!important}
+.v35-launcher-item > .omni-more-custom-icon{width:34px!important;height:34px!important;min-width:34px!important;border-radius:10px!important;object-fit:contain!important;flex:0 0 34px!important;padding:4px!important;box-sizing:border-box!important;background:var(--bg-elevated)!important}
+.v35-launcher-item.omni-has-custom-icon > .v48-more-icon,
+.v35-launcher-item.omni-has-custom-icon > .v35-launcher-icon{display:none!important}
 [data-v35-more] > .omni-more-custom-icon{
   display:none!important;width:24px!important;height:24px!important;object-fit:contain!important;
   border-radius:5px!important;flex:0 0 24px!important;

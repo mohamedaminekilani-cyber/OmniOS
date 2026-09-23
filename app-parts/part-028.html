@@ -1741,7 +1741,6 @@ function watchMutations(){
     subtree:true,
     childList:true,
     attributes:true,
-    characterData:true,
     attributeFilter:['class','style','hidden','src','data-view','aria-hidden']
   });
 }
@@ -1799,7 +1798,6 @@ function release(){
   if(released)return;
   released=true;
   observer?.disconnect();
-  finalSync();
   root.dataset.omniosBoot='ready';
   root.classList.add('omnios-ready');
 
@@ -1820,7 +1818,9 @@ function checkStable(){
   const now=performance.now();
   const age=now-startedAt;
   const quiet=now-lastMutation;
-  if((age>=MIN_WAIT&&quiet>=QUIET_FOR&&stableSamples>=REQUIRED_STABLE_SAMPLES)||age>=MAX_WAIT){
+  const geometryStable=stableSamples>=REQUIRED_STABLE_SAMPLES;
+  const startupQuiet=quiet>=QUIET_FOR;
+  if(age>=MIN_WAIT&&geometryStable&&(startupQuiet||age>=MAX_WAIT)){
     release();
     return;
   }

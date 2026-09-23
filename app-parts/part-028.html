@@ -1697,10 +1697,26 @@ window.addEventListener('pageshow',stamp);
 })();
 </script>
 
-<script id="omnios-v623-startup-sync">
+<script id="omnios-v624-stable-startup">
 (function(){
 'use strict';
+
 const root=document.documentElement;
+const boot=document.getElementById('omnios-boot-screen');
+const MIN_WAIT=720;
+const QUIET_FOR=260;
+const MAX_WAIT=2800;
+const SAMPLE_MS=70;
+const REQUIRED_STABLE_SAMPLES=4;
+let released=false;
+let observer=null;
+let startedAt=performance.now();
+let lastMutation=startedAt;
+let stableSamples=0;
+let previousSnapshot='';
+
+function delay(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
+
 function finalSync(){
   try{
     const active=document.querySelector('.view.active')?.id?.replace(/^view-/,'');
@@ -1710,14 +1726,147 @@ function finalSync(){
     if(typeof window.applyCustomIcons==='function')window.applyCustomIcons();
   }catch(err){console.warn('OmniOS final startup sync',err)}
 }
-function ready(){
-  root.dataset.omniosBoot='ready';
-  root.classList.remove('omnios-booting','omnios-no-first-motion');
-  root.classList.add('omnios-ready');
-  requestAnimationFrame(()=>requestAnimationFrame(finalSync));
+
+function watchMutations(){
+  if(!window.MutationObserver||!document.body)return;
+  observer=new MutationObserver(records=>{
+    for(const r of records){
+      if(r.target===boot||boot?.contains?.(r.target))continue;
+      lastMutation=performance.now();
+      stableSamples=0;
+      break;
+    }
+  });
+  observer.observe(document.body,{
+    subtree:true,
+    childList:true,
+    attributes:true,
+    characterData:true,
+    attributeFilter:['class','style','hidden','src','data-view','aria-hidden']
+  });
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
-window.addEventListener('pageshow',()=>root.classList.remove('omnios-booting','omnios-no-first-motion'));
+
+function rectKey(el){
+  if(!el)return '';
+  const r=el.getBoundingClientRect();
+  return [r.x,r.y,r.width,r.height,el.scrollWidth,el.scrollHeight]
+    .map(v=>Number.isFinite(v)?Math.round(v*2)/2:0).join(',');
+}
+
+function layoutSnapshot(){
+  const active=document.querySelector('.view.active');
+  const els=[
+    document.querySelector('.sidebar'),
+    document.querySelector('.mobile-nav'),
+    document.querySelector('.main-content'),
+    document.querySelector('.topbar'),
+    document.querySelector('.view-container'),
+    active
+  ];
+  return els.map(rectKey).join('|');
+}
+
+async function waitForFonts(){
+  if(!document.fonts?.ready)return;
+  try{await Promise.race([document.fonts.ready,delay(850)])}catch(_){}
+}
+
+async function waitForCriticalImages(){
+  const selectors='.logo img,.sidebar img,.mobile-nav img,.topbar img';
+  const imgs=[...document.querySelectorAll(selectors)].slice(0,18);
+  if(!imgs.length)return;
+  await Promise.race([
+    Promise.all(imgs.map(img=>{
+      if(img.complete)return Promise.resolve();
+      return new Promise(resolve=>{
+        const done=()=>{img.removeEventListener('load',done);img.removeEventListener('error',done);resolve()};
+        img.addEventListener('load',done,{once:true});
+        img.addEventListener('error',done,{once:true});
+      });
+    })),
+    delay(900)
+  ]);
+}
+
+function sampleStableLayout(){
+  const snap=layoutSnapshot();
+  if(snap&&snap===previousSnapshot)stableSamples++;
+  else stableSamples=0;
+  previousSnapshot=snap;
+}
+
+function release(){
+  if(released)return;
+  released=true;
+  observer?.disconnect();
+  finalSync();
+  root.dataset.omniosBoot='ready';
+  root.classList.add('omnios-ready');
+
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      root.classList.remove('omnios-startup-gate');
+      requestAnimationFrame(()=>{
+        boot?.classList.add('is-leaving');
+        setTimeout(()=>boot?.remove(),210);
+      });
+    });
+  });
+}
+
+function checkStable(){
+  if(released)return;
+  sampleStableLayout();
+  const now=performance.now();
+  const age=now-startedAt;
+  const quiet=now-lastMutation;
+  if((age>=MIN_WAIT&&quiet>=QUIET_FOR&&stableSamples>=REQUIRED_STABLE_SAMPLES)||age>=MAX_WAIT){
+    release();
+    return;
+  }
+  setTimeout(checkStable,SAMPLE_MS);
+}
+
+async function start(){
+  startedAt=performance.now();
+  lastMutation=startedAt;
+
+  if(!boot){
+    finalSync();
+    root.dataset.omniosBoot='ready';
+    root.classList.remove('omnios-startup-gate');
+    root.classList.add('omnios-ready');
+    return;
+  }
+
+  root.dataset.omniosBoot='stabilizing';
+  watchMutations();
+
+  finalSync();
+  await Promise.all([waitForFonts(),waitForCriticalImages()]);
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+
+  /* Run the final render pass while the loader still covers the UI,
+     then require a quiet/stable window before first paint. */
+  finalSync();
+  lastMutation=performance.now();
+  previousSnapshot='';
+  stableSamples=0;
+  checkStable();
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',start,{once:true});
+}else{
+  start();
+}
+
+window.addEventListener('pageshow',()=>{
+  if(root.dataset.omniosBoot==='ready'){
+    root.classList.remove('omnios-startup-gate');
+    boot?.remove();
+  }
+});
 })();
 </script>
 

@@ -5280,5 +5280,638 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 })();
 </script>
 
+<style id="omnios-v68-bible-tabs-ux">
+/* ===== OmniOS v68 — unified Bible UI/UX ===== */
+#view-bible{
+  --bib68-gap:10px;
+  --bib68-radius:15px;
+  --bib68-tab-h:46px;
+}
+#view-bible .bib-shell{gap:var(--bib68-gap)!important}
+#view-bible #bib-content{min-width:0}
+#view-bible .bib-card{
+  border-radius:var(--bib68-radius)!important;
+  box-shadow:none!important;
+}
+#view-bible .bib-card-head{
+  gap:10px;
+  align-items:flex-start;
+}
+#view-bible .bib-card-title{
+  letter-spacing:-.012em;
+}
+#view-bible .bib-card-sub{
+  line-height:1.45;
+}
+
+/* The Bible destinations are one navigation system, not unrelated buttons. */
+#view-bible .bib-tabs{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:4px!important;
+  width:100%!important;
+  max-width:100%!important;
+  padding:4px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scrollbar-width:none!important;
+  -webkit-overflow-scrolling:touch;
+  border:1px solid var(--border-color)!important;
+  background:color-mix(in srgb,var(--bg-surface) 94%,transparent)!important;
+}
+#view-bible .bib-tabs::-webkit-scrollbar{display:none}
+#view-bible .bib-tab{
+  flex:0 0 auto!important;
+  min-height:38px!important;
+  padding:7px 11px!important;
+  border:1px solid transparent!important;
+  border-radius:10px!important;
+  background:transparent!important;
+  color:var(--text-muted)!important;
+  font-size:.62rem!important;
+  font-weight:760!important;
+  white-space:nowrap!important;
+}
+#view-bible .bib-tab.active{
+  color:var(--text-primary)!important;
+  border-color:color-mix(in srgb,var(--bib-accent) 42%,var(--border-color))!important;
+  background:
+    linear-gradient(180deg,color-mix(in srgb,var(--bib-accent) 13%,var(--bg-elevated)),var(--bg-elevated))!important;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bib-accent) 7%,transparent)!important;
+}
+#view-bible .bib-tab[data-bib-tab="plan"]{margin-left:5px!important}
+
+/* Consistent action language everywhere. */
+#view-bible .bib-actions{
+  gap:6px!important;
+}
+#view-bible .bib-actions .btn{
+  min-height:38px;
+}
+#view-bible :is(.bib-passage,.bib-mood-card-v573,.bib-journal-item,.bib-lib-item.v573,.bib-guide-item){
+  border-radius:12px!important;
+}
+
+/* Clearer scripture typography throughout the experience. */
+#view-bible :is(.bib-today-scripture-v5717,.bib-meditate-scripture,.bib-med-verse-text-v633,.bib-lib-copy.v573,.bib-study-passage){
+  text-wrap:pretty;
+}
+#view-bible .bib-today-verse-num-v583,
+#view-bible .bib-med-verse-num-v633{
+  color:var(--bib-accent)!important;
+  font-weight:900!important;
+}
+
+@media(max-width:760px){
+  #view-bible{
+    --bib68-gap:8px;
+    --bib68-radius:14px;
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+  }
+
+  /* Header becomes a compact launch area; detailed copy is useful on Today,
+     but should not consume the top of every working tab. */
+  #view-bible .bib-top{
+    padding:10px 11px!important;
+    gap:8px!important;
+    border-radius:14px!important;
+  }
+  #view-bible .bib-title{
+    font-size:1.05rem!important;
+    margin:1px 0 2px!important;
+  }
+  #view-bible .bib-eyebrow{
+    font-size:.46rem!important;
+    letter-spacing:.10em!important;
+  }
+  #view-bible .bib-subtitle{
+    font-size:.59rem!important;
+    line-height:1.38!important;
+    -webkit-line-clamp:2!important;
+  }
+  #view-bible .bib-source-chip{
+    margin-top:5px!important;
+    min-height:30px!important;
+    padding:4px 7px!important;
+    font-size:.51rem!important;
+  }
+  #view-bible:not([data-bib-active="today"]) .bib-subtitle,
+  #view-bible:not([data-bib-active="today"]) .bib-source-chip{
+    display:none!important;
+  }
+  #view-bible:not([data-bib-active="today"]) .bib-top{
+    grid-template-columns:minmax(0,1fr) auto!important;
+    align-items:center!important;
+  }
+  #view-bible .bib-top-actions{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    width:100%!important;
+    gap:5px!important;
+    overflow-x:auto!important;
+    scrollbar-width:none!important;
+  }
+  #view-bible .bib-top-actions::-webkit-scrollbar{display:none}
+  #view-bible .bib-top-actions .btn{
+    min-height:36px!important;
+    padding:6px 9px!important;
+    font-size:.56rem!important;
+    flex:0 0 auto!important;
+  }
+  #view-bible:not([data-bib-active="today"]) .bib-top-actions{
+    width:auto!important;
+    justify-self:end!important;
+  }
+  #view-bible:not([data-bib-active="today"]) .bib-top-actions [data-bib-task]{
+    display:none!important;
+  }
+
+  /* Sticky sub-tab rail: the user always knows where they are and can move laterally. */
+  #view-bible .bib-tabs{
+    position:sticky!important;
+    top:0!important;
+    z-index:82!important;
+    min-height:var(--bib68-tab-h)!important;
+    margin:0 0 7px!important;
+    border-radius:12px!important;
+    -webkit-backdrop-filter:blur(18px) saturate(1.08);
+    backdrop-filter:blur(18px) saturate(1.08);
+    box-shadow:0 8px 20px rgba(0,0,0,.10)!important;
+  }
+  #view-bible .bib-tab{
+    min-height:36px!important;
+    padding:6px 10px!important;
+    font-size:.58rem!important;
+  }
+
+  #view-bible #bib-content{
+    width:100%!important;
+    min-width:0!important;
+    padding-bottom:12px!important;
+  }
+
+  /* ---------- Today ---------- */
+  #view-bible .bib-today-v5717{gap:8px!important}
+  #view-bible .bib-today-feature-v5717{
+    padding:12px!important;
+    gap:9px!important;
+  }
+  #view-bible .bib-today-copy-v5717 h3{
+    font-size:1.28rem!important;
+    margin:3px 0 1px!important;
+  }
+  #view-bible .bib-today-scripture-v5717{
+    margin:9px 0!important;
+    padding:11px 11px 11px 12px!important;
+    font-size:.94rem!important;
+    line-height:1.72!important;
+  }
+  #view-bible .bib-today-copy-v5717>.bib-actions{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    overflow:visible!important;
+    gap:6px!important;
+  }
+  #view-bible .bib-today-copy-v5717>.bib-actions .btn{
+    width:100%!important;
+    min-width:0!important;
+    justify-content:center!important;
+  }
+  #view-bible .bib-today-guide-v5717{
+    gap:6px!important;
+  }
+  #view-bible .bib-today-guide-v5717 .bib-guide-item{
+    padding:9px 10px!important;
+  }
+  #view-bible .bib-today-grid-v5717{
+    gap:8px!important;
+  }
+
+  /* ---------- Read ---------- */
+  #view-bible .bib-toolbar-v5814{
+    top:calc(var(--bib68-tab-h) + 2px)!important;
+    z-index:78!important;
+    padding:6px!important;
+    gap:5px!important;
+    border-radius:12px!important;
+    box-shadow:0 7px 18px rgba(0,0,0,.09)!important;
+  }
+  #view-bible .bib-toolbar-books-v5814 .bib-toolbar-controls-v5814{
+    grid-template-columns:36px minmax(0,1fr) 88px 36px!important;
+  }
+  #view-bible .bib-toolbar-ref-v5814 .bib-toolbar-controls-v5814{
+    grid-template-columns:minmax(0,1fr) 42px 56px!important;
+  }
+  #view-bible .bib-toolbar-tools-v5814 .bib-toolbar-controls-v5814{
+    grid-template-columns:42px 42px 56px minmax(62px,1fr)!important;
+  }
+  #view-bible .bib-toolbar-v5814 :is(.form-input,.form-select,.btn,.bib-icon-btn){
+    min-height:38px!important;
+    height:38px!important;
+  }
+  #view-bible .bib-reader-pane-v5814{
+    border-radius:14px!important;
+  }
+  #view-bible .bib-reader-header-v5814{
+    padding:12px 10px 8px!important;
+  }
+  #view-bible .bib-reader-header-v5814 h2{
+    font-size:1.32rem!important;
+  }
+  #view-bible .bib-reader-meta-v5814{
+    flex-wrap:nowrap!important;
+    overflow-x:auto!important;
+    scrollbar-width:none!important;
+    max-width:100%!important;
+  }
+  #view-bible .bib-reader-meta-v5814::-webkit-scrollbar{display:none}
+  #view-bible .bib-reader-meta-v5814 span{flex:0 0 auto}
+  #view-bible .bib-reader-copy-v5814{
+    padding:7px 2px 22px!important;
+  }
+  #view-bible .bib-reader-copy-v5814 .bib-verse-row.v573{
+    grid-template-columns:29px minmax(0,1fr)!important;
+    gap:6px!important;
+    padding:7px 4px!important;
+    scroll-margin-top:calc(var(--bib68-tab-h) + 124px)!important;
+  }
+  #view-bible .bib-reader-copy-v5814 .bib-vtext{
+    line-height:1.82!important;
+  }
+  #view-bible .bib-search-v5814{
+    margin:0 0 7px!important;
+    padding:7px!important;
+  }
+  #view-bible .bib-search-results{
+    max-height:none!important;
+  }
+
+  /* ---------- Study ---------- */
+  #view-bible .bib-study-layout,
+  #view-bible .bib-study-main,
+  #view-bible .bib-study-side{
+    gap:8px!important;
+  }
+  #view-bible .bib-study-field{
+    padding:10px!important;
+    border-radius:11px!important;
+  }
+  #view-bible .bib-study-field textarea{
+    min-height:104px!important;
+  }
+  #view-bible .bib-study-passage{
+    padding:11px!important;
+    font-size:.88rem!important;
+    line-height:1.72!important;
+    border-radius:11px!important;
+  }
+  #view-bible .bib-related{
+    grid-template-columns:minmax(0,1fr) auto!important;
+    padding:8px!important;
+  }
+  #view-bible .bib-related-copy{
+    grid-column:1/-1!important;
+  }
+  #view-bible .bib-map-studio-v5720{
+    padding:9px!important;
+    border-radius:13px!important;
+  }
+  #view-bible .bib-map-studio-head-v5720{
+    gap:7px!important;
+  }
+  #view-bible .bib-map-create-v5720{
+    padding-bottom:2px;
+  }
+  #view-bible .bib-map-board-wrap-v5721{
+    height:min(48dvh,460px)!important;
+    min-height:340px!important;
+    border-radius:11px!important;
+  }
+
+  /* ---------- Meditate ---------- */
+  #view-bible .bib-timer-layout{gap:8px!important}
+  #view-bible .bib-timer-card{padding:11px!important}
+  #view-bible .bib-med-passage-v633,
+  #view-bible .bib-meditate-scripture{
+    margin:8px 0!important;
+    padding:10px!important;
+    border-radius:10px!important;
+  }
+  #view-bible .bib-med-verse-text-v633{
+    font-size:.93rem!important;
+    line-height:1.72!important;
+  }
+  #view-bible .bib-ring{
+    width:128px!important;
+    height:128px!important;
+    margin:6px auto 8px!important;
+  }
+  #view-bible .bib-presets{
+    gap:5px!important;
+  }
+  #view-bible .bib-timer-card>.bib-actions{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    overflow:visible!important;
+  }
+  #view-bible .bib-timer-card>.bib-actions [data-timer-main]{
+    grid-column:1/-1!important;
+  }
+  #view-bible .bib-guide-grid{
+    gap:6px!important;
+  }
+  #view-bible .bib-timer-layout>section:nth-child(2)>.bib-actions{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    overflow:visible!important;
+  }
+  #view-bible .bib-timer-layout>section:nth-child(2)>.bib-actions .btn{
+    width:100%!important;
+  }
+
+  /* ---------- 365 Plan ---------- */
+  #view-bible .bib-plan-head{
+    gap:6px!important;
+  }
+  #view-bible .bib-plan-progress-copy{
+    font-size:.57rem!important;
+  }
+  #view-bible .bib-plan-calnav{
+    gap:5px!important;
+  }
+  #view-bible .bib-plan-cell{
+    min-height:66px!important;
+    border-radius:11px!important;
+  }
+  #view-bible .bib-plan-ref{
+    font-size:.72rem!important;
+  }
+  #view-bible .bib-plan-sub{
+    font-size:.55rem!important;
+  }
+
+  /* ---------- Mood ---------- */
+  #view-bible .bib-mood-layout{
+    gap:8px!important;
+  }
+  #view-bible .bib-all-moods{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:6px!important;
+  }
+  #view-bible .bib-mood{
+    min-height:46px!important;
+    padding:7px!important;
+    border-radius:10px!important;
+  }
+  #view-bible .bib-mood-card-v573{
+    padding:10px!important;
+    margin-top:6px!important;
+  }
+  #view-bible .bib-mood-excerpt{
+    font-size:.65rem!important;
+    line-height:1.52!important;
+    -webkit-line-clamp:4!important;
+  }
+  #view-bible .bib-mood-card-v573 .bib-actions{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    overflow:visible!important;
+  }
+  #view-bible .bib-mood-card-v573 .bib-actions .btn{
+    width:100%!important;
+    min-width:0!important;
+    padding-inline:3px!important;
+    justify-content:center!important;
+  }
+
+  /* ---------- Journal ----------
+     The writing surface comes before the archive on a phone. */
+  #view-bible .bib-journal-layout{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:8px!important;
+  }
+  #view-bible .bib-journal-layout>section:nth-child(2){order:1}
+  #view-bible .bib-journal-layout>section:nth-child(1){order:2}
+  #view-bible .bib-journal-layout .form-grid{
+    grid-template-columns:1fr 1fr!important;
+    gap:7px!important;
+  }
+  #view-bible .bib-journal-layout .form-group.full{
+    grid-column:1/-1!important;
+  }
+  #view-bible .bib-journal-layout textarea{
+    min-height:108px!important;
+  }
+  #view-bible .bib-journal-layout>section:nth-child(2)>.bib-actions{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    overflow:visible!important;
+  }
+  #view-bible .bib-journal-list{
+    display:grid!important;
+    gap:5px!important;
+  }
+  #view-bible .bib-journal-item{
+    padding:9px!important;
+  }
+  #view-bible .bib-journal-item-copy{
+    -webkit-line-clamp:2!important;
+  }
+
+  /* ---------- Library ---------- */
+  #view-bible .bib-library-summary{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:6px!important;
+    margin-bottom:8px!important;
+  }
+  #view-bible .bib-lib-summary-card{
+    padding:9px!important;
+    border-radius:10px!important;
+  }
+  #view-bible .bib-library-toolbar{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-areas:
+      "tabs tabs"
+      "search export"!important;
+    gap:6px!important;
+    align-items:center!important;
+    overflow:visible!important;
+  }
+  #view-bible .bib-library-tabs{
+    grid-area:tabs!important;
+    width:100%!important;
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    overflow-x:auto!important;
+    scrollbar-width:none!important;
+    gap:4px!important;
+  }
+  #view-bible .bib-library-tabs::-webkit-scrollbar{display:none}
+  #view-bible .bib-lib-tab{
+    flex:0 0 auto!important;
+    min-height:36px!important;
+    white-space:nowrap!important;
+  }
+  #view-bible .bib-library-toolbar .bib-grow{display:none!important}
+  #view-bible #bib-lib-search{
+    grid-area:search!important;
+    width:100%!important;
+    max-width:none!important;
+    min-height:40px!important;
+  }
+  #view-bible .bib-library-toolbar [data-export]{
+    grid-area:export!important;
+    min-height:40px!important;
+    white-space:nowrap!important;
+  }
+  #view-bible .bib-library-grid.v573{
+    gap:7px!important;
+  }
+  #view-bible .bib-lib-item.v573{
+    padding:10px 11px!important;
+    border-radius:11px!important;
+  }
+  #view-bible .bib-lib-copy.v573{
+    font-size:.65rem!important;
+    line-height:1.55!important;
+  }
+  #view-bible .bib-lib-item.v573>.bib-actions{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    overflow:visible!important;
+  }
+  #view-bible .bib-lib-item.v573>.bib-actions .btn{
+    min-width:0!important;
+    width:100%!important;
+    padding-inline:3px!important;
+    justify-content:center!important;
+  }
+
+  /* ---------- Atlas ----------
+     v66 handles the sheets/map; v68 aligns it visually with the rest of Bible. */
+  #view-bible .atlas28{
+    gap:8px!important;
+  }
+  #view-bible .atlas28-hero,
+  #view-bible .atlas28-map-card,
+  #view-bible .atlas28-timeline{
+    border-radius:14px!important;
+  }
+  #view-bible .atlas28-mapbar-actions .btn{
+    min-height:38px!important;
+  }
+
+  /* Form consistency across Bible tabs. */
+  #view-bible :is(.form-input,.form-select,.form-textarea){
+    border-radius:10px!important;
+  }
+  #view-bible .form-label{
+    margin-bottom:5px!important;
+  }
+}
+
+@media(max-width:390px){
+  #view-bible .bib-tab{
+    padding-inline:9px!important;
+  }
+  #view-bible .bib-toolbar-books-v5814 .bib-toolbar-controls-v5814{
+    grid-template-columns:34px minmax(0,1fr) 80px 34px!important;
+  }
+  #view-bible .bib-today-copy-v5717>.bib-actions{
+    grid-template-columns:1fr!important;
+  }
+  #view-bible .bib-mood-card-v573 .bib-actions,
+  #view-bible .bib-lib-item.v573>.bib-actions{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+</style>
+
+<script id="omnios-v68-bible-tabs-ux-js">
+(function(){
+  if(window.__omniBibleTabsUX68)return;
+  window.__omniBibleTabsUX68=true;
+
+  const mobile=()=>matchMedia('(max-width:760px)').matches;
+
+  function activeTab(view){
+    return view?.querySelector('.bib-tab.active')?.dataset.bibTab||'today';
+  }
+
+  function closeTransientModes(view,tab){
+    if(!view)return;
+    if(tab!=='read')view.classList.remove('bib-reader-focus');
+    if(tab!=='meditate')view.classList.remove('bib-focus');
+    view.querySelector('.bib-read-v5814')?.classList.remove('v66-tools-open');
+    view.querySelector('.atlas28')?.classList.remove('v66-atlas-filters-open','v66-atlas-details-open');
+    document.querySelector('.view-container')?.classList.remove('bib-scroll-locked-v67');
+  }
+
+  function enhance(){
+    const view=document.getElementById('view-bible');
+    if(!view)return;
+    const tab=activeTab(view);
+    view.dataset.bibActive=tab;
+
+    const tabs=view.querySelector('.bib-tabs');
+    if(tabs){
+      tabs.setAttribute('role','tablist');
+      tabs.setAttribute('aria-label','Bible sections');
+      tabs.querySelectorAll('.bib-tab').forEach(b=>{
+        const on=b.dataset.bibTab===tab;
+        b.setAttribute('role','tab');
+        b.setAttribute('aria-selected',on?'true':'false');
+        b.tabIndex=on?0:-1;
+      });
+      if(mobile()){
+        const a=tabs.querySelector('.bib-tab.active');
+        if(a)requestAnimationFrame(()=>a.scrollIntoView({block:'nearest',inline:'center',behavior:'auto'}));
+      }
+    }
+
+    /* Keep the destination content semantically connected to its active tab. */
+    const content=view.querySelector('#bib-content');
+    if(content){
+      content.setAttribute('role','tabpanel');
+      content.dataset.bibPanel=tab;
+    }
+  }
+
+  document.addEventListener('click',e=>{
+    const tab=e.target.closest?.('#view-bible .bib-tab');
+    if(!tab)return;
+    const view=document.getElementById('view-bible');
+    closeTransientModes(view,tab.dataset.bibTab);
+    requestAnimationFrame(()=>requestAnimationFrame(enhance));
+  },true);
+
+  const mo=new MutationObserver(records=>{
+    let relevant=false;
+    for(const r of records){
+      if(r.type==='childList'&&r.addedNodes.length){
+        if(r.target.closest?.('#view-bible')||[...r.addedNodes].some(n=>n.nodeType===1&&(n.id==='view-bible'||n.id==='bib-content'||n.querySelector?.('.bib-tabs')))){
+          relevant=true;break;
+        }
+      }
+      if(r.type==='attributes'&&r.target.matches?.('#view-bible .bib-tab')){
+        relevant=true;break;
+      }
+    }
+    if(relevant)requestAnimationFrame(enhance);
+  });
+  mo.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+
+  addEventListener('resize',()=>requestAnimationFrame(enhance),{passive:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>requestAnimationFrame(enhance),{once:true});
+  else requestAnimationFrame(enhance);
+
+  window.OmniBibleTabsUX68={refresh:enhance};
+})();
+</script>
+
 </body>
 </html>

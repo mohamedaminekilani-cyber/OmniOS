@@ -2064,5 +2064,103 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.se
 }
 </style>
 
+
+<style id="omnios-v625-personalization-style">
+.omni-custom-ui-icon{
+  width:18px;height:18px;min-width:18px;object-fit:contain;border-radius:4px;
+  display:block!important;flex:none
+}
+.mobile-nav .omni-custom-ui-icon{width:20px;height:20px;min-width:20px;margin:auto}
+.omni-custom-brand-logo{width:30px;height:30px;object-fit:contain;border-radius:7px;display:block;margin:0 auto 5px}
+.omni-has-custom-icon>.v48-nav-icon,
+.omni-has-custom-icon>.v48-mobile-icon,
+.omni-has-custom-icon>.nav-icon,
+.omni-has-custom-icon>.v35-nav-emoji,
+.omni-has-custom-icon>.icon-fallback{display:none!important}
+@media(max-width:760px){
+  .omni-custom-ui-icon{width:20px;height:20px;min-width:20px}
+}
+</style>
+<script id="omnios-v625-personalization-bridge">
+(function(){
+'use strict';
+if(window.__omniPersonalizationBridge625)return;
+window.__omniPersonalizationBridge625=true;
+
+function iconState(){
+  try{return state&&state.customIcons&&typeof state.customIcons==='object'?state.customIcons:{}}
+  catch(_){return{}}
+}
+function viewKey(el){
+  return el?.dataset?.view||el?.dataset?.mobileView||el?.dataset?.v35MobileView||el?.dataset?.v25MobileView||'';
+}
+function setIcon(el,src){
+  if(!el)return;
+  let img=el.querySelector(':scope > .omni-custom-ui-icon');
+  if(src){
+    if(!img){
+      img=document.createElement('img');
+      img.className='omni-custom-ui-icon';
+      img.alt='';
+      img.setAttribute('aria-hidden','true');
+      el.insertBefore(img,el.firstChild);
+    }
+    if(img.getAttribute('src')!==src)img.src=src;
+    el.classList.add('omni-has-custom-icon');
+  }else{
+    img?.remove();
+    el.classList.remove('omni-has-custom-icon');
+  }
+}
+function syncLogo(icons){
+  const host=document.querySelector('.sidebar .logo');
+  if(!host)return;
+  let img=host.querySelector('.omni-custom-brand-logo');
+  const src=icons.logo||'';
+  if(src){
+    if(!img){
+      img=document.createElement('img');
+      img.className='omni-custom-brand-logo';
+      img.alt='OmniOS';
+      host.insertBefore(img,host.firstChild);
+    }
+    if(img.getAttribute('src')!==src)img.src=src;
+  }else img?.remove();
+}
+function sync(){
+  const icons=iconState();
+  document.querySelectorAll(
+    '.nav-menu .nav-item[data-view],.mobile-nav button[data-mobile-view],.mobile-nav button[data-v35-mobile-view],.mobile-nav button[data-v25-mobile-view],[data-v35-mobile-view],[data-v25-mobile-view]'
+  ).forEach(el=>{
+    const key=viewKey(el);
+    setIcon(el,key?icons[key]||'':'');
+  });
+  syncLogo(icons);
+}
+window.applyPersonalizationAssets=sync;
+
+const original=window.applyCustomIcons;
+window.applyCustomIcons=function(){
+  try{original?.apply(this,arguments)}catch(e){console.warn('Legacy icon apply failed',e)}
+  sync();
+};
+let timer=0;
+const schedule=()=>{clearTimeout(timer);timer=setTimeout(sync,30)};
+const mo=new MutationObserver(records=>{
+  for(const r of records){
+    if([...r.addedNodes].some(n=>n.nodeType===1)){schedule();break}
+  }
+});
+function init(){
+  sync();
+  if(document.body)mo.observe(document.body,{childList:true,subtree:true});
+  document.addEventListener('change',e=>{
+    if(e.target?.matches?.('input[type="file"][id^="icon-upload-"]'))setTimeout(sync,80);
+  },true);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
+
 </body>
 </html>

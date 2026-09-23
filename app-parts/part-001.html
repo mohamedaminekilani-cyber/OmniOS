@@ -7,7 +7,23 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="OmniOS">
-<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link id="omnios-apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="./icons/icon-192.png">
+<script id="omnios-pwa-icon-final-head">
+(function(){
+  try{
+    var qs=new URLSearchParams(location.search);
+    var id=(qs.get('pwaIcon')||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,120);
+    var rev=(qs.get('pwaIconRev')||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,80);
+    var href='';
+    if(id)href='https://omnios-pwa.netlify.app/api/icon?id='+encodeURIComponent(id)+(rev?'&v='+encodeURIComponent(rev):'');
+    if(!href)href=localStorage.getItem('omnios_app_icon_public_v1')||'';
+    if(href){
+      var old=document.getElementById('omnios-apple-touch-icon');if(old)old.remove();
+      var link=document.createElement('link');link.id='omnios-apple-touch-icon';link.rel='apple-touch-icon';link.setAttribute('sizes','180x180');link.href=href;document.head.appendChild(link);
+    }
+  }catch(_){}
+})();
+</script>
 <link rel="manifest" href="./manifest.webmanifest">
 <title>OmniOS v62.3 — Personal PWA</title>
 <script id="omnios-accent-early">

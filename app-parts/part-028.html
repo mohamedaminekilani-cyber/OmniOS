@@ -2989,5 +2989,60 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 }
 </style>
 
+<style id="omnios-v64-mobile-active-frame">
+@media(max-width:760px){
+  .mobile-nav button{
+    border:1px solid transparent!important;
+    box-shadow:none!important;
+  }
+
+  .mobile-nav button.active{
+    color:#f4f7ff!important;
+    border-color:rgba(105,145,255,.34)!important;
+    background:
+      radial-gradient(circle at 50% 12%,rgba(70,126,255,.20),transparent 62%),
+      linear-gradient(180deg,rgba(55,75,140,.18),rgba(28,35,65,.10))!important;
+    box-shadow:
+      inset 0 0 0 1px rgba(118,151,255,.07),
+      0 6px 18px rgba(44,77,190,.09)!important;
+  }
+
+  .mobile-nav button.active > :is(.v48-mobile-icon,.nav-icon){
+    color:#7aaaff!important;
+    filter:drop-shadow(0 0 7px rgba(73,124,255,.48));
+  }
+
+  /* Defensive hard close: if a regular bottom tab is touched while More is open,
+     remove every surviving launcher before the click handler navigates. */
+  body:has(#v35-page-launcher.open) .mobile-nav button[data-v35-mobile-view]{
+    pointer-events:auto!important;
+  }
+}
+</style>
+
+<script id="omnios-v64-bottom-nav-hard-close">
+(function(){
+  if(window.__omniBottomHardClose64)return;
+  window.__omniBottomHardClose64=true;
+
+  function destroyMore(){
+    document.querySelectorAll('#v35-page-launcher').forEach(m=>m.remove());
+    document.body.style.removeProperty('overflow');
+  }
+
+  document.addEventListener('pointerdown',function(e){
+    const tab=e.target.closest?.('.mobile-nav button[data-v35-mobile-view]');
+    if(!tab)return;
+    destroyMore();
+  },true);
+
+  document.addEventListener('click',function(e){
+    const tab=e.target.closest?.('.mobile-nav button[data-v35-mobile-view]');
+    if(!tab)return;
+    destroyMore();
+  },true);
+})();
+</script>
+
 </body>
 </html>

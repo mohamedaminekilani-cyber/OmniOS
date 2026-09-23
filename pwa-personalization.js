@@ -141,7 +141,7 @@ function assetCardHtml(){
   try{app=localStorage.getItem(APP_ICON_PREVIEW)||'';boot=localStorage.getItem(BOOT_ICON_KEY)||''}catch(_){}
   return '<div class="card settings-section" id="omnios-pwa-assets-card">'+
     '<h3 class="card-title mb-4">App & startup icons</h3>'+
-    '<div class="settings-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="omni-pwa-preview">'+(app?'<img src="'+esc(app)+'" alt="Home Screen icon preview">':'<span>O</span>')+'</div><div><div class="settings-row-label">Home Screen app icon</div><div class="settings-row-desc">Upload a square icon for the installed PWA. OmniOS automatically crops and resizes it.</div></div></div><div class="omni-pwa-actions"><input id="omni-pwa-icon-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="omni-pwa-icon-upload">'+(app?'Replace':'Upload')+'</button>'+(app?'<button type="button" class="btn btn-sm" id="omni-pwa-icon-reset">Reset</button>':'')+'</div></div>'+
+    '<div class="settings-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="omni-pwa-preview">'+(app?'<img src="'+esc(app)+'" alt="Home Screen icon preview">':'<img src="./icons/icon-192.png" alt="Default OmniOS icon">')+'</div><div><div class="settings-row-label">Home Screen app icon</div><div class="settings-row-desc">Upload a square icon for the installed PWA. OmniOS automatically crops and resizes it.</div></div></div><div class="omni-pwa-actions"><input id="omni-pwa-icon-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="omni-pwa-icon-upload">'+(app?'Replace':'Upload')+'</button>'+(app?'<button type="button" class="btn btn-sm" id="omni-pwa-icon-reset">Reset</button>':'')+'</div></div>'+
     '<div class="settings-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="omni-pwa-preview">'+(boot?'<img src="'+esc(boot)+'" alt="Loading icon preview">':'<span>↻</span>')+'</div><div><div class="settings-row-label">Loading screen icon</div><div class="settings-row-desc">Replaces the spinner icon on the single OmniOS loading screen.</div></div></div><div class="omni-pwa-actions"><input id="omni-boot-icon-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="omni-boot-icon-upload">'+(boot?'Replace':'Upload')+'</button>'+(boot?'<button type="button" class="btn btn-sm" id="omni-boot-icon-reset">Reset</button>':'')+'</div></div>'+
     '<div class="settings-meta-line">On iPhone/iPad, an icon that is already installed is cached by iOS. After changing it, remove the existing Home Screen copy and add OmniOS again to see the new icon.</div>'+
     '</div>';
@@ -166,6 +166,14 @@ function b64ToBytes(base64){
   var raw=atob(s),out=new Uint8Array(raw.length);
   for(var i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);
   return out;
+}
+function pushBackendReady(){
+  return new Promise(function(resolve){
+    var done=false,img=new Image(),timer=setTimeout(function(){if(!done){done=true;resolve(false)}},4500);
+    function finish(ok){if(done)return;done=true;clearTimeout(timer);resolve(ok)}
+    img.onload=function(){finish(true)};img.onerror=function(){finish(false)};
+    img.src='https://omnios-pwa.netlify.app/api/push/health.svg?t='+Date.now();
+  });
 }
 async function postPush(payload){
   var same=location.hostname==='omnios-pwa.netlify.app';
@@ -264,6 +272,7 @@ async function enablePush(){
   var reg=await navigator.serviceWorker.ready;
   var sub=await reg.pushManager.getSubscription();
   if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToBytes(PUSH_PUBLIC_KEY)});
+  if(!(await pushBackendReady()))throw new Error('The OmniOS push service is not online yet. Try again after the latest deployment finishes.');
   settings().pushEnabled=true;
   safeSave();
   await postPush({action:'register',deviceId:deviceId(),subscription:sub.toJSON(),timezone:timezone(),schedules:collectSchedules()});
@@ -281,7 +290,7 @@ async function disablePush(){
 async function testPush(){
   if(Notification.permission!=='granted'){await enablePush();if(Notification.permission!=='granted')return}
   var sub=await subscription();if(!sub){await enablePush();sub=await subscription();if(!sub)return}
-  try{await postPush({action:'test',deviceId:deviceId(),subscription:sub.toJSON(),timezone:timezone(),schedules:collectSchedules()});toast('Test push requested.')}catch(e){toast(e.message||'Could not request a test push')}
+  try{if(!(await pushBackendReady()))throw new Error('The OmniOS push service is not online yet.');await postPush({action:'test',deviceId:deviceId(),subscription:sub.toJSON(),timezone:timezone(),schedules:collectSchedules()});toast('Test push requested.')}catch(e){toast(e.message||'Could not request a test push')}
 }
 async function syncPush(){
   var n=settings();if(!n.pushEnabled||Notification.permission!=='granted')return;

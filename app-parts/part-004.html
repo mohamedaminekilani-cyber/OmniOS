@@ -433,24 +433,18 @@ function closeMore35(){
     m.classList.remove('open');
     m.setAttribute('aria-hidden','true');
     m.style.pointerEvents='none';
+    m.remove();
   }
   document.body.style.removeProperty('overflow');
   updateMobileActive35(activeView35());
 }
 function navigateMobile35(view){
-  /* A bottom-tab navigation must never coexist with the More launcher.
-     Close it synchronously, then navigate on the next frame so the closed
-     state is painted before the destination page renders. */
+  /* Remove More from the DOM before rendering the destination page.
+     No launcher element is allowed to survive a bottom-tab navigation. */
   closeMore35();
-  requestAnimationFrame(()=>{
-    const m=document.getElementById('v35-page-launcher');
-    if(m){
-      m.classList.remove('open');
-      m.setAttribute('aria-hidden','true');
-      m.style.pointerEvents='none';
-    }
-    window.switchView(view);
-  });
+  document.querySelectorAll('#v35-page-launcher').forEach(x=>x.remove());
+  document.body.style.removeProperty('overflow');
+  window.switchView(view);
 }
 function renderMore35(m,q=''){
   const body=m.querySelector('.v35-launcher-body'),needle=String(q||'').trim().toLowerCase(),active=activeView35();

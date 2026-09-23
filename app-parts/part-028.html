@@ -3966,6 +3966,9 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
   #view-bible .bib-mobile-tools-backdrop-v66{
     display:none;
     position:fixed;
+    border:0!important;
+    padding:0!important;
+    margin:0!important;
     inset:0 0 calc(var(--mobile-nav-h,64px) + env(safe-area-inset-bottom)) 0;
     z-index:2147481600;
     background:rgba(2,5,10,.54);
@@ -4125,14 +4128,14 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
   #view-bible .bib-plan-cell.leap{display:none!important}
   #view-bible .bib-plan-cell{
     display:grid!important;
-    grid-template-columns:48px minmax(0,1fr) auto!important;
+    grid-template-columns:46px minmax(0,1fr)!important;
     grid-template-areas:
-      "date ref check"
-      "date sub check"!important;
+      "date ref"
+      "date sub"!important;
     align-items:center!important;
     column-gap:9px!important;
     row-gap:2px!important;
-    min-height:64px!important;
+    min-height:68px!important;
     padding:8px 9px!important;
     border:1px solid var(--border-color)!important;
     border-radius:12px!important;
@@ -4140,7 +4143,10 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
   }
   #view-bible .bib-plan-cell-head{
     grid-area:date!important;
-    display:block!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    gap:4px!important;
     margin:0!important;
   }
   #view-bible .bib-plan-date{

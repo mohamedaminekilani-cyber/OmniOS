@@ -6830,7 +6830,11 @@ new MutationObserver(themeChrome).observe(document.documentElement,{attributes:t
     padding-bottom:14px!important;
   }
 
-  /* Calendar tools remain between persistent banners. */
+  /* Calendar mobile tools: backdrop below the sheet, both between persistent banners. */
+  #view-master-calendar .v603-mobile-sheet-backdrop{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    z-index:2147481650!important;
+  }
   #view-master-calendar .v603-calendar-rail{
     bottom:calc(var(--ux-bottomnav-h,64px) + 6px)!important;
     max-height:min(

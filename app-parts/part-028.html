@@ -5077,7 +5077,7 @@ function handlePeerIncoming(conn){
   if(conn?.metadata?.omniLocalAnswer){
     conn.on('data',msg=>{
       if(msg?.type!=='local-answer'||!msg.payload)return;
-      document.dispatchEvent(new CustomEvent('omnios:local-answer-signal',{detail:msg.payload}));
+      document.dispatchEvent(new CustomEvent('omnios:local-answer-signal',{detail:{payload:msg.payload,conn}}));
       try{conn.send({type:'local-answer-ack',sid:msg.payload.sid||''})}catch(_){}
     });
     return
@@ -5278,7 +5278,7 @@ window.OmniDeviceSync={
     return await new Promise((resolve,reject)=>{
       const conn=p.connect(peerId,{reliable:true,metadata:{omniLocalAnswer:true,sid:payload?.sid||''}});
       let done=false;
-      const finish=(ok,err)=>{if(done)return;done=true;clearTimeout(tm);try{conn.close()}catch(_){};ok?resolve(true):reject(err||new Error('Local answer signaling failed'))};
+      const finish=(ok,err)=>{if(done)return;done=true;clearTimeout(tm);if(ok)resolve({ok:true,conn,peerId:p.id});else{try{conn.close()}catch(_){};reject(err||new Error('Local answer signaling failed'))}};
       const tm=setTimeout(()=>finish(false,new Error('Local answer signaling timed out')),4500);
       conn.on('open',()=>{try{conn.send({type:'local-answer',payload})}catch(e){finish(false,e)}});
       conn.on('data',msg=>{if(msg?.type==='local-answer-ack'&&msg.sid===payload?.sid)finish(true)});

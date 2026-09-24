@@ -5706,19 +5706,21 @@ function activateAssistedFallback(signalConn,sid,initiator=false){
   return true
 }
 function fallbackFromBlockedLocal(sid){
+  const signal=assistedSignalForSid(sid);
+  if(signal){
+    stage(3,'Direct Wi-Fi route blocked','Reusing the secure connection that already linked the two devices…','busy');
+    logProgress('Direct LAN route blocked · switching to existing secure channel');
+    return activateAssistedFallback(signal,sid,true)
+  }
   const secret=relaySecretForSid(sid);
   if(secret){
-    stage(3,'Peer-to-peer route blocked','Switching to the encrypted fallback automatically…','busy');
-    logProgress('Direct Wi-Fi route blocked · starting encrypted fallback');
+    stage(3,'Peer-to-peer route blocked','Switching to the encrypted HTTPS fallback automatically…','busy');
+    logProgress('Secure peer route unavailable · starting encrypted HTTPS fallback');
     activateRelayTransport(sid,secret,true).then(ok=>{if(!ok){
-      const signal=assistedSignalForSid(sid);
-      if(signal)activateAssistedFallback(signal,sid,true);
-      else{stage(3,'Connection blocked','Encrypted fallback is unavailable. Use Internet fallback.','error');showFallbackOnly()}
+      stage(3,'Connection blocked','Automatic fallback is unavailable. Use Internet fallback.','error');showFallbackOnly()
     }});
     return true
   }
-  const signal=assistedSignalForSid(sid);
-  if(signal)return activateAssistedFallback(signal,sid,true);
   stage(3,'Connection blocked','No fallback route is available. Use Internet fallback.','error');showFallbackOnly();return false
 }
 
@@ -5810,6 +5812,7 @@ async function startLocalHost(){
   modal('Start Local Hub','This PC becomes the OmniOS hub. OmniOS tries direct Wi-Fi first and switches automatically if the network blocks it.');
   stage(1,'Creating local offer','Preparing the direct Wi-Fi connection…','busy');setProgress(8,'Preparing');logProgress('Preparing Local Wi-Fi session');
   try{
+    const signalPromise=api()?.ensureSignalPeer?.().catch(()=>null);
     await ensureQr();
     const pc=new RTCPeerConnection(localConfig()),sid=randomHex(10),secret=randomHex(18);
     const dc=pc.createDataChannel('omnios-sync',{ordered:true});
@@ -5817,14 +5820,15 @@ async function startLocalHost(){
     hostSession={pc,dc,conn,sid,secret,answerCleanup:null,connectTimeout:null,answerApplied:false,signalConn:null};
     beginRelay(sid,secret,'host').catch(e=>console.warn('Relay standby unavailable',e));
     const offer=await pc.createOffer();await pc.setLocalDescription(offer);await waitLocalIce(pc);setProgress(18,'Offer ready');logProgress('Local WebRTC offer created');
-    const payload={v:PROTOCOL,type:'offer',sid,secret,offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},from:dev(),createdAt:Date.now()};
+    const signalPeer=await Promise.race([signalPromise,new Promise(resolve=>setTimeout(()=>resolve(null),1800))]);
+    const payload={v:PROTOCOL,type:'offer',sid,secret,signalPeer:signalPeer?.id||'',offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},from:dev(),createdAt:Date.now()};
     const url=await payloadUrl('offer',payload);
     hostView(url,true);listenForAnswer(sid);
-    stage(1,'Scan once inside OmniOS on your phone','The phone response returns automatically. Direct Wi-Fi is preferred; encrypted fallback is automatic.','ok');setProgress(25,'Waiting for scan');logProgress('QR ready on first device')
+    stage(1,'Scan once inside OmniOS on your phone','The phone response returns automatically. Direct Wi-Fi is preferred; assisted encrypted transport is ready if needed.','ok');setProgress(25,'Waiting for scan');logProgress('QR ready on first device')
   }catch(e){console.error('Local host',e);stage(1,'Could not create Local Wi-Fi code','Use Internet fallback on this browser.','error');showFallbackOnly()}
 }
 async function joinLocalOffer(payload){
-  modal('Join Local Hub','This device is connecting to the PC. OmniOS prefers direct Wi-Fi and has an encrypted fallback if peer-to-peer traffic is blocked.');
+  modal('Join Local Hub','This device is connecting to the PC. OmniOS prefers direct Wi-Fi and keeps a secure assisted path ready if needed.');
   stage(2,'Offer received','Creating the response for the PC…','busy');setProgress(42,'QR read');logProgress('PC QR read inside OmniOS');
   try{
     await ensureQr();
@@ -5835,12 +5839,28 @@ async function joinLocalOffer(payload){
     const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await waitLocalIce(pc);setProgress(55,'Response ready');logProgress('Phone response created');
     const response={v:PROTOCOL,type:'answer',sid:payload.sid,secret:payload.secret,answer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},from:dev(),createdAt:Date.now()};
     stage(2,'Sending response automatically','No second QR scan is needed.','busy');
-    await relaySendEnvelope(payload.sid,payload.secret,'answer',response);
-    setProgress(66,'Response sent');logProgress('Response sent securely to PC');
+    let delivered=false;
+    if(payload.signalPeer&&api()?.sendLocalAnswer){
+      try{
+        const signalResult=await api().sendLocalAnswer(payload.signalPeer,response);
+        joinSessionState.signalConn=signalResult?.conn||null;
+        delivered=true;setProgress(66,'Response sent');logProgress('Response delivered to PC over secure signal channel');
+      }catch(e){console.warn('Primary answer delivery failed',e)}
+    }
+    if(!delivered){
+      try{
+        delivered=await relaySendEnvelope(payload.sid,payload.secret,'answer',response);
+        if(delivered){setProgress(66,'Response sent');logProgress('Response delivered through encrypted relay')}
+      }catch(e){console.warn('Relay answer delivery failed',e)}
+    }
+    if(!delivered){
+      const url=await payloadUrl('answer',response);answerView(url);
+      stage(2,'Automatic response unavailable','Copy the response link and paste it into the PC.','error');return
+    }
     const host=overlay?.querySelector('.omni-sync-content');
-    if(host)host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response sent automatically</strong><span>Keep OmniOS open. Direct Wi-Fi is being tried first; if it is blocked, the encrypted fallback will take over automatically.</span></div>';
+    if(host)host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response sent automatically</strong><span>Keep OmniOS open. Direct Wi-Fi is being tried first; the existing secure connection will be reused automatically if the LAN route is blocked.</span></div>';
     stage(3,'Response sent to the PC','Opening the fastest available encrypted route…','ok');
-    setTimeout(()=>{if(!liveConn?.open||liveConn?.peer?.includes(payload.sid)===false)fallbackFromBlockedLocal(payload.sid)},4200)
+    setTimeout(()=>{if(!liveConn?.open)fallbackFromBlockedLocal(payload.sid)},4200)
   }catch(e){console.error('Local join',e);stage(2,'Could not create response','Use Internet fallback.','error');showFallbackOnly()}
 }
 async function handleAnswerHandoff(payload){

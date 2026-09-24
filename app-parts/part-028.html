@@ -4479,6 +4479,62 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
     display:none!important;
   }
 }
+
+
+/* Meditation + Atlas mobile cleanup v70 */
+@media(max-width:760px){
+  /* Meditation: Scripture is read elsewhere; keep this screen focused on timer + notes. */
+  #view-bible .bib-med-passage-v633{display:none!important}
+
+  /* Atlas map controls: Fit, Map, Satellite, Reset stay on one row. */
+  #view-bible .atlas28[data-atlas-ux="streamlined"] .atlas28-mapbar{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:5px!important;
+    align-items:center!important;
+  }
+  #view-bible .atlas28[data-atlas-ux="streamlined"] .atlas28-mapbar-main{
+    width:100%!important;
+    min-width:0!important;
+  }
+  #view-bible .atlas69-map-actions{
+    width:100%!important;
+    min-width:0!important;
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    gap:4px!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-inline:contain!important;
+    scrollbar-width:none!important;
+  }
+  #view-bible .atlas69-map-actions::-webkit-scrollbar{display:none!important}
+  #view-bible .atlas69-map-actions>[data-atlas28-fit],
+  #view-bible .atlas69-map-actions>[data-atlas28-reset]{
+    flex:0 0 auto!important;
+    min-height:32px!important;
+    padding:5px 9px!important;
+    white-space:nowrap!important;
+    font-size:.51rem!important;
+  }
+  #view-bible .atlas69-map-actions .atlas28-basemap{
+    flex:0 0 auto!important;
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    gap:2px!important;
+    min-width:max-content!important;
+    padding:2px!important;
+  }
+  #view-bible .atlas69-map-actions .atlas28-basemap button{
+    flex:0 0 auto!important;
+    min-height:28px!important;
+    padding:4px 8px!important;
+    white-space:nowrap!important;
+    font-size:.5rem!important;
+  }
+}
 </style>
 
 <script id="omnios-v66-bible-ux-js">

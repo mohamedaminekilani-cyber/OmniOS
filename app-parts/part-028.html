@@ -5507,14 +5507,76 @@ function makeAdapter(pc,dc,sid){
     if(ice==='checking'){stage(3,'Checking the local network','Trying direct routes between the phone and PC…','busy');setProgress(76,'Checking network');logProgress('ICE is checking Wi-Fi routes')}
     if(ice==='connected'||ice==='completed'){stage(3,'Direct route found','Opening the encrypted data channel…','busy');setProgress(81,'Route found');logProgress('Direct Wi-Fi route found')}
     if(ice==='disconnected'){stage(3,'Wi-Fi route interrupted','Trying to recover the local connection…','busy');logProgress('Local route temporarily disconnected')}
-    if(ice==='failed'){stage(3,'Local Wi-Fi connection blocked','The devices could not establish a usable local route. The router may isolate clients.','error');logProgress('ICE failed to establish a route');showFallbackOnly()}
+    if(ice==='failed'){stage(3,'Strict local route blocked','Trying the already-open assisted peer route automatically…','busy');logProgress('ICE failed to establish a strict LAN route');fallbackFromBlockedLocal(sid)}
   };
   pc.onconnectionstatechange=()=>{
-    if(pc.connectionState==='failed'){stage(3,'Local Wi-Fi connection blocked','The router may have client isolation enabled. Use Internet fallback.','error');showFallbackOnly()}
+    if(pc.connectionState==='failed'){stage(3,'Strict local route blocked','Switching routes automatically…','busy');fallbackFromBlockedLocal(sid)}
     if(pc.connectionState==='connected'){stage(3,'Connected on local Wi-Fi','Opening the OmniOS data channel…','busy');setProgress(83,'Connected')}
   };
   return conn
 }
+function assistedSignalForSid(sid){
+  if(hostSession?.sid===sid&&hostSession.signalConn?.open)return hostSession.signalConn;
+  if(joinSessionState?.sid===sid&&joinSessionState.signalConn?.open)return joinSessionState.signalConn;
+  return null
+}
+function activateAssistedFallback(signalConn,sid,initiator=false){
+  if(!signalConn?.open)return false;
+  if(liveConn?.__assisted&&liveConn.open)return true;
+  const conn={
+    peer:'assisted:'+sid,
+    peerConnection:signalConn.peerConnection,
+    __omniAuth:true,__omniLastSent:'',__omniLastRecv:'',__assisted:true,
+    get open(){return !!signalConn.open},
+    send(obj){if(signalConn.open)signalConn.send({type:'local-assisted-data',protocol:PROTOCOL,sid,payload:obj})},
+    close(){try{signalConn.close()}catch(_){}}
+  };
+  const consume=async msg=>{
+    if(!msg||msg.protocol!==PROTOCOL||msg.sid!==sid)return;
+    if(msg.type==='local-assisted-start'){
+      if(!liveConn?.__assisted){liveConn=conn;setButtonLive(true)}
+      stage(3,'Assisted direct route active','Strict LAN traffic was blocked, so OmniOS is using the already-open encrypted peer channel.','busy');
+      setProgress(86,'Assisted direct');logProgress('Switched from blocked LAN route to assisted direct channel');
+      if(!initiator)sendBundle(true);
+      return
+    }
+    if(msg.type!=='local-assisted-data'||!msg.payload)return;
+    const inner=msg.payload;
+    if(inner.type==='bundle'&&inner.bundle){
+      if(inner.bundle.fingerprint&&inner.bundle.fingerprint===conn.__omniLastRecv)return;
+      conn.__omniLastRecv=inner.bundle.fingerprint||'';
+      try{
+        setProgress(93,'Comparing data');logProgress('Comparing newest records over assisted channel');
+        const result=await api()?.merge?.(inner.bundle);
+        if(result?.changed)sendBundle(true);
+        conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
+        stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Encrypted peer connection is live.','ok');
+        setProgress(100,'Synced');logProgress(result?.changed?'Newest data applied':'Both devices already match')
+      }catch(err){console.error('Assisted sync merge',err);stage(3,'Sync failed','Your automatic pre-sync snapshot is still available.','error')}
+    }else if(inner.type==='ack'){
+      stage(4,'Live sync active','New changes will continue to transfer while both apps stay open.','ok');
+      setProgress(100,'Live')
+    }
+  };
+  signalConn.on('data',consume);
+  signalConn.on('close',()=>{if(liveConn===conn){liveConn=null;setButtonLive(false)}});
+  liveConn=conn;setButtonLive(true);
+  if(initiator){
+    try{signalConn.send({type:'local-assisted-start',protocol:PROTOCOL,sid})}catch(_){}
+    stage(3,'Switching to assisted direct','The Wi-Fi blocked the strict LAN route; continuing automatically…','busy');
+    setProgress(85,'Switching route');logProgress('Strict LAN route blocked · switching automatically');
+    setTimeout(()=>sendBundle(true),40)
+  }
+  return true
+}
+function fallbackFromBlockedLocal(sid){
+  const signal=assistedSignalForSid(sid);
+  if(signal)return activateAssistedFallback(signal,sid,true);
+  stage(3,'Local connection blocked','No assisted channel is available. Use Internet fallback.','error');
+  showFallbackOnly();
+  return false
+}
+
 function sendBundle(force=false){
   const conn=liveConn;if(!conn?.open)return;
   const bundle=api()?.bundle?.();if(!bundle)return;
@@ -5573,7 +5635,7 @@ async function applyAnswer(payload){
   if(!hostSession||payload.sid!==hostSession.sid||payload.secret!==hostSession.secret||hostSession.answerApplied)return;
   hostSession.answerApplied=true;hostSession.answerCleanup?.();stage(3,'Phone responded automatically','Opening the direct local Wi-Fi channel…','busy');setProgress(72,'Opening channel');logProgress('Phone response received');
   try{await hostSession.pc.setRemoteDescription(payload.answer)}catch(e){console.error(e);stage(3,'Could not apply response','Generate a new Local Wi-Fi code and try again.','error');return}
-  const timeout=setTimeout(()=>{if(!liveConn?.open){const ice=hostSession?.pc?.iceConnectionState||'unknown';stage(3,'Still waiting for the data channel','ICE state: '+ice+'. Both devices must be on the same Wi-Fi and the router must allow device-to-device traffic.','error');logProgress('Data channel did not open · ICE '+ice);showFallbackOnly()}},6500);
+  const timeout=setTimeout(()=>{if(!liveConn?.open){const ice=hostSession?.pc?.iceConnectionState||'unknown';logProgress('Strict LAN data channel did not open · ICE '+ice);if(!fallbackFromBlockedLocal(hostSession.sid)){stage(3,'Local connection blocked','ICE state: '+ice+'. Use Internet fallback.','error')}}},4200);
   hostSession.connectTimeout=timeout
 }
 async function startResponseScanner(){
@@ -5608,7 +5670,7 @@ async function startLocalHost(){
     const pc=new RTCPeerConnection(localConfig()),sid=randomHex(10),secret=randomHex(18);
     const dc=pc.createDataChannel('omnios-sync',{ordered:true});
     const conn=makeAdapter(pc,dc,sid);
-    hostSession={pc,dc,conn,sid,secret,answerCleanup:null,connectTimeout:null,answerApplied:false};
+    hostSession={pc,dc,conn,sid,secret,answerCleanup:null,connectTimeout:null,answerApplied:false,signalConn:null};
     const offer=await pc.createOffer();await pc.setLocalDescription(offer);await waitLocalIce(pc);setProgress(18,'Offer ready');logProgress('Local WebRTC offer created');
     const signalPeer=await Promise.race([signalPromise,new Promise(resolve=>setTimeout(()=>resolve(null),1800))]);
     const payload={v:PROTOCOL,type:'offer',sid,secret,signalPeer:signalPeer?.id||'',offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},from:dev(),createdAt:Date.now()};
@@ -5622,7 +5684,7 @@ async function joinLocalOffer(payload){
   stage(2,'Offer received','Creating the response for the PC…','busy');setProgress(42,'QR read');logProgress('PC QR read inside OmniOS');
   try{
     await ensureQr();
-    const pc=new RTCPeerConnection(localConfig());joinSessionState={pc,sid:payload.sid,secret:payload.secret};
+    const pc=new RTCPeerConnection(localConfig());joinSessionState={pc,sid:payload.sid,secret:payload.secret,signalConn:null};
     pc.ondatachannel=e=>{joinSessionState.dc=e.channel;joinSessionState.conn=makeAdapter(pc,e.channel,payload.sid)};
     await pc.setRemoteDescription(payload.offer);
     const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await waitLocalIce(pc);setProgress(55,'Response ready');logProgress('Phone response created');
@@ -5630,7 +5692,7 @@ async function joinLocalOffer(payload){
     if(payload.signalPeer&&api()?.sendLocalAnswer){
       stage(2,'Sending response automatically','No second QR scan is needed.','busy');
       try{
-        await api().sendLocalAnswer(payload.signalPeer,response);setProgress(66,'Response sent');logProgress('Response sent to PC');
+        const signalResult=await api().sendLocalAnswer(payload.signalPeer,response);joinSessionState.signalConn=signalResult?.conn||null;setProgress(66,'Response sent');logProgress('Response sent to PC · backup route ready');
         const host=overlay?.querySelector('.omni-sync-content');
         if(host)host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response sent automatically</strong><span>Keep this page open. The direct Local Wi-Fi connection should open now.</span></div>';
         stage(3,'Response sent to the PC','Opening the direct encrypted Wi-Fi connection…','ok');
@@ -5743,7 +5805,7 @@ function patchSyncButton(){
 }
 function init(){
   document.addEventListener('omnios:data-changed',scheduleSend);
-  document.addEventListener('omnios:local-answer-signal',e=>{const p=e.detail;if(p)applyAnswer(p)});
+  document.addEventListener('omnios:local-answer-signal',e=>{const d=e.detail||{};const p=d.payload||d;if(hostSession&&d.conn)hostSession.signalConn=d.conn;if(p)applyAnswer(p)});
   const boot=async()=>{
     if(await handleIncomingHash())return;
     if(!patchSyncButton()){const mo=new MutationObserver(()=>{if(patchSyncButton())mo.disconnect()});mo.observe(document.documentElement,{subtree:true,childList:true})}

@@ -329,6 +329,7 @@ function ensureV35State(){
   state.core.localDB=state.core.localDB&&typeof state.core.localDB==='object'?state.core.localDB:{};
   state.core.syncMeta=state.core.syncMeta&&typeof state.core.syncMeta==='object'?state.core.syncMeta:{};
   state.core.syncMeta.modules=state.core.syncMeta.modules&&typeof state.core.syncMeta.modules==='object'?state.core.syncMeta.modules:{};
+  state.core.syncMeta.records=state.core.syncMeta.records&&typeof state.core.syncMeta.records==='object'?state.core.syncMeta.records:{};
   state.life=state.life&&typeof state.life==='object'?state.life:{};
   const arrays=['inbox','projects','timeBlocks','people','home','health','learning','travel','money','documents','journal','importantDates','vehicles','decisions','someday','reviews'];
   arrays.forEach(k=>state.life[k]=Array.isArray(state.life[k])?state.life[k]:[]);
@@ -508,7 +509,14 @@ function syncBaseline35(){
   try{const b=JSON.parse(storage.getItem('omnios_v3_backup')||'null');if(b?.savedAt&&String(b.savedAt)>String(at))at=b.savedAt}catch(_){}
   return at||new Date().toISOString()
 }
-function syncStateKeys35(s=state){return Object.keys(s||{}).filter(k=>k!=='core'&&typeof s[k]!=='function').sort()}
+function syncStateKeys35(s=state){return Object.keys(s||{}).filter(k=>k!=='core'&&!String(k).startsWith('__')&&typeof s[k]!=='function').sort()}
+function syncRecordId35(x){return x&&typeof x==='object'&&x.id!=null?String(x.id):''}
+function initializeRecordMeta35(key,list,base){
+  if(!Array.isArray(list))return;
+  const records=state.core.syncMeta.records;
+  records[key]=records[key]&&typeof records[key]==='object'?records[key]:{};
+  list.forEach(x=>{const id=syncRecordId35(x);if(id&&!records[key][id])records[key][id]={at:base,deleted:false}})
+}
 function changedStateKeys35(a,b){
   const keys=new Set([...syncStateKeys35(a),...syncStateKeys35(b)]);
   return [...keys].filter(k=>JSON.stringify(a?.[k])!==JSON.stringify(b?.[k]))
@@ -516,17 +524,36 @@ function changedStateKeys35(a,b){
 function ensureSyncMeta35(){
   ensureV35State();
   const base=syncBaseline35(),m=state.core.syncMeta.modules;
-  syncStateKeys35(state).forEach(k=>{if(!m[k])m[k]=base});
+  syncStateKeys35(state).forEach(k=>{if(!m[k])m[k]=base;initializeRecordMeta35(k,state[k],base)});
   state.core.syncMeta.updatedAt=state.core.syncMeta.updatedAt||base;
   return state.core.syncMeta
 }
-function touchSyncStateKeys35(keys,at=new Date().toISOString()){
-  const m=ensureSyncMeta35().modules;
-  (keys||[]).forEach(k=>{if(k&&k!=='core')m[k]=at});
-  state.core.syncMeta.updatedAt=at
+function touchRecordMeta35(key,prevList,nextList,at){
+  if(!Array.isArray(prevList)||!Array.isArray(nextList))return;
+  const prev=new Map(prevList.map(x=>[syncRecordId35(x),x]).filter(x=>x[0])),next=new Map(nextList.map(x=>[syncRecordId35(x),x]).filter(x=>x[0]));
+  if(!prev.size&&!next.size)return;
+  const records=ensureSyncMeta35().records;
+  records[key]=records[key]&&typeof records[key]==='object'?records[key]:{};
+  const ids=new Set([...prev.keys(),...next.keys()]);
+  ids.forEach(id=>{
+    const a=prev.get(id),b=next.get(id);
+    if(a&&!b)records[key][id]={at,deleted:true};
+    else if(b&&(!a||JSON.stringify(a)!==JSON.stringify(b)))records[key][id]={at,deleted:false}
+  })
+}
+function touchSyncStateKeys35(keys,at=new Date().toISOString(),prevState=null,nextState=state){
+  const meta=ensureSyncMeta35(),m=meta.modules;
+  (keys||[]).forEach(k=>{if(k&&k!=='core'){m[k]=at;touchRecordMeta35(k,prevState?.[k],nextState?.[k],at)}});
+  meta.updatedAt=at
 }
 function readAuxMeta35(){
   try{const x=JSON.parse(localStorage.getItem(SYNC_AUX_META_KEY35)||'{}');return x&&typeof x==='object'?x:{}}catch(_){return{}}
+}
+function ensureAuxMeta35(){
+  const m=readAuxMeta35(),base=syncBaseline35(),aux=captureAux35();let changed=false;
+  Object.keys(aux).forEach(k=>{if(!m[k]){m[k]={at:base,deleted:false};changed=true}});
+  if(changed)writeAuxMeta35(m);
+  return m
 }
 function writeAuxMeta35(meta){
   try{
@@ -546,7 +573,7 @@ function automationPass35(){
 }
 function addChangeLog35(mods){ensureV35State();state.core.changeLog.push({id:uid('chg'),at:new Date().toISOString(),modules:mods,label:mods.length?`Updated ${mods.join(', ')}`:'Saved changes'});state.core.changeLog=state.core.changeLog.slice(-250)}
 function installUndo35(){
-  if(window.saveState?.__v35)return;const base=window.saveState;const wrapped=function(){if(saveGuard35)return base.apply(this,arguments);ensureV35State();automationPass35();const now=clone(state);const mods=changedModules35(comparable35(lastCommitted35),comparable35(now)),syncKeys=changedStateKeys35(lastCommitted35,now);if(syncKeys.length&&!window.__omniSyncApplying)touchSyncStateKeys35(syncKeys);if(mods.length){undo35.push(clone(lastCommitted35));undo35=undo35.slice(-60);redo35=[];addChangeLog35(mods)}saveGuard35=true;const r=base.apply(this,arguments);saveGuard35=false;lastCommitted35=clone(state);updateUndoControls35();persistIDB35('save');if(mods.length)scheduleAutoSnapshot35(mods);if(syncKeys.length&&!window.__omniSyncApplying)queueMicrotask(()=>document.dispatchEvent(new CustomEvent('omnios:data-changed',{detail:{modules:syncKeys}})));return r};wrapped.__v35=true;window.saveState=wrapped;
+  if(window.saveState?.__v35)return;const base=window.saveState;const wrapped=function(){if(saveGuard35)return base.apply(this,arguments);ensureV35State();automationPass35();const now=clone(state);const mods=changedModules35(comparable35(lastCommitted35),comparable35(now)),syncKeys=changedStateKeys35(lastCommitted35,now);if(syncKeys.length&&!window.__omniSyncApplying)touchSyncStateKeys35(syncKeys,new Date().toISOString(),lastCommitted35,now);if(mods.length){undo35.push(clone(lastCommitted35));undo35=undo35.slice(-60);redo35=[];addChangeLog35(mods)}saveGuard35=true;const r=base.apply(this,arguments);saveGuard35=false;lastCommitted35=clone(state);updateUndoControls35();persistIDB35('save');if(mods.length)scheduleAutoSnapshot35(mods);if(syncKeys.length&&!window.__omniSyncApplying)queueMicrotask(()=>document.dispatchEvent(new CustomEvent('omnios:data-changed',{detail:{modules:syncKeys}})));return r};wrapped.__v35=true;window.saveState=wrapped;
   window.omniUndo=function(){if(!undo35.length){window.toast?.('Nothing to undo');return}const cur=clone(state),prev=undo35.pop();redo35.push(cur);state=clone(prev);ensureV35State();saveGuard35=true;base();saveGuard35=false;lastCommitted35=clone(state);state.core.changeLog.push({id:uid('chg'),at:new Date().toISOString(),modules:['System'],label:'Undo'});updateUndoControls35();renderAll?.();renderNewView35(activeView35());persistIDB35('undo');window.toast?.('↶ Undone')};
   window.omniRedo=function(){if(!redo35.length){window.toast?.('Nothing to redo');return}const cur=clone(state),next=redo35.pop();undo35.push(cur);state=clone(next);ensureV35State();saveGuard35=true;base();saveGuard35=false;lastCommitted35=clone(state);state.core.changeLog.push({id:uid('chg'),at:new Date().toISOString(),modules:['System'],label:'Redo'});updateUndoControls35();renderAll?.();renderNewView35(activeView35());persistIDB35('redo');window.toast?.('↷ Redone')};
   document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey))return;const tag=document.activeElement?.tagName;if(['INPUT','TEXTAREA','SELECT'].includes(tag))return;if(e.key.toLowerCase()==='z'&&e.shiftKey){e.preventDefault();window.omniRedo()}else if(e.key.toLowerCase()==='z'){e.preventDefault();window.omniUndo()}else if(e.key.toLowerCase()==='y'){e.preventDefault();window.omniRedo()}},true)
@@ -645,6 +672,12 @@ async function commitAutoSnapshot35(){
     if(!autoSnapshotBase35)autoSnapshotBase35=clone(current);
     const fp=fingerprint35(current,aux);
     if(fp===autoSnapshotLastFP35){autoSnapshotPending35.clear();return null}
+    const fallbackKeys=changedStateKeys35(autoSnapshotBase35,current);
+    if(fallbackKeys.length&&!window.__omniSyncApplying){
+      touchSyncStateKeys35(fallbackKeys,new Date().toISOString(),autoSnapshotBase35,current);
+      try{storage.setItem('omnios_v3_state',JSON.stringify(state))}catch(_){}
+      queueMicrotask(()=>document.dispatchEvent(new CustomEvent('omnios:data-changed',{detail:{modules:fallbackKeys}})))
+    }
     let mods=[...autoSnapshotPending35];
     if(!mods.length)mods=changedModules35(snapshotStateComparable35(autoSnapshotBase35),snapshotStateComparable35(current));
     const baseAux=autoSnapshotBase35?autoSnapshotBase35.__auxSnapshot35||{}:{};
@@ -675,7 +708,7 @@ function persistIDB35(reason='save'){
   persistTimer35=setTimeout(async()=>{
     try{
       ensureV35State();
-      const payload={version:35,savedAt:new Date().toISOString(),state:clone(state),aux:captureAux35(),auxMeta:readAuxMeta35()};
+      const payload={version:35,savedAt:new Date().toISOString(),state:clone(state),aux:captureAux35(),auxMeta:ensureAuxMeta35()};
       await idbPut35(STORE_STATE,'latest',payload);
       state.core.localDB.lastSavedAt=payload.savedAt;
       state.core.localDB.status='ok';
@@ -699,7 +732,7 @@ async function trimSnapshots35(all){
   for(const old of all)if(!keep.has(old.id))await idbDelete35(STORE_SNAPS,old.id)
 }
 async function makeSnapshot35(label='Manual snapshot',opts={}){
-  const snapshotState=clone(state),aux=opts.aux||captureAux35(),auxMeta=opts.auxMeta||readAuxMeta35();
+  const snapshotState=clone(state),aux=opts.aux||captureAux35(),auxMeta=opts.auxMeta||ensureAuxMeta35();
   const kind=opts.kind||(/^Automatic\b/i.test(label)?'auto':'manual');
   const fp=opts.fingerprint||fingerprint35(snapshotState,aux);
   let all=await idbAll35(STORE_SNAPS);
@@ -774,11 +807,12 @@ window.OmniRecovery35={
   makeSnapshot:(label,opts)=>makeSnapshot35(label,opts),
   captureAux:()=>captureAux35(),
   restoreAux:(aux)=>restoreAux35(aux),
-  readAuxMeta:()=>readAuxMeta35(),
+  readAuxMeta:()=>ensureAuxMeta35(),
   writeAuxMeta:(m)=>writeAuxMeta35(m),
   ensureSyncMeta:()=>ensureSyncMeta35(),
   touchSyncStateKeys:(keys,at)=>touchSyncStateKeys35(keys,at),
   stateKeys:(s)=>syncStateKeys35(s),
+  recordId:(x)=>syncRecordId35(x),
   fingerprint:(s,aux)=>fingerprint35(s,aux)
 };
 async function restoreSnapshot35(id){const all=await idbAll35(STORE_SNAPS),snap=all.find(x=>x.id===id);if(!snap)return;if(!confirm(`Restore snapshot from ${new Date(snap.at).toLocaleString()}? Current state can be recovered with Undo during this session.`))return;undo35.push(clone(state));state=clone(snap.state);restoreAux35(snap.aux);if(snap.auxMeta)writeAuxMeta35(snap.auxMeta);ensureV35State();lastCommitted35=clone(state);autoSnapshotBase35=clone(state);autoSnapshotBase35.__auxSnapshot35=captureAux35();autoSnapshotLastFP35=fingerprint35(state,autoSnapshotBase35.__auxSnapshot35);saveGuard35=true;(window.saveState?.__v35?null:null);const baseCurrent=window.saveState;saveGuard35=false;window.saveState();renderAll?.();renderNewView35(activeView35());window.toast?.('Snapshot restored')}
@@ -1090,7 +1124,7 @@ window.OmniLifeCRUD35={
 
 /* ---------- initialization ---------- */
 async function init35(){
-  ensureV35State();await recoverLatestIDB35();ensureV35State();ensureSyncMeta35();if(!storage.getItem('omnios_v35_migrated')){storage.setItem('omnios_v35_migrated','1');if(getSetting('appearance.startView','dashboard')==='dashboard')setSetting('appearance.startView','today')}installRouteHistory35();installUndo35();installAutoSnapshotFallback35();installTopbar35();installMobileTopbar35();buildMobileNav35();installTaskAdvanced35();patchMasterCalendar35();ensureDrawer35();patchViewButton35();enrichSettings35();installHelp35();processRecurringTasks35();loadBackupFolder35().then(()=>updateDBStatus35());if(idbRecovered35)renderAll?.();persistIDB35('init');renderNewView35(activeView35());document.documentElement.dataset.omniosVersion='35';if(idbRecovered35)setTimeout(()=>window.toast?.('Recovered newer OmniOS data from the local recovery database.'),0);
+  ensureV35State();await recoverLatestIDB35();ensureV35State();ensureSyncMeta35();ensureAuxMeta35();if(!storage.getItem('omnios_v35_migrated')){storage.setItem('omnios_v35_migrated','1');if(getSetting('appearance.startView','dashboard')==='dashboard')setSetting('appearance.startView','today')}installRouteHistory35();installUndo35();installAutoSnapshotFallback35();installTopbar35();installMobileTopbar35();buildMobileNav35();installTaskAdvanced35();patchMasterCalendar35();ensureDrawer35();patchViewButton35();enrichSettings35();installHelp35();processRecurringTasks35();loadBackupFolder35().then(()=>updateDBStatus35());if(idbRecovered35)renderAll?.();persistIDB35('init');renderNewView35(activeView35());document.documentElement.dataset.omniosVersion='35';if(idbRecovered35)setTimeout(()=>window.toast?.('Recovered newer OmniOS data from the local recovery database.'),0);
   // The old dashboard database card is superseded by Data Center.
   const legacy=document.getElementById('database-panel');if(legacy)legacy.style.display='none';
   // Make Today the first-run landing page while respecting an explicit saved start view.

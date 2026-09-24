@@ -506,7 +506,7 @@ function automationPass35(){
 }
 function addChangeLog35(mods){ensureV35State();state.core.changeLog.push({id:uid('chg'),at:new Date().toISOString(),modules:mods,label:mods.length?`Updated ${mods.join(', ')}`:'Saved changes'});state.core.changeLog=state.core.changeLog.slice(-250)}
 function installUndo35(){
-  if(window.saveState?.__v35)return;const base=window.saveState;const wrapped=function(){if(saveGuard35)return base.apply(this,arguments);ensureV35State();automationPass35();const now=clone(state);const mods=changedModules35(comparable35(lastCommitted35),comparable35(now));if(mods.length){undo35.push(clone(lastCommitted35));undo35=undo35.slice(-60);redo35=[];addChangeLog35(mods)}saveGuard35=true;const r=base.apply(this,arguments);saveGuard35=false;lastCommitted35=clone(state);updateUndoControls35();persistIDB35('save');return r};wrapped.__v35=true;window.saveState=wrapped;
+  if(window.saveState?.__v35)return;const base=window.saveState;const wrapped=function(){if(saveGuard35)return base.apply(this,arguments);ensureV35State();automationPass35();const now=clone(state);const mods=changedModules35(comparable35(lastCommitted35),comparable35(now));if(mods.length){undo35.push(clone(lastCommitted35));undo35=undo35.slice(-60);redo35=[];addChangeLog35(mods)}saveGuard35=true;const r=base.apply(this,arguments);saveGuard35=false;lastCommitted35=clone(state);updateUndoControls35();persistIDB35('save');if(mods.length)scheduleAutoSnapshot35(mods);return r};wrapped.__v35=true;window.saveState=wrapped;
   window.omniUndo=function(){if(!undo35.length){window.toast?.('Nothing to undo');return}const cur=clone(state),prev=undo35.pop();redo35.push(cur);state=clone(prev);ensureV35State();saveGuard35=true;base();saveGuard35=false;lastCommitted35=clone(state);state.core.changeLog.push({id:uid('chg'),at:new Date().toISOString(),modules:['System'],label:'Undo'});updateUndoControls35();renderAll?.();renderNewView35(activeView35());persistIDB35('undo');window.toast?.('↶ Undone')};
   window.omniRedo=function(){if(!redo35.length){window.toast?.('Nothing to redo');return}const cur=clone(state),next=redo35.pop();undo35.push(cur);state=clone(next);ensureV35State();saveGuard35=true;base();saveGuard35=false;lastCommitted35=clone(state);state.core.changeLog.push({id:uid('chg'),at:new Date().toISOString(),modules:['System'],label:'Redo'});updateUndoControls35();renderAll?.();renderNewView35(activeView35());persistIDB35('redo');window.toast?.('↷ Redone')};
   document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey))return;const tag=document.activeElement?.tagName;if(['INPUT','TEXTAREA','SELECT'].includes(tag))return;if(e.key.toLowerCase()==='z'&&e.shiftKey){e.preventDefault();window.omniRedo()}else if(e.key.toLowerCase()==='z'){e.preventDefault();window.omniUndo()}else if(e.key.toLowerCase()==='y'){e.preventDefault();window.omniRedo()}},true)
@@ -535,9 +535,161 @@ function activityCsv35(){const rows=[['timestamp','label','modules']];(state.cor
 async function mirrorBackupFolder35(){if(!backupDir35||mirrorBusy35)return false;mirrorBusy35=true;try{if(!(await folderPermission35(backupDir35))){backupDir35=null;return false}const payload={format:'OmniOS Local Mirror',version:35,savedAt:new Date().toISOString(),state:clone(state)};await writeFolderFile35('OmniOS_Latest.json',JSON.stringify(payload,null,2));await writeFolderFile35('OmniOS_Activity.csv',activityCsv35(),'text/csv;charset=utf-8');return true}catch(e){console.warn('Folder mirror failed',e);return false}finally{mirrorBusy35=false}}
 async function connectBackupFolder35(){if(!window.showDirectoryPicker){window.toast?.('Direct folder mirroring is not supported here. Use Export backup instead.');return false}try{const h=await showDirectoryPicker({mode:'readwrite'});backupDir35=h;await idbPut35(STORE_STATE,'backup-folder-handle',h);await mirrorBackupFolder35();window.toast?.('Backup folder connected. Current OmniOS data was mirrored; no file was imported.');renderDataCenter35();return true}catch(e){if(e?.name!=='AbortError')console.warn(e);return false}}
 let persistTimer35;
-function persistIDB35(reason='save'){clearTimeout(persistTimer35);persistTimer35=setTimeout(async()=>{try{ensureV35State();const payload={version:35,savedAt:new Date().toISOString(),state:clone(state)};await idbPut35(STORE_STATE,'latest',payload);state.core.localDB.lastSavedAt=payload.savedAt;state.core.localDB.status='ok';const date=todayKey();if(state.core.localDB.lastDailySnapshot!==date){await makeSnapshot35('Automatic daily snapshot');state.core.localDB.lastDailySnapshot=date}updateDBStatus35();if(backupDir35)mirrorBackupFolder35()}catch(e){state.core.localDB.status='error';state.core.localDB.error=String(e?.message||e);updateDBStatus35()}},250)}
-async function makeSnapshot35(label='Manual snapshot'){const snap={id:uid('snap'),at:new Date().toISOString(),label,state:clone(state)};await idbPut35(STORE_SNAPS,null,snap);let all=await idbAll35(STORE_SNAPS);all.sort((a,b)=>String(b.at).localeCompare(String(a.at)));for(const old of all.slice(30))await idbDelete35(STORE_SNAPS,old.id);return snap}
-async function restoreSnapshot35(id){const all=await idbAll35(STORE_SNAPS),snap=all.find(x=>x.id===id);if(!snap)return;if(!confirm(`Restore snapshot from ${new Date(snap.at).toLocaleString()}? Current state can be recovered with Undo during this session.`))return;undo35.push(clone(state));state=clone(snap.state);ensureV35State();lastCommitted35=clone(state);saveGuard35=true;(window.saveState?.__v35?null:null);const baseCurrent=window.saveState;saveGuard35=false;window.saveState();renderAll?.();renderNewView35(activeView35());window.toast?.('Snapshot restored')}
+const AUTO_SNAPSHOT_DELAY35=1200,MAX_AUTO_SNAPS35=80,MAX_MANUAL_SNAPS35=20;
+let autoSnapshotTimer35=null,autoSnapshotPending35=new Set(),autoSnapshotBase35=null,autoSnapshotLastFP35='';
+
+function auxSnapshotKey35(key){
+  key=String(key||'');
+  if(!/^omnios_/i.test(key))return false;
+  if(['omnios_v3_state','omnios_v3_backup','omnios_ui_preferences_v1','omnios_v35_full_reset_at'].includes(key))return false;
+  if(/storage_test|parts?_cache|startup|boot_cache/i.test(key))return false;
+  return true
+}
+function captureAux35(){
+  const out={};
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(auxSnapshotKey35(k))out[k]=localStorage.getItem(k);
+    }
+  }catch(_){}
+  return out
+}
+function restoreAux35(aux){
+  if(!aux||typeof aux!=='object')return;
+  try{
+    const current=[];
+    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(auxSnapshotKey35(k))current.push(k)}
+    current.forEach(k=>{if(!Object.prototype.hasOwnProperty.call(aux,k))localStorage.removeItem(k)});
+    Object.entries(aux).forEach(([k,v])=>{if(auxSnapshotKey35(k)&&v!=null)localStorage.setItem(k,String(v))});
+  }catch(e){console.warn('Auxiliary snapshot restore failed',e)}
+}
+function snapshotStateComparable35(s){
+  const clean=comparable35(s);
+  if(clean?.core?.ui)delete clean.core.ui.savedAt;
+  return clean
+}
+function fingerprint35(stateValue=state,auxValue=captureAux35()){
+  let raw='';
+  try{raw=JSON.stringify({state:snapshotStateComparable35(stateValue),aux:auxValue})}catch(_){raw=String(Date.now())}
+  let h=2166136261;
+  for(let i=0;i<raw.length;i++){h^=raw.charCodeAt(i);h=Math.imul(h,16777619)}
+  return raw.length+':'+(h>>>0).toString(16)
+}
+function changedAuxModules35(a,b){
+  const keys=new Set([...Object.keys(a||{}),...Object.keys(b||{})]),mods=[];
+  for(const k of keys){
+    if((a||{})[k]===(b||{})[k])continue;
+    if(/bible/i.test(k))mods.push('Bible');
+    else if(/icon|cover|brand|pwa|personal/i.test(k))mods.push('Personalization');
+    else mods.push('App data')
+  }
+  return [...new Set(mods)]
+}
+function autoSnapshotLabel35(mods){
+  const names=[...new Set((mods||[]).filter(Boolean))];
+  if(!names.length)return 'Automatic snapshot';
+  if(names.length===1)return 'Automatic · '+names[0];
+  return 'Automatic · '+names.slice(0,3).join(', ')+(names.length>3?' +'+(names.length-3):'')
+}
+function scheduleAutoSnapshot35(mods=[]){
+  (mods||[]).forEach(m=>autoSnapshotPending35.add(m));
+  clearTimeout(autoSnapshotTimer35);
+  autoSnapshotTimer35=setTimeout(commitAutoSnapshot35,AUTO_SNAPSHOT_DELAY35)
+}
+async function commitAutoSnapshot35(){
+  autoSnapshotTimer35=null;
+  try{
+    const aux=captureAux35();
+    const current=clone(state);
+    if(!autoSnapshotBase35)autoSnapshotBase35=clone(current);
+    const fp=fingerprint35(current,aux);
+    if(fp===autoSnapshotLastFP35){autoSnapshotPending35.clear();return null}
+    let mods=[...autoSnapshotPending35];
+    if(!mods.length)mods=changedModules35(snapshotStateComparable35(autoSnapshotBase35),snapshotStateComparable35(current));
+    const baseAux=autoSnapshotBase35?autoSnapshotBase35.__auxSnapshot35||{}:{};
+    mods.push(...changedAuxModules35(baseAux,aux));
+    mods=[...new Set(mods)];
+    if(!mods.length){
+      autoSnapshotLastFP35=fp;
+      autoSnapshotBase35=clone(current);
+      autoSnapshotBase35.__auxSnapshot35=aux;
+      autoSnapshotPending35.clear();
+      return null
+    }
+    const snap=await makeSnapshot35(autoSnapshotLabel35(mods),{kind:'auto',modules:mods,dedupe:true,aux,fingerprint:fp});
+    autoSnapshotLastFP35=fp;
+    autoSnapshotBase35=clone(current);
+    autoSnapshotBase35.__auxSnapshot35=aux;
+    autoSnapshotPending35.clear();
+    state.core.localDB.lastAutoSnapshotAt=snap?.at||new Date().toISOString();
+    return snap
+  }catch(e){
+    console.warn('Automatic snapshot failed',e);
+    autoSnapshotPending35.clear();
+    return null
+  }
+}
+function persistIDB35(reason='save'){
+  clearTimeout(persistTimer35);
+  persistTimer35=setTimeout(async()=>{
+    try{
+      ensureV35State();
+      const payload={version:35,savedAt:new Date().toISOString(),state:clone(state),aux:captureAux35()};
+      await idbPut35(STORE_STATE,'latest',payload);
+      state.core.localDB.lastSavedAt=payload.savedAt;
+      state.core.localDB.status='ok';
+      updateDBStatus35();
+      if(backupDir35)mirrorBackupFolder35()
+    }catch(e){
+      state.core.localDB.status='error';
+      state.core.localDB.error=String(e?.message||e);
+      updateDBStatus35()
+    }
+  },250)
+}
+async function trimSnapshots35(all){
+  all.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+  const autos=all.filter(s=>s.kind==='auto'||/^Automatic\b/i.test(s.label||''));
+  const manuals=all.filter(s=>!(s.kind==='auto'||/^Automatic\b/i.test(s.label||'')));
+  const keep=new Set([
+    ...autos.slice(0,MAX_AUTO_SNAPS35).map(s=>s.id),
+    ...manuals.slice(0,MAX_MANUAL_SNAPS35).map(s=>s.id)
+  ]);
+  for(const old of all)if(!keep.has(old.id))await idbDelete35(STORE_SNAPS,old.id)
+}
+async function makeSnapshot35(label='Manual snapshot',opts={}){
+  const snapshotState=clone(state),aux=opts.aux||captureAux35();
+  const kind=opts.kind||(/^Automatic\b/i.test(label)?'auto':'manual');
+  const fp=opts.fingerprint||fingerprint35(snapshotState,aux);
+  let all=await idbAll35(STORE_SNAPS);
+  all.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+  if(opts.dedupe!==false&&kind==='auto'){
+    const latest=all.find(s=>s.kind==='auto'||/^Automatic\b/i.test(s.label||''));
+    if(latest&&latest.fingerprint===fp)return latest
+  }
+  const snap={id:uid('snap'),at:new Date().toISOString(),label,kind,modules:Array.isArray(opts.modules)?opts.modules:[],fingerprint:fp,state:snapshotState,aux};
+  await idbPut35(STORE_SNAPS,null,snap);
+  all.unshift(snap);
+  await trimSnapshots35(all);
+  return snap
+}
+
+/* A fallback catches state changes made by modules that persist directly instead of
+   calling saveState. Debouncing means typing creates one recovery point, not one per key. */
+function installAutoSnapshotFallback35(){
+  if(window.__omniAutoSnapshotFallback35)return;
+  window.__omniAutoSnapshotFallback35=true;
+  autoSnapshotBase35=clone(state);
+  autoSnapshotBase35.__auxSnapshot35=captureAux35();
+  autoSnapshotLastFP35=fingerprint35(state,autoSnapshotBase35.__auxSnapshot35);
+  const schedule=()=>scheduleAutoSnapshot35([]);
+  document.addEventListener('input',schedule,true);
+  document.addEventListener('change',schedule,true);
+  document.addEventListener('click',e=>{if(e.target.closest('button,[role="button"],[data-view],[data-action]'))schedule()},false);
+  window.addEventListener('pagehide',()=>{if(autoSnapshotTimer35){clearTimeout(autoSnapshotTimer35);commitAutoSnapshot35()}});
+}
+async function restoreSnapshot35(id){const all=await idbAll35(STORE_SNAPS),snap=all.find(x=>x.id===id);if(!snap)return;if(!confirm(`Restore snapshot from ${new Date(snap.at).toLocaleString()}? Current state can be recovered with Undo during this session.`))return;undo35.push(clone(state));state=clone(snap.state);restoreAux35(snap.aux);ensureV35State();lastCommitted35=clone(state);autoSnapshotBase35=clone(state);autoSnapshotBase35.__auxSnapshot35=captureAux35();autoSnapshotLastFP35=fingerprint35(state,autoSnapshotBase35.__auxSnapshot35);saveGuard35=true;(window.saveState?.__v35?null:null);const baseCurrent=window.saveState;saveGuard35=false;window.saveState();renderAll?.();renderNewView35(activeView35());window.toast?.('Snapshot restored')}
 function download35(name,text,type='application/json'){const blob=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function exportBackup35(){const payload={format:'OmniOS Portable Backup',version:35,exportedAt:new Date().toISOString(),state:clone(state)};download35(`OmniOS_Backup_${todayKey()}.json`,JSON.stringify(payload,null,2));window.toast?.('Portable backup exported')}
 function importBackup35(){const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.onchange=async()=>{const f=inp.files?.[0];if(!f)return;try{const p=JSON.parse(await f.text());const imported=p.state||p;if(!imported||!Array.isArray(imported.entries))throw new Error('Not an OmniOS backup');if(!confirm('Restore this backup? Your current state is added to Undo history first.'))return;undo35.push(clone(state));state=clone(imported);ensureV35State();lastCommitted35=clone(state);window.saveState();await makeSnapshot35('Imported backup');renderAll?.();renderNewView35(activeView35());window.toast?.('Backup restored')}catch(e){alert('Could not import backup: '+e.message)}};inp.click()}
@@ -590,7 +742,7 @@ async function renderDataCenter35(){
   el.innerHTML=`<div class="v35-page-head"><div><div class="v35-kicker">LOCAL DATA & RECOVERY</div><h3>Data Center</h3><div class="text-muted text-sm">Your OmniOS data stays local to this browser. Review storage health, create recovery snapshots, and export portable backups.</div></div><div class="v35-page-actions"><button class="btn" id="v35-db-refresh">↻ Refresh</button><button class="btn btn-primary" id="v35-db-snapshot">+ Snapshot</button></div></div>
   <div class="v35-db-hero"><div class="v35-card-head"><div><div class="v35-card-title">Local database</div><div class="v35-card-sub">Primary app state + IndexedDB recovery layer</div></div><span class="v35-chip" id="v35-db-health-chip">Checking…</span></div><div class="v35-db-state"><span class="v35-db-led" id="v35-db-led"></span><span id="v35-db-health-text">Checking browser storage…</span></div><div class="v35-stat-grid" style="margin-top:14px"><div class="v35-stat"><div class="v35-stat-label">Last saved</div><div class="v35-stat-value" style="font-size:.92rem" id="v35-db-last">${last?esc(new Date(last).toLocaleString()):'This session'}</div></div><div class="v35-stat"><div class="v35-stat-label">Storage used</div><div class="v35-stat-value" id="v35-db-used">—</div></div><div class="v35-stat"><div class="v35-stat-label">Available quota</div><div class="v35-stat-value" id="v35-db-quota">—</div></div><div class="v35-stat"><div class="v35-stat-label">Persistent storage</div><div class="v35-stat-value" style="font-size:.92rem" id="v35-db-persisted">—</div></div></div></div>
   <div class="v35-grid" style="margin-top:12px">
-    <div class="v35-card v35-span-7"><div class="v35-card-head"><div><div class="v35-card-title">Recovery snapshots</div><div class="v35-card-sub">Automatic daily snapshots plus any snapshots you create manually. Up to 30 are retained.</div></div><button class="btn btn-sm" id="v35-db-clear-snaps">Clear snapshots</button></div><div id="v35-db-snapshots"><div class="v35-empty">Loading snapshots…</div></div></div>
+    <div class="v35-card v35-span-7"><div class="v35-card-head"><div><div class="v35-card-title">Recovery snapshots</div><div class="v35-card-sub">Automatic snapshots are created after meaningful changes, with a short debounce to group typing. Up to 80 automatic and 20 manual snapshots are retained.</div></div><button class="btn btn-sm" id="v35-db-clear-snaps">Clear snapshots</button></div><div id="v35-db-snapshots"><div class="v35-empty">Loading snapshots…</div></div></div>
     <div class="v35-card v35-span-5"><div class="v35-card-head"><div><div class="v35-card-title">Portable backup</div><div class="v35-card-sub">Export one JSON file containing the complete OmniOS state, or restore from a previous backup.</div></div></div><div class="v35-list"><button class="btn btn-primary" id="v35-db-export" style="justify-content:flex-start">⇩ Export complete backup</button><button class="btn" id="v35-db-import" style="justify-content:flex-start">⇧ Restore from backup</button><button class="btn" id="v35-db-folder" style="justify-content:flex-start">▣ ${backupDir35?'Backup folder connected':'Connect backup folder'}</button></div><div class="text-muted" style="font-size:.62rem;line-height:1.5;margin-top:10px">Folder mirroring is available only when the browser permits direct folder access. Portable export works without it.</div></div>
     <div class="v35-card v35-span-7"><div class="v35-card-head"><div><div class="v35-card-title">Data inventory</div><div class="v35-card-sub">Live counts from the current OmniOS state.</div></div></div><div class="v35-grid">${dataInventory35().map(([k,n])=>`<div class="v35-stat v35-span-3"><div class="v35-stat-label">${esc(k)}</div><div class="v35-stat-value">${Number(n)||0}</div></div>`).join('')}</div></div>
     <div class="v35-card v35-span-5"><div class="v35-card-head"><div><div class="v35-card-title">Recent changes</div><div class="v35-card-sub">Latest local change-history records.</div></div><button class="btn btn-sm" id="v35-db-history">Full history</button></div><div class="v35-list">${[...(state.core?.changeLog||[])].reverse().slice(0,8).map(x=>`<div class="v35-history-item"><div class="v35-row-icon">↺</div><div><div class="v35-row-title">${esc(x.label||'Saved changes')}</div><div class="v35-history-time">${esc(new Date(x.at).toLocaleString())}</div></div></div>`).join('')||'<div class="v35-empty">No recorded changes yet.</div>'}</div></div>
@@ -610,7 +762,7 @@ async function renderDataCenter35(){
   if(used)used.textContent=formatBytes35(info.usage||0);if(quota)quota.textContent=formatBytes35(info.quota||0);if(persisted)persisted.textContent=info.persisted?'Protected':'Best effort';
   if(dbErr){if(health)health.textContent='IndexedDB snapshots are unavailable here. OmniOS is still using its basic local save layer.';if(chip){chip.textContent='Basic local';chip.style.color='var(--accent-yellow)'}if(led)led.style.background='var(--accent-yellow)'}
   else{if(health)health.textContent=`Local browser database active · ${snaps.length} recovery snapshot${snaps.length===1?'':'s'} available.`;if(chip){chip.textContent='Healthy';chip.style.color='var(--accent-green)'}}
-  const host=el.querySelector('#v35-db-snapshots');if(host){host.innerHTML=dbErr?`<div class="v35-empty">${esc(dbErr)}</div>`:(snaps.length?snaps.map(s=>`<div class="v35-snapshot-row"><div class="v35-row-icon">◈</div><div class="v35-snapshot-main"><div class="v35-row-title">${esc(s.label||'Snapshot')}</div><div class="v35-row-meta">${esc(new Date(s.at).toLocaleString())}</div></div><button class="btn btn-sm" data-v35-restore-snap="${esc(s.id)}">Restore</button><button class="icon-btn" data-v35-delete-snap="${esc(s.id)}" title="Delete snapshot">✕</button></div>`).join(''):'<div class="v35-empty">No snapshots yet. Create one before a major change or import.</div>')}
+  const host=el.querySelector('#v35-db-snapshots');if(host){host.innerHTML=dbErr?`<div class="v35-empty">${esc(dbErr)}</div>`:(snaps.length?snaps.map(s=>`<div class="v35-snapshot-row"><div class="v35-row-icon">◈</div><div class="v35-snapshot-main"><div class="v35-row-title">${esc(s.label||'Snapshot')}</div><div class="v35-row-meta">${esc(s.kind==='auto'?'Automatic':'Manual')} · ${esc(new Date(s.at).toLocaleString())}</div></div><button class="btn btn-sm" data-v35-restore-snap="${esc(s.id)}">Restore</button><button class="icon-btn" data-v35-delete-snap="${esc(s.id)}" title="Delete snapshot">✕</button></div>`).join(''):'<div class="v35-empty">No snapshots yet. Create one before a major change or import.</div>')}
   el.querySelectorAll('[data-v35-restore-snap]').forEach(b=>b.onclick=()=>restoreSnapshot35(b.dataset.v35RestoreSnap));
   el.querySelectorAll('[data-v35-delete-snap]').forEach(b=>b.onclick=async()=>{if(!confirm('Delete this recovery snapshot?'))return;await idbDelete35(STORE_SNAPS,b.dataset.v35DeleteSnap);await renderDataCenter35()});
   el.querySelector('#v35-db-clear-snaps')?.addEventListener('click',async()=>{if(!snaps.length){window.toast?.('No snapshots to clear');return}if(!confirm(`Delete all ${snaps.length} recovery snapshots? Your current OmniOS data is not deleted.`))return;for(const s of snaps)await idbDelete35(STORE_SNAPS,s.id);await renderDataCenter35()});
@@ -844,7 +996,7 @@ window.OmniLifeCRUD35={
 
 /* ---------- initialization ---------- */
 async function init35(){
-  ensureV35State();await recoverLatestIDB35();ensureV35State();if(!storage.getItem('omnios_v35_migrated')){storage.setItem('omnios_v35_migrated','1');if(getSetting('appearance.startView','dashboard')==='dashboard')setSetting('appearance.startView','today')}installRouteHistory35();installUndo35();installTopbar35();installMobileTopbar35();buildMobileNav35();installTaskAdvanced35();patchMasterCalendar35();ensureDrawer35();patchViewButton35();enrichSettings35();installHelp35();processRecurringTasks35();loadBackupFolder35().then(()=>updateDBStatus35());if(idbRecovered35)renderAll?.();persistIDB35('init');renderNewView35(activeView35());document.documentElement.dataset.omniosVersion='35';if(idbRecovered35)setTimeout(()=>window.toast?.('Recovered newer OmniOS data from the local recovery database.'),0);
+  ensureV35State();await recoverLatestIDB35();ensureV35State();if(!storage.getItem('omnios_v35_migrated')){storage.setItem('omnios_v35_migrated','1');if(getSetting('appearance.startView','dashboard')==='dashboard')setSetting('appearance.startView','today')}installRouteHistory35();installUndo35();installAutoSnapshotFallback35();installTopbar35();installMobileTopbar35();buildMobileNav35();installTaskAdvanced35();patchMasterCalendar35();ensureDrawer35();patchViewButton35();enrichSettings35();installHelp35();processRecurringTasks35();loadBackupFolder35().then(()=>updateDBStatus35());if(idbRecovered35)renderAll?.();persistIDB35('init');renderNewView35(activeView35());document.documentElement.dataset.omniosVersion='35';if(idbRecovered35)setTimeout(()=>window.toast?.('Recovered newer OmniOS data from the local recovery database.'),0);
   // The old dashboard database card is superseded by Data Center.
   const legacy=document.getElementById('database-panel');if(legacy)legacy.style.display='none';
   // Make Today the first-run landing page while respecting an explicit saved start view.

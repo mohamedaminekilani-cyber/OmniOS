@@ -5073,6 +5073,18 @@ function qrView(url){
 }
 function joinView(){const host=syncModal?.querySelector('.omni-sync-content');if(host)host.innerHTML='<div class="omni-sync-joining"><div class="omni-sync-spinner"></div><strong>Finding the other device…</strong><span>The newest data on each device will be kept.</span></div>'}
 
+function handlePeerIncoming(conn){
+  if(conn?.metadata?.omniLocalAnswer){
+    conn.on('data',msg=>{
+      if(msg?.type!=='local-answer'||!msg.payload)return;
+      document.dispatchEvent(new CustomEvent('omnios:local-answer-signal',{detail:msg.payload}));
+      try{conn.send({type:'local-answer-ack',sid:msg.payload.sid||''})}catch(_){}
+    });
+    return
+  }
+  bindConnection(conn,{incoming:true})
+}
+
 async function ensurePeer(){
   await loadPeer();
   if(peer&&!peer.destroyed&&peer.open)return peer;
@@ -5084,7 +5096,7 @@ async function ensurePeer(){
     let timeout=setTimeout(()=>{if(done)return;done=true;try{p.destroy()}catch(_){};peer=null;reject(new Error('Sync broker timed out'))},PEER_OPEN_TIMEOUT);
     const wire=current=>{
       current.on('open',()=>{if(done)return;done=true;clearTimeout(timeout);resolve(current)});
-      current.on('connection',conn=>bindConnection(conn,{incoming:true}));
+      current.on('connection',conn=>handlePeerIncoming(conn));
       current.on('error',err=>{
         console.warn('OmniOS sync peer',err);
         if(err?.type==='unavailable-id'&&!done&&current===p){
@@ -5260,6 +5272,20 @@ window.OmniDeviceSync={
   bundle:buildBundle,
   merge:remote=>mergeBundle(remote),
   loadQR:()=>loadQR(),
+  ensureSignalPeer:()=>ensurePeer(),
+  sendLocalAnswer:async(peerId,payload)=>{
+    const p=await ensurePeer();
+    return await new Promise((resolve,reject)=>{
+      const conn=p.connect(peerId,{reliable:true,metadata:{omniLocalAnswer:true,sid:payload?.sid||''}});
+      let done=false;
+      const finish=(ok,err)=>{if(done)return;done=true;clearTimeout(tm);try{conn.close()}catch(_){};ok?resolve(true):reject(err||new Error('Local answer signaling failed'))};
+      const tm=setTimeout(()=>finish(false,new Error('Local answer signaling timed out')),4500);
+      conn.on('open',()=>{try{conn.send({type:'local-answer',payload})}catch(e){finish(false,e)}});
+      conn.on('data',msg=>{if(msg?.type==='local-answer-ack'&&msg.sid===payload?.sid)finish(true)});
+      conn.on('error',e=>finish(false,e));
+      conn.on('close',()=>{if(!done)finish(false,new Error('Local answer signaling closed'))})
+    })
+  },
   configureTurn:iceServers=>{try{localStorage.setItem(TURN_KEY,JSON.stringify(Array.isArray(iceServers)?iceServers:[]));peer?.destroy?.();peer=null;warmPromise=null;return true}catch(_){return false}},
   clearTurn:()=>{try{localStorage.removeItem(TURN_KEY);peer?.destroy?.();peer=null;warmPromise=null;return true}catch(_){return false}}
 };

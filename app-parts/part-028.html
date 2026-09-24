@@ -4532,6 +4532,109 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
     font-size:.5rem!important;
   }
 }
+
+
+/* Meditation layout v71 — two columns: controls left, passage + notes right */
+#view-bible .bib-meditation-layout-v71{
+  display:grid!important;
+  grid-template-columns:minmax(230px,280px) minmax(0,1fr)!important;
+  gap:10px!important;
+  align-items:start!important;
+}
+#view-bible .bib-meditation-sidebar-v71{
+  min-width:0!important;
+  position:sticky!important;
+  top:calc(var(--omni-header-h,58px) + 10px)!important;
+  align-self:start!important;
+}
+#view-bible .bib-meditation-ref-v71{
+  margin-top:2px!important;
+  font-size:.84rem!important;
+  line-height:1.3!important;
+  color:var(--text-secondary)!important;
+}
+#view-bible .bib-meditation-main-v71{
+  min-width:0!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:10px!important;
+}
+#view-bible .bib-meditation-passage-card-v71,
+#view-bible .bib-meditation-notes-card-v71{
+  min-width:0!important;
+}
+#view-bible .bib-meditation-passage-head-v71{
+  margin-bottom:8px!important;
+}
+#view-bible .bib-meditation-passage-card-v71 .bib-med-passage-v633{
+  margin:0!important;
+  max-height:360px!important;
+  overflow:auto!important;
+  border:0!important;
+  border-radius:0!important;
+  padding:2px 0 0!important;
+  background:transparent!important;
+}
+#view-bible .bib-meditation-sidebar-v71 .bib-ring{
+  margin:14px auto 12px!important;
+}
+#view-bible .bib-meditation-sidebar-v71 .bib-presets{
+  justify-content:center!important;
+}
+#view-bible .bib-meditation-timer-actions-v71{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:5px!important;
+  overflow:visible!important;
+}
+#view-bible .bib-meditation-timer-actions-v71>.btn{
+  min-width:0!important;
+  width:100%!important;
+  justify-content:center!important;
+}
+#view-bible .bib-meditation-steps-v71{
+  margin-top:10px!important;
+  min-width:0!important;
+}
+
+@media(max-width:760px){
+  #view-bible .bib-meditation-layout-v71{
+    grid-template-columns:1fr!important;
+    gap:7px!important;
+  }
+  #view-bible .bib-meditation-sidebar-v71{
+    position:relative!important;
+    top:auto!important;
+    order:1!important;
+  }
+  #view-bible .bib-meditation-main-v71{
+    order:2!important;
+    gap:7px!important;
+  }
+  #view-bible .bib-meditation-passage-card-v71{order:1!important}
+  #view-bible .bib-meditation-notes-card-v71{order:2!important}
+  #view-bible .bib-meditation-passage-card-v71 .bib-med-passage-v633{
+    max-height:none!important;
+    overflow:visible!important;
+    padding:0!important;
+  }
+  #view-bible .bib-meditation-sidebar-v71 .bib-ring{
+    margin:8px auto 9px!important;
+  }
+  #view-bible .bib-meditation-timer-actions-v71{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:5px!important;
+  }
+  #view-bible .bib-meditation-timer-actions-v71>.btn{
+    min-height:38px!important;
+    padding:6px 5px!important;
+    font-size:.56rem!important;
+    white-space:nowrap!important;
+  }
+  #view-bible .bib-meditation-steps-v71{
+    margin-top:8px!important;
+  }
+}
 </style>
 
 <script id="omnios-v66-bible-ux-js">

@@ -643,10 +643,14 @@
           const mobileActions=document.createElement('div');
           mobileActions.className='atlas69-map-actions';
           const base=root.querySelector('.atlas28-basemap');
+          const fitBtn=root.querySelector('[data-atlas28-fit]');
           const resetBtn=root.querySelector('[data-atlas28-reset]');
+          if(fitBtn)mobileActions.appendChild(fitBtn);
           if(base)mobileActions.appendChild(base);
           if(resetBtn)mobileActions.appendChild(resetBtn);
           mapbar.appendChild(mobileActions);
+          const oldActions=mapbar.querySelector('.atlas28-mapbar-actions');
+          if(oldActions&&!oldActions.children.length)oldActions.remove();
         }
       }
       hero?.classList.add('atlas69-mobile-hero');

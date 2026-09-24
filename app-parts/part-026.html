@@ -354,8 +354,8 @@ renderRead=function(h){
   if(!ch){h.innerHTML='<div class="bib-empty">Bible text could not be loaded for this chapter.</div>';return}
   const max=ch.verses.length;
   let nums=verseNums(B.reader.verse,max);
-  if(!nums.length){B.reader.verse='1';nums=[1]}
-  const ref=currentRef(),note=B.notes[ref]||{},marked=!!B.bookmarks[ref],passage=selectedPassageText(ref),stats=chapterSavedStats573(),highs=selectionHighlights573(nums),firstHi=highs[0]||{},mixed=highs.some(x=>x.color!==firstHi.color||x.purpose!==firstHi.purpose||x.style!==firstHi.style),color=mixed?(B.reader.color||'gold'):(firstHi.color||B.reader.color||'gold'),purpose=mixed?(B.ui.highlightPurpose||'none'):(firstHi.purpose||B.ui.highlightPurpose||'none'),style=mixed?(B.ui.highlightStyle||'marker'):(firstHi.style||B.ui.highlightStyle||'marker');
+  const hasSelection=nums.length>0;
+  const ref=hasSelection?currentRef():`${B.reader.book} ${B.reader.chapter}`,note=hasSelection?(B.notes[ref]||{}):{},marked=hasSelection&&!!B.bookmarks[ref],passage=hasSelection?selectedPassageText(ref):'',stats=chapterSavedStats573(),highs=selectionHighlights573(nums),firstHi=highs[0]||{},mixed=highs.some(x=>x.color!==firstHi.color||x.purpose!==firstHi.purpose||x.style!==firstHi.style),color=mixed?(B.reader.color||'gold'):(firstHi.color||B.reader.color||'gold'),purpose=mixed?(B.ui.highlightPurpose||'none'):(firstHi.purpose||B.ui.highlightPurpose||'none'),style=mixed?(B.ui.highlightStyle||'marker'):(firstHi.style||B.ui.highlightStyle||'marker');
   const sameChapter=!!prevRoot&&prevRoot.dataset.book===B.reader.book&&Number(prevRoot.dataset.chapter)===Number(B.reader.chapter);
   const jumpTarget=B.ui.readJumpTarget||'';
   const searchOpen=!!B.ui.readSearchOpen;
@@ -429,7 +429,7 @@ renderRead=function(h){
           <div class="bib-side-card-head-v5814">
             <div>
               <div class="bib-side-card-kicker-v5814">Selected passage</div>
-              <div class="bib-selection-ref-v5814" id="bib-ref-display">${esc(ref)}</div>
+              <div class="bib-selection-ref-v5814" id="bib-ref-display">${hasSelection?esc(ref):'No verse selected'}</div>
               <div class="bib-selection-meta-v5814">${nums.length} verse${nums.length===1?'':'s'} selected${mixed?' · mixed highlight styles':''}</div>
             </div>
           </div>
@@ -437,7 +437,7 @@ renderRead=function(h){
             <label class="form-label">Verse / range</label>
             <input class="form-input" id="bib-verse" value="${esc(B.reader.verse)}" placeholder="16 or 16-18">
           </div>
-          <div class="bib-passage-preview v573" id="bib-passage-preview">${passage?esc(passage):'Select a verse to preview it here.'}</div>
+          <div class="bib-passage-preview v573" id="bib-passage-preview">${passage?esc(passage):'Tap a verse to select it. You can leave the selection empty.'}</div>
           <div class="bib-side-actions-v5814 bib-side-actions-compact-v5814">
             <button class="btn" id="bib-bookmark">${marked?'★ Bookmarked':'☆ Bookmark'}</button>
             <button class="btn" id="bib-meditate-ref">Meditate</button>
@@ -515,16 +515,14 @@ renderRead=function(h){
     let next=[];
     if(window.matchMedia?.('(max-width:760px)').matches){
       const set=new Set(cur);
-      if(set.has(v)){
-        if(set.size>1)set.delete(v);
-        else return;
-      }else set.add(v);
+      if(set.has(v))set.delete(v);
+      else set.add(v);
       next=[...set]
     }else if(e.shiftKey&&cur.length){
       const a=cur[0];
       next=Array.from({length:Math.abs(v-a)+1},(_,i)=>Math.min(a,v)+i)
     }else next=[v];
-    B.reader.verse=compactVerseSpec(next)||String(v);
+    B.reader.verse=compactVerseSpec(next);
     save();renderRead(h)
   };
   h.querySelectorAll('[data-verse-row]').forEach(row=>{
@@ -542,15 +540,17 @@ renderRead=function(h){
       e.preventDefault();chooseVerse(v,e)
     }
   });
-  verse.oninput=()=>{B.reader.verse=verse.value.trim()||'1';const r=currentRef();h.querySelector('#bib-ref-display').textContent=r;h.querySelector('#bib-passage-preview').textContent=selectedPassageText(r)||'No verse text found for this selection.'};
+  verse.oninput=()=>{B.reader.verse=verse.value.trim();const ns=verseNums(B.reader.verse,max),r=ns.length?currentRef():'';h.querySelector('#bib-ref-display').textContent=r||'No verse selected';h.querySelector('#bib-passage-preview').textContent=r?(selectedPassageText(r)||'No verse text found for this selection.'):'Tap a verse to select it. You can leave the selection empty.'};
   let chosenColor=color,chosenPurpose=purpose,chosenStyle=style;h.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>{chosenColor=b.dataset.color;B.reader.color=chosenColor;h.querySelectorAll('[data-color]').forEach(x=>x.classList.toggle('active',x===b))});h.querySelectorAll('[data-purpose]').forEach(b=>b.onclick=()=>{chosenPurpose=b.dataset.purpose;B.ui.highlightPurpose=chosenPurpose;h.querySelectorAll('[data-purpose]').forEach(x=>x.classList.toggle('active',x===b))});h.querySelectorAll('[data-hl-style]').forEach(b=>b.onclick=()=>{chosenStyle=b.dataset.hlStyle;B.ui.highlightStyle=chosenStyle;h.querySelectorAll('[data-hl-style]').forEach(x=>x.classList.toggle('active',x===b))});
-  h.querySelector('#bib-apply-highlight').onclick=()=>{B.reader.verse=verse.value.trim()||'1';const ns=verseNums(B.reader.verse,max);if(!ns.length)return toast('Select at least one verse');applyHighlight573(ns,chosenColor,chosenPurpose,chosenStyle);toast('Highlight applied');renderRead(h)};
-  h.querySelector('#bib-clear-highlight').onclick=()=>{B.reader.verse=verse.value.trim()||'1';removeSelectedHighlights573(verseNums(B.reader.verse,max));save();toast('Highlight removed');renderRead(h)};
-  const toggleBookmark=()=>{B.reader.verse=verse.value.trim()||'1';const r=currentRef();if(B.bookmarks[r])delete B.bookmarks[r];else B.bookmarks[r]={at:new Date().toISOString(),excerpt:selectedPassageText(r)};save();renderRead(h)};h.querySelector('#bib-bookmark').onclick=toggleBookmark;
-  h.querySelector('#bib-save-note').onclick=()=>{B.reader.verse=verse.value.trim()||'1';const r=currentRef(),text=h.querySelector('#bib-note').value.trim(),excerpt=selectedPassageText(r);if(text)B.notes[r]={text,excerpt,updatedAt:new Date().toISOString()};else delete B.notes[r];save();toast(text?'Passage note saved':'Passage note removed');renderRead(h)};
-  const toStudy=()=>{B.reader.verse=verse.value.trim()||B.reader.verse||'1';B.tab='study';save();render()};h.querySelector('#bib-open-study').onclick=toStudy;h.querySelector('#bib-study-selected').onclick=toStudy;
-  h.querySelector('#bib-meditate-ref').onclick=()=>{B.reader.verse=verse.value.trim()||'1';startMeditation(currentRef())};
-  h.querySelector('#bib-create-task').onclick=()=>{B.reader.verse=verse.value.trim()||'1';const r=currentRef();openBibleDailyTask5725({ref:r,source:'Read',seed:`Reflect on ${r}`,notes:B.notes[r]?.text||'',duration:15})};
+  const readSelection=()=>{B.reader.verse=verse.value.trim();return verseNums(B.reader.verse,max)};
+  const requireSelection=()=>{const ns=readSelection();if(!ns.length){toast('Select at least one verse for this action');return null}return ns};
+  h.querySelector('#bib-apply-highlight').onclick=()=>{const ns=requireSelection();if(!ns)return;applyHighlight573(ns,chosenColor,chosenPurpose,chosenStyle);toast('Highlight applied');renderRead(h)};
+  h.querySelector('#bib-clear-highlight').onclick=()=>{const ns=requireSelection();if(!ns)return;removeSelectedHighlights573(ns);save();toast('Highlight removed');renderRead(h)};
+  const toggleBookmark=()=>{if(!requireSelection())return;const r=currentRef();if(B.bookmarks[r])delete B.bookmarks[r];else B.bookmarks[r]={at:new Date().toISOString(),excerpt:selectedPassageText(r)};save();renderRead(h)};h.querySelector('#bib-bookmark').onclick=toggleBookmark;
+  h.querySelector('#bib-save-note').onclick=()=>{if(!requireSelection())return;const r=currentRef(),text=h.querySelector('#bib-note').value.trim(),excerpt=selectedPassageText(r);if(text)B.notes[r]={text,excerpt,updatedAt:new Date().toISOString()};else delete B.notes[r];save();toast(text?'Passage note saved':'Passage note removed');renderRead(h)};
+  const toStudy=()=>{if(!requireSelection())return;B.tab='study';save();render()};h.querySelector('#bib-open-study').onclick=toStudy;h.querySelector('#bib-study-selected').onclick=toStudy;
+  h.querySelector('#bib-meditate-ref').onclick=()=>{if(!requireSelection())return;startMeditation(currentRef())};
+  h.querySelector('#bib-create-task').onclick=()=>{if(!requireSelection())return;const r=currentRef();openBibleDailyTask5725({ref:r,source:'Read',seed:`Reflect on ${r}`,notes:B.notes[r]?.text||'',duration:15})};
 };
 function renderStudy573(h){
   const ref=currentRef(),passage=selectedPassageText(ref),entry=studyEntry573(ref),related=relatedRefs573(ref),plan=planForRef(ref),recent=B.study.recent.slice(0,5);

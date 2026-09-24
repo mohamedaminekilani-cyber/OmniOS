@@ -5422,16 +5422,26 @@ function logProgress(message){
 }
 
 
-function localConfig(){return {iceServers:[],iceCandidatePoolSize:0,bundlePolicy:'max-bundle',rtcpMuxPolicy:'require'}}
-function waitLocalIce(pc,limit=1500){
+function localConfig(){
+  return {
+    iceServers:[
+      {urls:['stun:stun.cloudflare.com:3478']},
+      {urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']}
+    ],
+    iceTransportPolicy:'all',
+    iceCandidatePoolSize:4,
+    bundlePolicy:'max-bundle',
+    rtcpMuxPolicy:'require'
+  }
+}
+function waitLocalIce(pc,limit=1400){
   if(pc.iceGatheringState==='complete')return Promise.resolve();
   return new Promise(resolve=>{
-    let settled=false,shortTimer=null;
-    const finish=()=>{if(settled)return;settled=true;clearTimeout(maxTimer);clearTimeout(shortTimer);pc.removeEventListener('icecandidate',onCandidate);pc.removeEventListener('icegatheringstatechange',onState);resolve()};
-    const onCandidate=e=>{if(!e.candidate){finish();return}const type=e.candidate.type||(/ typ host(?: |$)/.test(e.candidate.candidate||'')?'host':'');if(type==='host'){clearTimeout(shortTimer);shortTimer=setTimeout(finish,140)}};
+    let settled=false;
+    const finish=()=>{if(settled)return;settled=true;clearTimeout(timer);pc.removeEventListener('icegatheringstatechange',onState);resolve()};
     const onState=()=>{if(pc.iceGatheringState==='complete')finish()};
-    const maxTimer=setTimeout(finish,limit);
-    pc.addEventListener('icecandidate',onCandidate);pc.addEventListener('icegatheringstatechange',onState)
+    const timer=setTimeout(finish,limit);
+    pc.addEventListener('icegatheringstatechange',onState)
   })
 }
 function setButtonLive(on){
@@ -5492,9 +5502,16 @@ function makeAdapter(pc,dc,sid){
   };
   dc.onclose=()=>{if(liveConn===conn)liveConn=null;setButtonLive(false);stage(3,'Local connection closed','Open Sync again to reconnect.','')};
   dc.onerror=()=>stage(3,'Local connection error','Your Wi-Fi may block device-to-device traffic. Try Internet fallback.','error');
+  pc.oniceconnectionstatechange=()=>{
+    const ice=pc.iceConnectionState;
+    if(ice==='checking'){stage(3,'Checking the local network','Trying direct routes between the phone and PC…','busy');setProgress(76,'Checking network');logProgress('ICE is checking Wi-Fi routes')}
+    if(ice==='connected'||ice==='completed'){stage(3,'Direct route found','Opening the encrypted data channel…','busy');setProgress(81,'Route found');logProgress('Direct Wi-Fi route found')}
+    if(ice==='disconnected'){stage(3,'Wi-Fi route interrupted','Trying to recover the local connection…','busy');logProgress('Local route temporarily disconnected')}
+    if(ice==='failed'){stage(3,'Local Wi-Fi connection blocked','The devices could not establish a usable local route. The router may isolate clients.','error');logProgress('ICE failed to establish a route');showFallbackOnly()}
+  };
   pc.onconnectionstatechange=()=>{
     if(pc.connectionState==='failed'){stage(3,'Local Wi-Fi connection blocked','The router may have client isolation enabled. Use Internet fallback.','error');showFallbackOnly()}
-    if(pc.connectionState==='connected')stage(3,'Connected on local Wi-Fi','Exchanging the newest OmniOS data…','busy')
+    if(pc.connectionState==='connected'){stage(3,'Connected on local Wi-Fi','Opening the OmniOS data channel…','busy');setProgress(83,'Connected')}
   };
   return conn
 }
@@ -5556,7 +5573,7 @@ async function applyAnswer(payload){
   if(!hostSession||payload.sid!==hostSession.sid||payload.secret!==hostSession.secret||hostSession.answerApplied)return;
   hostSession.answerApplied=true;hostSession.answerCleanup?.();stage(3,'Phone responded automatically','Opening the direct local Wi-Fi channel…','busy');setProgress(72,'Opening channel');logProgress('Phone response received');
   try{await hostSession.pc.setRemoteDescription(payload.answer)}catch(e){console.error(e);stage(3,'Could not apply response','Generate a new Local Wi-Fi code and try again.','error');return}
-  const timeout=setTimeout(()=>{if(!liveConn?.open){stage(3,'Local Wi-Fi connection blocked','Both devices must be on the same Wi-Fi and the router must allow device-to-device traffic.','error');showFallbackOnly()}},5000);
+  const timeout=setTimeout(()=>{if(!liveConn?.open){const ice=hostSession?.pc?.iceConnectionState||'unknown';stage(3,'Still waiting for the data channel','ICE state: '+ice+'. Both devices must be on the same Wi-Fi and the router must allow device-to-device traffic.','error');logProgress('Data channel did not open · ICE '+ice);showFallbackOnly()}},6500);
   hostSession.connectTimeout=timeout
 }
 async function startResponseScanner(){

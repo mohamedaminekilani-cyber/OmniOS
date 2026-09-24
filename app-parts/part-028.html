@@ -7955,5 +7955,144 @@ setTimeout(bindChrome,500);
 }
 </style>
 
+
+<style id="omnios-v82-menu-safezone-edge-fix">
+@media(max-width:760px){
+  /* MENU: the outer launcher is only the safe-zone backdrop. */
+  #v35-page-launcher{
+    position:fixed!important;
+    top:var(--ux-topbar-h,56px)!important;
+    right:0!important;
+    bottom:var(--ux-bottomnav-h,64px)!important;
+    left:0!important;
+    width:auto!important;
+    height:auto!important;
+    max-width:none!important;
+    max-height:none!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    overflow:hidden!important;
+    align-items:initial!important;
+    justify-content:initial!important;
+    background:rgba(2,5,10,.50)!important;
+    backdrop-filter:blur(5px)!important;
+    -webkit-backdrop-filter:blur(5px)!important;
+    z-index:2147481800!important;
+    box-sizing:border-box!important;
+  }
+
+  /* MENU: the actual card is independently inset INSIDE that safe zone. */
+  #v35-page-launcher>.v35-launcher-sheet{
+    position:absolute!important;
+    top:8px!important;
+    right:8px!important;
+    bottom:8px!important;
+    left:8px!important;
+    inset:8px!important;
+    width:auto!important;
+    height:auto!important;
+    max-width:none!important;
+    max-height:none!important;
+    min-width:0!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    box-sizing:border-box!important;
+    display:flex!important;
+    flex-direction:column!important;
+    overflow:hidden!important;
+    border:1px solid var(--border-light)!important;
+    border-radius:18px!important;
+    background:var(--bg-surface)!important;
+    box-shadow:0 24px 70px rgba(0,0,0,.46)!important;
+  }
+
+  #v35-page-launcher .v35-launcher-grab{
+    flex:0 0 auto!important;
+    margin-top:8px!important;
+  }
+
+  #v35-page-launcher .v35-launcher-head{
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+    flex:0 0 auto!important;
+    background:var(--bg-surface)!important;
+    padding-top:8px!important;
+  }
+
+  #v35-page-launcher .v35-launcher-search-wrap{
+    position:relative!important;
+    z-index:20!important;
+    flex:0 0 auto!important;
+    background:var(--bg-surface)!important;
+  }
+
+  #v35-page-launcher .v35-launcher-body{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    padding-bottom:16px!important;
+    scrollbar-width:none!important;
+  }
+  #v35-page-launcher .v35-launcher-body::-webkit-scrollbar{display:none!important}
+
+  #v35-page-launcher .v35-launcher-close{
+    position:relative!important;
+    z-index:35!important;
+    width:44px!important;
+    min-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    flex:0 0 44px!important;
+  }
+
+  /* Keep both persistent banners physically above the menu. */
+  .topbar{z-index:2147481900!important}
+  .mobile-nav{z-index:2147482000!important}
+
+  /* Remove the thin right-edge artefact on mobile pages.
+     The app already has its own background, so the decorative scanline layer is unnecessary here. */
+  html:not([data-theme="light"]) body::after{
+    content:none!important;
+    display:none!important;
+  }
+
+  html,body,.main-content,.view-container{
+    max-width:100%!important;
+    border-right:0!important;
+    scrollbar-width:none!important;
+  }
+  body,.main-content,.view-container{
+    overflow-x:hidden!important;
+  }
+  .view-container::-webkit-scrollbar,
+  .main-content::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  html::-webkit-scrollbar{
+    width:0!important;
+    height:0!important;
+    display:none!important;
+  }
+
+  /* Prevent fractional-width content from painting a 1px seam at the viewport edge. */
+  .main-content,.view-container,.view,.view.active{
+    width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+}
+</style>
+
 </body>
 </html>

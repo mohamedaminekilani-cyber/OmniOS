@@ -5335,7 +5335,9 @@ window.__omniLocalWifiSync73=true;
 const PROTOCOL=1;
 const ANSWER_PREFIX='omnios_local_answer_';
 const CHANNEL_NAME='omnios-local-sync-v1';
+const JSQR_SRC='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
 let hostSession=null,joinSessionState=null,overlay=null,scannerStop=null,liveConn=null,sendTimer=null,bc=null;
+let progressLog=[];
 
 const api=()=>window.OmniDeviceSync;
 const dev=()=>{try{return JSON.parse(localStorage.getItem('omnios_sync_device_v1')||'null')||{id:'unknown'}}catch(_){return{id:'unknown'}}};
@@ -5372,6 +5374,37 @@ async function parseValue(value){
 function parseHashRaw(){return String(location.hash||'')}
 function clearHash(){try{if(/#omni-local-(offer|answer)=/.test(location.hash))history.replaceState(history.state,'',location.pathname+location.search)}catch(_){}}
 
+function isStandalonePWA(){
+  return window.matchMedia?.('(display-mode: standalone)')?.matches===true||navigator.standalone===true
+}
+function isAppleMobile(){
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)
+}
+function loadJsQR(){
+  if(typeof window.jsQR==='function')return Promise.resolve(window.jsQR);
+  return new Promise((resolve,reject)=>{
+    let s=document.getElementById('omni-jsqr-v74');
+    if(s){
+      s.addEventListener('load',()=>typeof window.jsQR==='function'?resolve(window.jsQR):reject(new Error('QR decoder unavailable')),{once:true});
+      s.addEventListener('error',()=>reject(new Error('QR decoder unavailable')),{once:true});return
+    }
+    s=document.createElement('script');s.id='omni-jsqr-v74';s.src=JSQR_SRC;s.async=true;s.crossOrigin='anonymous';
+    s.onload=()=>typeof window.jsQR==='function'?resolve(window.jsQR):reject(new Error('QR decoder unavailable'));
+    s.onerror=()=>reject(new Error('QR decoder unavailable'));document.head.appendChild(s)
+  })
+}
+function progressPercent(n){return n<=1?20:n===2?48:n===3?78:100}
+function setProgress(percent,label){
+  const p=Math.max(0,Math.min(100,Number(percent)||0));
+  const bar=overlay?.querySelector('[data-local-progress-bar]'),txt=overlay?.querySelector('[data-local-progress-text]');
+  if(bar)bar.style.width=p+'%';if(txt)txt.textContent=(label||'Sync')+' · '+Math.round(p)+'%'
+}
+function logProgress(message){
+  if(!message)return;progressLog.push({at:new Date(),message:String(message)});progressLog=progressLog.slice(-6);
+  const host=overlay?.querySelector('[data-local-log]');if(host)host.innerHTML=progressLog.map((x,i)=>'<div'+(i===progressLog.length-1?' class="current"':'')+'><span>✓</span><span>'+String(x.message).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))+'</span></div>').join('')
+}
+
+
 function localConfig(){return {iceServers:[],iceCandidatePoolSize:0,bundlePolicy:'max-bundle',rtcpMuxPolicy:'require'}}
 function waitLocalIce(pc,limit=1500){
   if(pc.iceGatheringState==='complete')return Promise.resolve();
@@ -5392,7 +5425,7 @@ function closeModal(){stopScanner();overlay?.remove();overlay=null}
 function modal(title,subtitle){
   closeModal();
   const ov=document.createElement('div');ov.className='omni-sync-overlay omni-local-sync';
-  ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true"><header class="omni-sync-head"><div><div class="omni-sync-kicker">LOCAL WI-FI SYNC</div><h3>'+title+'</h3><p>'+subtitle+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-local-status>Preparing…</strong><span data-local-detail>Both devices must be connected to the same Wi-Fi network.</span></div></div><div class="omni-local-steps"><div class="omni-local-step active" data-local-step="1">1 · Offer</div><div class="omni-local-step" data-local-step="2">2 · Response</div><div class="omni-local-step" data-local-step="3">3 · Connect</div><div class="omni-local-step" data-local-step="4">4 · Live</div></div><div class="omni-sync-content"></div></div></section>';
+  progressLog=[];ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true"><header class="omni-sync-head"><div><div class="omni-sync-kicker">LOCAL WI-FI SYNC</div><h3>'+title+'</h3><p>'+subtitle+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-local-status>Preparing…</strong><span data-local-detail>Both devices must be connected to the same Wi-Fi network.</span></div></div><div class="omni-local-progress"><div class="omni-local-progress-track"><span data-local-progress-bar></span></div><div data-local-progress-text>Preparing · 0%</div></div><div class="omni-local-steps"><div class="omni-local-step active" data-local-step="1">1 · Offer</div><div class="omni-local-step" data-local-step="2">2 · Response</div><div class="omni-local-step" data-local-step="3">3 · Connect</div><div class="omni-local-step" data-local-step="4">4 · Live</div></div><div class="omni-local-log" data-local-log></div><div class="omni-sync-content"></div></div></section>';
   document.body.appendChild(ov);overlay=ov;
   ov.querySelector('.omni-sync-close').onclick=closeModal;ov.onclick=e=>{if(e.target===ov)closeModal()};
   return ov
@@ -5400,7 +5433,8 @@ function modal(title,subtitle){
 function stage(n,status,detail,tone=''){
   overlay?.querySelectorAll('[data-local-step]').forEach(el=>{const x=Number(el.dataset.localStep);el.classList.toggle('done',x<n);el.classList.toggle('active',x===n)});
   const s=overlay?.querySelector('[data-local-status]'),d=overlay?.querySelector('[data-local-detail]');
-  if(s){s.textContent=status||'';s.dataset.tone=tone}if(d&&detail)d.textContent=detail
+  if(s){s.textContent=status||'';s.dataset.tone=tone}if(d&&detail)d.textContent=detail;
+  setProgress(progressPercent(n),status||'Sync')
 }
 async function ensureQr(){await api()?.loadQR?.()}
 function drawQr(box,url){
@@ -5420,7 +5454,7 @@ function makeAdapter(pc,dc,sid){
     close(){try{dc.close()}catch(_){}try{pc.close()}catch(_){}}
   };
   dc.onopen=()=>{
-    liveConn=conn;setButtonLive(true);stage(3,'Connected on local Wi-Fi','Exchanging the newest OmniOS data…','busy');sendBundle(true)
+    liveConn=conn;setButtonLive(true);stage(3,'Connected on local Wi-Fi','Exchanging the newest OmniOS data…','busy');setProgress(84,'Connected');logProgress('Local Wi-Fi channel opened');sendBundle(true)
   };
   dc.onmessage=async e=>{
     let msg;try{msg=typeof e.data==='string'?JSON.parse(e.data):e.data}catch(_){return}
@@ -5429,10 +5463,11 @@ function makeAdapter(pc,dc,sid){
       if(msg.bundle.fingerprint&&msg.bundle.fingerprint===conn.__omniLastRecv)return;
       conn.__omniLastRecv=msg.bundle.fingerprint||'';
       try{
+        setProgress(92,'Comparing data');logProgress('Comparing newest records');
         const result=await api()?.merge?.(msg.bundle);
         if(result?.changed)sendBundle(true);
         conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
-        stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Direct encrypted connection on your Wi-Fi.','ok')
+        stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Direct encrypted connection on your Wi-Fi.','ok');setProgress(100,'Synced');logProgress(result?.changed?'Newest data applied':'Both devices already match')
       }catch(err){console.error('Local Wi-Fi merge',err);stage(3,'Sync failed','Your automatic pre-sync snapshot is still available.','error')}
     }else if(msg.type==='ack'){
       stage(4,'Live Local Wi-Fi sync','New changes will continue to transfer while both apps stay open.','ok')
@@ -5502,7 +5537,7 @@ function listenForAnswer(sid){
 }
 async function applyAnswer(payload){
   if(!hostSession||payload.sid!==hostSession.sid||payload.secret!==hostSession.secret||hostSession.answerApplied)return;
-  hostSession.answerApplied=true;hostSession.answerCleanup?.();stage(3,'Phone responded automatically','Opening the direct local Wi-Fi channel…','busy');
+  hostSession.answerApplied=true;hostSession.answerCleanup?.();stage(3,'Phone responded automatically','Opening the direct local Wi-Fi channel…','busy');setProgress(72,'Opening channel');logProgress('Phone response received');
   try{await hostSession.pc.setRemoteDescription(payload.answer)}catch(e){console.error(e);stage(3,'Could not apply response','Generate a new Local Wi-Fi code and try again.','error');return}
   const timeout=setTimeout(()=>{if(!liveConn?.open){stage(3,'Local Wi-Fi connection blocked','Both devices must be on the same Wi-Fi and the router must allow device-to-device traffic.','error');showFallbackOnly()}},5000);
   hostSession.connectTimeout=timeout
@@ -5532,7 +5567,7 @@ async function startResponseScanner(){
 async function startLocalHost(){
   try{hostSession?.pc?.close?.()}catch(_){}hostSession=null;liveConn=null;setButtonLive(false);
   modal('Sync on the same Wi-Fi','Easy mode: the PC shows one QR; the phone scans it and returns the connection response automatically.');
-  stage(1,'Creating local offer','Preparing the direct Wi-Fi connection…','busy');
+  stage(1,'Creating local offer','Preparing the direct Wi-Fi connection…','busy');setProgress(8,'Preparing');logProgress('Preparing Local Wi-Fi session');
   try{
     const signalPromise=api()?.ensureSignalPeer?.().catch(()=>null);
     await ensureQr();
@@ -5540,28 +5575,28 @@ async function startLocalHost(){
     const dc=pc.createDataChannel('omnios-sync',{ordered:true});
     const conn=makeAdapter(pc,dc,sid);
     hostSession={pc,dc,conn,sid,secret,answerCleanup:null,connectTimeout:null,answerApplied:false};
-    const offer=await pc.createOffer();await pc.setLocalDescription(offer);await waitLocalIce(pc);
+    const offer=await pc.createOffer();await pc.setLocalDescription(offer);await waitLocalIce(pc);setProgress(18,'Offer ready');logProgress('Local WebRTC offer created');
     const signalPeer=await Promise.race([signalPromise,new Promise(resolve=>setTimeout(()=>resolve(null),1800))]);
     const payload={v:PROTOCOL,type:'offer',sid,secret,signalPeer:signalPeer?.id||'',offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},from:dev(),createdAt:Date.now()};
     const url=await payloadUrl('offer',payload);
     hostView(url,!!payload.signalPeer);listenForAnswer(sid);
-    stage(1,payload.signalPeer?'Scan once with your phone':'Scan with your phone','Both devices stay on the same Wi-Fi; OmniOS data will transfer directly between them.','ok')
+    stage(1,payload.signalPeer?'Scan once inside OmniOS on your phone':'Scan inside OmniOS on your phone','On the phone: open the installed OmniOS app → Sync → Scan PC QR.','ok');setProgress(25,'Waiting for scan');logProgress('QR ready on first device')
   }catch(e){console.error('Local host',e);stage(1,'Could not create Local Wi-Fi code','Use Internet fallback on this browser.','error');showFallbackOnly()}
 }
 async function joinLocalOffer(payload){
   modal('Join Local Wi-Fi sync','The phone is preparing a direct connection to the PC over the same Wi-Fi.');
-  stage(2,'Offer received','Creating the response for the PC…','busy');
+  stage(2,'Offer received','Creating the response for the PC…','busy');setProgress(42,'QR read');logProgress('PC QR read inside OmniOS');
   try{
     await ensureQr();
     const pc=new RTCPeerConnection(localConfig());joinSessionState={pc,sid:payload.sid,secret:payload.secret};
     pc.ondatachannel=e=>{joinSessionState.dc=e.channel;joinSessionState.conn=makeAdapter(pc,e.channel,payload.sid)};
     await pc.setRemoteDescription(payload.offer);
-    const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await waitLocalIce(pc);
+    const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await waitLocalIce(pc);setProgress(55,'Response ready');logProgress('Phone response created');
     const response={v:PROTOCOL,type:'answer',sid:payload.sid,secret:payload.secret,answer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},from:dev(),createdAt:Date.now()};
     if(payload.signalPeer&&api()?.sendLocalAnswer){
       stage(2,'Sending response automatically','No second QR scan is needed.','busy');
       try{
-        await api().sendLocalAnswer(payload.signalPeer,response);
+        await api().sendLocalAnswer(payload.signalPeer,response);setProgress(66,'Response sent');logProgress('Response sent to PC');
         const host=overlay?.querySelector('.omni-sync-content');
         if(host)host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response sent automatically</strong><span>Keep this page open. The direct Local Wi-Fi connection should open now.</span></div>';
         stage(3,'Response sent to the PC','Opening the direct encrypted Wi-Fi connection…','ok');

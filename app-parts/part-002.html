@@ -1306,6 +1306,77 @@ function resetTimer() {
 
 // ================= FOCUS GUARD =================
 const FOCUS_GUARD_PRESETS=[{"id":"instagram","name":"Instagram","icon":"◎","url":"https://www.instagram.com/","hosts":["instagram.com"]},{"id":"tiktok","name":"TikTok","icon":"♪","url":"https://www.tiktok.com/","hosts":["tiktok.com"]},{"id":"youtube","name":"YouTube","icon":"▶","url":"https://www.youtube.com/","hosts":["youtube.com","youtu.be"]},{"id":"x","name":"X / Twitter","icon":"𝕏","url":"https://x.com/","hosts":["x.com","twitter.com"]},{"id":"reddit","name":"Reddit","icon":"●","url":"https://www.reddit.com/","hosts":["reddit.com"]},{"id":"facebook","name":"Facebook","icon":"f","url":"https://www.facebook.com/","hosts":["facebook.com"]},{"id":"netflix","name":"Netflix","icon":"N","url":"https://www.netflix.com/","hosts":["netflix.com"]}];
+let focusNativeInfo={available:false,platform:'web',authorized:false,selectionCount:0,activeUntil:null,error:''};
+const focusNativePending=new Map();
+function focusNativeBridgeAvailable(){
+  return !!(window.webkit?.messageHandlers?.focusGuard || window.SecondBrainFocusGuardNative?.postMessage);
+}
+function focusNativeCall(action,payload={}){
+  return new Promise((resolve,reject)=>{
+    if(!focusNativeBridgeAvailable()){reject(new Error('Native Focus Guard bridge unavailable'));return}
+    const requestId='fg-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+    const timer=setTimeout(()=>{focusNativePending.delete(requestId);reject(new Error('Native Focus Guard request timed out'))},12000);
+    focusNativePending.set(requestId,{resolve:v=>{clearTimeout(timer);resolve(v)},reject:e=>{clearTimeout(timer);reject(e)}});
+    const message={requestId,action,payload};
+    try{
+      if(window.webkit?.messageHandlers?.focusGuard) window.webkit.messageHandlers.focusGuard.postMessage(message);
+      else window.SecondBrainFocusGuardNative.postMessage(JSON.stringify(message));
+    }catch(err){clearTimeout(timer);focusNativePending.delete(requestId);reject(err)}
+  })
+}
+window.SecondBrainFocusGuardNativeResult=function(result){
+  try{
+    const msg=typeof result==='string'?JSON.parse(result):result;
+    const pending=focusNativePending.get(msg?.requestId);
+    if(!pending)return;
+    focusNativePending.delete(msg.requestId);
+    if(msg.ok===false)pending.reject(new Error(msg.error||'Native Focus Guard error'));
+    else pending.resolve(msg.data||{});
+  }catch(_){}
+};
+async function focusNativeRefresh(){
+  if(!focusNativeBridgeAvailable()){
+    focusNativeInfo={available:false,platform:'web',authorized:false,selectionCount:0,activeUntil:null,error:''};
+    renderFocusNativeStatus();return focusNativeInfo;
+  }
+  try{
+    const data=await focusNativeCall('status');
+    focusNativeInfo={available:true,platform:data.platform||'ios',authorized:!!data.authorized,selectionCount:Number(data.selectionCount||0),activeUntil:data.activeUntil||null,error:''};
+  }catch(err){focusNativeInfo={available:true,platform:'ios',authorized:false,selectionCount:0,activeUntil:null,error:String(err.message||err)}}
+  renderFocusNativeStatus();return focusNativeInfo;
+}
+function renderFocusNativeStatus(){
+  const panel=document.querySelector('.focus-native-panel'),status=document.getElementById('focus-native-status');
+  const auth=document.getElementById('focus-native-authorize'),picker=document.getElementById('focus-native-picker');
+  if(!panel||!status||!auth||!picker)return;
+  panel.classList.toggle('native-ready',focusNativeInfo.available&&focusNativeInfo.authorized);
+  if(!focusNativeInfo.available){
+    status.textContent='PWA mode · system-wide app blocking requires the native iPhone host.';
+    auth.disabled=true;picker.disabled=true;return;
+  }
+  auth.disabled=false;picker.disabled=!focusNativeInfo.authorized;
+  if(focusNativeInfo.error){status.textContent='Native blocker error · '+focusNativeInfo.error;return}
+  if(!focusNativeInfo.authorized){status.textContent='iPhone native host detected · Screen Time authorization required.';return}
+  status.textContent='System blocker ready · '+focusNativeInfo.selectionCount+' selected app/site'+(focusNativeInfo.selectionCount===1?'':'s')+'.';
+}
+async function focusNativeAuthorize(){
+  try{await focusNativeCall('authorize');await focusNativeRefresh();window.toast?.('Screen Time authorization updated')}
+  catch(err){window.toast?.(String(err.message||err))}
+}
+async function focusNativeChoose(){
+  try{await focusNativeCall('chooseApps');await focusNativeRefresh()}
+  catch(err){window.toast?.(String(err.message||err))}
+}
+async function focusNativeStart(until){
+  if(!focusNativeInfo.available||!focusNativeInfo.authorized||!focusNativeInfo.selectionCount)return false;
+  await focusNativeCall('start',{untilISO:until.toISOString()});
+  await focusNativeRefresh();return true;
+}
+async function focusNativeStop(){
+  if(!focusNativeInfo.available)return;
+  try{await focusNativeCall('stop');await focusNativeRefresh()}catch(_){}
+}
+
 function focusHostsFromUrl(url){
   try{
     const raw=String(url||"");
@@ -1394,22 +1465,25 @@ function focusResolveUntil(){
   if(d<=now)d.setDate(d.getDate()+1);
   return d;
 }
-function focusStartGuard(){
+async function focusStartGuard(){
   ensureFocusGuard();
-  if(!state.focusGuard.blocked.length)return window.toast?.("Choose at least one app or website to block.");
+  const webCount=state.focusGuard.blocked.length,nativeCount=focusNativeInfo.available&&focusNativeInfo.authorized?focusNativeInfo.selectionCount:0;
+  if(!webCount&&!nativeCount)return window.toast?.("Choose at least one website or iPhone app to block.");
   const until=focusResolveUntil();
   if(!until)return window.toast?.("Choose a valid unblock time.");
   state.focusGuard.blockedUntil=until.toISOString();
   state.focusGuard.lastStartedAt=new Date().toISOString();
   saveState();renderFocusGuard();
+  try{if(nativeCount)await focusNativeStart(until)}catch(err){window.toast?.("PWA guard started, but iPhone system blocking failed: "+String(err.message||err))}
   window.toast?.("Focus Guard active until "+focusFormatUntil(until));
 }
-function focusStopGuard(){
+async function focusStopGuard(){
   ensureFocusGuard();
   if(!focusGuardActive())return;
   if(!confirm("End Focus Guard early?"))return;
   state.focusGuard.blockedUntil=null;
   saveState();renderFocusGuard();
+  await focusNativeStop();
 }
 function focusBlockedTarget(url){
   if(!focusGuardActive()||!url)return null;
@@ -1458,6 +1532,7 @@ function renderFocusGuard(){
   list.querySelectorAll("[data-focus-launch]").forEach(b=>b.onclick=()=>focusLaunch(focusGuardItem(b.dataset.focusLaunch)));
   list.querySelectorAll("[data-focus-edit]").forEach(b=>b.onclick=()=>focusOpenCustomModal(b.dataset.focusEdit));
   list.querySelectorAll("[data-focus-remove]").forEach(b=>b.onclick=()=>{state.focusGuard.blocked=state.focusGuard.blocked.filter(x=>String(x.id)!==String(b.dataset.focusRemove));focusGuardSave()});
+  renderFocusNativeStatus();
 }
 function focusDurationChanged(e){
   const custom=e.target.value==="custom";
@@ -1480,7 +1555,10 @@ document.getElementById('focus-block-duration')?.addEventListener('change',focus
 document.getElementById('focus-block-start')?.addEventListener('click',focusStartGuard);
 document.getElementById('focus-block-stop')?.addEventListener('click',focusStopGuard);
 document.getElementById('focus-add-custom')?.addEventListener('click',()=>focusOpenCustomModal());
+document.getElementById('focus-native-authorize')?.addEventListener('click',focusNativeAuthorize);
+document.getElementById('focus-native-picker')?.addEventListener('click',focusNativeChoose);
 document.addEventListener('click',focusAnchorGuard,true);
+setTimeout(focusNativeRefresh,400);
 setInterval(()=>{if(document.getElementById('view-focus')?.classList.contains('active'))renderFocusGuard()},15000);
 
 // ================= NOTES =================

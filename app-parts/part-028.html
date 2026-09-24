@@ -4865,7 +4865,7 @@ const PAIRS_KEY='omnios_sync_pairs_v1';
 const TURN_KEY='omnios_sync_turn_v1';
 const PEER_OPEN_TIMEOUT=7000;
 const DATA_OPEN_TIMEOUT=6500;
-let peer=null,peerReady=null,pendingSession=null,syncModal=null,sendTimer=null,warmPromise=null;
+let peer=null,peerReady=null,pendingSession=null,syncModal=null,sendTimer=null,warmPromise=null,lastJoinPayload=null;
 const live=new Map();
 
 const clone=v=>{try{return JSON.parse(JSON.stringify(v))}catch(_){return null}};
@@ -5163,7 +5163,7 @@ async function connectionRoute(conn){
 function connectionFailedView(message){
   const host=syncModal?.querySelector('.omni-sync-content');if(!host)return;
   host.innerHTML='<div class="omni-sync-joining"><strong>Could not reach the other device</strong><span>'+String(message||'Generate a fresh code and try again.')+'</span><div class="omni-sync-retry"><button type="button" class="btn btn-primary" data-sync-retry-now>Try again</button><button type="button" class="btn" data-sync-new-code>New QR code</button></div></div>';
-  host.querySelector('[data-sync-retry-now]')?.addEventListener('click',()=>{const incoming=parseIncoming();if(incoming)joinSession(incoming);else startHost(true)});
+  host.querySelector('[data-sync-retry-now]')?.addEventListener('click',()=>{if(lastJoinPayload)joinSession(lastJoinPayload);else startHost(true)});
   host.querySelector('[data-sync-new-code]')?.addEventListener('click',()=>{modalShell('host');startHost(true)})
 }
 function bindConnection(conn,opts={}){
@@ -5194,6 +5194,7 @@ function sessionUrl(peerId,secret){
   const u=new URL(location.href);u.hash='omni-sync='+payload;return u.toString()
 }
 async function startHost(refresh=false){
+  lastJoinPayload=null;
   const ov=syncModal||modalShell('host');
   try{
     setStage('finding','Preparing secure session','Using the already-warmed sync transport when available.','busy');
@@ -5205,11 +5206,12 @@ async function startHost(refresh=false){
   }catch(e){console.error(e);setStatus('Sync could not start. Check the internet connection and try again.','error');const host=ov.querySelector('.omni-sync-content');if(host)host.innerHTML='<button type="button" class="btn btn-primary" data-sync-retry>Try again</button>';host?.querySelector('[data-sync-retry]')?.addEventListener('click',()=>startHost(true))}
 }
 async function joinSession(payload){
+  lastJoinPayload=payload;
   modalShell('join');joinView();
   try{
     setStage('finding','Finding the other device','Contacting the sync broker…','busy');
     const p=await ensurePeer();
-    setStage('connecting','Connecting securely','Trying the fastest direct route first…','busy');
+    setStage('connecting','Connecting securely',configuredTurnServers().length?'Trying direct and relay routes in parallel…':'Trying the fastest direct route first…','busy');
     const conn=p.connect(payload.p,{reliable:true});bindConnection(conn,{secret:payload.s})
   }catch(e){console.error(e);setStage('connecting','Could not connect','Generate a new QR code and try again.','error');connectionFailedView('The other device could not be reached.')}
 }

@@ -4807,5 +4807,293 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 })();
 </script>
 
+
+<style id="omnios-device-sync-v72-css">
+/* OmniOS device sync v72 */
+#omni-sync-btn{position:relative;gap:6px;align-items:center;justify-content:center;white-space:nowrap}
+#omni-sync-btn .omni-sync-icon{font-size:.9rem;line-height:1}
+#omni-sync-btn.is-live{border-color:color-mix(in srgb,var(--accent-green,#10b981) 55%,var(--border-color));color:var(--accent-green,#10b981)}
+#omni-sync-btn.is-live::after{content:'';position:absolute;right:5px;top:5px;width:6px;height:6px;border-radius:50%;background:var(--accent-green,#10b981);box-shadow:0 0 0 2px var(--bg-surface)}
+.omni-sync-overlay{position:fixed;inset:0;z-index:2147483200;display:grid;place-items:center;padding:18px;background:rgba(2,6,12,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.omni-sync-modal{width:min(720px,100%);max-height:min(88dvh,820px);overflow:auto;border:1px solid var(--border-light);border-radius:22px;background:var(--bg-surface);box-shadow:0 28px 90px rgba(0,0,0,.5)}
+.omni-sync-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 19px 14px;border-bottom:1px solid var(--border-color)}
+.omni-sync-head>div{min-width:0}.omni-sync-head h3{margin:3px 0 5px;font-size:1.12rem;letter-spacing:-.02em}.omni-sync-head p{margin:0;max-width:58ch;color:var(--text-muted);font-size:.68rem;line-height:1.5}
+.omni-sync-kicker{font-size:.52rem;font-weight:850;letter-spacing:.11em;color:var(--accent-cyan)}
+.omni-sync-close{flex:0 0 38px;width:38px;height:38px;font-size:1.1rem}
+.omni-sync-body{padding:15px 18px 18px}
+.omni-sync-status{display:flex;align-items:flex-start;gap:10px;padding:10px 11px;border:1px solid var(--border-color);border-radius:13px;background:var(--bg-base)}
+.omni-sync-status>div{display:grid;gap:2px;min-width:0}.omni-sync-status strong{font-size:.68rem;color:var(--text-primary)}.omni-sync-status strong[data-tone="ok"]{color:var(--accent-green,#10b981)}.omni-sync-status strong[data-tone="error"]{color:var(--accent-red,#ef4444)}.omni-sync-status strong[data-tone="busy"]{color:var(--accent-cyan)}.omni-sync-status span:not(.omni-sync-dot){font-size:.57rem;line-height:1.4;color:var(--text-muted)}
+.omni-sync-dot{flex:0 0 9px;width:9px;height:9px;margin-top:5px;border-radius:50%;background:var(--accent-cyan);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent-cyan) 14%,transparent)}
+.omni-sync-content{margin-top:13px}
+.omni-sync-qr-wrap{display:grid;grid-template-columns:minmax(240px,300px) minmax(0,1fr);gap:18px;align-items:center;padding:14px;border:1px solid var(--border-color);border-radius:16px;background:var(--bg-base)}
+.omni-sync-qr{display:grid;place-items:center;min-height:270px;padding:10px;border-radius:14px;background:#fff;overflow:hidden}
+.omni-sync-qr canvas{display:block;width:min(100%,260px)!important;height:auto!important;image-rendering:pixelated}
+.omni-sync-instructions{display:grid;gap:8px;align-content:center}.omni-sync-instructions strong{font-size:.86rem}.omni-sync-instructions>span{font-size:.65rem;line-height:1.55;color:var(--text-muted)}
+.omni-sync-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:5px}.omni-sync-actions .btn{min-height:38px}
+.omni-sync-security{margin-top:9px;padding:0 3px;color:var(--text-muted);font-size:.55rem;line-height:1.45}
+.omni-sync-joining{min-height:260px;display:grid;place-items:center;align-content:center;gap:9px;text-align:center;border:1px solid var(--border-color);border-radius:16px;background:var(--bg-base)}
+.omni-sync-joining strong{font-size:.86rem}.omni-sync-joining span{font-size:.63rem;color:var(--text-muted)}
+.omni-sync-spinner{width:34px;height:34px;border:3px solid var(--border-color);border-top-color:var(--accent-cyan);border-radius:50%;animation:omniSyncSpin .8s linear infinite}
+@keyframes omniSyncSpin{to{transform:rotate(360deg)}}
+@media(max-width:760px){
+  #omni-sync-btn{display:inline-flex!important;min-width:62px!important;height:38px!important;padding:0 9px!important;font-size:.58rem!important}
+  .omni-sync-overlay{place-items:end center;padding:0;background:rgba(2,6,12,.55)}
+  .omni-sync-modal{width:100%;max-height:92dvh;border-radius:22px 22px 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom)}
+  .omni-sync-head{padding:13px 14px 11px}.omni-sync-head h3{font-size:1rem}.omni-sync-head p{font-size:.62rem}.omni-sync-body{padding:11px 12px 14px}
+  .omni-sync-qr-wrap{grid-template-columns:1fr;gap:11px;padding:10px}.omni-sync-qr{min-height:0;padding:8px}.omni-sync-qr canvas{width:min(72vw,250px)!important}
+  .omni-sync-instructions{text-align:center}.omni-sync-actions{justify-content:center}.omni-sync-actions .btn{flex:1 1 130px}
+  .omni-sync-security{text-align:center;font-size:.52rem}.omni-sync-joining{min-height:230px}
+}
+</style>
+
+<script id="omnios-device-sync-v72">
+(function(){
+'use strict';
+if(window.__omniDeviceSync72)return;
+window.__omniDeviceSync72=true;
+
+const PROTOCOL=1;
+const PEER_SRC='https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js';
+const QR_SRC='https://cdn.jsdelivr.net/npm/qrcanvas@3';
+const DEVICE_KEY='omnios_sync_device_v1';
+const PAIRS_KEY='omnios_sync_pairs_v1';
+let peer=null,peerReady=null,pendingSession=null,syncModal=null,sendTimer=null;
+const live=new Map();
+
+const clone=v=>{try{return JSON.parse(JSON.stringify(v))}catch(_){return null}};
+const iso=()=>new Date().toISOString();
+const when=v=>{const n=Date.parse(String(v||''));return Number.isFinite(n)?n:0};
+const randHex=(bytes=18)=>{const a=new Uint8Array(bytes);crypto.getRandomValues(a);return [...a].map(x=>x.toString(16).padStart(2,'0')).join('')};
+const b64urlEncode=text=>btoa(unescape(encodeURIComponent(text))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const b64urlDecode=text=>decodeURIComponent(escape(atob(String(text).replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(String(text).length/4)*4,'='))));
+
+function loadScript(id,src,ready){
+  if(ready())return Promise.resolve();
+  return new Promise((resolve,reject)=>{
+    let s=document.getElementById(id);
+    if(s){
+      if(ready())return resolve();
+      s.addEventListener('load',()=>ready()?resolve():reject(new Error('Library did not initialize')),{once:true});
+      s.addEventListener('error',()=>reject(new Error('Could not load sync library')),{once:true});
+      return;
+    }
+    s=document.createElement('script');s.id=id;s.src=src;s.async=true;s.crossOrigin='anonymous';
+    s.onload=()=>ready()?resolve():reject(new Error('Library did not initialize'));
+    s.onerror=()=>reject(new Error('Could not load sync library'));
+    document.head.appendChild(s);
+  })
+}
+async function loadPeer(){await loadScript('omni-peerjs-v72',PEER_SRC,()=>typeof window.Peer==='function')}
+async function loadQR(){await loadScript('omni-qrcanvas-v72',QR_SRC,()=>!!window.qrcanvas?.qrcanvas)}
+
+function device(){
+  let d=null;try{d=JSON.parse(localStorage.getItem(DEVICE_KEY)||'null')}catch(_){}
+  if(!d?.id){
+    const id=randHex(16);
+    d={id,name:/iPhone|iPad|Android|Mobile/i.test(navigator.userAgent)?'Mobile device':'Computer',createdAt:iso()};
+    try{localStorage.setItem(DEVICE_KEY,JSON.stringify(d))}catch(_){}
+  }
+  return d
+}
+function pairs(){try{const x=JSON.parse(localStorage.getItem(PAIRS_KEY)||'[]');return Array.isArray(x)?x:[]}catch(_){return[]}}
+function savePair(peerId,secret,remoteDevice){
+  if(!peerId||!secret)return;
+  const list=pairs(),i=list.findIndex(x=>x.peerId===peerId);
+  const row={peerId,secret,deviceId:remoteDevice?.id||'',name:remoteDevice?.name||'Paired device',pairedAt:i>=0?list[i].pairedAt:iso(),lastSeenAt:iso()};
+  if(i>=0)list[i]={...list[i],...row};else list.push(row);
+  try{localStorage.setItem(PAIRS_KEY,JSON.stringify(list.slice(-8)))}catch(_){}
+}
+function knownSecret(peerId){return pairs().find(x=>x.peerId===peerId)?.secret||''}
+
+function recovery(){return window.OmniRecovery35||null}
+function ensureReadyForMerge(){
+  const r=recovery();if(!r)throw new Error('Recovery layer is not ready yet');
+  r.ensureSyncMeta?.();return r
+}
+function buildBundle(){
+  const r=ensureReadyForMerge(),aux=r.captureAux?.()||{},meta=state.core?.syncMeta||{};
+  return {protocol:PROTOCOL,generatedAt:iso(),device:device(),state:clone(state),moduleTimes:{...(meta.modules||{})},aux,auxMeta:r.readAuxMeta?.()||{},fingerprint:r.fingerprint?.(state,aux)||''}
+}
+function chooseRemote(lt,rt,localId,remoteId){
+  if(rt>lt)return true;if(rt<lt)return false;
+  return String(remoteId||'')>String(localId||'')
+}
+function same(a,b){try{return JSON.stringify(a)===JSON.stringify(b)}catch(_){return false}}
+
+async function mergeBundle(remote){
+  if(!remote||remote.protocol!==PROTOCOL||!remote.state)return {changed:false,modules:[],aux:[]};
+  const r=ensureReadyForMerge(),localId=device().id,remoteId=remote.device?.id||'';
+  const localMeta=r.ensureSyncMeta?.()||{modules:{}},localTimes={...(localMeta.modules||{})},remoteTimes={...(remote.moduleTimes||remote.state?.core?.syncMeta?.modules||{})};
+  const keys=new Set([...(r.stateKeys?.(state)||[]),...(r.stateKeys?.(remote.state)||[])]),stateChanges=[],mergedTimes={...localTimes};
+  for(const k of keys){
+    const lt=when(localTimes[k]),rt=when(remoteTimes[k]);
+    if(chooseRemote(lt,rt,localId,remoteId)&&!same(state[k],remote.state[k]))stateChanges.push([k,clone(remote.state[k])]);
+    if(rt>lt||(rt===lt&&String(remoteId)>String(localId)))mergedTimes[k]=remoteTimes[k]||localTimes[k]||remote.generatedAt;
+    else mergedTimes[k]=localTimes[k]||remoteTimes[k]||remote.generatedAt;
+  }
+
+  const localAux=r.captureAux?.()||{},localAuxMeta=r.readAuxMeta?.()||{},remoteAux=remote.aux||{},remoteAuxMeta=remote.auxMeta||{};
+  const auxKeys=new Set([...Object.keys(localAux),...Object.keys(remoteAux),...Object.keys(localAuxMeta),...Object.keys(remoteAuxMeta)]),auxChanges=[],mergedAuxMeta={...localAuxMeta};
+  for(const k of auxKeys){
+    const lm=localAuxMeta[k]||{},rm=remoteAuxMeta[k]||{};
+    const lt=when(lm.at),rt=when(rm.at),take=chooseRemote(lt,rt,localId,remoteId);
+    if(take){
+      const deleted=!!rm.deleted;
+      const next=deleted?null:remoteAux[k];
+      const current=Object.prototype.hasOwnProperty.call(localAux,k)?localAux[k]:null;
+      if(deleted?Object.prototype.hasOwnProperty.call(localAux,k):current!==next)auxChanges.push([k,next,deleted]);
+      mergedAuxMeta[k]={at:rm.at||remote.generatedAt,deleted};
+    }
+  }
+
+  if(!stateChanges.length&&!auxChanges.length)return {changed:false,modules:[],aux:[]};
+  await r.makeSnapshot?.('Before device sync',{kind:'manual'});
+  window.__omniSyncApplying=true;
+  try{
+    for(const [k,v] of stateChanges)state[k]=v;
+    state.core=state.core&&typeof state.core==='object'?state.core:{};
+    state.core.syncMeta=state.core.syncMeta&&typeof state.core.syncMeta==='object'?state.core.syncMeta:{};
+    state.core.syncMeta.modules=mergedTimes;
+    state.core.syncMeta.updatedAt=[state.core.syncMeta.updatedAt,remote.generatedAt,iso()].filter(Boolean).sort().pop();
+    for(const [k,v,deleted] of auxChanges){
+      try{if(deleted)localStorage.removeItem(k);else localStorage.setItem(k,String(v??''))}catch(_){}
+    }
+    r.writeAuxMeta?.(mergedAuxMeta);
+    if(typeof normalizeState==='function')normalizeState();
+    if(typeof window.saveState==='function')window.saveState();
+    try{window.renderAll?.()}catch(_){}
+  }finally{window.__omniSyncApplying=false}
+  return {changed:true,modules:stateChanges.map(x=>x[0]),aux:auxChanges.map(x=>x[0])}
+}
+
+function setStatus(text,tone=''){document.querySelectorAll('[data-sync-status]').forEach(el=>{el.textContent=text;el.dataset.tone=tone})}
+function setLiveUI(){
+  const b=document.getElementById('omni-sync-btn'),n=[...live.values()].filter(x=>x.auth&&x.conn?.open).length;
+  if(b){b.classList.toggle('is-live',n>0);b.title=n?('Sync · '+n+' device'+(n===1?'':'s')+' connected'):'Sync devices'}
+}
+function closeSyncModal(){syncModal?.remove();syncModal=null}
+function modalShell(mode='host'){
+  closeSyncModal();const ov=document.createElement('div');ov.className='omni-sync-overlay';ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true" aria-labelledby="omni-sync-title"><header class="omni-sync-head"><div><div class="omni-sync-kicker">DEVICE SYNC</div><h3 id="omni-sync-title">'+(mode==='join'?'Connecting devices':'Sync OmniOS')+'</h3><p>'+(mode==='join'?'Keep this screen open while OmniOS connects and reconciles the newest data.':'Scan once with the second device. Both devices compare timestamps and keep the newest data.')+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-sync-status>'+(mode==='join'?'Preparing connection…':'Preparing secure session…')+'</strong><span>Automatic recovery snapshot is created before incoming data is applied.</span></div></div><div class="omni-sync-content"></div></div></section>';
+  document.body.appendChild(ov);syncModal=ov;ov.querySelector('.omni-sync-close').onclick=closeSyncModal;ov.onclick=e=>{if(e.target===ov)closeSyncModal()};return ov
+}
+function qrView(url){
+  const host=syncModal?.querySelector('.omni-sync-content');if(!host)return;
+  host.innerHTML='<div class="omni-sync-qr-wrap"><div class="omni-sync-qr" id="omni-sync-qr"></div><div class="omni-sync-instructions"><strong>Scan this QR code on the other device</strong><span>It opens OmniOS and starts a direct sync session. Keep both devices online and this page open.</span><div class="omni-sync-actions"><button type="button" class="btn btn-primary" data-sync-copy>Copy sync link</button><button type="button" class="btn" data-sync-new>New code</button></div></div></div><div class="omni-sync-security">One-time pairing secret · data travels over an encrypted WebRTC connection · the QR does not contain your OmniOS data.</div>';
+  const box=host.querySelector('#omni-sync-qr');box.innerHTML='';
+  try{const canvas=window.qrcanvas.qrcanvas({data:url,size:260,correctLevel:'M'});box.appendChild(canvas)}catch(e){box.textContent='QR could not be generated';console.warn(e)}
+  host.querySelector('[data-sync-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(url);setStatus('Sync link copied','ok')}catch(_){setStatus('Could not copy link','error')}};
+  host.querySelector('[data-sync-new]').onclick=()=>startHost(true)
+}
+function joinView(){const host=syncModal?.querySelector('.omni-sync-content');if(host)host.innerHTML='<div class="omni-sync-joining"><div class="omni-sync-spinner"></div><strong>Connecting securely…</strong><span>The newest data on each device will be kept.</span></div>'}
+
+async function ensurePeer(){
+  await loadPeer();
+  if(peer&&!peer.destroyed&&peer.open)return peer;
+  if(peerReady)return peerReady;
+  peerReady=new Promise((resolve,reject)=>{
+    const p=new window.Peer(undefined,{debug:1});peer=p;
+    let done=false;const timeout=setTimeout(()=>{if(!done){done=true;reject(new Error('Sync service timed out'))}},15000);
+    p.on('open',()=>{if(done)return;done=true;clearTimeout(timeout);resolve(p)});
+    p.on('connection',conn=>bindConnection(conn,{incoming:true}));
+    p.on('error',err=>{console.warn('OmniOS sync peer',err);setStatus(err?.type==='peer-unavailable'?'Other device is no longer available.':'Sync connection error.','error')});
+    p.on('disconnected',()=>{try{p.reconnect()}catch(_){}});
+  }).finally(()=>{peerReady=null});
+  return peerReady
+}
+function validIncomingSecret(conn,secret){
+  if(pendingSession&&pendingSession.secret===secret)return true;
+  return knownSecret(conn.peer)===secret
+}
+function sendBundle(conn,reason='live',force=false){
+  if(!conn?.open||!conn.__omniAuth)return;
+  const bundle=buildBundle();
+  if(!force&&bundle.fingerprint&&bundle.fingerprint===conn.__omniLastSent)return;
+  conn.__omniLastSent=bundle.fingerprint||'';
+  conn.send({type:'bundle',protocol:PROTOCOL,reason,bundle})
+}
+function scheduleLiveSend(){
+  if(window.__omniSyncApplying)return;clearTimeout(sendTimer);sendTimer=setTimeout(()=>{for(const x of live.values())if(x.auth&&x.conn?.open)sendBundle(x.conn,'live')},550)
+}
+async function handleMessage(conn,msg,expectedSecret){
+  if(!msg||msg.protocol!==PROTOCOL)return;
+  if(msg.type==='hello'){
+    if(!validIncomingSecret(conn,msg.secret)){try{conn.send({type:'error',protocol:PROTOCOL,message:'Pairing code expired or invalid'})}catch(_){};conn.close();return}
+    conn.__omniAuth=true;conn.__omniRemoteDevice=msg.device||{};savePair(conn.peer,msg.secret,msg.device);live.set(conn.peer,{conn,auth:true});setLiveUI();
+    conn.send({type:'hello-ack',protocol:PROTOCOL,device:device()});sendBundle(conn,'initial',true);setStatus('Device connected · reconciling newest data…','busy');return
+  }
+  if(msg.type==='hello-ack'){
+    if(!expectedSecret)return;conn.__omniAuth=true;conn.__omniRemoteDevice=msg.device||{};savePair(conn.peer,expectedSecret,msg.device);live.set(conn.peer,{conn,auth:true});setLiveUI();sendBundle(conn,'initial',true);setStatus('Device connected · reconciling newest data…','busy');return
+  }
+  if(msg.type==='bundle'&&conn.__omniAuth){
+    if(msg.bundle?.fingerprint&&msg.bundle.fingerprint===conn.__omniLastRecv)return;
+    conn.__omniLastRecv=msg.bundle?.fingerprint||'';
+    try{
+      const result=await mergeBundle(msg.bundle);
+      if(result.changed){sendBundle(conn,'merged',true);setStatus('Synced · newest data kept'+(result.modules.length?(' · '+result.modules.length+' module'+(result.modules.length===1?'':'s')+' updated'):''),'ok')}
+      else setStatus('Synced · both devices already match','ok');
+      try{conn.send({type:'ack',protocol:PROTOCOL,at:iso()})}catch(_){}
+    }catch(e){console.error('OmniOS sync merge',e);setStatus('Could not apply synced data. Your pre-sync snapshot is still available.','error')}
+    return
+  }
+  if(msg.type==='ack'&&conn.__omniAuth){setStatus('Live sync active · newest changes will continue to transfer','ok');return}
+  if(msg.type==='error'){setStatus(msg.message||'Sync error','error')}
+}
+function bindConnection(conn,opts={}){
+  if(!conn)return;const expectedSecret=opts.secret||'';
+  conn.on('open',()=>{
+    live.set(conn.peer,{conn,auth:false});setLiveUI();
+    if(expectedSecret)conn.send({type:'hello',protocol:PROTOCOL,secret:expectedSecret,device:device()})
+  });
+  conn.on('data',msg=>handleMessage(conn,msg,expectedSecret));
+  conn.on('close',()=>{live.delete(conn.peer);setLiveUI();if(![...live.values()].some(x=>x.auth&&x.conn?.open))setStatus('Sync connection closed','')});
+  conn.on('error',err=>{console.warn('OmniOS sync data channel',err);setStatus('Device connection error','error')})
+}
+
+function sessionUrl(peerId,secret){
+  const payload=b64urlEncode(JSON.stringify({v:PROTOCOL,p:peerId,s:secret}));
+  const u=new URL(location.href);u.hash='omni-sync='+payload;return u.toString()
+}
+async function startHost(refresh=false){
+  const ov=syncModal||modalShell('host');
+  try{
+    setStatus('Preparing secure session…','busy');await Promise.all([loadQR(),ensurePeer()]);
+    const secret=randHex(24);pendingSession={secret,createdAt:Date.now(),peerId:peer.id};
+    qrView(sessionUrl(peer.id,secret));setStatus('Ready · waiting for the second device','')
+  }catch(e){console.error(e);setStatus('Sync could not start. Check the internet connection and try again.','error');const host=ov.querySelector('.omni-sync-content');if(host)host.innerHTML='<button type="button" class="btn btn-primary" data-sync-retry>Try again</button>';host?.querySelector('[data-sync-retry]')?.addEventListener('click',()=>startHost(true))}
+}
+async function joinSession(payload){
+  modalShell('join');joinView();
+  try{
+    setStatus('Connecting to the other device…','busy');const p=await ensurePeer();
+    const conn=p.connect(payload.p,{reliable:true,serialization:'json'});bindConnection(conn,{secret:payload.s})
+  }catch(e){console.error(e);setStatus('Could not connect to the other device. Generate a new QR code and try again.','error')}
+}
+function parseIncoming(){
+  const raw=String(location.hash||'');const m=raw.match(/(?:^#|&)omni-sync=([^&]+)/);if(!m)return null;
+  try{const p=JSON.parse(b64urlDecode(m[1]));if(p?.v===PROTOCOL&&p.p&&p.s)return p}catch(_){}
+  return null
+}
+function clearIncomingHash(){
+  try{if(/^#omni-sync=/.test(location.hash))history.replaceState(history.state,'',location.pathname+location.search)}catch(_){}
+}
+function installButton(){
+  const actions=document.querySelector('.topbar-actions');if(!actions||document.getElementById('omni-sync-btn'))return false;
+  const b=document.createElement('button');b.type='button';b.id='omni-sync-btn';b.className='btn btn-sm omni-sync-btn';b.title='Sync devices';b.innerHTML='<span class="omni-sync-icon" aria-hidden="true">⇄</span><span class="omni-sync-label">Sync</span>';
+  b.onclick=()=>{modalShell('host');startHost()};
+  const anchor=document.getElementById('v55-notif-btn')||document.getElementById('settings-topbar-btn');actions.insertBefore(b,anchor||actions.firstChild);setLiveUI();return true
+}
+function init(){
+  device();
+  if(!installButton()){
+    const mo=new MutationObserver(()=>{if(installButton())mo.disconnect()});mo.observe(document.documentElement,{subtree:true,childList:true})
+  }
+  document.addEventListener('omnios:data-changed',scheduleLiveSend);
+  const incoming=parseIncoming();if(incoming){clearIncomingHash();setTimeout(()=>joinSession(incoming),80)}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+window.OmniDeviceSync={open:()=>{modalShell('host');startHost()},connections:()=>[...live.keys()],bundle:buildBundle};
+})();
+</script>
+
 </body>
 </html>

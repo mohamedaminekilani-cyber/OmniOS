@@ -200,23 +200,105 @@ function todayPassageHtml583(ref){
   const nums=hasColon?verseNums(p.verse,ch.verses.length):ch.verses.map((_,i)=>i+1);
   return nums.filter(v=>ch.verses[v-1]).map(v=>`<span class="bib-today-verse-v583"><sup class="bib-today-verse-num-v583">${v}</sup><span>${esc(ch.verses[v-1])}</span></span>`).join(' ');
 }
+function todayPreviewHtml67(ref,limit=4){
+  const p=parseRef(ref);if(!p)return'';
+  const ch=nivChapter(p.book,p.chapter);if(!ch)return'';
+  const all=String(ref).includes(':')?verseNums(p.verse,ch.verses.length):ch.verses.map((_,i)=>i+1).filter(v=>ch.verses[v-1]);
+  return all.slice(0,limit).filter(v=>ch.verses[v-1]).map(v=>`<div class="bib-today-preview-verse-v67"><span>${v}</span><p>${esc(ch.verses[v-1])}</p></div>`).join('');
+}
 function renderTodayBible(h){
-  const p=todayPlan(),passage=selectedPassageText(p.ref),done=!!B.planCompleted[p.id],sessions=(B.sessions||[]).filter(x=>x.date===todayKey()),mins=sessions.reduce((a,x)=>a+(Number(x.minutes)||0),0),lastJournal=(B.journal||[]).find(x=>x.date===todayKey());
-  h.innerHTML=`<div class="bib-today-v5717">
-    <section class="bib-today-feature-v5717">
-      <div class="bib-today-copy-v5717"><div class="bib-day">Day ${p.id} · ${esc(p.theme)}</div><h3>${esc(p.ref)}</h3><div class="bib-today-subtheme-v5717">${esc(p.subtheme)}</div><div class="bib-today-scripture-v5717">${passage?todayPassageHtml583(p.ref):'Open the passage to read today’s Scripture.'}</div><div class="bib-actions"><button class="btn btn-primary" id="bib-today-meditate">Meditate</button><button class="btn" id="bib-today-read">Read passage</button><button class="btn" id="bib-today-task">Add to Today</button><button class="btn ${done?'active':''}" id="bib-today-complete">${done?'✓ Complete':'Mark complete'}</button></div></div>
-      <aside class="bib-today-guide-v5717"><div class="bib-guide-item"><strong>Reflect</strong><p>${esc(p.question)}</p></div><div class="bib-guide-item"><strong>Practice</strong><p>${esc(p.practice)}</p></div><div class="bib-guide-item"><strong>Prayer direction</strong><p>${esc(p.prayer)}</p></div></aside>
+  const p=todayPlan();
+  const refs=Array.isArray(p.refs)&&p.refs.length?p.refs:[{label:p.displayRef||p.ref,openRef:p.ref}];
+  const firstRef=refs[0]?.openRef||p.ref;
+  const done=!!B.planCompleted[p.id];
+  const sessions=(B.sessions||[]).filter(x=>x.date===todayKey());
+  const mins=sessions.reduce((a,x)=>a+(Number(x.minutes)||0),0);
+  const lastJournal=(B.journal||[]).find(x=>x.date===todayKey());
+  const chapters=Array.isArray(p.chapters)&&p.chapters.length?p.chapters.length:refs.length;
+  const progress=typeof planPct==='function'?planPct():0;
+  const dateLabel=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+  const preview=todayPreviewHtml67(firstRef,4);
+
+  h.innerHTML=`<div class="bib-today-v5717 bib-today-v67">
+    <section class="bib-today-hero-v67 ${done?'is-complete':''}">
+      <div class="bib-today-hero-main-v67">
+        <div class="bib-today-overline-v67"><span>${esc(dateLabel)}</span><span>Day ${p.id} of 365</span>${done?'<span class="done">✓ Completed</span>':''}</div>
+        <div class="bib-today-heading-v67">
+          <div>
+            <div class="bib-day">Bible 365 · ${esc(p.theme||'Daily reading')}</div>
+            <h3>Today’s reading</h3>
+            <div class="bib-today-assignment-v67">${esc(p.displayRef||refs.map(x=>x.label).join(' · ')||p.ref)}</div>
+          </div>
+          <div class="bib-today-progress-ring-v67" aria-label="${progress}% of yearly plan complete">
+            <strong>${progress}%</strong><span>year</span>
+          </div>
+        </div>
+
+        <div class="bib-today-reading-list-v67" aria-label="Today's assigned readings">
+          ${refs.map((x,i)=>`<button type="button" class="bib-today-reading-v67 ${i===0?'primary':''}" data-today-read="${esc(x.openRef||p.ref)}">
+            <span class="bib-today-reading-index-v67">${i+1}</span>
+            <span class="bib-today-reading-copy-v67"><strong>${esc(x.label||x.openRef||p.ref)}</strong><small>${i===0?'Start here':'Continue reading'}</small></span>
+            <span class="bib-today-reading-arrow-v67" aria-hidden="true">›</span>
+          </button>`).join('')}
+        </div>
+
+        <div class="bib-today-actions-v67">
+          <button type="button" class="btn btn-primary" id="bib-today-read">Read now</button>
+          <button type="button" class="btn" id="bib-today-meditate">Meditate</button>
+          <button type="button" class="btn" id="bib-today-task">Add to Today</button>
+          <button type="button" class="btn bib-today-complete-v67 ${done?'active':''}" id="bib-today-complete">${done?'✓ Completed':'Mark complete'}</button>
+        </div>
+      </div>
+
+      <aside class="bib-today-preview-v67">
+        <div class="bib-today-preview-head-v67">
+          <div><span>Opening passage</span><strong>${esc(firstRef)}</strong></div>
+          <button type="button" class="btn btn-sm" data-today-read="${esc(firstRef)}">Open</button>
+        </div>
+        <div class="bib-today-preview-copy-v67">${preview||'<div class="bib-empty">Open today’s reading to view the Scripture text.</div>'}</div>
+      </aside>
     </section>
-    <section class="bib-today-grid-v5717">
-      <article class="bib-card"><div class="bib-card-title">Today’s rhythm</div><div class="bib-card-sub">A small snapshot of your Scripture practice today.</div><div class="bib-today-metrics-v5717"><div><strong>${sessions.length}</strong><span>sessions</span></div><div><strong>${mins}</strong><span>minutes</span></div><div><strong>${Object.keys(B.highlights||{}).length}</strong><span>highlights</span></div></div></article>
-      <article class="bib-card"><div class="bib-card-head"><div><div class="bib-card-title">Reflection</div><div class="bib-card-sub">${lastJournal?'You already wrote today.':'Capture one thought after reading.'}</div></div></div>${lastJournal?`<div class="bib-today-reflection-v5717">${esc(lastJournal.text||lastJournal.prayer||lastJournal.response||'Reflection saved.')}</div>`:'<div class="bib-empty">No reflection saved today.</div>'}<div class="bib-actions" style="margin-top:10px"><button class="btn" id="bib-today-journal">${lastJournal?'Open journal':'Write reflection'}</button></div></article>
+
+    <section class="bib-today-guidance-v67">
+      <article class="bib-today-guide-card-v67">
+        <span class="bib-today-guide-num-v67">01</span>
+        <div><strong>Reflect</strong><p>${esc(p.question||'What stands out in today’s reading?')}</p></div>
+      </article>
+      <article class="bib-today-guide-card-v67">
+        <span class="bib-today-guide-num-v67">02</span>
+        <div><strong>Practice</strong><p>${esc(p.practice||'Carry one concrete response into the rest of the day.')}</p></div>
+      </article>
+      <article class="bib-today-guide-card-v67">
+        <span class="bib-today-guide-num-v67">03</span>
+        <div><strong>Pray</strong><p>${esc(p.prayer||'Turn the reading into a simple prayer.')}</p></div>
+      </article>
+    </section>
+
+    <section class="bib-today-bottom-v67">
+      <article class="bib-card bib-today-rhythm-v67">
+        <div class="bib-card-head"><div><div class="bib-card-title">Today’s rhythm</div><div class="bib-card-sub">${chapters} chapter${chapters===1?'':'s'} assigned today.</div></div></div>
+        <div class="bib-today-metrics-v67">
+          <div><span>Reading</span><strong>${done?'Done':'Open'}</strong></div>
+          <div><span>Meditation</span><strong>${mins} min</strong></div>
+          <div><span>Sessions</span><strong>${sessions.length}</strong></div>
+        </div>
+      </article>
+
+      <article class="bib-card bib-today-reflection-card-v67">
+        <div class="bib-card-head"><div><div class="bib-card-title">Reflection</div><div class="bib-card-sub">${lastJournal?'Your reflection for today is saved.':'Capture one thought, prayer, or response after reading.'}</div></div><button type="button" class="btn btn-sm" id="bib-today-journal">${lastJournal?'Open':'Write'}</button></div>
+        ${lastJournal?`<div class="bib-today-reflection-v67">${esc(lastJournal.text||lastJournal.prayer||lastJournal.response||'Reflection saved.')}</div>`:`<button type="button" class="bib-today-empty-reflection-v67" id="bib-today-journal-empty"><span>＋</span><strong>Write a reflection</strong><small>Keep today’s reading and your response together.</small></button>`}
+      </article>
     </section>
   </div>`;
-  h.querySelector('#bib-today-meditate').onclick=()=>startMeditation(p.ref);
-  h.querySelector('#bib-today-read').onclick=()=>setRef(p.ref,'read');
-  h.querySelector('#bib-today-task').onclick=()=>openBibleDailyTask5725({ref:p.ref,source:'Today',seed:p.practice||`Meditate on ${p.ref}`,notes:`${p.theme} · ${p.subtheme}\nReflect: ${p.question}\nPrayer direction: ${p.prayer}`,duration:Number(B.meditation.minutes)||10});
+
+  h.querySelectorAll('[data-today-read]').forEach(b=>b.onclick=()=>setRef(b.dataset.todayRead,'read'));
+  h.querySelector('#bib-today-read').onclick=()=>setRef(firstRef,'read');
+  h.querySelector('#bib-today-meditate').onclick=()=>startMeditation(firstRef);
+  h.querySelector('#bib-today-task').onclick=()=>openBibleDailyTask5725({ref:firstRef,source:'Today',seed:p.practice||`Read and reflect on ${p.displayRef||p.ref}`,notes:`${p.theme||'Bible 365'} · ${p.displayRef||p.ref}\nReflect: ${p.question||''}\nPrayer: ${p.prayer||''}`,duration:Number(B.meditation.minutes)||10});
   h.querySelector('#bib-today-complete').onclick=()=>{B.planCompleted[p.id]=!B.planCompleted[p.id];save();renderTodayBible(h)};
-  h.querySelector('#bib-today-journal').onclick=()=>{B.ui.journalEdit=lastJournal?.id||'';save();setTab('journal')};
+  const openJournal=()=>{B.ui.journalEdit=lastJournal?.id||'';B.meditation.ref=firstRef;save();setTab('journal')};
+  h.querySelector('#bib-today-journal')?.addEventListener('click',openJournal);
+  h.querySelector('#bib-today-journal-empty')?.addEventListener('click',openJournal);
 }
 
 /* Replace the Bible header/tabs with a study-oriented hierarchy. */

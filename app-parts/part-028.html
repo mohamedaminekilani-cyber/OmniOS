@@ -7374,3 +7374,316 @@ setTimeout(bindChrome,500);
 
 </body>
 </html>
+
+
+<style id="omnios-v76-mobile-safe-cards">
+/* OmniOS v76 — one mobile contract for every opening card/panel.
+   The real top and bottom chrome stay visible; opened content owns only the safe region between them. */
+@media(max-width:760px){
+  :root{--omni-open-gap:8px}
+
+  /* Backdrops never cover the persistent top or bottom navigation. */
+  :is(.modal-overlay,.shortcuts-overlay,.v44-cover-dialog,.omni-sync-overlay,.inspector-backdrop,.omni-assistant-backdrop){
+    top:var(--ux-topbar-h,56px)!important;
+    bottom:var(--ux-bottomnav-h,64px)!important;
+    left:0!important;
+    right:0!important;
+    height:auto!important;
+    z-index:2147481750!important;
+  }
+
+  /* Generic modal cards occupy the measured safe region. */
+  .modal-overlay{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    padding:var(--omni-open-gap)!important;
+    align-items:stretch!important;
+    justify-content:center!important;
+    overflow:hidden!important;
+  }
+  .modal-overlay>.modal{
+    width:min(720px,100%)!important;
+    max-width:100%!important;
+    height:100%!important;
+    max-height:100%!important;
+    min-height:0!important;
+    margin:0 auto!important;
+    border-radius:18px!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  .modal-overlay>.modal>.modal-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+    flex:0 0 auto!important;
+    background:var(--bg-surface)!important;
+    padding-top:4px!important;
+  }
+
+  /* Keep every standard modal close button comfortably tappable. */
+  .modal-header :is(
+    [data-close],[data-v45-close],[data-pantry-close],
+    .modal-close,.icon-btn[aria-label="Close"]
+  ){
+    width:44px!important;
+    min-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    flex:0 0 44px!important;
+    position:relative!important;
+    z-index:32!important;
+  }
+
+  /* Inspector becomes a safe-area card instead of a full-height desktop drawer. */
+  .inspector-panel{
+    top:calc(var(--ux-topbar-h,56px) + var(--omni-open-gap))!important;
+    bottom:calc(var(--ux-bottomnav-h,64px) + var(--omni-open-gap))!important;
+    left:var(--omni-open-gap)!important;
+    right:var(--omni-open-gap)!important;
+    width:auto!important;
+    max-width:none!important;
+    height:auto!important;
+    max-height:none!important;
+    border:1px solid var(--border-light)!important;
+    border-radius:18px!important;
+    z-index:2147481800!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  .inspector-close{
+    position:sticky!important;
+    top:0!important;
+    margin-left:auto!important;
+    z-index:35!important;
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    display:grid!important;
+    place-items:center!important;
+    background:var(--bg-elevated)!important;
+    border:1px solid var(--border-color)!important;
+  }
+  .inspector-backdrop{z-index:2147481750!important}
+
+  /* Page-cover dialogs follow the same safe-region contract. */
+  .v44-cover-dialog{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    padding:var(--omni-open-gap)!important;
+    align-items:stretch!important;
+    justify-content:center!important;
+    z-index:2147481750!important;
+  }
+  .v44-cover-dialog-card{
+    width:min(720px,100%)!important;
+    height:100%!important;
+    max-height:100%!important;
+    min-height:0!important;
+    border-radius:18px!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  .v44-cover-dialog-head{
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+    background:var(--bg-surface)!important;
+  }
+  .v44-cover-close{
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    flex:0 0 44px!important;
+    display:grid!important;
+    place-items:center!important;
+  }
+
+  /* Sync no longer overlays either persistent banner. */
+  .omni-sync-overlay{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    padding:var(--omni-open-gap)!important;
+    place-items:stretch center!important;
+    align-items:stretch!important;
+    z-index:2147481750!important;
+  }
+  .omni-sync-modal{
+    width:min(720px,100%)!important;
+    height:100%!important;
+    max-height:100%!important;
+    min-height:0!important;
+    border-radius:18px!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  .omni-sync-head{
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+    background:var(--bg-surface)!important;
+  }
+  .omni-sync-close{
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    flex:0 0 44px!important;
+    display:grid!important;
+    place-items:center!important;
+  }
+
+  /* Assistant behaves like every other opening mobile card. */
+  .omni-assistant-backdrop{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    z-index:2147481750!important;
+  }
+  .omni-assistant-panel{
+    top:calc(var(--ux-topbar-h,56px) + var(--omni-open-gap))!important;
+    bottom:calc(var(--ux-bottomnav-h,64px) + var(--omni-open-gap))!important;
+    left:var(--omni-open-gap)!important;
+    right:var(--omni-open-gap)!important;
+    width:auto!important;
+    max-width:none!important;
+    height:auto!important;
+    max-height:none!important;
+    border-radius:18px!important;
+    z-index:2147481800!important;
+  }
+  .omni-assistant-head{
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+  }
+  .omni-assistant-close{
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    flex:0 0 44px!important;
+  }
+
+  /* Keyboard shortcuts: same bounded card and an always-visible close action. */
+  .shortcuts-overlay{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    padding:var(--omni-open-gap)!important;
+    align-items:stretch!important;
+    justify-content:center!important;
+    z-index:2147481750!important;
+  }
+  .shortcuts-box{
+    position:relative!important;
+    width:min(600px,100%)!important;
+    max-width:100%!important;
+    height:100%!important;
+    max-height:100%!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+    border-radius:18px!important;
+  }
+  .omni-safe-card-close{
+    position:sticky!important;
+    top:0!important;
+    z-index:35!important;
+    margin:0 0 8px auto!important;
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    border:1px solid var(--border-color)!important;
+    border-radius:12px!important;
+    background:var(--bg-elevated)!important;
+    color:var(--text-primary)!important;
+    font:inherit!important;
+    font-size:1rem!important;
+  }
+
+  /* Bible passage tools fill the same measured region and keep their close row pinned. */
+  #view-bible .bib-mobile-tools-backdrop-v67{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    z-index:2147481650!important;
+  }
+  #view-bible .bib-side-v5814{
+    top:calc(var(--ux-topbar-h,56px) + var(--omni-open-gap))!important;
+    bottom:calc(var(--ux-bottomnav-h,64px) + var(--omni-open-gap))!important;
+    left:var(--omni-open-gap)!important;
+    right:var(--omni-open-gap)!important;
+    width:auto!important;
+    height:auto!important;
+    max-height:none!important;
+    min-height:0!important;
+    border-radius:18px!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  #view-bible .bib-mobile-tools-close-v67{
+    position:sticky!important;
+    top:-8px!important;
+    z-index:35!important;
+    min-height:48px!important;
+  }
+
+  /* Calendar menu already follows this pattern; reinforce its close control. */
+  #view-master-calendar .v603-mobile-sheet-close{
+    position:relative!important;
+    z-index:35!important;
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+  }
+
+  /* Persistent chrome always remains above opening cards. */
+  .topbar{z-index:2147481900!important}
+  .mobile-nav{z-index:2147482000!important}
+}
+</style>
+
+<script id="omnios-v76-mobile-safe-cards-js">
+(function(){
+  'use strict';
+  if(window.__omniMobileSafeCards76)return;
+  window.__omniMobileSafeCards76=true;
+
+  const mobile=()=>matchMedia('(max-width:760px)').matches;
+
+  function ensureShortcutsClose(){
+    if(!mobile())return;
+    const box=document.querySelector('#shortcuts-overlay .shortcuts-box');
+    if(!box||box.querySelector('.omni-safe-card-close'))return;
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='omni-safe-card-close';
+    b.setAttribute('aria-label','Close keyboard shortcuts');
+    b.textContent='✕';
+    b.addEventListener('click',()=>{
+      const existing=document.getElementById('shortcuts-close-btn');
+      if(existing)existing.click();
+      else{
+        const ov=document.getElementById('shortcuts-overlay');
+        ov?.classList.remove('open');
+        ov?.setAttribute('aria-hidden','true');
+      }
+    });
+    box.insertBefore(b,box.firstChild);
+  }
+
+  function refresh(){
+    if(!mobile())return;
+    ensureShortcutsClose();
+  }
+
+  const mo=new MutationObserver(()=>requestAnimationFrame(refresh));
+  if(document.body)mo.observe(document.body,{childList:true,subtree:true});
+  addEventListener('resize',refresh,{passive:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh,{once:true});
+  else refresh();
+
+  window.OmniMobileSafeCards76={refresh};
+})();
+</script>

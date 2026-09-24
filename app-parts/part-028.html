@@ -5266,5 +5266,307 @@ window.OmniDeviceSync={
 })();
 </script>
 
+
+<style id="omnios-local-wifi-sync-v73-css">
+/* OmniOS v73 — broker-free Local Wi-Fi sync */
+.omni-local-sync .omni-sync-modal{width:min(760px,100%)}
+.omni-local-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:10px 0 0}
+.omni-local-step{padding:5px 6px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);color:var(--text-muted);font-size:.49rem;font-weight:800;text-align:center}
+.omni-local-step.active{border-color:color-mix(in srgb,var(--accent-cyan) 50%,var(--border-color));color:var(--accent-cyan);background:color-mix(in srgb,var(--accent-cyan) 8%,var(--bg-base))}
+.omni-local-step.done{border-color:color-mix(in srgb,var(--accent-green,#10b981) 40%,var(--border-color));color:var(--accent-green,#10b981)}
+.omni-local-card{margin-top:12px;padding:12px;border:1px solid var(--border-color);border-radius:15px;background:var(--bg-base)}
+.omni-local-grid{display:grid;grid-template-columns:minmax(230px,290px) minmax(0,1fr);gap:16px;align-items:center}
+.omni-local-qr{display:grid;place-items:center;padding:9px;border-radius:13px;background:#fff;min-height:250px;overflow:hidden}
+.omni-local-qr canvas{display:block;width:min(100%,270px)!important;height:auto!important;image-rendering:pixelated}
+.omni-local-copy{display:grid;gap:8px;align-content:center;min-width:0}
+.omni-local-copy h4{margin:0;font-size:.9rem;letter-spacing:-.015em}
+.omni-local-copy p{margin:0;color:var(--text-muted);font-size:.64rem;line-height:1.55}
+.omni-local-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:3px}
+.omni-local-actions .btn{min-height:38px}
+.omni-local-badge{display:inline-flex;align-items:center;gap:5px;width:max-content;max-width:100%;padding:5px 8px;border:1px solid color-mix(in srgb,var(--accent-green,#10b981) 34%,var(--border-color));border-radius:999px;color:var(--accent-green,#10b981);font-size:.52rem;font-weight:820}
+.omni-local-note{margin-top:9px;color:var(--text-muted);font-size:.55rem;line-height:1.5}
+.omni-local-camera{display:grid;gap:8px;margin-top:10px;padding:9px;border:1px solid var(--border-color);border-radius:13px;background:var(--bg-surface)}
+.omni-local-camera-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.61rem;font-weight:800}
+.omni-local-camera video{display:block;width:100%;max-height:330px;object-fit:cover;border-radius:10px;background:#000}
+.omni-local-success{display:grid;place-items:center;gap:8px;min-height:250px;text-align:center;padding:18px}
+.omni-local-success .mark{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;background:color-mix(in srgb,var(--accent-green,#10b981) 12%,var(--bg-base));color:var(--accent-green,#10b981);font-size:1.4rem;font-weight:900}
+.omni-local-success strong{font-size:.9rem}.omni-local-success span{max-width:50ch;color:var(--text-muted);font-size:.62rem;line-height:1.5}
+@media(max-width:760px){
+  .omni-local-grid{grid-template-columns:1fr;gap:10px}
+  .omni-local-card{padding:9px}
+  .omni-local-qr{min-height:0;padding:7px}.omni-local-qr canvas{width:min(72vw,250px)!important}
+  .omni-local-copy{text-align:center}.omni-local-badge{margin-inline:auto}.omni-local-actions{justify-content:center}.omni-local-actions .btn{flex:1 1 130px}
+  .omni-local-steps{gap:3px}.omni-local-step{padding:5px 3px;font-size:.45rem}
+}
+</style>
+
+<script id="omnios-local-wifi-sync-v73">
+(function(){
+'use strict';
+if(window.__omniLocalWifiSync73)return;
+window.__omniLocalWifiSync73=true;
+
+const PROTOCOL=1;
+const ANSWER_PREFIX='omnios_local_answer_';
+const CHANNEL_NAME='omnios-local-sync-v1';
+let hostSession=null,joinSessionState=null,overlay=null,scannerStop=null,liveConn=null,sendTimer=null,bc=null;
+
+const api=()=>window.OmniDeviceSync;
+const dev=()=>{try{return JSON.parse(localStorage.getItem('omnios_sync_device_v1')||'null')||{id:'unknown'}}catch(_){return{id:'unknown'}}};
+const randomHex=(n=16)=>{const a=new Uint8Array(n);crypto.getRandomValues(a);return [...a].map(x=>x.toString(16).padStart(2,'0')).join('')};
+const bytesToB64url=bytes=>{let s='';for(let i=0;i<bytes.length;i+=0x8000)s+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+const b64urlToBytes=text=>{const s=atob(String(text).replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(String(text).length/4)*4,'=')),a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return a};
+
+async function pack(obj){
+  const raw=new TextEncoder().encode(JSON.stringify(obj));
+  if('CompressionStream'in window){
+    try{
+      const stream=new Blob([raw]).stream().pipeThrough(new CompressionStream('gzip'));
+      return 'g'+bytesToB64url(new Uint8Array(await new Response(stream).arrayBuffer()))
+    }catch(_){}
+  }
+  return 'j'+bytesToB64url(raw)
+}
+async function unpack(token){
+  const mode=String(token||'').charAt(0),bytes=b64urlToBytes(String(token||'').slice(1));
+  let raw=bytes;
+  if(mode==='g'){
+    if(!('DecompressionStream'in window))throw new Error('This browser cannot open the compressed pairing code.');
+    raw=new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer())
+  }else if(mode!=='j')throw new Error('Invalid local sync code.');
+  return JSON.parse(new TextDecoder().decode(raw))
+}
+function cleanUrl(){const u=new URL(location.href);u.hash='';return u}
+async function payloadUrl(kind,payload){const u=cleanUrl();u.hash='omni-local-'+kind+'='+await pack(payload);return u.toString()}
+async function parseValue(value){
+  const m=String(value||'').match(/omni-local-(offer|answer)=([^&#\s]+)/);
+  if(!m)return null;
+  const data=await unpack(m[2]);return {...data,__kind:m[1]}
+}
+function parseHashRaw(){return String(location.hash||'')}
+function clearHash(){try{if(/#omni-local-(offer|answer)=/.test(location.hash))history.replaceState(history.state,'',location.pathname+location.search)}catch(_){}}
+
+function localConfig(){return {iceServers:[],iceCandidatePoolSize:0,bundlePolicy:'max-bundle',rtcpMuxPolicy:'require'}}
+function waitLocalIce(pc,limit=1500){
+  if(pc.iceGatheringState==='complete')return Promise.resolve();
+  return new Promise(resolve=>{
+    let settled=false,shortTimer=null;
+    const finish=()=>{if(settled)return;settled=true;clearTimeout(maxTimer);clearTimeout(shortTimer);pc.removeEventListener('icecandidate',onCandidate);pc.removeEventListener('icegatheringstatechange',onState);resolve()};
+    const onCandidate=e=>{if(!e.candidate){finish();return}const type=e.candidate.type||(/ typ host(?: |$)/.test(e.candidate.candidate||'')?'host':'');if(type==='host'){clearTimeout(shortTimer);shortTimer=setTimeout(finish,140)}};
+    const onState=()=>{if(pc.iceGatheringState==='complete')finish()};
+    const maxTimer=setTimeout(finish,limit);
+    pc.addEventListener('icecandidate',onCandidate);pc.addEventListener('icegatheringstatechange',onState)
+  })
+}
+function setButtonLive(on){
+  const b=document.getElementById('omni-sync-btn');if(b){b.classList.toggle('is-live',!!on);b.title=on?'Sync · Local Wi-Fi connected':'Sync devices'}
+}
+function stopScanner(){try{scannerStop?.()}catch(_){}scannerStop=null}
+function closeModal(){stopScanner();overlay?.remove();overlay=null}
+function modal(title,subtitle){
+  closeModal();
+  const ov=document.createElement('div');ov.className='omni-sync-overlay omni-local-sync';
+  ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true"><header class="omni-sync-head"><div><div class="omni-sync-kicker">LOCAL WI-FI SYNC</div><h3>'+title+'</h3><p>'+subtitle+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-local-status>Preparing…</strong><span data-local-detail>Both devices must be connected to the same Wi-Fi network.</span></div></div><div class="omni-local-steps"><div class="omni-local-step active" data-local-step="1">1 · Offer</div><div class="omni-local-step" data-local-step="2">2 · Response</div><div class="omni-local-step" data-local-step="3">3 · Connect</div><div class="omni-local-step" data-local-step="4">4 · Live</div></div><div class="omni-sync-content"></div></div></section>';
+  document.body.appendChild(ov);overlay=ov;
+  ov.querySelector('.omni-sync-close').onclick=closeModal;ov.onclick=e=>{if(e.target===ov)closeModal()};
+  return ov
+}
+function stage(n,status,detail,tone=''){
+  overlay?.querySelectorAll('[data-local-step]').forEach(el=>{const x=Number(el.dataset.localStep);el.classList.toggle('done',x<n);el.classList.toggle('active',x===n)});
+  const s=overlay?.querySelector('[data-local-status]'),d=overlay?.querySelector('[data-local-detail]');
+  if(s){s.textContent=status||'';s.dataset.tone=tone}if(d&&detail)d.textContent=detail
+}
+async function ensureQr(){await api()?.loadQR?.()}
+function drawQr(box,url){
+  if(!box||!window.qrcanvas?.qrcanvas)return false;box.innerHTML='';
+  try{box.appendChild(window.qrcanvas.qrcanvas({data:url,size:290,correctLevel:'L'}));return true}catch(e){console.warn('Local Wi-Fi QR',e);box.textContent='QR code is too large for this browser.';return false}
+}
+function internetFallback(){
+  closeModal();api()?.openInternet?.()
+}
+
+function makeAdapter(pc,dc,sid){
+  const id='wifi:'+sid;
+  const conn={
+    peer:id,peerConnection:pc,__omniAuth:true,__omniLastSent:'',__omniLastRecv:'',
+    get open(){return dc.readyState==='open'},
+    send(obj){if(dc.readyState==='open')dc.send(JSON.stringify(obj))},
+    close(){try{dc.close()}catch(_){}try{pc.close()}catch(_){}}
+  };
+  dc.onopen=()=>{
+    liveConn=conn;setButtonLive(true);stage(3,'Connected on local Wi-Fi','Exchanging the newest OmniOS data…','busy');sendBundle(true)
+  };
+  dc.onmessage=async e=>{
+    let msg;try{msg=typeof e.data==='string'?JSON.parse(e.data):e.data}catch(_){return}
+    if(!msg||msg.protocol!==PROTOCOL)return;
+    if(msg.type==='bundle'&&msg.bundle){
+      if(msg.bundle.fingerprint&&msg.bundle.fingerprint===conn.__omniLastRecv)return;
+      conn.__omniLastRecv=msg.bundle.fingerprint||'';
+      try{
+        const result=await api()?.merge?.(msg.bundle);
+        if(result?.changed)sendBundle(true);
+        conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
+        stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Direct encrypted connection on your Wi-Fi.','ok')
+      }catch(err){console.error('Local Wi-Fi merge',err);stage(3,'Sync failed','Your automatic pre-sync snapshot is still available.','error')}
+    }else if(msg.type==='ack'){
+      stage(4,'Live Local Wi-Fi sync','New changes will continue to transfer while both apps stay open.','ok')
+    }
+  };
+  dc.onclose=()=>{if(liveConn===conn)liveConn=null;setButtonLive(false);stage(3,'Local connection closed','Open Sync again to reconnect.','')};
+  dc.onerror=()=>stage(3,'Local connection error','Your Wi-Fi may block device-to-device traffic. Try Internet fallback.','error');
+  pc.onconnectionstatechange=()=>{
+    if(pc.connectionState==='failed'){stage(3,'Local Wi-Fi connection blocked','The router may have client isolation enabled. Use Internet fallback.','error');showFallbackOnly()}
+    if(pc.connectionState==='connected')stage(3,'Connected on local Wi-Fi','Exchanging the newest OmniOS data…','busy')
+  };
+  return conn
+}
+function sendBundle(force=false){
+  const conn=liveConn;if(!conn?.open)return;
+  const bundle=api()?.bundle?.();if(!bundle)return;
+  if(!force&&bundle.fingerprint&&bundle.fingerprint===conn.__omniLastSent)return;
+  conn.__omniLastSent=bundle.fingerprint||'';
+  conn.send({type:'bundle',protocol:PROTOCOL,reason:'local-wifi',bundle})
+}
+function scheduleSend(){clearTimeout(sendTimer);sendTimer=setTimeout(()=>sendBundle(false),350)}
+
+function showFallbackOnly(){
+  const host=overlay?.querySelector('.omni-sync-content');if(!host)return;
+  const actions=host.querySelector('.omni-local-actions')||host;
+  if(!host.querySelector('[data-local-internet]')){const b=document.createElement('button');b.type='button';b.className='btn';b.dataset.localInternet='';b.textContent='Use Internet fallback';b.onclick=internetFallback;actions.appendChild(b)}
+}
+function hostView(url){
+  const host=overlay?.querySelector('.omni-sync-content');if(!host)return;
+  host.innerHTML='<div class="omni-local-card"><div class="omni-local-grid"><div class="omni-local-qr" data-local-qr></div><div class="omni-local-copy"><div class="omni-local-badge">⚡ Same Wi-Fi · no broker</div><h4>Scan this on the second device</h4><p>The second device will open OmniOS and generate a response QR. Then return that response to this first device.</p><div class="omni-local-actions"><button type="button" class="btn btn-primary" data-local-scan>Scan response</button><button type="button" class="btn" data-local-paste>Paste response</button><button type="button" class="btn" data-local-copy>Copy offer</button><button type="button" class="btn" data-local-internet>Internet fallback</button></div></div></div><div class="omni-local-note"><strong>Why two QR codes?</strong> Browsers require an offer and an answer before a direct WebRTC connection can open. Using the two QR codes replaces the signaling server completely.</div><div data-local-camera-host></div></div>';
+  if(!drawQr(host.querySelector('[data-local-qr]'),url))stage(1,'Local code is too large','Use Internet fallback on this browser.','error');
+  host.querySelector('[data-local-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(url);stage(1,'Offer copied','Open it on the second device.','ok')}catch(_){stage(1,'Could not copy offer','Use the QR code instead.','error')}};
+  host.querySelector('[data-local-internet]').onclick=internetFallback;
+  host.querySelector('[data-local-paste]').onclick=async()=>{
+    const value=prompt('Paste the response link from the second device:');if(!value)return;
+    try{const p=await parseValue(value);if(!p||p.__kind!=='answer')throw new Error();await applyAnswer(p)}catch(_){stage(2,'Invalid response','Paste the complete response link.','error')}
+  };
+  const scan=host.querySelector('[data-local-scan]');
+  if(!('BarcodeDetector'in window)||!navigator.mediaDevices?.getUserMedia){scan.textContent='Paste response';scan.onclick=host.querySelector('[data-local-paste]').onclick}
+  else scan.onclick=startResponseScanner
+}
+function answerView(url){
+  const host=overlay?.querySelector('.omni-sync-content');if(!host)return;
+  host.innerHTML='<div class="omni-local-card"><div class="omni-local-grid"><div class="omni-local-qr" data-local-qr></div><div class="omni-local-copy"><div class="omni-local-badge">✓ Local offer received</div><h4>Return this response to the first device</h4><p>On the first device, tap <b>Scan response</b> and point its camera at this QR code. If it has no camera, copy the response link instead.</p><div class="omni-local-actions"><button type="button" class="btn btn-primary" data-local-copy>Copy response link</button><button type="button" class="btn" data-local-internet>Use Internet fallback</button></div></div></div><div class="omni-local-note">Keep this screen open. As soon as the first device accepts the response, the direct Wi-Fi data channel will open automatically.</div></div>';
+  drawQr(host.querySelector('[data-local-qr]'),url);
+  host.querySelector('[data-local-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(url);stage(2,'Response copied','Paste it into the first device.','ok')}catch(_){stage(2,'Could not copy response','Use the QR code instead.','error')}};
+  host.querySelector('[data-local-internet]').onclick=internetFallback
+}
+function deliveredView(){
+  modal('Response delivered','Return to the original OmniOS screen that displayed the first QR code.');
+  stage(2,'Response sent to the original tab','The direct Wi-Fi connection should open there now.','ok');
+  const host=overlay.querySelector('.omni-sync-content');
+  host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response delivered</strong><span>Return to the original OmniOS tab or app window. Keep this page open only if the original window does not connect.</span></div>'
+}
+
+function answerStorageKey(sid){return ANSWER_PREFIX+sid}
+function notifyAnswer(payload){
+  try{localStorage.setItem(answerStorageKey(payload.sid),JSON.stringify(payload))}catch(_){}
+  try{bc?.postMessage({type:'answer',payload})}catch(_){}
+}
+function listenForAnswer(sid){
+  const key=answerStorageKey(sid);
+  const receive=async payload=>{if(!payload||payload.sid!==sid)return;await applyAnswer(payload)};
+  const onStorage=e=>{if(e.key!==key||!e.newValue)return;try{receive(JSON.parse(e.newValue))}catch(_){}};
+  window.addEventListener('storage',onStorage);
+  if('BroadcastChannel'in window){try{bc=bc||new BroadcastChannel(CHANNEL_NAME);bc.onmessage=e=>{if(e.data?.type==='answer')receive(e.data.payload)}}catch(_){}}
+  try{const existing=JSON.parse(localStorage.getItem(key)||'null');if(existing)receive(existing)}catch(_){}
+  hostSession.answerCleanup=()=>{window.removeEventListener('storage',onStorage);try{localStorage.removeItem(key)}catch(_){}}
+}
+async function applyAnswer(payload){
+  if(!hostSession||payload.sid!==hostSession.sid||payload.secret!==hostSession.secret)return;
+  hostSession.answerCleanup?.();stage(3,'Response received','Opening the direct local Wi-Fi channel…','busy');
+  try{await hostSession.pc.setRemoteDescription(payload.answer)}catch(e){console.error(e);stage(3,'Could not apply response','Generate a new Local Wi-Fi code and try again.','error');return}
+  const timeout=setTimeout(()=>{if(!liveConn?.open){stage(3,'Local Wi-Fi connection blocked','Both devices must be on the same Wi-Fi and the router must allow device-to-device traffic.','error');showFallbackOnly()}},5000);
+  hostSession.connectTimeout=timeout
+}
+async function startResponseScanner(){
+  stopScanner();
+  const host=overlay?.querySelector('[data-local-camera-host]');if(!host)return;
+  try{
+    const detector=new BarcodeDetector({formats:['qr_code']});
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+    host.innerHTML='<div class="omni-local-camera"><div class="omni-local-camera-head"><span>Point the camera at the response QR</span><button type="button" class="icon-btn" data-local-camera-close>×</button></div><video playsinline muted></video></div>';
+    const video=host.querySelector('video');video.srcObject=stream;await video.play();
+    let stopped=false,busy=false,last=0;
+    const stop=()=>{if(stopped)return;stopped=true;stream.getTracks().forEach(t=>t.stop());host.innerHTML='';scannerStop=null};
+    scannerStop=stop;host.querySelector('[data-local-camera-close]').onclick=stop;
+    const loop=async ts=>{
+      if(stopped)return;
+      if(!busy&&ts-last>250){busy=true;last=ts;try{
+        const codes=await detector.detect(video);
+        for(const code of codes){const p=await parseValue(code.rawValue||'');if(p?.__kind==='answer'&&p.sid===hostSession?.sid){stop();await applyAnswer(p);return}}
+      }catch(_){}finally{busy=false}}
+      requestAnimationFrame(loop)
+    };requestAnimationFrame(loop)
+  }catch(e){console.warn('Local QR scanner',e);stage(2,'Camera scanner unavailable','Use Paste response instead.','error')}
+}
+
+async function startLocalHost(){
+  try{hostSession?.pc?.close?.()}catch(_){}hostSession=null;liveConn=null;setButtonLive(false);
+  modal('Sync on the same Wi-Fi','Fast local mode: the QR codes replace the internet signaling server.');
+  stage(1,'Creating local offer','Gathering this device’s Wi-Fi connection information…','busy');
+  try{
+    await ensureQr();
+    const pc=new RTCPeerConnection(localConfig()),sid=randomHex(10),secret=randomHex(18);
+    const dc=pc.createDataChannel('omnios-sync',{ordered:true});
+    const conn=makeAdapter(pc,dc,sid);
+    hostSession={pc,dc,conn,sid,secret,answerCleanup:null,connectTimeout:null};
+    const offer=await pc.createOffer();await pc.setLocalDescription(offer);await waitLocalIce(pc);
+    const payload={v:PROTOCOL,type:'offer',sid,secret,offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},from:dev(),createdAt:Date.now()};
+    const url=await payloadUrl('offer',payload);
+    hostView(url);listenForAnswer(sid);
+    stage(1,'Step 1 · scan this code','Both devices must be on the same Wi-Fi. No PeerJS broker is used.','ok')
+  }catch(e){console.error('Local host',e);stage(1,'Could not create Local Wi-Fi code','Use Internet fallback on this browser.','error');showFallbackOnly()}
+}
+async function joinLocalOffer(payload){
+  modal('Join Local Wi-Fi sync','The first device was found through its QR code; no internet signaling broker is needed.');
+  stage(2,'Offer received','Creating the response for the first device…','busy');
+  try{
+    await ensureQr();
+    const pc=new RTCPeerConnection(localConfig());joinSessionState={pc,sid:payload.sid,secret:payload.secret};
+    pc.ondatachannel=e=>{joinSessionState.dc=e.channel;joinSessionState.conn=makeAdapter(pc,e.channel,payload.sid)};
+    await pc.setRemoteDescription(payload.offer);
+    const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await waitLocalIce(pc);
+    const response={v:PROTOCOL,type:'answer',sid:payload.sid,secret:payload.secret,answer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},from:dev(),createdAt:Date.now()};
+    const url=await payloadUrl('answer',response);answerView(url);
+    stage(2,'Step 2 · return the response','Scan this response QR on the first device.','ok')
+  }catch(e){console.error('Local join',e);stage(2,'Could not create response','Use Internet fallback.','error');showFallbackOnly()}
+}
+async function handleAnswerHandoff(payload){
+  notifyAnswer(payload);deliveredView()
+}
+async function handleIncomingHash(){
+  const raw=parseHashRaw();if(!/#omni-local-(offer|answer)=/.test(raw))return false;
+  try{
+    const payload=await parseValue(raw);clearHash();
+    if(payload?.__kind==='offer'&&payload.type==='offer'){await joinLocalOffer(payload);return true}
+    if(payload?.__kind==='answer'&&payload.type==='answer'){await handleAnswerHandoff(payload);return true}
+  }catch(e){console.error('Local Wi-Fi link',e)}
+  return false
+}
+
+function patchSyncButton(){
+  const b=document.getElementById('omni-sync-btn');if(!b)return false;
+  if(b.dataset.localWifi73==='1')return true;
+  b.dataset.localWifi73='1';b.title='Sync over Local Wi-Fi';b.onclick=e=>{e.preventDefault();startLocalHost()};return true
+}
+function init(){
+  document.addEventListener('omnios:data-changed',scheduleSend);
+  const boot=async()=>{
+    if(await handleIncomingHash())return;
+    if(!patchSyncButton()){const mo=new MutationObserver(()=>{if(patchSyncButton())mo.disconnect()});mo.observe(document.documentElement,{subtree:true,childList:true})}
+  };
+  boot()
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+
+window.OmniLocalWifiSync73={open:startLocalHost,join:joinLocalOffer,parse:parseValue};
+})();
+</script>
+
 </body>
 </html>

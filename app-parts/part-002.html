@@ -1304,6 +1304,185 @@ function resetTimer() {
     document.getElementById(id).addEventListener('change', () => { if(!isRunning) resetTimer(); });
 });
 
+// ================= FOCUS GUARD =================
+const FOCUS_GUARD_PRESETS=[{"id":"instagram","name":"Instagram","icon":"◎","url":"https://www.instagram.com/","hosts":["instagram.com"]},{"id":"tiktok","name":"TikTok","icon":"♪","url":"https://www.tiktok.com/","hosts":["tiktok.com"]},{"id":"youtube","name":"YouTube","icon":"▶","url":"https://www.youtube.com/","hosts":["youtube.com","youtu.be"]},{"id":"x","name":"X / Twitter","icon":"𝕏","url":"https://x.com/","hosts":["x.com","twitter.com"]},{"id":"reddit","name":"Reddit","icon":"●","url":"https://www.reddit.com/","hosts":["reddit.com"]},{"id":"facebook","name":"Facebook","icon":"f","url":"https://www.facebook.com/","hosts":["facebook.com"]},{"id":"netflix","name":"Netflix","icon":"N","url":"https://www.netflix.com/","hosts":["netflix.com"]}];
+function focusHostsFromUrl(url){
+  try{
+    const raw=String(url||"");
+    const u=new URL(/^https?:\/\//i.test(raw)?raw:"https://"+raw);
+    return [u.hostname.replace(/^www\./,"")].filter(Boolean);
+  }catch(_){return []}
+}
+function ensureFocusGuard(){
+  state.focusGuard=state.focusGuard&&typeof state.focusGuard==="object"?state.focusGuard:{};
+  state.focusGuard.blocked=Array.isArray(state.focusGuard.blocked)?state.focusGuard.blocked:[];
+  state.focusGuard.blockedUntil=state.focusGuard.blockedUntil||null;
+  state.focusGuard.dismissCount=Number(state.focusGuard.dismissCount||0);
+  state.focusGuard.lastStartedAt=state.focusGuard.lastStartedAt||null;
+  state.focusGuard.blocked=state.focusGuard.blocked.map(x=>({
+    id:x.id||("custom-"+Math.random().toString(36).slice(2,8)),
+    name:String(x.name||"Blocked item"),
+    icon:String(x.icon||"◼"),
+    url:String(x.url||""),
+    hosts:Array.isArray(x.hosts)?x.hosts.filter(Boolean):focusHostsFromUrl(x.url)
+  }));
+}
+function focusGuardUntil(){
+  ensureFocusGuard();
+  const d=state.focusGuard.blockedUntil?new Date(state.focusGuard.blockedUntil):null;
+  return d&&!isNaN(d)&&d.getTime()>Date.now()?d:null;
+}
+function focusGuardActive(){return !!focusGuardUntil()}
+function focusGuardItem(id){ensureFocusGuard();return state.focusGuard.blocked.find(x=>String(x.id)===String(id))}
+function focusGuardSelected(id){return !!focusGuardItem(id)}
+function focusFormatUntil(d){return d?d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):""}
+function focusRemainingText(d){
+  if(!d)return "Inactive";
+  const mins=Math.ceil(Math.max(0,d-Date.now())/60000);
+  if(mins<60)return mins+" min remaining";
+  const h=Math.floor(mins/60),m=mins%60;
+  return h+"h"+(m?" "+m+"m":"")+" remaining";
+}
+function focusGuardSave(){saveState();renderFocusGuard()}
+function focusAddPreset(p){
+  ensureFocusGuard();
+  const i=state.focusGuard.blocked.findIndex(x=>String(x.id)===String(p.id));
+  if(i>=0)state.focusGuard.blocked.splice(i,1);
+  else state.focusGuard.blocked.push({...p,hosts:[...p.hosts]});
+  focusGuardSave();
+}
+function focusNormalizeUrl(v){
+  const raw=String(v||"").trim();
+  if(!raw)return "";
+  try{return new URL(/^https?:\/\//i.test(raw)?raw:"https://"+raw).href}catch(_){return ""}
+}
+function focusOpenCustomModal(existingId=null){
+  ensureFocusGuard();
+  const existing=existingId?focusGuardItem(existingId):null;
+  document.getElementById("focus-custom-modal")?.remove();
+  const ov=document.createElement("div");
+  ov.id="focus-custom-modal";
+  ov.className="modal-overlay active";
+  ov.innerHTML=`<div class="modal" style="max-width:520px"><div class="modal-header"><h3 class="modal-title">${existing?"Edit blocked app / site":"Add app or website"}</h3><button type="button" class="icon-btn" data-fgc-close>✕</button></div><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="fgc-name" placeholder="Instagram, News, Shopping…" value="${escapeHtml(existing?.name||"")}"></div><div class="form-group"><label class="form-label">Website / launch URL</label><input class="form-input" id="fgc-url" inputmode="url" placeholder="https://example.com" value="${escapeHtml(existing?.url||"")}"></div><div class="text-muted text-sm">Use the normal web address. On phones, universal links may open the installed app when the guard is inactive.</div><div class="modal-footer">${existing?'<button type="button" class="btn btn-danger" id="fgc-delete">Delete</button>':""}<span style="flex:1"></span><button type="button" class="btn" data-fgc-close>Cancel</button><button type="button" class="btn btn-primary" id="fgc-save">Save</button></div></div>`;
+  document.body.appendChild(ov);
+  ov.querySelectorAll("[data-fgc-close]").forEach(b=>b.onclick=()=>ov.remove());
+  ov.onclick=e=>{if(e.target===ov)ov.remove()};
+  ov.querySelector("#fgc-save").onclick=()=>{
+    const name=ov.querySelector("#fgc-name").value.trim();
+    const url=focusNormalizeUrl(ov.querySelector("#fgc-url").value);
+    if(!name)return window.toast?.("Enter an app or site name.");
+    if(!url)return window.toast?.("Enter a valid website address.");
+    const hosts=focusHostsFromUrl(url);
+    if(existing)Object.assign(existing,{name,url,hosts});
+    else state.focusGuard.blocked.push({id:"custom-"+Date.now(),name,icon:"◼",url,hosts});
+    ov.remove();focusGuardSave();
+  };
+  ov.querySelector("#fgc-delete")?.addEventListener("click",()=>{
+    state.focusGuard.blocked=state.focusGuard.blocked.filter(x=>String(x.id)!==String(existing.id));
+    ov.remove();focusGuardSave();
+  });
+  setTimeout(()=>ov.querySelector("#fgc-name")?.focus(),30);
+}
+function focusResolveUntil(){
+  const duration=document.getElementById("focus-block-duration")?.value||"60";
+  const now=new Date();
+  if(duration!=="custom")return new Date(now.getTime()+Math.max(1,Number(duration)||60)*60000);
+  const raw=document.getElementById("focus-block-until")?.value||"";
+  if(!/^\d{2}:\d{2}$/.test(raw))return null;
+  const parts=raw.split(":").map(Number),d=new Date(now);
+  d.setHours(parts[0],parts[1],0,0);
+  if(d<=now)d.setDate(d.getDate()+1);
+  return d;
+}
+function focusStartGuard(){
+  ensureFocusGuard();
+  if(!state.focusGuard.blocked.length)return window.toast?.("Choose at least one app or website to block.");
+  const until=focusResolveUntil();
+  if(!until)return window.toast?.("Choose a valid unblock time.");
+  state.focusGuard.blockedUntil=until.toISOString();
+  state.focusGuard.lastStartedAt=new Date().toISOString();
+  saveState();renderFocusGuard();
+  window.toast?.("Focus Guard active until "+focusFormatUntil(until));
+}
+function focusStopGuard(){
+  ensureFocusGuard();
+  if(!focusGuardActive())return;
+  if(!confirm("End Focus Guard early?"))return;
+  state.focusGuard.blockedUntil=null;
+  saveState();renderFocusGuard();
+}
+function focusBlockedTarget(url){
+  if(!focusGuardActive()||!url)return null;
+  let host="";
+  try{host=new URL(url,location.href).hostname.replace(/^www\./,"").toLowerCase()}catch(_){return null}
+  return state.focusGuard.blocked.find(item=>(item.hosts||[]).some(h=>{
+    const x=String(h||"").replace(/^www\./,"").toLowerCase();
+    return host===x||host.endsWith("."+x);
+  }))||null;
+}
+function focusShowBlocked(item){
+  const until=focusGuardUntil();
+  if(!until)return false;
+  document.getElementById("focus-blocked-modal")?.remove();
+  const ov=document.createElement("div");
+  ov.id="focus-blocked-modal";
+  ov.className="modal-overlay active";
+  ov.innerHTML=`<div class="modal" style="max-width:430px"><div class="modal-header"><h3 class="modal-title">Focus Guard</h3><button type="button" class="icon-btn" data-fgb-close>✕</button></div><div class="focus-block-modal-copy"><div class="focus-block-modal-icon">◉</div><h3>${escapeHtml(item?.name||"This app")}</h3><p class="text-muted" style="margin-top:7px;line-height:1.55">You should not be using <strong>${escapeHtml(item?.name||"this app")}</strong> right now. It is blocked to protect your focus until:</p><div class="focus-block-modal-time">${escapeHtml(focusFormatUntil(until))}</div><div class="text-muted text-sm" style="margin-top:5px">${escapeHtml(focusRemainingText(until))}</div></div><div class="modal-footer"><button type="button" class="btn btn-primary" data-fgb-close>Return to focus</button></div></div>`;
+  document.body.appendChild(ov);
+  ov.querySelectorAll("[data-fgb-close]").forEach(b=>b.onclick=()=>ov.remove());
+  ov.onclick=e=>{if(e.target===ov)ov.remove()};
+  state.focusGuard.dismissCount=(state.focusGuard.dismissCount||0)+1;
+  try{saveState()}catch(_){}
+  return true;
+}
+function focusLaunch(item){
+  if(!item?.url)return;
+  if(focusGuardActive()){focusShowBlocked(item);return}
+  window.open(item.url,"_blank","noopener");
+}
+function renderFocusGuard(){
+  ensureFocusGuard();
+  const row=document.getElementById("focus-preset-row");
+  const list=document.getElementById("focus-blocked-list");
+  const status=document.getElementById("focus-guard-status");
+  const summary=document.getElementById("focus-guard-summary");
+  if(!row||!list||!status||!summary)return;
+  const until=focusGuardUntil(),active=!!until;
+  if(!active&&state.focusGuard.blockedUntil){state.focusGuard.blockedUntil=null;try{saveState()}catch(_){}}
+  status.textContent=active?"Active · "+focusRemainingText(until):"Inactive";
+  status.classList.toggle("active",active);
+  summary.innerHTML=active?`Blocking <strong>${state.focusGuard.blocked.length}</strong> selected app${state.focusGuard.blocked.length===1?"":"s"} until <strong>${escapeHtml(focusFormatUntil(until))}</strong>. Stay with the task you chose.`:`${state.focusGuard.blocked.length?state.focusGuard.blocked.length+" selected. ":""}Choose a duration and start blocking when you begin focused work.`;
+  row.innerHTML=FOCUS_GUARD_PRESETS.map(p=>`<button type="button" class="focus-preset ${focusGuardSelected(p.id)?"selected":""}" data-focus-preset="${p.id}"><span>${p.icon}</span>${escapeHtml(p.name)}</button>`).join("");
+  row.querySelectorAll("[data-focus-preset]").forEach(b=>b.onclick=()=>{const p=FOCUS_GUARD_PRESETS.find(x=>x.id===b.dataset.focusPreset);if(p)focusAddPreset(p)});
+  list.innerHTML=state.focusGuard.blocked.map(item=>`<div class="focus-blocked-item"><div class="focus-blocked-icon">${escapeHtml(item.icon||"◼")}</div><div class="focus-blocked-main"><div class="focus-blocked-name">${escapeHtml(item.name)}</div><div class="focus-blocked-meta">${escapeHtml((item.hosts||[])[0]||item.url||"")}</div></div><div class="focus-blocked-actions"><button type="button" class="btn btn-sm" data-focus-launch="${escapeHtml(item.id)}">${active?"Test block":"Open"}</button>${String(item.id).startsWith("custom-")?`<button type="button" class="btn btn-sm" data-focus-edit="${escapeHtml(item.id)}">Edit</button>`:""}<button type="button" class="icon-btn" data-focus-remove="${escapeHtml(item.id)}" aria-label="Remove ${escapeHtml(item.name)}">×</button></div></div>`).join("")||'<div class="empty-state" style="padding:18px">No distractions selected yet.</div>';
+  list.querySelectorAll("[data-focus-launch]").forEach(b=>b.onclick=()=>focusLaunch(focusGuardItem(b.dataset.focusLaunch)));
+  list.querySelectorAll("[data-focus-edit]").forEach(b=>b.onclick=()=>focusOpenCustomModal(b.dataset.focusEdit));
+  list.querySelectorAll("[data-focus-remove]").forEach(b=>b.onclick=()=>{state.focusGuard.blocked=state.focusGuard.blocked.filter(x=>String(x.id)!==String(b.dataset.focusRemove));focusGuardSave()});
+}
+function focusDurationChanged(e){
+  const custom=e.target.value==="custom";
+  const wrap=document.getElementById("focus-block-until-wrap");
+  if(wrap)wrap.style.display=custom?"":"none";
+  if(custom){
+    const d=new Date(Date.now()+60*60000);
+    const inp=document.getElementById("focus-block-until");
+    if(inp&&!inp.value)inp.value=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  }
+}
+function focusAnchorGuard(e){
+  const a=e.target.closest?.("a[href]");
+  if(!a)return;
+  const item=focusBlockedTarget(a.href);
+  if(item){e.preventDefault();e.stopPropagation();focusShowBlocked(item)}
+}
+
+document.getElementById('focus-block-duration')?.addEventListener('change',focusDurationChanged);
+document.getElementById('focus-block-start')?.addEventListener('click',focusStartGuard);
+document.getElementById('focus-block-stop')?.addEventListener('click',focusStopGuard);
+document.getElementById('focus-add-custom')?.addEventListener('click',()=>focusOpenCustomModal());
+document.addEventListener('click',focusAnchorGuard,true);
+setInterval(()=>{if(document.getElementById('view-focus')?.classList.contains('active'))renderFocusGuard()},15000);
+
 // ================= NOTES =================
 let editingNoteId = null;
 let noteSaveTimer = null;
@@ -1949,6 +2128,7 @@ function renderAll() {
     updateTimerDisplay();
     document.getElementById('total-focus-time').textContent = `${(state.focusDaily && state.focusDaily[localDateString()]) || 0} min`;
     document.getElementById('total-sessions').textContent = state.focusSessions || 0;
+    renderFocusGuard();
 }
 
 normalizeState();

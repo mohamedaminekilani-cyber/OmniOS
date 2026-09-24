@@ -5248,15 +5248,18 @@ function init(){
   const incoming=parseIncoming();
   if(incoming){clearIncomingHash();setTimeout(()=>joinSession(incoming),20)}
   else{
-    const warm=()=>warmSyncTransport().then(()=>reconnectKnownPairs()).catch(()=>{});
-    if('requestIdleCallback'in window)requestIdleCallback(warm,{timeout:900});else setTimeout(warm,180)
+    const warmQr=()=>loadQR().catch(()=>{});
+    if('requestIdleCallback'in window)requestIdleCallback(warmQr,{timeout:900});else setTimeout(warmQr,180)
   }
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 window.OmniDeviceSync={
   open:()=>{modalShell('host');startHost()},
+  openInternet:()=>{modalShell('host');startHost()},
   connections:()=>[...live.keys()],
   bundle:buildBundle,
+  merge:remote=>mergeBundle(remote),
+  loadQR:()=>loadQR(),
   configureTurn:iceServers=>{try{localStorage.setItem(TURN_KEY,JSON.stringify(Array.isArray(iceServers)?iceServers:[]));peer?.destroy?.();peer=null;warmPromise=null;return true}catch(_){return false}},
   clearTurn:()=>{try{localStorage.removeItem(TURN_KEY);peer?.destroy?.();peer=null;warmPromise=null;return true}catch(_){return false}}
 };

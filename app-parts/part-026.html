@@ -234,6 +234,40 @@ function tick(){if(!T.running)return;T.remaining=Math.max(0,Math.ceil((T.endsAt-
 function recordSession(completed=false){const mins=Math.max(1,Math.round((T.total-T.remaining)/60));if(T.recorded&&completed)return;B.sessions.unshift({id:'bs-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),date:todayKey(),ref:T.ref||B.meditation.ref||todayPlan().ref,minutes:mins,completed,createdAt:new Date().toISOString()});T.recorded=completed;save()}
 function startMeditation(ref){B.meditation.ref=ref||todayPlan().ref;B.tab='meditate';if(!T.running&&!T.paused){T.ref=B.meditation.ref;T.total=(Number(B.meditation.minutes)||10)*60;T.remaining=T.total}save();window.switchView?.('bible');render()}
 
+/* OmniOS v79 — shared curated Verse of the Day. */
+const DAILY_VERSE_POOL79=[
+  ['Psalms 16:8','Steadiness'],['Psalms 18:2','Strength'],['Psalms 23:4','Courage'],['Psalms 27:1','Courage'],
+  ['Psalms 34:8','Trust'],['Psalms 34:17','Prayer'],['Psalms 37:5','Trust'],['Psalms 46:1','Strength'],
+  ['Psalms 46:10','Peace'],['Psalms 55:22','Surrender'],['Psalms 56:3','Trust'],['Psalms 62:1','Rest'],
+  ['Psalms 73:26','Strength'],['Psalms 84:11','Trust'],['Psalms 91:1','Safety'],['Psalms 103:2','Gratitude'],
+  ['Psalms 119:105','Guidance'],['Psalms 121:2','Help'],['Psalms 139:14','Identity'],['Psalms 147:3','Healing'],
+  ['Proverbs 3:5','Trust'],['Proverbs 3:6','Guidance'],['Proverbs 4:23','Wisdom'],['Proverbs 16:3','Purpose'],
+  ['Proverbs 17:22','Joy'],['Proverbs 18:10','Safety'],['Proverbs 19:21','Purpose'],
+  ['Isaiah 26:3','Peace'],['Isaiah 40:31','Hope'],['Isaiah 41:10','Courage'],['Isaiah 43:2','Perseverance'],['Isaiah 55:11','Purpose'],
+  ['Jeremiah 17:7','Trust'],['Jeremiah 29:11','Hope'],['Jeremiah 31:3','Love'],
+  ['Lamentations 3:22','Mercy'],['Lamentations 3:23','Faithfulness'],['Lamentations 3:25','Hope'],['Micah 6:8','Character'],
+  ['Matthew 5:14','Purpose'],['Matthew 6:33','Priority'],['Matthew 11:28','Rest'],['Matthew 11:29','Rest'],
+  ['Mark 9:23','Faith'],['Mark 10:27','Possibility'],['Luke 1:37','Faith'],['Luke 6:31','Love'],['Luke 12:32','Peace'],
+  ['John 1:5','Hope'],['John 3:16','Love'],['John 8:12','Guidance'],['John 10:10','Life'],['John 13:34','Love'],
+  ['John 14:6','Truth'],['John 14:27','Peace'],['John 15:5','Dependence'],['John 16:33','Courage'],
+  ['Romans 5:8','Grace'],['Romans 8:1','Grace'],['Romans 8:28','Trust'],['Romans 8:31','Courage'],
+  ['Romans 12:2','Renewal'],['Romans 12:12','Perseverance'],['Romans 15:13','Hope'],
+  ['2 Corinthians 5:7','Faith'],['2 Corinthians 12:9','Grace'],['Galatians 2:20','Identity'],['Galatians 6:9','Perseverance'],
+  ['Ephesians 2:10','Purpose'],['Ephesians 3:20','Possibility'],['Ephesians 4:32','Kindness'],['Ephesians 6:10','Strength'],
+  ['Philippians 1:6','Confidence'],['Philippians 4:4','Joy'],['Philippians 4:6','Peace'],['Philippians 4:7','Peace'],
+  ['Philippians 4:13','Strength'],['Philippians 4:19','Provision'],['Colossians 3:15','Peace'],['Colossians 3:23','Purpose'],
+  ['1 Thessalonians 5:16','Joy'],['1 Thessalonians 5:17','Prayer'],['1 Thessalonians 5:18','Gratitude'],
+  ['2 Timothy 1:7','Courage'],['Hebrews 4:12','Truth'],['Hebrews 11:1','Faith'],['Hebrews 12:1','Perseverance'],
+  ['Hebrews 13:5','Presence'],['Hebrews 13:8','Faithfulness'],['James 1:5','Wisdom'],['James 1:17','Gratitude'],
+  ['James 1:19','Wisdom'],['James 4:8','Closeness'],['1 Peter 5:7','Peace'],['1 John 1:9','Grace'],
+  ['1 John 4:18','Love'],['1 John 4:19','Love'],['Revelation 21:4','Hope']
+];
+function dailyVerseKey79(d=new Date()){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}
+function dailyVerseHash79(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return h>>>0}
+function resolveDailyVerse79(ref){const p=parseRef(ref);if(!p)return null;const ch=nivChapter(p.book,p.chapter);if(!ch)return null;const ns=verseNums(p.verse,ch.verses.length),v=ns[0],text=v?ch.verses[v-1]:'';return text?{ref:p.book+' '+p.chapter+':'+v,text}:null}
+function dailyVerseToday79(d=new Date()){const date=dailyVerseKey79(d),seed=dailyVerseHash79(date+'|omnios-meaningful-v79');for(let step=0;step<DAILY_VERSE_POOL79.length;step++){const item=DAILY_VERSE_POOL79[(seed+step*37)%DAILY_VERSE_POOL79.length],verse=resolveDailyVerse79(item[0]);if(verse)return Object.assign(verse,{theme:item[1],date})}return null}
+window.OmniDailyVerse79={today:dailyVerseToday79,read(ref){const v=ref||dailyVerseToday79()?.ref;if(v)setRef(v,'read')},meditate(ref){const v=ref||dailyVerseToday79()?.ref;if(v)startMeditation(v)},poolSize:DAILY_VERSE_POOL79.length};
+
 function todayPassageHtml583(ref){
   const p=parseRef(ref);if(!p)return'';
   const ch=nivChapter(p.book,p.chapter);if(!ch)return'';
@@ -249,6 +283,7 @@ function todayPreviewHtml67(ref,limit=4){
 }
 function renderTodayBible(h){
   const p=todayPlan();
+  const daily=window.OmniDailyVerse79?.today?.()||null;
   const refs=Array.isArray(p.refs)&&p.refs.length?p.refs:[{label:p.displayRef||p.ref,openRef:p.ref}];
   const firstRef=refs[0]?.openRef||p.ref;
   const done=!!B.planCompleted[p.id];
@@ -261,6 +296,7 @@ function renderTodayBible(h){
   const preview=todayPreviewHtml67(firstRef,4);
 
   h.innerHTML=`<div class="bib-today-v5717 bib-today-v67">
+    ${daily?`<section class="bib-daily-verse-v79" aria-label="Verse of the day"><div class="bib-daily-verse-copy-v79"><div class="bib-daily-verse-kicker-v79">Verse of the day · ${esc(daily.theme)}</div><blockquote>${esc(daily.text)}</blockquote><div class="bib-daily-verse-ref-v79">${esc(daily.ref)}</div></div><div class="bib-daily-verse-actions-v79"><button type="button" class="btn btn-sm" id="bib-daily-verse-read">Read in context</button><button type="button" class="btn btn-sm" id="bib-daily-verse-meditate">Meditate</button></div></section>`:''}
     <section class="bib-today-hero-v67 ${done?'is-complete':''}">
       <div class="bib-today-hero-main-v67">
         <div class="bib-today-overline-v67"><span>${esc(dateLabel)}</span><span>Day ${p.id} of 365</span>${done?'<span class="done">✓ Completed</span>':''}</div>
@@ -332,6 +368,8 @@ function renderTodayBible(h){
     </section>
   </div>`;
 
+  h.querySelector('#bib-daily-verse-read')?.addEventListener('click',()=>setRef(daily.ref,'read'));
+  h.querySelector('#bib-daily-verse-meditate')?.addEventListener('click',()=>startMeditation(daily.ref));
   h.querySelectorAll('[data-today-read]').forEach(b=>b.onclick=()=>setRef(b.dataset.todayRead,'read'));
   h.querySelector('#bib-today-read').onclick=()=>setRef(firstRef,'read');
   h.querySelector('#bib-today-meditate').onclick=()=>startMeditation(firstRef);

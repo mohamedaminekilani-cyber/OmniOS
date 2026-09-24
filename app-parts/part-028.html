@@ -4824,6 +4824,11 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 .omni-sync-status{display:flex;align-items:flex-start;gap:10px;padding:10px 11px;border:1px solid var(--border-color);border-radius:13px;background:var(--bg-base)}
 .omni-sync-status>div{display:grid;gap:2px;min-width:0}.omni-sync-status strong{font-size:.68rem;color:var(--text-primary)}.omni-sync-status strong[data-tone="ok"]{color:var(--accent-green,#10b981)}.omni-sync-status strong[data-tone="error"]{color:var(--accent-red,#ef4444)}.omni-sync-status strong[data-tone="busy"]{color:var(--accent-cyan)}.omni-sync-status span:not(.omni-sync-dot){font-size:.57rem;line-height:1.4;color:var(--text-muted)}
 .omni-sync-dot{flex:0 0 9px;width:9px;height:9px;margin-top:5px;border-radius:50%;background:var(--accent-cyan);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent-cyan) 14%,transparent)}
+.omni-sync-stages{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:9px}
+.omni-sync-stage{min-width:0;padding:5px 6px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);color:var(--text-muted);font-size:.48rem;font-weight:780;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.omni-sync-stage.is-active{border-color:color-mix(in srgb,var(--accent-cyan) 48%,var(--border-color));background:color-mix(in srgb,var(--accent-cyan) 9%,var(--bg-base));color:var(--accent-cyan)}
+.omni-sync-stage.is-done{border-color:color-mix(in srgb,var(--accent-green,#10b981) 38%,var(--border-color));color:var(--accent-green,#10b981)}
+.omni-sync-retry{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:10px}
 .omni-sync-content{margin-top:13px}
 .omni-sync-qr-wrap{display:grid;grid-template-columns:minmax(240px,300px) minmax(0,1fr);gap:18px;align-items:center;padding:14px;border:1px solid var(--border-color);border-radius:16px;background:var(--bg-base)}
 .omni-sync-qr{display:grid;place-items:center;min-height:270px;padding:10px;border-radius:14px;background:#fff;overflow:hidden}
@@ -4857,7 +4862,10 @@ const PEER_SRC='https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js';
 const QR_SRC='https://cdn.jsdelivr.net/npm/qrcanvas@3';
 const DEVICE_KEY='omnios_sync_device_v1';
 const PAIRS_KEY='omnios_sync_pairs_v1';
-let peer=null,peerReady=null,pendingSession=null,syncModal=null,sendTimer=null;
+const TURN_KEY='omnios_sync_turn_v1';
+const PEER_OPEN_TIMEOUT=7000;
+const DATA_OPEN_TIMEOUT=6500;
+let peer=null,peerReady=null,pendingSession=null,syncModal=null,sendTimer=null,warmPromise=null;
 const live=new Map();
 
 const clone=v=>{try{return JSON.parse(JSON.stringify(v))}catch(_){return null}};
@@ -4866,6 +4874,35 @@ const when=v=>{const n=Date.parse(String(v||''));return Number.isFinite(n)?n:0};
 const randHex=(bytes=18)=>{const a=new Uint8Array(bytes);crypto.getRandomValues(a);return [...a].map(x=>x.toString(16).padStart(2,'0')).join('')};
 const b64urlEncode=text=>btoa(unescape(encodeURIComponent(text))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const b64urlDecode=text=>decodeURIComponent(escape(atob(String(text).replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(String(text).length/4)*4,'='))));
+
+function preconnectSyncOrigins(){
+  ['https://unpkg.com','https://cdn.jsdelivr.net','https://0.peerjs.com'].forEach(href=>{
+    if(document.head.querySelector('link[data-omni-sync-preconnect="'+href+'"]'))return;
+    const l=document.createElement('link');l.rel='preconnect';l.href=href;l.crossOrigin='anonymous';l.dataset.omniSyncPreconnect=href;document.head.appendChild(l)
+  })
+}
+function configuredTurnServers(){
+  try{
+    const parsed=JSON.parse(localStorage.getItem(TURN_KEY)||'null');
+    const list=Array.isArray(parsed)?parsed:Array.isArray(parsed?.iceServers)?parsed.iceServers:[];
+    return list.filter(x=>x&&x.urls&&(x.username||String(Array.isArray(x.urls)?x.urls[0]:x.urls).startsWith('stun:')))
+  }catch(_){return[]}
+}
+function rtcConfig(){
+  return {
+    iceServers:[
+      {urls:['stun:stun.cloudflare.com:3478']},
+      {urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']},
+      ...configuredTurnServers()
+    ],
+    iceCandidatePoolSize:8,
+    bundlePolicy:'max-bundle',
+    rtcpMuxPolicy:'require',
+    sdpSemantics:'unified-plan'
+  }
+}
+function stablePeerId(){return 'omnios-'+device().id}
+
 
 function loadScript(id,src,ready){
   if(ready())return Promise.resolve();
@@ -5004,14 +5041,26 @@ async function mergeBundle(remote){
   return {changed:true,modules:stateChanges.map(x=>x[0]),aux:auxChanges.map(x=>x[0])}
 }
 
-function setStatus(text,tone=''){document.querySelectorAll('[data-sync-status]').forEach(el=>{el.textContent=text;el.dataset.tone=tone})}
+function setStatus(text,tone='',detail=''){
+  document.querySelectorAll('[data-sync-status]').forEach(el=>{el.textContent=text;el.dataset.tone=tone});
+  if(detail)document.querySelectorAll('[data-sync-detail]').forEach(el=>el.textContent=detail)
+}
+function setStage(stage,text,detail='',tone='busy'){
+  const order=['finding','connecting','syncing','live'],idx=Math.max(0,order.indexOf(stage));
+  document.querySelectorAll('[data-sync-stage]').forEach(el=>{
+    const i=order.indexOf(el.dataset.syncStage);
+    el.classList.toggle('is-done',i>=0&&i<idx);
+    el.classList.toggle('is-active',i===idx)
+  });
+  setStatus(text,tone,detail)
+}
 function setLiveUI(){
   const b=document.getElementById('omni-sync-btn'),n=[...live.values()].filter(x=>x.auth&&x.conn?.open).length;
   if(b){b.classList.toggle('is-live',n>0);b.title=n?('Sync · '+n+' device'+(n===1?'':'s')+' connected'):'Sync devices'}
 }
 function closeSyncModal(){syncModal?.remove();syncModal=null}
 function modalShell(mode='host'){
-  closeSyncModal();const ov=document.createElement('div');ov.className='omni-sync-overlay';ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true" aria-labelledby="omni-sync-title"><header class="omni-sync-head"><div><div class="omni-sync-kicker">DEVICE SYNC</div><h3 id="omni-sync-title">'+(mode==='join'?'Connecting devices':'Sync OmniOS')+'</h3><p>'+(mode==='join'?'Keep this screen open while OmniOS connects and reconciles the newest data.':'Scan once with the second device. Both devices compare timestamps and keep the newest data.')+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-sync-status>'+(mode==='join'?'Preparing connection…':'Preparing secure session…')+'</strong><span>Automatic recovery snapshot is created before incoming data is applied.</span></div></div><div class="omni-sync-content"></div></div></section>';
+  closeSyncModal();const ov=document.createElement('div');ov.className='omni-sync-overlay';ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true" aria-labelledby="omni-sync-title"><header class="omni-sync-head"><div><div class="omni-sync-kicker">DEVICE SYNC</div><h3 id="omni-sync-title">'+(mode==='join'?'Connecting devices':'Sync OmniOS')+'</h3><p>'+(mode==='join'?'Keep this screen open while OmniOS connects and reconciles the newest data.':'Scan once with the second device. Both devices compare timestamps and keep the newest data.')+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-sync-status>'+(mode==='join'?'Finding the other device…':'Preparing secure session…')+'</strong><span data-sync-detail>Automatic recovery snapshot is created before incoming data is applied.</span></div></div><div class="omni-sync-stages" aria-label="Sync progress"><div class="omni-sync-stage is-active" data-sync-stage="finding">Finding</div><div class="omni-sync-stage" data-sync-stage="connecting">Connecting</div><div class="omni-sync-stage" data-sync-stage="syncing">Syncing</div><div class="omni-sync-stage" data-sync-stage="live">Live</div></div><div class="omni-sync-content"></div></div></section>';
   document.body.appendChild(ov);syncModal=ov;ov.querySelector('.omni-sync-close').onclick=closeSyncModal;ov.onclick=e=>{if(e.target===ov)closeSyncModal()};return ov
 }
 function qrView(url){
@@ -5022,22 +5071,44 @@ function qrView(url){
   host.querySelector('[data-sync-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(url);setStatus('Sync link copied','ok')}catch(_){setStatus('Could not copy link','error')}};
   host.querySelector('[data-sync-new]').onclick=()=>startHost(true)
 }
-function joinView(){const host=syncModal?.querySelector('.omni-sync-content');if(host)host.innerHTML='<div class="omni-sync-joining"><div class="omni-sync-spinner"></div><strong>Connecting securely…</strong><span>The newest data on each device will be kept.</span></div>'}
+function joinView(){const host=syncModal?.querySelector('.omni-sync-content');if(host)host.innerHTML='<div class="omni-sync-joining"><div class="omni-sync-spinner"></div><strong>Finding the other device…</strong><span>The newest data on each device will be kept.</span></div>'}
 
 async function ensurePeer(){
   await loadPeer();
   if(peer&&!peer.destroyed&&peer.open)return peer;
   if(peerReady)return peerReady;
   peerReady=new Promise((resolve,reject)=>{
-    const p=new window.Peer(undefined,{debug:1});peer=p;
-    let done=false;const timeout=setTimeout(()=>{if(!done){done=true;reject(new Error('Sync service timed out'))}},15000);
-    p.on('open',()=>{if(done)return;done=true;clearTimeout(timeout);resolve(p)});
-    p.on('connection',conn=>bindConnection(conn,{incoming:true}));
-    p.on('error',err=>{console.warn('OmniOS sync peer',err);setStatus(err?.type==='peer-unavailable'?'Other device is no longer available.':'Sync connection error.','error')});
-    p.on('disconnected',()=>{try{p.reconnect()}catch(_){}});
+    const options={debug:0,host:'0.peerjs.com',port:443,secure:true,path:'/',pingInterval:4000,config:rtcConfig()};
+    let p=new window.Peer(stablePeerId(),options);peer=p;
+    let done=false;
+    let timeout=setTimeout(()=>{if(done)return;done=true;try{p.destroy()}catch(_){};peer=null;reject(new Error('Sync broker timed out'))},PEER_OPEN_TIMEOUT);
+    const wire=current=>{
+      current.on('open',()=>{if(done)return;done=true;clearTimeout(timeout);resolve(current)});
+      current.on('connection',conn=>bindConnection(conn,{incoming:true}));
+      current.on('error',err=>{
+        console.warn('OmniOS sync peer',err);
+        if(err?.type==='unavailable-id'&&!done&&current===p){
+          try{current.destroy()}catch(_){}
+          p=new window.Peer(undefined,options);peer=p;wire(p);return
+        }
+        if(!done&&['network','server-error','socket-error','socket-closed'].includes(err?.type)){
+          done=true;clearTimeout(timeout);try{current.destroy()}catch(_){};peer=null;reject(err);return
+        }
+        if(done)setStatus(err?.type==='peer-unavailable'?'Other device is not online yet.':'Sync connection error.','error')
+      });
+      current.on('disconnected',()=>{try{current.reconnect()}catch(_){}});
+    };
+    wire(p)
   }).finally(()=>{peerReady=null});
   return peerReady
 }
+async function warmSyncTransport(){
+  if(warmPromise)return warmPromise;
+  preconnectSyncOrigins();
+  warmPromise=Promise.allSettled([loadQR(),ensurePeer()]).then(()=>peer).catch(()=>null);
+  return warmPromise
+}
+
 function validIncomingSecret(conn,secret){
   if(pendingSession&&pendingSession.secret===secret&&Date.now()-pendingSession.createdAt<5*60*1000)return true;
   return knownSecret(conn.peer)===secret
@@ -5059,34 +5130,63 @@ async function handleMessage(conn,msg,expectedSecret){
     if(!validIncomingSecret(conn,msg.secret)){try{conn.send({type:'error',protocol:PROTOCOL,message:'Pairing code expired or invalid'})}catch(_){};conn.close();return}
     if(pendingMatch)pendingSession=null;
     conn.__omniAuth=true;conn.__omniRemoteDevice=msg.device||{};savePair(conn.peer,msg.secret,msg.device);live.set(conn.peer,{conn,auth:true});setLiveUI();
-    conn.send({type:'hello-ack',protocol:PROTOCOL,device:device()});sendBundle(conn,'initial',true);setStatus('Device connected · reconciling newest data…','busy');return
+    conn.send({type:'hello-ack',protocol:PROTOCOL,device:device()});sendBundle(conn,'initial',true);setStage('syncing','Device connected','Comparing timestamps and applying the newest records…','busy');return
   }
   if(msg.type==='hello-ack'){
-    if(!expectedSecret)return;conn.__omniAuth=true;conn.__omniRemoteDevice=msg.device||{};savePair(conn.peer,expectedSecret,msg.device);live.set(conn.peer,{conn,auth:true});setLiveUI();sendBundle(conn,'initial',true);setStatus('Device connected · reconciling newest data…','busy');return
+    if(!expectedSecret)return;conn.__omniAuth=true;conn.__omniRemoteDevice=msg.device||{};savePair(conn.peer,expectedSecret,msg.device);live.set(conn.peer,{conn,auth:true});setLiveUI();sendBundle(conn,'initial',true);setStage('syncing','Device connected','Comparing timestamps and applying the newest records…','busy');return
   }
   if(msg.type==='bundle'&&conn.__omniAuth){
     if(msg.bundle?.fingerprint&&msg.bundle.fingerprint===conn.__omniLastRecv)return;
     conn.__omniLastRecv=msg.bundle?.fingerprint||'';
     try{
       const result=await mergeBundle(msg.bundle);
-      if(result.changed){sendBundle(conn,'merged',true);setStatus('Synced · newest data kept'+(result.modules.length?(' · '+result.modules.length+' module'+(result.modules.length===1?'':'s')+' updated'):''),'ok')}
-      else setStatus('Synced · both devices already match','ok');
+      if(result.changed){sendBundle(conn,'merged',true);setStage('live','Synced · newest data kept',result.modules.length?(result.modules.length+' module'+(result.modules.length===1?'':'s')+' updated'):'Auxiliary data updated','ok')}
+      else setStage('live','Synced · both devices already match','Live changes will continue to transfer.','ok');
       try{conn.send({type:'ack',protocol:PROTOCOL,at:iso()})}catch(_){}
     }catch(e){console.error('OmniOS sync merge',e);setStatus('Could not apply synced data. Your pre-sync snapshot is still available.','error')}
     return
   }
-  if(msg.type==='ack'&&conn.__omniAuth){setStatus('Live sync active · newest changes will continue to transfer','ok');return}
+  if(msg.type==='ack'&&conn.__omniAuth){const route=await connectionRoute(conn);setStage('live','Live sync active',route==='relay'?'Relay connection · newest changes will continue to transfer':'Direct connection · newest changes will continue to transfer','ok');return}
   if(msg.type==='error'){setStatus(msg.message||'Sync error','error')}
 }
+async function connectionRoute(conn){
+  try{
+    const pc=conn?.peerConnection;if(!pc?.getStats)return 'direct';
+    const stats=await pc.getStats(),byId=new Map();stats.forEach(x=>byId.set(x.id,x));
+    let pair=null;
+    stats.forEach(x=>{if(x.type==='transport'&&x.selectedCandidatePairId)pair=byId.get(x.selectedCandidatePairId);if(!pair&&x.type==='candidate-pair'&&x.state==='succeeded'&&x.nominated)pair=x});
+    if(!pair)return 'direct';
+    const local=byId.get(pair.localCandidateId),remote=byId.get(pair.remoteCandidateId);
+    return local?.candidateType==='relay'||remote?.candidateType==='relay'?'relay':'direct'
+  }catch(_){return 'direct'}
+}
+function connectionFailedView(message){
+  const host=syncModal?.querySelector('.omni-sync-content');if(!host)return;
+  host.innerHTML='<div class="omni-sync-joining"><strong>Could not reach the other device</strong><span>'+String(message||'Generate a fresh code and try again.')+'</span><div class="omni-sync-retry"><button type="button" class="btn btn-primary" data-sync-retry-now>Try again</button><button type="button" class="btn" data-sync-new-code>New QR code</button></div></div>';
+  host.querySelector('[data-sync-retry-now]')?.addEventListener('click',()=>{const incoming=parseIncoming();if(incoming)joinSession(incoming);else startHost(true)});
+  host.querySelector('[data-sync-new-code]')?.addEventListener('click',()=>{modalShell('host');startHost(true)})
+}
 function bindConnection(conn,opts={}){
-  if(!conn)return;const expectedSecret=opts.secret||'';
-  conn.on('open',()=>{
-    live.set(conn.peer,{conn,auth:false});setLiveUI();
-    if(expectedSecret)conn.send({type:'hello',protocol:PROTOCOL,secret:expectedSecret,device:device()})
+  if(!conn)return;
+  const expectedSecret=opts.secret||'',quiet=!!opts.quiet;
+  let opened=false;
+  const watchdog=setTimeout(()=>{
+    if(opened||conn.open)return;
+    try{conn.close()}catch(_){}
+    if(!quiet){
+      setStage('connecting','Connection is taking too long.','Direct path did not open quickly enough. Try again or use a configured TURN relay.','error');
+      connectionFailedView('The direct connection did not open in time.')
+    }
+  },DATA_OPEN_TIMEOUT);
+  conn.on('open',async()=>{
+    opened=true;clearTimeout(watchdog);live.set(conn.peer,{conn,auth:false});setLiveUI();
+    if(!quiet)setStage('connecting','Secure channel opened','Authenticating the paired device…','busy');
+    if(expectedSecret)conn.send({type:'hello',protocol:PROTOCOL,secret:expectedSecret,device:device()});
+    setTimeout(async()=>{if(conn.open&&conn.__omniAuth&&!quiet){const route=await connectionRoute(conn);setStage('live','Live sync active',route==='relay'?'Connected through relay':'Direct encrypted connection','ok')}},900)
   });
   conn.on('data',msg=>handleMessage(conn,msg,expectedSecret));
-  conn.on('close',()=>{live.delete(conn.peer);setLiveUI();if(![...live.values()].some(x=>x.auth&&x.conn?.open))setStatus('Sync connection closed','')});
-  conn.on('error',err=>{console.warn('OmniOS sync data channel',err);setStatus('Device connection error','error')})
+  conn.on('close',()=>{clearTimeout(watchdog);live.delete(conn.peer);setLiveUI();if(![...live.values()].some(x=>x.auth&&x.conn?.open)&&!quiet)setStatus('Sync connection closed','')});
+  conn.on('error',err=>{clearTimeout(watchdog);console.warn('OmniOS sync data channel',err);if(!quiet){setStage('connecting','Device connection error','Try again with both devices online.','error');connectionFailedView('The device connection failed.')}})
 }
 
 function sessionUrl(peerId,secret){
@@ -5096,17 +5196,22 @@ function sessionUrl(peerId,secret){
 async function startHost(refresh=false){
   const ov=syncModal||modalShell('host');
   try{
-    setStatus('Preparing secure session…','busy');await Promise.all([loadQR(),ensurePeer()]);
+    setStage('finding','Preparing secure session','Using the already-warmed sync transport when available.','busy');
+    await warmSyncTransport();
+    if(!peer?.open)await ensurePeer();
+    await loadQR();
     const secret=randHex(24);pendingSession={secret,createdAt:Date.now(),peerId:peer.id};
-    qrView(sessionUrl(peer.id,secret));setStatus('Ready · waiting for the second device','')
+    qrView(sessionUrl(peer.id,secret));setStage('finding','Ready · scan the QR code','Waiting for the second device…','')
   }catch(e){console.error(e);setStatus('Sync could not start. Check the internet connection and try again.','error');const host=ov.querySelector('.omni-sync-content');if(host)host.innerHTML='<button type="button" class="btn btn-primary" data-sync-retry>Try again</button>';host?.querySelector('[data-sync-retry]')?.addEventListener('click',()=>startHost(true))}
 }
 async function joinSession(payload){
   modalShell('join');joinView();
   try{
-    setStatus('Connecting to the other device…','busy');const p=await ensurePeer();
+    setStage('finding','Finding the other device','Contacting the sync broker…','busy');
+    const p=await ensurePeer();
+    setStage('connecting','Connecting securely','Trying the fastest direct route first…','busy');
     const conn=p.connect(payload.p,{reliable:true});bindConnection(conn,{secret:payload.s})
-  }catch(e){console.error(e);setStatus('Could not connect to the other device. Generate a new QR code and try again.','error')}
+  }catch(e){console.error(e);setStage('connecting','Could not connect','Generate a new QR code and try again.','error');connectionFailedView('The other device could not be reached.')}
 }
 function parseIncoming(){
   const raw=String(location.hash||'');const m=raw.match(/(?:^#|&)omni-sync=([^&]+)/);if(!m)return null;
@@ -5116,6 +5221,16 @@ function parseIncoming(){
 function clearIncomingHash(){
   try{if(/^#omni-sync=/.test(location.hash))history.replaceState(history.state,'',location.pathname+location.search)}catch(_){}
 }
+async function reconnectKnownPairs(){
+  try{
+    const p=await ensurePeer(),list=pairs().filter(x=>x.peerId&&x.secret&&x.peerId!==p.id);
+    for(const item of list.slice(-4)){
+      if(live.has(item.peerId))continue;
+      try{const conn=p.connect(item.peerId,{reliable:true});bindConnection(conn,{secret:item.secret,quiet:true})}catch(_){}
+    }
+  }catch(_){}
+}
+
 function installButton(){
   const actions=document.querySelector('.topbar-actions');if(!actions||document.getElementById('omni-sync-btn'))return false;
   const b=document.createElement('button');b.type='button';b.id='omni-sync-btn';b.className='btn btn-sm omni-sync-btn';b.title='Sync devices';b.innerHTML='<span class="omni-sync-icon" aria-hidden="true">⇄</span><span class="omni-sync-label">Sync</span>';
@@ -5123,15 +5238,26 @@ function installButton(){
   const anchor=document.getElementById('v55-notif-btn')||document.getElementById('settings-topbar-btn');actions.insertBefore(b,anchor||actions.firstChild);setLiveUI();return true
 }
 function init(){
-  device();
+  device();preconnectSyncOrigins();
   if(!installButton()){
     const mo=new MutationObserver(()=>{if(installButton())mo.disconnect()});mo.observe(document.documentElement,{subtree:true,childList:true})
   }
   document.addEventListener('omnios:data-changed',scheduleLiveSend);
-  const incoming=parseIncoming();if(incoming){clearIncomingHash();setTimeout(()=>joinSession(incoming),80)}
+  const incoming=parseIncoming();
+  if(incoming){clearIncomingHash();setTimeout(()=>joinSession(incoming),20)}
+  else{
+    const warm=()=>warmSyncTransport().then(()=>reconnectKnownPairs()).catch(()=>{});
+    if('requestIdleCallback'in window)requestIdleCallback(warm,{timeout:900});else setTimeout(warm,180)
+  }
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-window.OmniDeviceSync={open:()=>{modalShell('host');startHost()},connections:()=>[...live.keys()],bundle:buildBundle};
+window.OmniDeviceSync={
+  open:()=>{modalShell('host');startHost()},
+  connections:()=>[...live.keys()],
+  bundle:buildBundle,
+  configureTurn:iceServers=>{try{localStorage.setItem(TURN_KEY,JSON.stringify(Array.isArray(iceServers)?iceServers:[]));peer?.destroy?.();peer=null;warmPromise=null;return true}catch(_){return false}},
+  clearTurn:()=>{try{localStorage.removeItem(TURN_KEY);peer?.destroy?.();peer=null;warmPromise=null;return true}catch(_){return false}}
+};
 })();
 </script>
 

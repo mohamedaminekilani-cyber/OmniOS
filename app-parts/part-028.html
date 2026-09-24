@@ -6548,5 +6548,269 @@ new MutationObserver(themeChrome).observe(document.documentElement,{attributes:t
 })();
 </script>
 
+
+<style id="omnios-v75-chrome-clearance">
+/* OmniOS v75 — measured top/bottom chrome clearance.
+   Fixed chrome and popups use the real rendered heights instead of hard-coded guesses. */
+:root{
+  --ux-topbar-h:58px;
+  --ux-bottomnav-h:0px;
+  --ux-visible-h:100dvh;
+}
+
+/* Full-screen overlays must sit ABOVE persistent app chrome. */
+.modal-overlay{z-index:2147483000!important}
+.inspector-backdrop{z-index:2147482850!important}
+.inspector-panel{z-index:2147482900!important}
+.shortcuts-overlay{z-index:2147483000!important}
+.v44-cover-dialog{z-index:2147483000!important}
+.omni-assistant-panel{z-index:2147483100!important}
+.omni-sync-overlay{z-index:2147483200!important}
+
+@media(max-width:760px){
+  /* Canonical chrome stacking: page < sheets < header < bottom dock < modal overlays. */
+  .topbar{
+    z-index:2147481900!important;
+    position:relative!important;
+  }
+  .mobile-nav{
+    z-index:2147482000!important;
+    position:fixed!important;
+  }
+
+  /* Page content always clears the ACTUAL bottom dock height. */
+  .view-container{
+    padding-bottom:calc(var(--ux-bottomnav-h,64px) + 14px)!important;
+    scroll-padding-top:12px!important;
+    scroll-padding-bottom:calc(var(--ux-bottomnav-h,64px) + 16px)!important;
+  }
+  .view.active{
+    scroll-padding-top:12px!important;
+    scroll-padding-bottom:calc(var(--ux-bottomnav-h,64px) + 16px)!important;
+  }
+  :is(
+    input,textarea,select,button,a,[role="button"],[tabindex],
+    .card,.v35-card,.v43-card,.v55-card,.rt-card,.list-item,.v35-row,.v43-row,.v55-row
+  ){
+    scroll-margin-top:calc(var(--ux-topbar-h,56px) + 12px)!important;
+    scroll-margin-bottom:calc(var(--ux-bottomnav-h,64px) + 14px)!important;
+  }
+
+  /* Generic dialogs overlay the banners instead of being trapped underneath them. */
+  .modal-overlay{
+    inset:0!important;
+    padding:max(8px,env(safe-area-inset-top)) 0 0!important;
+    align-items:flex-end!important;
+  }
+  .modal{
+    max-height:calc(var(--ux-visible-h,100dvh) - max(8px,env(safe-area-inset-top)))!important;
+    overflow:hidden!important;
+    display:flex!important;
+    flex-direction:column!important;
+  }
+  .modal-header{flex:0 0 auto!important}
+  .modal>:is(.modal-body,.v45-modal-body,.v55-modal-body),
+  .modal>.form-scroll,
+  .modal>.modal-content{
+    min-height:0!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  /* Legacy modals often place fields directly inside .modal. Keep the whole sheet scrollable
+     when there is no dedicated body, while sticky footer/header remain reachable. */
+  .modal:not(:has(> .modal-body)):not(:has(> .v45-modal-body)):not(:has(> .v55-modal-body)){
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  .modal-footer{
+    flex:0 0 auto!important;
+    bottom:0!important;
+  }
+
+  /* Inspector is also above persistent chrome. */
+  .inspector-panel{
+    z-index:2147482900!important;
+    max-height:var(--ux-visible-h,100dvh)!important;
+    height:auto!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+
+  /* "More" is intentionally BETWEEN top and bottom banners, never behind either. */
+  #v35-page-launcher{
+    top:var(--ux-topbar-h,56px)!important;
+    bottom:var(--ux-bottomnav-h,64px)!important;
+    height:auto!important;
+    max-height:calc(var(--ux-visible-h,100dvh) - var(--ux-topbar-h,56px) - var(--ux-bottomnav-h,64px))!important;
+    z-index:2147481800!important;
+    overflow:hidden!important;
+  }
+  #v35-page-launcher :is(.v35-page-launcher-sheet,.v35-launcher-sheet,.v35-page-launcher-panel){
+    max-height:100%!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+    padding-bottom:14px!important;
+  }
+
+  /* Calendar tools remain between persistent banners. */
+  #view-master-calendar .v603-calendar-rail{
+    bottom:calc(var(--ux-bottomnav-h,64px) + 6px)!important;
+    max-height:min(
+      620px,
+      calc(var(--ux-visible-h,100dvh) - var(--ux-topbar-h,56px) - var(--ux-bottomnav-h,64px) - 18px)
+    )!important;
+    z-index:2147481700!important;
+    overscroll-behavior:contain!important;
+  }
+
+  /* Bible passage tools use the same measured safe region. */
+  #view-bible .bib-side-v5814{
+    bottom:calc(var(--ux-bottomnav-h,64px) + 7px)!important;
+    max-height:min(
+      650px,
+      calc(var(--ux-visible-h,100dvh) - var(--ux-topbar-h,56px) - var(--ux-bottomnav-h,64px) - 20px)
+    )!important;
+    z-index:2147481700!important;
+  }
+  #view-bible .bib-mobile-tools-backdrop-v67{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    z-index:2147481600!important;
+  }
+
+  /* Full-screen Assistant intentionally overlays both app banners. */
+  .omni-assistant-panel{
+    inset:0!important;
+    top:0!important;
+    bottom:0!important;
+    width:100vw!important;
+    height:var(--ux-visible-h,100dvh)!important;
+    max-height:var(--ux-visible-h,100dvh)!important;
+  }
+
+  /* Sync/modal sheets overlay app chrome, but respect the iPhone safe areas internally. */
+  .omni-sync-overlay{
+    inset:0!important;
+    padding:max(8px,env(safe-area-inset-top)) 0 0!important;
+    align-items:flex-end!important;
+  }
+  .omni-sync-modal{
+    max-height:calc(var(--ux-visible-h,100dvh) - max(8px,env(safe-area-inset-top)))!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+
+  /* Floating controls near the bottom must also clear the measured dock. */
+  :is(.toast-container,.omni-toast-stack,.floating-actions,.fab-stack){
+    bottom:calc(var(--ux-bottomnav-h,64px) + 12px)!important;
+  }
+}
+</style>
+
+<script id="omnios-v75-chrome-clearance-js">
+(function(){
+'use strict';
+if(window.__omniChromeClearance75)return;
+window.__omniChromeClearance75=true;
+
+const root=document.documentElement;
+const mq=window.matchMedia('(max-width:760px)');
+let topEl=null,navEl=null;
+let raf=0;
+
+function shown(el){
+  if(!el)return false;
+  const s=getComputedStyle(el);
+  return s.display!=='none'&&s.visibility!=='hidden'&&el.getClientRects().length>0;
+}
+function px(n){return Math.max(0,Math.ceil(Number(n)||0))+'px'}
+
+function measure(){
+  cancelAnimationFrame(raf);
+  raf=requestAnimationFrame(()=>{
+    const vv=window.visualViewport;
+    const visibleH=Math.max(1,Math.round(vv?.height||window.innerHeight||document.documentElement.clientHeight||1));
+    root.style.setProperty('--ux-visible-h',visibleH+'px');
+
+    if(!mq.matches){
+      root.style.setProperty('--ux-topbar-h','0px');
+      root.style.setProperty('--ux-bottomnav-h','0px');
+      return;
+    }
+
+    const top=document.querySelector('.topbar');
+    const nav=document.querySelector('.mobile-nav');
+    const topH=shown(top)?top.getBoundingClientRect().height:0;
+    const navH=shown(nav)?nav.getBoundingClientRect().height:0;
+    root.style.setProperty('--ux-topbar-h',px(topH));
+    root.style.setProperty('--ux-bottomnav-h',px(navH));
+  });
+}
+
+const ro=typeof ResizeObserver==='function'?new ResizeObserver(measure):null;
+function bindChrome(){
+  const nextTop=document.querySelector('.topbar');
+  const nextNav=document.querySelector('.mobile-nav');
+  if(nextTop!==topEl){if(topEl)try{ro?.unobserve(topEl)}catch(_){};topEl=nextTop;if(topEl)ro?.observe(topEl)}
+  if(nextNav!==navEl){if(navEl)try{ro?.unobserve(navEl)}catch(_){};navEl=nextNav;if(navEl)ro?.observe(navEl)}
+  measure();
+}
+bindChrome();
+
+mq.addEventListener?.('change',bindChrome);
+window.addEventListener('resize',measure,{passive:true});
+window.addEventListener('orientationchange',()=>setTimeout(bindChrome,80),{passive:true});
+window.visualViewport?.addEventListener('resize',measure,{passive:true});
+window.visualViewport?.addEventListener('scroll',measure,{passive:true});
+
+const mo=new MutationObserver(records=>{
+  let chromeChanged=false;
+  for(const r of records){
+    for(const n of r.addedNodes){
+      if(n.nodeType!==1)continue;
+      if(n.matches?.('.topbar,.mobile-nav')||n.querySelector?.('.topbar,.mobile-nav')){chromeChanged=true;break}
+    }
+    if(chromeChanged)break;
+  }
+  if(chromeChanged)bindChrome();
+});
+mo.observe(document.body,{childList:true,subtree:true});
+
+/* If a focused page control would land underneath fixed chrome, nudge its own
+   scroll container just enough to keep the complete control visible. */
+function nearestScroller(el){
+  for(let p=el.parentElement;p&&p!==document.body;p=p.parentElement){
+    const s=getComputedStyle(p),oy=s.overflowY;
+    if((oy==='auto'||oy==='scroll')&&p.scrollHeight>p.clientHeight+2)return p;
+  }
+  return document.scrollingElement||document.documentElement;
+}
+function reveal(el){
+  if(!mq.matches||!el?.getBoundingClientRect)return;
+  const vv=window.visualViewport;
+  const vpTop=vv?.offsetTop||0;
+  const vpBottom=vpTop+(vv?.height||window.innerHeight);
+  const inOverlay=!!el.closest('.modal,.inspector-panel,.omni-assistant-panel,.omni-sync-modal,#welcome63');
+  const topH=inOverlay?8:(parseFloat(getComputedStyle(root).getPropertyValue('--ux-topbar-h'))||0)+8;
+  const bottomH=inOverlay?8:(parseFloat(getComputedStyle(root).getPropertyValue('--ux-bottomnav-h'))||0)+10;
+  const upper=vpTop+topH,lower=vpBottom-bottomH;
+  const r=el.getBoundingClientRect();
+  let delta=0;
+  if(r.bottom>lower)delta=r.bottom-lower;
+  else if(r.top<upper)delta=r.top-upper;
+  if(Math.abs(delta)<1)return;
+  const scroller=nearestScroller(el);
+  try{scroller.scrollBy({top:delta,behavior:'smooth'})}
+  catch(_){scroller.scrollTop+=delta}
+}
+document.addEventListener('focusin',e=>{
+  if(!e.target.matches?.('input,textarea,select,button,[role="button"],[contenteditable="true"]'))return;
+  setTimeout(()=>reveal(e.target),140);
+},true);
+
+setTimeout(bindChrome,80);
+setTimeout(bindChrome,500);
+})();
+</script>
+
 </body>
 </html>

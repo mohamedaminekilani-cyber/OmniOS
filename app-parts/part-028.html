@@ -5647,7 +5647,7 @@ function makeAdapter(pc,dc,sid){
   };
   pc.onconnectionstatechange=()=>{
     if(pc.connectionState==='failed'){stage(3,'Strict local route blocked','Switching routes automatically…','busy');fallbackFromBlockedLocal(sid)}
-    if(pc.connectionState==='connected'){stage(3,'Connected on local Wi-Fi','Opening the OmniOS data channel…','busy');setProgress(83,'Connected')}
+    if(pc.connectionState==='connected'&&!liveConn?.open){stage(3,'Connected on local Wi-Fi','Opening the OmniOS data channel…','busy');setProgress(83,'Connected')}
   };
   return conn
 }
@@ -5780,8 +5780,10 @@ function listenForAnswer(sid){
 }
 async function applyAnswer(payload){
   if(!hostSession||payload.sid!==hostSession.sid||payload.secret!==hostSession.secret||hostSession.answerApplied)return;
-  hostSession.answerApplied=true;hostSession.answerCleanup?.();stage(3,'Phone responded automatically','Opening the direct local Wi-Fi channel…','busy');setProgress(72,'Opening channel');logProgress('Phone response received');
-  try{await hostSession.pc.setRemoteDescription(payload.answer)}catch(e){console.error(e);stage(3,'Could not apply response','Generate a new Local Wi-Fi code and try again.','error');return}
+  hostSession.answerApplied=true;hostSession.answerCleanup?.();
+  if(!liveConn?.open){stage(3,'Phone responded automatically','Opening the direct local Wi-Fi channel…','busy');setProgress(72,'Opening channel')}
+  logProgress('Phone response received');
+  try{await hostSession.pc.setRemoteDescription(payload.answer)}catch(e){console.error(e);if(!liveConn?.open)stage(3,'Could not apply response','Generate a new Local Wi-Fi code and try again.','error');return}
   const timeout=setTimeout(()=>{if(!liveConn?.open){const ice=hostSession?.pc?.iceConnectionState||'unknown';logProgress('Direct Wi-Fi data channel did not open · ICE '+ice);fallbackFromBlockedLocal(hostSession.sid)}},4200);
   hostSession.connectTimeout=timeout
 }
@@ -5845,6 +5847,10 @@ async function joinLocalOffer(payload){
         const signalResult=await api().sendLocalAnswer(payload.signalPeer,response);
         joinSessionState.signalConn=signalResult?.conn||null;
         delivered=true;setProgress(66,'Response sent');logProgress('Response delivered to PC over secure signal channel');
+        if(joinSessionState.signalConn?.open){
+          activateAssistedFallback(joinSessionState.signalConn,payload.sid,true);
+          setProgress(86,'Secure channel ready');logProgress('Sync started immediately on the proven working channel')
+        }
       }catch(e){console.warn('Primary answer delivery failed',e)}
     }
     if(!delivered){
@@ -5858,7 +5864,7 @@ async function joinLocalOffer(payload){
       stage(2,'Automatic response unavailable','Copy the response link and paste it into the PC.','error');return
     }
     const host=overlay?.querySelector('.omni-sync-content');
-    if(host)host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response sent automatically</strong><span>Keep OmniOS open. Direct Wi-Fi is being tried first; the existing secure connection will be reused automatically if the LAN route is blocked.</span></div>';
+    if(host)host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response sent automatically</strong><span>Sync starts immediately on the secure connection that delivered the response. OmniOS will upgrade to the local Wi-Fi data channel automatically if it becomes available.</span></div>';
     stage(3,'Response sent to the PC','Opening the fastest available encrypted route…','ok');
     setTimeout(()=>{if(!liveConn?.open)fallbackFromBlockedLocal(payload.sid)},4200)
   }catch(e){console.error('Local join',e);stage(2,'Could not create response','Use Internet fallback.','error');showFallbackOnly()}
@@ -5965,7 +5971,7 @@ function patchSyncButton(){
 }
 function init(){
   document.addEventListener('omnios:data-changed',scheduleSend);
-  document.addEventListener('omnios:local-answer-signal',e=>{const d=e.detail||{};const p=d.payload||d;if(hostSession&&d.conn)hostSession.signalConn=d.conn;if(p)applyAnswer(p)});
+  document.addEventListener('omnios:local-answer-signal',e=>{const d=e.detail||{};const p=d.payload||d;if(hostSession&&d.conn){hostSession.signalConn=d.conn;if(p?.sid)activateAssistedFallback(d.conn,p.sid,false)}if(p)applyAnswer(p)});
   const boot=async()=>{
     if(await handleIncomingHash())return;
     if(!patchSyncButton()){const mo=new MutationObserver(()=>{if(patchSyncButton())mo.disconnect()});mo.observe(document.documentElement,{subtree:true,childList:true})}

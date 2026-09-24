@@ -687,6 +687,24 @@ function installAutoSnapshotFallback35(){
   document.addEventListener('input',schedule,true);
   document.addEventListener('change',schedule,true);
   document.addEventListener('click',e=>{if(e.target.closest('button,[role="button"],[data-view],[data-action]'))schedule()},false);
+
+  /* Bible and some personalization modules maintain their own OmniOS localStorage
+     records. Observe those writes as well so programmatic saves are recoverable. */
+  try{
+    const proto=window.Storage?.prototype,raw=proto?.setItem;
+    if(proto&&typeof raw==='function'&&!raw.__omniAutoSnapshot35){
+      const wrapped=function(key,value){
+        const result=raw.apply(this,arguments);
+        try{if(this===window.localStorage&&auxSnapshotKey35(key))scheduleAutoSnapshot35([])}catch(_){}
+        return result
+      };
+      wrapped.__omniAutoSnapshot35=true;
+      wrapped.__base=raw;
+      proto.setItem=wrapped
+    }
+  }catch(e){console.warn('Auxiliary auto-snapshot hook unavailable',e)}
+
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&autoSnapshotTimer35){clearTimeout(autoSnapshotTimer35);commitAutoSnapshot35()}});
   window.addEventListener('pagehide',()=>{if(autoSnapshotTimer35){clearTimeout(autoSnapshotTimer35);commitAutoSnapshot35()}});
 }
 async function restoreSnapshot35(id){const all=await idbAll35(STORE_SNAPS),snap=all.find(x=>x.id===id);if(!snap)return;if(!confirm(`Restore snapshot from ${new Date(snap.at).toLocaleString()}? Current state can be recovered with Undo during this session.`))return;undo35.push(clone(state));state=clone(snap.state);restoreAux35(snap.aux);ensureV35State();lastCommitted35=clone(state);autoSnapshotBase35=clone(state);autoSnapshotBase35.__auxSnapshot35=captureAux35();autoSnapshotLastFP35=fingerprint35(state,autoSnapshotBase35.__auxSnapshot35);saveGuard35=true;(window.saveState?.__v35?null:null);const baseCurrent=window.saveState;saveGuard35=false;window.saveState();renderAll?.();renderNewView35(activeView35());window.toast?.('Snapshot restored')}

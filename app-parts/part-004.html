@@ -665,7 +665,7 @@ async function makeSnapshot35(label='Manual snapshot',opts={}){
   let all=await idbAll35(STORE_SNAPS);
   all.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
   if(opts.dedupe!==false&&kind==='auto'){
-    const latest=all.find(s=>s.kind==='auto'||/^Automatic\b/i.test(s.label||''));
+    const latest=all[0];
     if(latest&&latest.fingerprint===fp)return latest
   }
   const snap={id:uid('snap'),at:new Date().toISOString(),label,kind,modules:Array.isArray(opts.modules)?opts.modules:[],fingerprint:fp,state:snapshotState,aux};
@@ -709,6 +709,7 @@ async function recoverLatestIDB35(){
     const idbAt=time35(latest.savedAt);
     if(!idbAt||idbAt<=localAt||resetAt>=idbAt)return false;
     state=clone(latest.state);
+    restoreAux35(latest.aux);
     if(typeof normalizeState==='function')normalizeState();else ensureV35State();
     ensureV35State();
     lastCommitted35=clone(state);

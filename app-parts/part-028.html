@@ -3881,6 +3881,99 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
   #view-bible .bib-plan-calnav{grid-template-columns:38px minmax(0,1fr) 52px 38px!important}
   #view-bible .bib-all-moods{grid-template-columns:1fr!important}
 }
+
+
+/* Bible Today v67 — daily reading dashboard */
+#view-bible .bib-today-v67{display:flex;flex-direction:column;gap:10px;min-width:0}
+#view-bible .bib-today-hero-v67{
+  display:grid;
+  grid-template-columns:minmax(0,1.16fr) minmax(300px,.84fr);
+  gap:12px;
+  padding:14px;
+  border:1px solid var(--border-color);
+  border-radius:18px;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--bib-accent) 6%,var(--bg-surface)),var(--bg-surface) 44%);
+  min-width:0;
+}
+#view-bible .bib-today-hero-v67.is-complete{border-color:color-mix(in srgb,var(--accent-green) 38%,var(--border-color))}
+#view-bible .bib-today-hero-main-v67{min-width:0}
+#view-bible .bib-today-overline-v67{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+#view-bible .bib-today-overline-v67 span{display:inline-flex;align-items:center;min-height:24px;padding:4px 7px;border:1px solid var(--border-color);border-radius:999px;background:var(--bg-base);font-size:.55rem;font-weight:750;color:var(--text-muted)}
+#view-bible .bib-today-overline-v67 span.done{border-color:color-mix(in srgb,var(--accent-green) 34%,var(--border-color));background:color-mix(in srgb,var(--accent-green) 9%,var(--bg-base));color:var(--accent-green)}
+#view-bible .bib-today-heading-v67{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+#view-bible .bib-today-heading-v67>div:first-child{min-width:0}
+#view-bible .bib-today-heading-v67 h3{margin:3px 0 3px;font-family:Georgia,'Times New Roman',serif;font-size:1.62rem;line-height:1.1;letter-spacing:-.025em;color:var(--text-primary)}
+#view-bible .bib-today-assignment-v67{font-size:.72rem;line-height:1.45;color:var(--text-secondary);overflow-wrap:anywhere}
+#view-bible .bib-today-progress-ring-v67{width:62px;height:62px;flex:0 0 62px;display:grid;place-items:center;align-content:center;border:1px solid color-mix(in srgb,var(--bib-accent) 36%,var(--border-color));border-radius:50%;background:color-mix(in srgb,var(--bib-accent) 8%,var(--bg-base));text-align:center}
+#view-bible .bib-today-progress-ring-v67 strong{display:block;font-size:.85rem;line-height:1;color:var(--text-primary)}
+#view-bible .bib-today-progress-ring-v67 span{display:block;margin-top:3px;font-size:.48rem;font-weight:750;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)}
+#view-bible .bib-today-reading-list-v67{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:6px;margin-top:12px}
+#view-bible .bib-today-reading-v67{width:100%;display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:54px;padding:7px 9px;border:1px solid var(--border-color);border-radius:11px;background:var(--bg-base);color:inherit;text-align:left;font:inherit;cursor:pointer}
+#view-bible .bib-today-reading-v67:hover{background:var(--bg-hover);border-color:color-mix(in srgb,var(--bib-accent) 30%,var(--border-color))}
+#view-bible .bib-today-reading-v67.primary{border-color:color-mix(in srgb,var(--bib-accent) 34%,var(--border-color));background:color-mix(in srgb,var(--bib-accent) 6%,var(--bg-base))}
+#view-bible .bib-today-reading-index-v67{width:28px;height:28px;display:grid;place-items:center;border-radius:9px;background:var(--bg-elevated);font-size:.62rem;font-weight:850;color:var(--bib-accent)}
+#view-bible .bib-today-reading-copy-v67{min-width:0}
+#view-bible .bib-today-reading-copy-v67 strong{display:block;font-size:.68rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#view-bible .bib-today-reading-copy-v67 small{display:block;margin-top:2px;font-size:.52rem;color:var(--text-muted)}
+#view-bible .bib-today-reading-arrow-v67{font-size:1rem;color:var(--text-muted)}
+#view-bible .bib-today-actions-v67{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+#view-bible .bib-today-actions-v67 .btn{min-height:38px}
+#view-bible .bib-today-complete-v67.active{border-color:color-mix(in srgb,var(--accent-green) 34%,var(--border-color));background:color-mix(in srgb,var(--accent-green) 9%,var(--bg-elevated));color:var(--accent-green)}
+#view-bible .bib-today-preview-v67{min-width:0;padding:11px;border:1px solid var(--border-color);border-radius:14px;background:var(--bg-base)}
+#view-bible .bib-today-preview-head-v67{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid var(--border-color)}
+#view-bible .bib-today-preview-head-v67 span{display:block;font-size:.5rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}
+#view-bible .bib-today-preview-head-v67 strong{display:block;margin-top:2px;font-family:Georgia,'Times New Roman',serif;font-size:.88rem}
+#view-bible .bib-today-preview-copy-v67{padding-top:4px}
+#view-bible .bib-today-preview-verse-v67{display:grid;grid-template-columns:22px minmax(0,1fr);gap:7px;padding:6px 0}
+#view-bible .bib-today-preview-verse-v67>span{font-size:.59rem;line-height:1.65;font-weight:800;color:var(--bib-accent);text-align:right}
+#view-bible .bib-today-preview-verse-v67 p{margin:0;font-family:Georgia,'Times New Roman',serif;font-size:.82rem;line-height:1.62;color:var(--text-primary)}
+#view-bible .bib-today-guidance-v67{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#view-bible .bib-today-guide-card-v67{display:grid;grid-template-columns:32px minmax(0,1fr);gap:9px;align-items:start;padding:11px;border:1px solid var(--border-color);border-radius:13px;background:var(--bg-surface)}
+#view-bible .bib-today-guide-num-v67{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:color-mix(in srgb,var(--bib-accent) 9%,var(--bg-elevated));font-size:.55rem;font-weight:850;color:var(--bib-accent)}
+#view-bible .bib-today-guide-card-v67 strong{display:block;font-size:.7rem}
+#view-bible .bib-today-guide-card-v67 p{margin:4px 0 0;font-size:.61rem;line-height:1.5;color:var(--text-secondary)}
+#view-bible .bib-today-bottom-v67{display:grid;grid-template-columns:minmax(240px,.72fr) minmax(0,1.28fr);gap:8px}
+#view-bible .bib-today-metrics-v67{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#view-bible .bib-today-metrics-v67>div{padding:9px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base)}
+#view-bible .bib-today-metrics-v67 span{display:block;font-size:.51rem;color:var(--text-muted)}
+#view-bible .bib-today-metrics-v67 strong{display:block;margin-top:3px;font-size:.78rem}
+#view-bible .bib-today-reflection-v67{padding:10px;border-left:2px solid var(--bib-accent);border-radius:0 10px 10px 0;background:var(--bg-base);font-family:Georgia,'Times New Roman',serif;font-size:.76rem;line-height:1.62;color:var(--text-secondary)}
+#view-bible .bib-today-empty-reflection-v67{width:100%;display:grid;grid-template-columns:34px minmax(0,1fr);grid-template-areas:"icon title" "icon copy";column-gap:9px;align-items:center;padding:10px;border:1px dashed var(--border-light);border-radius:11px;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer}
+#view-bible .bib-today-empty-reflection-v67:hover{background:var(--bg-hover)}
+#view-bible .bib-today-empty-reflection-v67>span{grid-area:icon;width:32px;height:32px;display:grid;place-items:center;border-radius:9px;background:var(--bg-elevated);color:var(--bib-accent);font-size:1rem}
+#view-bible .bib-today-empty-reflection-v67 strong{grid-area:title;font-size:.68rem}
+#view-bible .bib-today-empty-reflection-v67 small{grid-area:copy;margin-top:1px;font-size:.53rem;line-height:1.35;color:var(--text-muted)}
+
+@media(max-width:900px){
+  #view-bible .bib-today-hero-v67{grid-template-columns:1fr}
+  #view-bible .bib-today-guidance-v67{grid-template-columns:1fr}
+  #view-bible .bib-today-bottom-v67{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  #view-bible .bib-today-v67{gap:7px!important}
+  #view-bible .bib-today-hero-v67{gap:8px!important;padding:10px!important;border-radius:14px!important}
+  #view-bible .bib-today-overline-v67{gap:4px!important;margin-bottom:7px!important}
+  #view-bible .bib-today-overline-v67 span{min-height:22px!important;padding:3px 6px!important;font-size:.5rem!important}
+  #view-bible .bib-today-heading-v67{gap:8px!important}
+  #view-bible .bib-today-heading-v67 h3{font-size:1.32rem!important}
+  #view-bible .bib-today-assignment-v67{font-size:.64rem!important}
+  #view-bible .bib-today-progress-ring-v67{width:52px!important;height:52px!important;flex-basis:52px!important}
+  #view-bible .bib-today-progress-ring-v67 strong{font-size:.73rem!important}
+  #view-bible .bib-today-progress-ring-v67 span{font-size:.43rem!important}
+  #view-bible .bib-today-reading-list-v67{grid-template-columns:1fr!important;gap:5px!important;margin-top:9px!important}
+  #view-bible .bib-today-reading-v67{min-height:50px!important;padding:6px 8px!important}
+  #view-bible .bib-today-actions-v67{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important;margin-top:8px!important}
+  #view-bible .bib-today-actions-v67 .btn{width:100%!important;min-width:0!important;justify-content:center!important;white-space:normal!important;line-height:1.15!important}
+  #view-bible .bib-today-preview-v67{padding:9px!important;border-radius:12px!important}
+  #view-bible .bib-today-preview-verse-v67{grid-template-columns:20px minmax(0,1fr)!important;gap:6px!important;padding:5px 0!important}
+  #view-bible .bib-today-preview-verse-v67 p{font-size:.79rem!important;line-height:1.58!important}
+  #view-bible .bib-today-guidance-v67{gap:6px!important}
+  #view-bible .bib-today-guide-card-v67{grid-template-columns:30px minmax(0,1fr)!important;gap:8px!important;padding:9px!important}
+  #view-bible .bib-today-guide-card-v67 p{font-size:.6rem!important}
+  #view-bible .bib-today-bottom-v67{gap:6px!important}
+  #view-bible .bib-today-metrics-v67>div{padding:8px 6px!important}
+  #view-bible .bib-today-reflection-v67{padding:9px!important}
+}
 </style>
 
 <script id="omnios-v66-bible-ux-js">

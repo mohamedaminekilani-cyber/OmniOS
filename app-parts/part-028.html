@@ -8094,5 +8094,38 @@ setTimeout(bindChrome,500);
 }
 </style>
 
+
+<style id="omnios-v83-hide-closed-drawer-edges">
+@media(max-width:760px){
+  /* Closed legacy drawers must be completely outside the viewport.
+     The 8px safe-zone inset previously allowed a thin edge to remain visible. */
+  :is(#v35-drawer,.v55-drawer):not(.open){
+    transform:translateX(calc(100% + 32px))!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    box-shadow:none!important;
+    border-color:transparent!important;
+  }
+
+  :is(#v35-drawer,.v55-drawer).open{
+    transform:translateX(0)!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+  }
+
+  /* Split panels already use display:none when closed; enforce it at the final layer. */
+  .v55-split:not(.open){
+    display:none!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
+  .v55-split.open{
+    display:flex!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+  }
+}
+</style>
+
 </body>
 </html>

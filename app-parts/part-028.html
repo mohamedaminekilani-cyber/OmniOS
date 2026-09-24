@@ -5317,6 +5317,23 @@ window.OmniDeviceSync={
 .omni-local-success{display:grid;place-items:center;gap:8px;min-height:250px;text-align:center;padding:18px}
 .omni-local-success .mark{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;background:color-mix(in srgb,var(--accent-green,#10b981) 12%,var(--bg-base));color:var(--accent-green,#10b981);font-size:1.4rem;font-weight:900}
 .omni-local-success strong{font-size:.9rem}.omni-local-success span{max-width:50ch;color:var(--text-muted);font-size:.62rem;line-height:1.5}
+.omni-local-progress{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:9px;margin-top:9px}
+.omni-local-progress-track{height:6px;overflow:hidden;border-radius:999px;background:var(--border-color)}
+.omni-local-progress-track span{display:block;width:0;height:100%;border-radius:inherit;background:var(--accent-cyan);transition:width .28s ease}
+.omni-local-progress>[data-local-progress-text]{min-width:82px;color:var(--text-muted);font-size:.49rem;font-weight:760;text-align:right}
+.omni-local-log{display:grid;gap:3px;margin-top:7px;max-height:82px;overflow:hidden}
+.omni-local-log>div{display:flex;gap:6px;align-items:center;color:var(--text-muted);font-size:.51rem;line-height:1.35}
+.omni-local-log>div span:first-child{width:13px;color:var(--text-muted);font-size:.48rem}.omni-local-log>div.current{color:var(--text-secondary)}.omni-local-log>div.current span:first-child{color:var(--accent-cyan)}
+.omni-pwa-scan-home{display:grid;gap:10px;margin-top:12px}
+.omni-pwa-scan-choice{display:grid;gap:8px;padding:13px;border:1px solid var(--border-color);border-radius:15px;background:var(--bg-base)}
+.omni-pwa-scan-choice.primary{border-color:color-mix(in srgb,var(--accent-cyan) 35%,var(--border-color));background:color-mix(in srgb,var(--accent-cyan) 5%,var(--bg-base))}
+.omni-pwa-scan-choice strong{font-size:.82rem}.omni-pwa-scan-choice p{margin:0;color:var(--text-muted);font-size:.61rem;line-height:1.5}
+.omni-pwa-scanner{position:relative;overflow:hidden;border:1px solid var(--border-color);border-radius:16px;background:#000;aspect-ratio:3/4;max-height:62dvh}
+.omni-pwa-scanner video{width:100%;height:100%;object-fit:cover;display:block}
+.omni-pwa-scan-frame{position:absolute;left:50%;top:50%;width:min(72%,280px);aspect-ratio:1;transform:translate(-50%,-50%);border:2px solid rgba(255,255,255,.9);border-radius:18px;box-shadow:0 0 0 999px rgba(0,0,0,.28),0 0 0 5px rgba(6,182,212,.14);pointer-events:none}
+.omni-pwa-scan-caption{position:absolute;left:12px;right:12px;bottom:12px;padding:7px 9px;border-radius:10px;background:rgba(0,0,0,.68);color:#fff;font-size:.57rem;text-align:center}
+.omni-safari-guard{display:grid;gap:10px;padding:14px;border:1px solid color-mix(in srgb,var(--accent-yellow,#f59e0b) 40%,var(--border-color));border-radius:15px;background:color-mix(in srgb,var(--accent-yellow,#f59e0b) 7%,var(--bg-base))}
+.omni-safari-guard strong{font-size:.82rem}.omni-safari-guard p{margin:0;color:var(--text-muted);font-size:.62rem;line-height:1.55}
 @media(max-width:760px){
   .omni-local-grid{grid-template-columns:1fr;gap:10px}
   .omni-local-card{padding:9px}
@@ -5610,10 +5627,91 @@ async function joinLocalOffer(payload){
 async function handleAnswerHandoff(payload){
   notifyAnswer(payload);deliveredView()
 }
+async function openMobileSyncHome(){
+  modal('Sync from this phone','Keep the sync inside the installed OmniOS app so it uses this app’s real data.');
+  stage(1,'Ready to scan','On the PC, open OmniOS → Sync and leave its QR code visible.','');
+  setProgress(0,'Ready');
+  const host=overlay.querySelector('.omni-sync-content');
+  host.innerHTML='<div class="omni-pwa-scan-home"><div class="omni-pwa-scan-choice primary"><strong>Scan PC QR</strong><p>Recommended. Uses the camera inside this installed OmniOS PWA, so Safari never opens.</p><button type="button" class="btn btn-primary" data-pwa-scan-now>Open scanner</button></div><div class="omni-pwa-scan-choice"><strong>Use this phone as the first device</strong><p>Show a QR on the phone for another device to scan.</p><button type="button" class="btn" data-pwa-show-qr>Show my QR</button></div><div class="omni-pwa-scan-choice"><strong>Paste pairing link</strong><p>Fallback when camera permission is unavailable.</p><button type="button" class="btn" data-pwa-paste>Paste link</button></div></div>';
+  host.querySelector('[data-pwa-scan-now]').onclick=startPwaQrScanner;
+  host.querySelector('[data-pwa-show-qr]').onclick=startLocalHost;
+  host.querySelector('[data-pwa-paste]').onclick=async()=>{
+    const value=prompt('Paste the pairing link shown by the PC:');if(!value)return;
+    try{const p=await parseValue(value);if(p?.__kind!=='offer')throw new Error();logProgress('Pairing link received');await joinLocalOffer(p)}
+    catch(_){stage(1,'Invalid pairing link','Paste the complete OmniOS pairing link from the PC.','error')}
+  }
+}
+async function startPwaQrScanner(){
+  stopScanner();
+  modal('Scan PC QR','Point the phone at the QR code shown in OmniOS on your PC.');
+  stage(1,'Opening camera','The scan stays inside the installed OmniOS app.','busy');setProgress(5,'Camera');
+  const host=overlay.querySelector('.omni-sync-content');
+  host.innerHTML='<div class="omni-pwa-scanner"><video playsinline muted autoplay></video><div class="omni-pwa-scan-frame"></div><div class="omni-pwa-scan-caption">Place the PC QR code inside the frame</div></div><div class="omni-local-actions" style="margin-top:9px"><button type="button" class="btn" data-pwa-stop>Cancel</button><button type="button" class="btn" data-pwa-paste>Paste link</button></div>';
+  const video=host.querySelector('video');
+  let stream=null,stopped=false,busy=false,last=0,detector=null,decoder=null;
+  try{
+    if('BarcodeDetector'in window){
+      try{const formats=await BarcodeDetector.getSupportedFormats?.();if(!formats||formats.includes('qr_code'))detector=new BarcodeDetector({formats:['qr_code']})}catch(_){}
+    }
+    if(!detector)decoder=await loadJsQR();
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:1280}},audio:false});
+    video.srcObject=stream;await video.play();stage(1,'Scanning PC QR','Keep the QR steady inside the frame.','busy');setProgress(12,'Scanning');logProgress('Camera ready inside OmniOS');
+  }catch(e){
+    console.warn('PWA QR scanner',e);stage(1,'Camera scanner unavailable','Allow camera access or use Paste link.','error');setProgress(0,'Camera blocked');return
+  }
+  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
+  const stop=()=>{if(stopped)return;stopped=true;try{stream?.getTracks().forEach(t=>t.stop())}catch(_){}scannerStop=null};
+  scannerStop=stop;
+  host.querySelector('[data-pwa-stop]').onclick=()=>{stop();openMobileSyncHome()};
+  host.querySelector('[data-pwa-paste]').onclick=async()=>{
+    const value=prompt('Paste the pairing link shown by the PC:');if(!value)return;
+    try{const p=await parseValue(value);if(p?.__kind!=='offer')throw new Error();stop();logProgress('Pairing link received');await joinLocalOffer(p)}
+    catch(_){stage(1,'Invalid pairing link','Paste the complete OmniOS pairing link from the PC.','error')}
+  };
+  const found=async raw=>{
+    const p=await parseValue(raw||'');if(!p||p.__kind!=='offer'||p.type!=='offer')return false;
+    stop();setProgress(32,'QR read');logProgress('PC QR detected');await joinLocalOffer(p);return true
+  };
+  const loop=async ts=>{
+    if(stopped)return;
+    if(!busy&&ts-last>120&&video.readyState>=2){
+      busy=true;last=ts;
+      try{
+        if(detector){
+          const codes=await detector.detect(video);
+          for(const code of codes)if(await found(code.rawValue||''))return
+        }else if(decoder){
+          const w=video.videoWidth,h=video.videoHeight;if(w&&h){
+            const scale=Math.min(1,900/Math.max(w,h));canvas.width=Math.max(1,Math.round(w*scale));canvas.height=Math.max(1,Math.round(h*scale));
+            ctx.drawImage(video,0,0,canvas.width,canvas.height);
+            const img=ctx.getImageData(0,0,canvas.width,canvas.height),code=decoder(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+            if(code?.data&&await found(code.data))return
+          }
+        }
+      }catch(e){console.warn('QR frame scan',e)}
+      finally{busy=false}
+    }
+    requestAnimationFrame(loop)
+  };
+  requestAnimationFrame(loop)
+}
+function showSafariPwaGuard(pairingUrl){
+  modal('Open Sync inside OmniOS','This QR was opened in Safari, not in the installed OmniOS app.');
+  stage(1,'Safari is separate from the installed app','Do not sync here if you want the PWA data to be updated.','error');setProgress(0,'Wrong app context');
+  const host=overlay.querySelector('.omni-sync-content');
+  host.innerHTML='<div class="omni-safari-guard"><strong>Use the OmniOS Home Screen app</strong><p>Close this Safari tab. Open OmniOS from your Home Screen, tap <b>Sync</b>, then <b>Scan PC QR</b>. The camera scanner is now built directly into OmniOS.</p><div class="omni-local-actions"><button type="button" class="btn" data-safari-copy>Copy pairing link</button></div></div>';
+  host.querySelector('[data-safari-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(pairingUrl);stage(1,'Pairing link copied','Paste it inside OmniOS → Sync → Paste link.','ok')}catch(_){}}
+}
+
 async function handleIncomingHash(){
   const raw=parseHashRaw();if(!/#omni-local-(offer|answer)=/.test(raw))return false;
+  const pairingUrl=location.href;
   try{
-    const payload=await parseValue(raw);clearHash();
+    const payload=await parseValue(raw);
+    if(payload?.__kind==='offer'&&payload.type==='offer'&&isAppleMobile()&&!isStandalonePWA()){
+      clearHash();showSafariPwaGuard(pairingUrl);return true
+    }
+    clearHash();
     if(payload?.__kind==='offer'&&payload.type==='offer'){await joinLocalOffer(payload);return true}
     if(payload?.__kind==='answer'&&payload.type==='answer'){await handleAnswerHandoff(payload);return true}
   }catch(e){console.error('Local Wi-Fi link',e)}
@@ -5622,8 +5720,9 @@ async function handleIncomingHash(){
 
 function patchSyncButton(){
   const b=document.getElementById('omni-sync-btn');if(!b)return false;
-  if(b.dataset.localWifi73==='1')return true;
-  b.dataset.localWifi73='1';b.title='Sync over Local Wi-Fi';b.onclick=e=>{e.preventDefault();startLocalHost()};return true
+  b.dataset.localWifi73='1';b.title='Sync over Local Wi-Fi';
+  b.onclick=e=>{e.preventDefault();if(window.matchMedia('(max-width:760px)').matches)openMobileSyncHome();else startLocalHost()};
+  return true
 }
 function init(){
   document.addEventListener('omnios:data-changed',scheduleSend);
@@ -5631,12 +5730,16 @@ function init(){
   const boot=async()=>{
     if(await handleIncomingHash())return;
     if(!patchSyncButton()){const mo=new MutationObserver(()=>{if(patchSyncButton())mo.disconnect()});mo.observe(document.documentElement,{subtree:true,childList:true})}
+    if(window.matchMedia('(max-width:760px)').matches){
+      const warm=()=>loadJsQR().catch(()=>{});
+      if('requestIdleCallback'in window)requestIdleCallback(warm,{timeout:1200});else setTimeout(warm,300)
+    }
   };
   boot()
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 
-window.OmniLocalWifiSync73={open:startLocalHost,join:joinLocalOffer,parse:parseValue};
+window.OmniLocalWifiSync73={open:startLocalHost,scan:startPwaQrScanner,mobile:openMobileSyncHome,join:joinLocalOffer,parse:parseValue};
 })();
 </script>
 

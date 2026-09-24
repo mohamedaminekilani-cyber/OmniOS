@@ -7093,5 +7093,46 @@ setTimeout(bindChrome,500);
 }
 </style>
 
+
+<style id="omnios-v78-bible-mobile-multiselect">
+@media(max-width:760px){
+  #view-bible .bib-reader-copy-v5814 .bib-verse-row.v573{
+    position:relative!important;
+    cursor:pointer!important;
+    touch-action:manipulation!important;
+    transition:background .12s ease,border-color .12s ease,box-shadow .12s ease!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+  #view-bible .bib-reader-copy-v5814 .bib-verse-row.v573.selected{
+    background:color-mix(in srgb,var(--accent-cyan) 11%,var(--bg-surface))!important;
+    border-color:color-mix(in srgb,var(--accent-cyan) 42%,var(--border-color))!important;
+    box-shadow:inset 3px 0 0 var(--accent-cyan)!important;
+  }
+  #view-bible .bib-reader-copy-v5814 .bib-verse-row.v573.selected .bib-vnum{
+    color:var(--accent-cyan)!important;
+    font-weight:850!important;
+  }
+  #view-bible .bib-reader-copy-v5814 .bib-verse-row.v573.selected::after{
+    content:'✓';
+    position:absolute;
+    top:7px;
+    right:7px;
+    width:18px;
+    height:18px;
+    display:grid;
+    place-items:center;
+    border-radius:999px;
+    background:var(--accent-cyan);
+    color:#071216;
+    font-size:11px;
+    font-weight:900;
+    pointer-events:none;
+  }
+  #view-bible .bib-reader-copy-v5814 .bib-verse-row.v573 .bib-vtext{
+    padding-right:20px!important;
+  }
+}
+</style>
+
 </body>
 </html>

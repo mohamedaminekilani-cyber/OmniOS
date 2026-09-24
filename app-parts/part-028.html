@@ -6812,5 +6812,148 @@ setTimeout(bindChrome,500);
 })();
 </script>
 
+
+<style id="omnios-v76-bible-read-toolbar-fix">
+/* OmniOS v76 — Bible Read selector bar.
+   Keep navigation controls in normal document flow and prevent the selector
+   surface from covering the reader/header below it. */
+@media(max-width:760px){
+  #view-bible .bib-read-v5814{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:10px!important;
+    overflow:visible!important;
+  }
+
+  #view-bible .bib-toolbar-v5814{
+    position:static!important;
+    inset:auto!important;
+    top:auto!important;
+    left:auto!important;
+    right:auto!important;
+    z-index:auto!important;
+    isolation:auto!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin:0 0 2px!important;
+    padding:8px!important;
+    gap:7px!important;
+    overflow:visible!important;
+    border-radius:14px!important;
+    box-sizing:border-box!important;
+  }
+
+  #view-bible .bib-toolbar-group-v5814{
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    gap:5px!important;
+  }
+
+  #view-bible .bib-toolbar-controls-v5814{
+    box-sizing:border-box!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    min-height:52px!important;
+    margin:0!important;
+    padding:4px!important;
+    gap:5px!important;
+    overflow:visible!important;
+  }
+
+  /* Previous | Book | Chapter | Next */
+  #view-bible .bib-toolbar-books-v5814 .bib-toolbar-controls-v5814{
+    display:grid!important;
+    grid-template-columns:44px minmax(0,1fr) minmax(76px,88px) 44px!important;
+    align-items:center!important;
+    overflow:visible!important;
+  }
+
+  #view-bible .bib-toolbar-books-v5814 #bib-book,
+  #view-bible .bib-toolbar-books-v5814 #bib-chapter{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    height:44px!important;
+    min-height:44px!important;
+    margin:0!important;
+    padding:7px 28px 7px 9px!important;
+    flex:none!important;
+    font-size:16px!important;
+    line-height:1.2!important;
+  }
+
+  #view-bible .bib-toolbar-books-v5814 .bib-icon-btn{
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    margin:0!important;
+    padding:0!important;
+  }
+
+  /* Reference/search and tools stay in their own rows; no horizontal strip can
+     escape the toolbar and visually sit over the reader. */
+  #view-bible .bib-toolbar-ref-v5814 .bib-toolbar-controls-v5814{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 44px minmax(58px,auto)!important;
+    align-items:center!important;
+    overflow:visible!important;
+  }
+  #view-bible .bib-toolbar-tools-v5814 .bib-toolbar-controls-v5814{
+    display:grid!important;
+    grid-template-columns:44px 44px minmax(58px,auto) minmax(72px,1fr)!important;
+    align-items:center!important;
+    overflow:visible!important;
+  }
+  #view-bible .bib-toolbar-ref-v5814 :is(.form-input,.form-select),
+  #view-bible .bib-toolbar-tools-v5814 :is(.form-input,.form-select){
+    min-width:0!important;
+    width:100%!important;
+    flex:none!important;
+  }
+
+  /* The reader begins after the complete selector surface. */
+  #view-bible .bib-search-v5814{
+    position:relative!important;
+    z-index:auto!important;
+    margin:0!important;
+  }
+  #view-bible .bib-read-grid-v5814{
+    position:relative!important;
+    z-index:auto!important;
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0!important;
+  }
+  #view-bible .bib-reader-pane-v5814{
+    position:relative!important;
+    z-index:auto!important;
+    margin:0!important;
+  }
+}
+
+@media(max-width:390px){
+  #view-bible .bib-toolbar-v5814{padding:7px!important}
+  #view-bible .bib-toolbar-controls-v5814{padding:3px!important;gap:4px!important}
+  #view-bible .bib-toolbar-books-v5814 .bib-toolbar-controls-v5814{
+    grid-template-columns:42px minmax(0,1fr) 78px 42px!important;
+  }
+  #view-bible .bib-toolbar-books-v5814 .bib-icon-btn{
+    width:42px!important;min-width:42px!important;max-width:42px!important;
+  }
+  #view-bible .bib-toolbar-books-v5814 #bib-book,
+  #view-bible .bib-toolbar-books-v5814 #bib-chapter{
+    padding-left:8px!important;
+    padding-right:25px!important;
+  }
+}
+</style>
+
 </body>
 </html>

@@ -8139,5 +8139,66 @@ setTimeout(bindChrome,500);
 }
 </style>
 
+
+<style id="omnios-v85-hide-closed-menu">
+@media(max-width:760px){
+  /* A closed Menu must have zero rendered footprint. */
+  #v35-page-launcher:not(.open){
+    display:none!important;
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+    position:fixed!important;
+    inset:auto!important;
+    width:0!important;
+    height:0!important;
+    max-width:0!important;
+    max-height:0!important;
+    overflow:hidden!important;
+    background:transparent!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    border:0!important;
+    box-shadow:none!important;
+  }
+
+  #v35-page-launcher:not(.open)>.v35-launcher-sheet{
+    display:none!important;
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+    width:0!important;
+    height:0!important;
+    inset:auto!important;
+    transform:none!important;
+    border:0!important;
+    box-shadow:none!important;
+  }
+
+  /* Only the explicit open state is allowed to render the launcher. */
+  #v35-page-launcher.open{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    top:var(--ux-topbar-h,56px)!important;
+    right:0!important;
+    bottom:var(--ux-bottomnav-h,64px)!important;
+    left:0!important;
+    width:auto!important;
+    height:auto!important;
+    max-width:none!important;
+    max-height:none!important;
+  }
+
+  #v35-page-launcher.open>.v35-launcher-sheet{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+  }
+}
+</style>
+
 </body>
 </html>

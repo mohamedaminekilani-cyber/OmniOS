@@ -3265,6 +3265,31 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
     padding-inline:4px!important;
     justify-content:center!important;
   }
+  #view-master-calendar #v603-rail-toggle{
+    display:grid!important;
+    place-items:center!important;
+    padding:0!important;
+    line-height:0!important;
+    overflow:hidden!important;
+    border-radius:11px!important;
+  }
+  #view-master-calendar #v603-rail-toggle .v603-hamburger-icon{
+    display:block!important;
+    width:19px!important;
+    height:19px!important;
+    fill:none!important;
+    stroke:currentColor!important;
+    stroke-width:2!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    pointer-events:none!important;
+  }
+  #view-master-calendar #v603-rail-toggle.active,
+  #view-master-calendar #v603-rail-toggle[aria-expanded="true"]{
+    color:var(--accent-cyan)!important;
+    border-color:color-mix(in srgb,var(--accent-cyan) 48%,var(--border-color))!important;
+    background:color-mix(in srgb,var(--accent-cyan) 10%,var(--bg-elevated))!important;
+  }
   #view-master-calendar #v36-filter-btn{font-size:.54rem!important}
   #view-master-calendar #v36-cal-add{font-size:0!important}
   #view-master-calendar #v36-cal-add::before{content:"＋";font-size:1rem;font-weight:800}
@@ -3524,7 +3549,9 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
     const layout=document.querySelector('#view-master-calendar .v603-calendar-layout.rail-open');
     if(!layout)return;
     layout.classList.remove('rail-open');
-    document.getElementById('v603-rail-toggle')?.classList.remove('active');
+    const toggle=document.getElementById('v603-rail-toggle');
+    toggle?.classList.remove('active');
+    toggle?.setAttribute('aria-expanded','false');
   }
 
   function decorateCalendar(){

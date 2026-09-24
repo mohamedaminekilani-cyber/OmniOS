@@ -5600,7 +5600,7 @@ async function startResponseScanner(){
 
 async function startLocalHost(){
   try{hostSession?.pc?.close?.()}catch(_){}hostSession=null;liveConn=null;setButtonLive(false);
-  modal('Sync on the same Wi-Fi','Easy mode: the PC shows one QR; the phone scans it and returns the connection response automatically.');
+  modal('Start Local Hub','This PC becomes the OmniOS hub. Your phone connects to it directly over the same Wi-Fi.');
   stage(1,'Creating local offer','Preparing the direct Wi-Fi connection…','busy');setProgress(8,'Preparing');logProgress('Preparing Local Wi-Fi session');
   try{
     const signalPromise=api()?.ensureSignalPeer?.().catch(()=>null);
@@ -5618,7 +5618,7 @@ async function startLocalHost(){
   }catch(e){console.error('Local host',e);stage(1,'Could not create Local Wi-Fi code','Use Internet fallback on this browser.','error');showFallbackOnly()}
 }
 async function joinLocalOffer(payload){
-  modal('Join Local Wi-Fi sync','The phone is preparing a direct connection to the PC over the same Wi-Fi.');
+  modal('Join Local Hub','This device is connecting directly to the PC hub over the same Wi-Fi.');
   stage(2,'Offer received','Creating the response for the PC…','busy');setProgress(42,'QR read');logProgress('PC QR read inside OmniOS');
   try{
     await ensureQr();
@@ -5645,11 +5645,11 @@ async function handleAnswerHandoff(payload){
   notifyAnswer(payload);deliveredView()
 }
 async function openMobileSyncHome(){
-  modal('Sync from this phone','Keep the sync inside the installed OmniOS app so it uses this app’s real data.');
-  stage(1,'Ready to scan','On the PC, open OmniOS → Sync and leave its QR code visible.','');
+  modal('Join Local Hub','Keep the sync inside the installed OmniOS app so it uses this app’s real data.');
+  stage(1,'Ready to join','On the PC, open OmniOS → Sync to start the Local Hub and leave its QR visible.','');
   setProgress(0,'Ready');
   const host=overlay.querySelector('.omni-sync-content');
-  host.innerHTML='<div class="omni-pwa-scan-home"><div class="omni-pwa-scan-choice primary"><strong>Scan PC QR</strong><p>Recommended. Uses the camera inside this installed OmniOS PWA, so Safari never opens.</p><button type="button" class="btn btn-primary" data-pwa-scan-now>Open scanner</button></div><div class="omni-pwa-scan-choice"><strong>Use this phone as the first device</strong><p>Show a QR on the phone for another device to scan.</p><button type="button" class="btn" data-pwa-show-qr>Show my QR</button></div><div class="omni-pwa-scan-choice"><strong>Paste pairing link</strong><p>Fallback when camera permission is unavailable.</p><button type="button" class="btn" data-pwa-paste>Paste link</button></div></div>';
+  host.innerHTML='<div class="omni-pwa-scan-home"><div class="omni-pwa-scan-choice primary"><strong>Scan Local Hub QR</strong><p>Recommended. Uses the camera inside this installed OmniOS PWA, so Safari never opens.</p><button type="button" class="btn btn-primary" data-pwa-scan-now>Open scanner</button></div><div class="omni-pwa-scan-choice"><strong>Use this phone as a Local Hub</strong><p>Show a Hub QR on the phone for another device to join.</p><button type="button" class="btn" data-pwa-show-qr>Show my QR</button></div><div class="omni-pwa-scan-choice"><strong>Paste pairing link</strong><p>Fallback when camera permission is unavailable.</p><button type="button" class="btn" data-pwa-paste>Paste link</button></div></div>';
   host.querySelector('[data-pwa-scan-now]').onclick=startPwaQrScanner;
   host.querySelector('[data-pwa-show-qr]').onclick=startLocalHost;
   host.querySelector('[data-pwa-paste]').onclick=async()=>{
@@ -5660,10 +5660,10 @@ async function openMobileSyncHome(){
 }
 async function startPwaQrScanner(){
   stopScanner();
-  modal('Scan PC QR','Point the phone at the QR code shown in OmniOS on your PC.');
+  modal('Scan Local Hub QR','Point the phone at the Hub QR shown in OmniOS on your PC.');
   stage(1,'Opening camera','The scan stays inside the installed OmniOS app.','busy');setProgress(5,'Camera');
   const host=overlay.querySelector('.omni-sync-content');
-  host.innerHTML='<div class="omni-pwa-scanner"><video playsinline muted autoplay></video><div class="omni-pwa-scan-frame"></div><div class="omni-pwa-scan-caption">Place the PC QR code inside the frame</div></div><div class="omni-local-actions" style="margin-top:9px"><button type="button" class="btn" data-pwa-stop>Cancel</button><button type="button" class="btn" data-pwa-paste>Paste link</button></div>';
+  host.innerHTML='<div class="omni-pwa-scanner"><video playsinline muted autoplay></video><div class="omni-pwa-scan-frame"></div><div class="omni-pwa-scan-caption">Place the PC Local Hub QR inside the frame</div></div><div class="omni-local-actions" style="margin-top:9px"><button type="button" class="btn" data-pwa-stop>Cancel</button><button type="button" class="btn" data-pwa-paste>Paste link</button></div>';
   const video=host.querySelector('video');
   let stream=null,stopped=false,busy=false,last=0,detector=null,decoder=null;
   try{
@@ -5737,7 +5737,7 @@ async function handleIncomingHash(){
 
 function patchSyncButton(){
   const b=document.getElementById('omni-sync-btn');if(!b)return false;
-  b.dataset.localWifi73='1';b.title='Sync over Local Wi-Fi';
+  b.dataset.localWifi73='1';b.title='OmniOS Local Hub';
   b.onclick=e=>{e.preventDefault();if(window.matchMedia('(max-width:760px)').matches)openMobileSyncHome();else startLocalHost()};
   return true
 }
@@ -5756,7 +5756,7 @@ function init(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 
-window.OmniLocalWifiSync73={open:startLocalHost,scan:startPwaQrScanner,mobile:openMobileSyncHome,join:joinLocalOffer,parse:parseValue};
+window.OmniLocalWifiSync73={open:startLocalHost,hub:startLocalHost,scan:startPwaQrScanner,mobile:openMobileSyncHome,join:joinLocalOffer,parse:parseValue};
 })();
 </script>
 

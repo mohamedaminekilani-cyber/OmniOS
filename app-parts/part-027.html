@@ -619,6 +619,38 @@
       const sub=details.querySelector('.atlas28-panel-sub');
       if(sub)sub.classList.add('atlas68-details-sub');
     }
+
+    /* Mobile-first Atlas: keep one compact control surface before the map. */
+    if(window.matchMedia('(max-width:760px)').matches&&body){
+      const search=body.querySelector('.atlas28-search-wrap');
+      const mode=body.querySelector('[data-atlas28-mode]')?.closest('.atlas28-field');
+      const quick=body.querySelector('[data-atlas28-quick]')?.closest('.atlas28-field');
+      const advanced=body.querySelector('.atlas68-advanced');
+      const grid=root.querySelector('.atlas28-grid');
+      const explore=root.querySelector('.atlas28-grid > .atlas28-panel:not(.atlas28-details)');
+      if(grid&&!root.querySelector('.atlas69-mobile-primary')){
+        const mobilePrimary=document.createElement('section');
+        mobilePrimary.className='atlas69-mobile-primary';
+        mobilePrimary.setAttribute('aria-label','Atlas controls');
+        [search,mode,quick,advanced].filter(Boolean).forEach(el=>mobilePrimary.appendChild(el));
+        root.insertBefore(mobilePrimary,grid);
+        if(explore)explore.classList.add('atlas69-mobile-empty');
+      }
+      const mapCard=root.querySelector('.atlas28-map-card');
+      if(mapCard){
+        const mapbar=mapCard.querySelector('.atlas28-mapbar');
+        if(mapbar&&!mapbar.querySelector('.atlas69-map-actions')){
+          const mobileActions=document.createElement('div');
+          mobileActions.className='atlas69-map-actions';
+          const base=root.querySelector('.atlas28-basemap');
+          const resetBtn=root.querySelector('[data-atlas28-reset]');
+          if(base)mobileActions.appendChild(base);
+          if(resetBtn)mobileActions.appendChild(resetBtn);
+          mapbar.appendChild(mobileActions);
+        }
+      }
+      hero?.classList.add('atlas69-mobile-hero');
+    }
     syncAtlasStreamline5735(h);
   }
 

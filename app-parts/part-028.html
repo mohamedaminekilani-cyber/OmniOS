@@ -5460,9 +5460,9 @@ function showFallbackOnly(){
   const actions=host.querySelector('.omni-local-actions')||host;
   if(!host.querySelector('[data-local-internet]')){const b=document.createElement('button');b.type='button';b.className='btn';b.dataset.localInternet='';b.textContent='Use Internet fallback';b.onclick=internetFallback;actions.appendChild(b)}
 }
-function hostView(url){
+function hostView(url,oneScan=false){
   const host=overlay?.querySelector('.omni-sync-content');if(!host)return;
-  host.innerHTML='<div class="omni-local-card"><div class="omni-local-grid"><div class="omni-local-qr" data-local-qr></div><div class="omni-local-copy"><div class="omni-local-badge">⚡ Same Wi-Fi · no broker</div><h4>Scan this on the second device</h4><p>The second device will open OmniOS and generate a response QR. Then return that response to this first device.</p><div class="omni-local-actions"><button type="button" class="btn btn-primary" data-local-scan>Scan response</button><button type="button" class="btn" data-local-paste>Paste response</button><button type="button" class="btn" data-local-copy>Copy offer</button><button type="button" class="btn" data-local-internet>Internet fallback</button></div></div></div><div class="omni-local-note"><strong>Why two QR codes?</strong> Browsers require an offer and an answer before a direct WebRTC connection can open. Using the two QR codes replaces the signaling server completely.</div><div data-local-camera-host></div></div>';
+  host.innerHTML='<div class="omni-local-card"><div class="omni-local-grid"><div class="omni-local-qr" data-local-qr></div><div class="omni-local-copy"><div class="omni-local-badge">⚡ Same Wi-Fi · direct data</div><h4>'+(oneScan?'Scan once with your phone':'Scan this on the second device')+'</h4><p>'+(oneScan?'The phone sends the connection response back automatically. You do not need to scan the phone from the PC.':'Automatic response delivery is unavailable right now. The second device will provide a response link you can paste here.')+'</p><div class="omni-local-actions"><button type="button" class="btn" data-local-paste>Paste response</button><button type="button" class="btn" data-local-copy>Copy offer</button><button type="button" class="btn" data-local-internet>Internet fallback</button></div></div></div><div class="omni-local-note"><strong>'+(oneScan?'Easy local mode:':'Manual local mode:')+'</strong> '+(oneScan?'A tiny signaling message returns only the WebRTC answer. Your OmniOS data still transfers directly over the local Wi-Fi connection.':'No signaling service is used; paste the response link from the second device.')+'</div></div>';
   if(!drawQr(host.querySelector('[data-local-qr]'),url))stage(1,'Local code is too large','Use Internet fallback on this browser.','error');
   host.querySelector('[data-local-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(url);stage(1,'Offer copied','Open it on the second device.','ok')}catch(_){stage(1,'Could not copy offer','Use the QR code instead.','error')}};
   host.querySelector('[data-local-internet]').onclick=internetFallback;
@@ -5470,15 +5470,13 @@ function hostView(url){
     const value=prompt('Paste the response link from the second device:');if(!value)return;
     try{const p=await parseValue(value);if(!p||p.__kind!=='answer')throw new Error();await applyAnswer(p)}catch(_){stage(2,'Invalid response','Paste the complete response link.','error')}
   };
-  const scan=host.querySelector('[data-local-scan]');
-  if(!('BarcodeDetector'in window)||!navigator.mediaDevices?.getUserMedia){scan.textContent='Paste response';scan.onclick=host.querySelector('[data-local-paste]').onclick}
-  else scan.onclick=startResponseScanner
+  if(oneScan)setTimeout(()=>{if(hostSession&&!hostSession.answerApplied&&!liveConn?.open)stage(2,'Waiting for the phone response','It should arrive automatically. If it does not, use Paste response below.','busy')},2800)
 }
 function answerView(url){
   const host=overlay?.querySelector('.omni-sync-content');if(!host)return;
-  host.innerHTML='<div class="omni-local-card"><div class="omni-local-grid"><div class="omni-local-qr" data-local-qr></div><div class="omni-local-copy"><div class="omni-local-badge">✓ Local offer received</div><h4>Return this response to the first device</h4><p>On the first device, tap <b>Scan response</b> and point its camera at this QR code. If it has no camera, copy the response link instead.</p><div class="omni-local-actions"><button type="button" class="btn btn-primary" data-local-copy>Copy response link</button><button type="button" class="btn" data-local-internet>Use Internet fallback</button></div></div></div><div class="omni-local-note">Keep this screen open. As soon as the first device accepts the response, the direct Wi-Fi data channel will open automatically.</div></div>';
+  host.innerHTML='<div class="omni-local-card"><div class="omni-local-grid"><div class="omni-local-qr" data-local-qr></div><div class="omni-local-copy"><div class="omni-local-badge">✓ Local offer received</div><h4>Automatic response could not be delivered</h4><p>No need to scan this QR with the PC. Tap <b>Copy response link</b>, then paste it into the PC’s Sync popup.</p><div class="omni-local-actions"><button type="button" class="btn btn-primary" data-local-copy>Copy response link</button><button type="button" class="btn" data-local-internet>Use Internet fallback</button></div></div></div><div class="omni-local-note">This is only the fallback. Normally the phone returns this response automatically after the first QR scan.</div></div>';
   drawQr(host.querySelector('[data-local-qr]'),url);
-  host.querySelector('[data-local-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(url);stage(2,'Response copied','Paste it into the first device.','ok')}catch(_){stage(2,'Could not copy response','Use the QR code instead.','error')}};
+  host.querySelector('[data-local-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(url);stage(2,'Response copied','Paste it into the PC Sync popup.','ok')}catch(_){stage(2,'Could not copy response','Use the QR code as a last resort.','error')}};
   host.querySelector('[data-local-internet]').onclick=internetFallback
 }
 function deliveredView(){
@@ -5503,8 +5501,8 @@ function listenForAnswer(sid){
   hostSession.answerCleanup=()=>{window.removeEventListener('storage',onStorage);try{localStorage.removeItem(key)}catch(_){}}
 }
 async function applyAnswer(payload){
-  if(!hostSession||payload.sid!==hostSession.sid||payload.secret!==hostSession.secret)return;
-  hostSession.answerCleanup?.();stage(3,'Response received','Opening the direct local Wi-Fi channel…','busy');
+  if(!hostSession||payload.sid!==hostSession.sid||payload.secret!==hostSession.secret||hostSession.answerApplied)return;
+  hostSession.answerApplied=true;hostSession.answerCleanup?.();stage(3,'Phone responded automatically','Opening the direct local Wi-Fi channel…','busy');
   try{await hostSession.pc.setRemoteDescription(payload.answer)}catch(e){console.error(e);stage(3,'Could not apply response','Generate a new Local Wi-Fi code and try again.','error');return}
   const timeout=setTimeout(()=>{if(!liveConn?.open){stage(3,'Local Wi-Fi connection blocked','Both devices must be on the same Wi-Fi and the router must allow device-to-device traffic.','error');showFallbackOnly()}},5000);
   hostSession.connectTimeout=timeout
@@ -5533,24 +5531,26 @@ async function startResponseScanner(){
 
 async function startLocalHost(){
   try{hostSession?.pc?.close?.()}catch(_){}hostSession=null;liveConn=null;setButtonLive(false);
-  modal('Sync on the same Wi-Fi','Fast local mode: the QR codes replace the internet signaling server.');
-  stage(1,'Creating local offer','Gathering this device’s Wi-Fi connection information…','busy');
+  modal('Sync on the same Wi-Fi','Easy mode: the PC shows one QR; the phone scans it and returns the connection response automatically.');
+  stage(1,'Creating local offer','Preparing the direct Wi-Fi connection…','busy');
   try{
+    const signalPromise=api()?.ensureSignalPeer?.().catch(()=>null);
     await ensureQr();
     const pc=new RTCPeerConnection(localConfig()),sid=randomHex(10),secret=randomHex(18);
     const dc=pc.createDataChannel('omnios-sync',{ordered:true});
     const conn=makeAdapter(pc,dc,sid);
-    hostSession={pc,dc,conn,sid,secret,answerCleanup:null,connectTimeout:null};
+    hostSession={pc,dc,conn,sid,secret,answerCleanup:null,connectTimeout:null,answerApplied:false};
     const offer=await pc.createOffer();await pc.setLocalDescription(offer);await waitLocalIce(pc);
-    const payload={v:PROTOCOL,type:'offer',sid,secret,offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},from:dev(),createdAt:Date.now()};
+    const signalPeer=await Promise.race([signalPromise,new Promise(resolve=>setTimeout(()=>resolve(null),1800))]);
+    const payload={v:PROTOCOL,type:'offer',sid,secret,signalPeer:signalPeer?.id||'',offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},from:dev(),createdAt:Date.now()};
     const url=await payloadUrl('offer',payload);
-    hostView(url);listenForAnswer(sid);
-    stage(1,'Step 1 · scan this code','Both devices must be on the same Wi-Fi. No PeerJS broker is used.','ok')
+    hostView(url,!!payload.signalPeer);listenForAnswer(sid);
+    stage(1,payload.signalPeer?'Scan once with your phone':'Scan with your phone','Both devices stay on the same Wi-Fi; OmniOS data will transfer directly between them.','ok')
   }catch(e){console.error('Local host',e);stage(1,'Could not create Local Wi-Fi code','Use Internet fallback on this browser.','error');showFallbackOnly()}
 }
 async function joinLocalOffer(payload){
-  modal('Join Local Wi-Fi sync','The first device was found through its QR code; no internet signaling broker is needed.');
-  stage(2,'Offer received','Creating the response for the first device…','busy');
+  modal('Join Local Wi-Fi sync','The phone is preparing a direct connection to the PC over the same Wi-Fi.');
+  stage(2,'Offer received','Creating the response for the PC…','busy');
   try{
     await ensureQr();
     const pc=new RTCPeerConnection(localConfig());joinSessionState={pc,sid:payload.sid,secret:payload.secret};
@@ -5558,8 +5558,18 @@ async function joinLocalOffer(payload){
     await pc.setRemoteDescription(payload.offer);
     const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await waitLocalIce(pc);
     const response={v:PROTOCOL,type:'answer',sid:payload.sid,secret:payload.secret,answer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},from:dev(),createdAt:Date.now()};
+    if(payload.signalPeer&&api()?.sendLocalAnswer){
+      stage(2,'Sending response automatically','No second QR scan is needed.','busy');
+      try{
+        await api().sendLocalAnswer(payload.signalPeer,response);
+        const host=overlay?.querySelector('.omni-sync-content');
+        if(host)host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response sent automatically</strong><span>Keep this page open. The direct Local Wi-Fi connection should open now.</span></div>';
+        stage(3,'Response sent to the PC','Opening the direct encrypted Wi-Fi connection…','ok');
+        return
+      }catch(e){console.warn('Automatic local answer delivery failed',e)}
+    }
     const url=await payloadUrl('answer',response);answerView(url);
-    stage(2,'Step 2 · return the response','Scan this response QR on the first device.','ok')
+    stage(2,'Automatic response unavailable','Copy the response link and paste it into the PC.','error')
   }catch(e){console.error('Local join',e);stage(2,'Could not create response','Use Internet fallback.','error');showFallbackOnly()}
 }
 async function handleAnswerHandoff(payload){
@@ -5582,6 +5592,7 @@ function patchSyncButton(){
 }
 function init(){
   document.addEventListener('omnios:data-changed',scheduleSend);
+  document.addEventListener('omnios:local-answer-signal',e=>{const p=e.detail;if(p)applyAnswer(p)});
   const boot=async()=>{
     if(await handleIncomingHash())return;
     if(!patchSyncButton()){const mo=new MutationObserver(()=>{if(patchSyncButton())mo.disconnect()});mo.observe(document.documentElement,{subtree:true,childList:true})}

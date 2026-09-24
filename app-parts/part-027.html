@@ -531,7 +531,7 @@
     if(change.person!==undefined){s.person=change.person;clearAtlasSelection5731();s.route='all'}
     if(change.tradition!==undefined){s.includeTradition=!!change.tradition;if(!s.includeTradition&&s.route!=='all'&&routeSourceKind(ROUTE_MAP.get(s.route)||{})==='tradition')s.route='all';clearAtlasSelection5731()}
     if(change.route!==undefined){s.route=change.route||'all';clearAtlasSelection5731();if(s.route!=='all'){const r=ROUTE_MAP.get(s.route);s.mode='journeys';s.selectedRoute=s.route;if(r&&s.person==='all')s.person=r.person}}
-    save();refreshAtlasContext5731(h);redrawAtlasLayers5731(fit)
+    save();refreshAtlasContext5731(h);redrawAtlasLayers5731(fit);syncAtlasStreamline5735(h)
   }
   function installCanonicalAtlasFilters5731(h){
     const s=atlasUi5728();
@@ -543,8 +543,87 @@
     h.querySelector('[data-atlas28-fit]')?.addEventListener('click',e=>{e.preventDefault();fitFilteredAtlas5731()});
     refreshAtlasContext5731(h);
   }
+  function atlasStreamlineActiveCount5735(){
+    const s=atlasUi5728();
+    return [s.period!=='all',s.person!=='all',s.route!=='all',!!s.includeTradition].filter(Boolean).length;
+  }
+  function syncAtlasStreamline5735(h){
+    const root=h.querySelector('.atlas28[data-atlas-ux="streamlined"]');if(!root)return;
+    const n=atlasStreamlineActiveCount5735(),advanced=root.querySelector('.atlas68-advanced'),label=root.querySelector('.atlas68-advanced-label');
+    if(label)label.textContent=n?`More filters & sources · ${n} active`:'More filters & sources';
+    if(advanced&&n)advanced.open=true;
+    const clear=root.querySelector('[data-atlas68-clear]');if(clear)clear.hidden=!n;
+  }
+  function streamlineAtlasUX5735(h){
+    const root=h.querySelector('.atlas28');if(!root||root.dataset.atlasUx==='streamlined')return;
+    root.dataset.atlasUx='streamlined';
+
+    const hero=root.querySelector('.atlas28-hero');
+    if(hero){
+      const kicker=hero.querySelector('.atlas28-kicker'),title=hero.querySelector('h3'),copy=hero.querySelector('p');
+      if(kicker)kicker.textContent='Scripture geography';
+      if(title)title.textContent='Bible Atlas';
+      if(copy)copy.textContent='Search places, follow journeys, and explore events on a sourced geographic map.';
+    }
+
+    const explore=root.querySelector('.atlas28-grid > .atlas28-panel:not(.atlas28-details)');
+    const body=explore?.querySelector('.atlas28-panel-body');
+    if(explore){
+      const title=explore.querySelector('.atlas28-panel-title'),sub=explore.querySelector('.atlas28-panel-sub');
+      if(title)title.textContent='Explore';
+      if(sub)sub.textContent='Search, choose a view, then use extra filters only when needed.';
+    }
+    if(body){
+      const search=body.querySelector('.atlas28-search-wrap');
+      const mode=body.querySelector('[data-atlas28-mode]')?.closest('.atlas28-field');
+      const period=body.querySelector('#atlas28-period')?.closest('.atlas28-field');
+      const person=body.querySelector('#atlas28-person')?.closest('.atlas28-field');
+      const route=body.querySelector('#atlas28-route')?.closest('.atlas28-field');
+      const tradition=body.querySelector('#atlas28-tradition')?.closest('.atlas28-toggle');
+      const quick=body.querySelector('[data-atlas28-quick]')?.closest('.atlas28-field');
+      const method=body.querySelector('.atlas28-method');
+      const input=body.querySelector('#atlas28-search');
+      if(input)input.placeholder='Search places, journeys, events…';
+
+      if(quick){
+        const ql=quick.querySelector('.atlas28-label');if(ql)ql.textContent='Shortcuts';
+      }
+      if(search)body.appendChild(search);
+      if(mode)body.appendChild(mode);
+      if(quick)body.appendChild(quick);
+
+      const advanced=document.createElement('details');
+      advanced.className='atlas68-advanced';
+      advanced.innerHTML='<summary><span class="atlas68-advanced-label">More filters & sources</span><span class="atlas68-chevron" aria-hidden="true">⌄</span></summary><div class="atlas68-advanced-body"></div>';
+      const advancedBody=advanced.querySelector('.atlas68-advanced-body');
+      [period,person,route,tradition].filter(Boolean).forEach(el=>advancedBody.appendChild(el));
+      if(method){
+        method.open=false;
+        const ms=method.querySelector('summary');if(ms)ms.textContent='Sources & accuracy';
+        advancedBody.appendChild(method);
+      }
+      const clear=document.createElement('button');
+      clear.type='button';clear.className='btn btn-sm atlas68-clear';clear.dataset.atlas68Clear='';clear.textContent='Clear filters';
+      clear.onclick=e=>{e.preventDefault();const s=atlasUi5728();s.period='all';s.person='all';s.route='all';s.includeTradition=false;s.selectedPlace='';s.selectedRoute='';s.selectedEvent='';save();refreshAtlasContext5731(h);redrawAtlasLayers5731(true);syncAtlasStreamline5735(h)};
+      advancedBody.insertBefore(clear,advancedBody.firstChild);
+      body.appendChild(advanced);
+    }
+
+    const mapbar=root.querySelector('.atlas28-mapbar-sub');
+    if(mapbar)mapbar.textContent='Drag · pinch or wheel to zoom · select a pin or route';
+    const fit=root.querySelector('[data-atlas28-fit]');if(fit)fit.textContent='Fit';
+    const reset=root.querySelector('[data-atlas28-reset]');if(reset)reset.textContent='Reset';
+
+    const details=root.querySelector('.atlas28-details');
+    if(details){
+      const sub=details.querySelector('.atlas28-panel-sub');
+      if(sub)sub.classList.add('atlas68-details-sub');
+    }
+    syncAtlasStreamline5735(h);
+  }
+
   const _renderAtlas5731=renderAtlas;
-  renderAtlas=function(h){_renderAtlas5731(h);installCanonicalAtlasFilters5731(h)};
+  renderAtlas=function(h){_renderAtlas5731(h);installCanonicalAtlasFilters5731(h);streamlineAtlasUX5735(h)};
 
   /* Keep selections compatible with the canonical filter engine. */
   const _atlasSelect5731=atlasSelect5728;

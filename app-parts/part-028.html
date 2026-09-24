@@ -6836,13 +6836,14 @@ new MutationObserver(themeChrome).observe(document.documentElement,{attributes:t
     z-index:2147481650!important;
   }
   #view-master-calendar .v603-calendar-rail{
-    bottom:calc(var(--ux-bottomnav-h,64px) + 6px)!important;
-    max-height:min(
-      620px,
-      calc(var(--ux-visible-h,100dvh) - var(--ux-topbar-h,56px) - var(--ux-bottomnav-h,64px) - 18px)
-    )!important;
+    top:calc(var(--ux-topbar-h,56px) + 8px)!important;
+    bottom:calc(var(--ux-bottomnav-h,64px) + 8px)!important;
+    height:auto!important;
+    max-height:none!important;
+    min-height:0!important;
     z-index:2147481700!important;
     overscroll-behavior:contain!important;
+    border-radius:18px!important;
   }
 
   /* Bible passage tools use the same measured safe region. */

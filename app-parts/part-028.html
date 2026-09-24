@@ -8097,32 +8097,44 @@ setTimeout(bindChrome,500);
 
 <style id="omnios-v83-hide-closed-drawer-edges">
 @media(max-width:760px){
-  /* Closed legacy drawers must be completely outside the viewport.
-     The 8px safe-zone inset previously allowed a thin edge to remain visible. */
-  :is(#v35-drawer,.v55-drawer):not(.open){
-    transform:translateX(calc(100% + 32px))!important;
+  /* Closed side panels are not rendered at all on mobile. */
+  .inspector-panel:not(.open),
+  #v35-drawer:not(.open),
+  .v55-drawer:not(.open),
+  .v55-split:not(.open){
+    display:none!important;
     visibility:hidden!important;
+    opacity:0!important;
     pointer-events:none!important;
+    transform:none!important;
     box-shadow:none!important;
     border-color:transparent!important;
   }
 
-  :is(#v35-drawer,.v55-drawer).open{
-    transform:translateX(0)!important;
+  .inspector-panel.open{
+    display:block!important;
     visibility:visible!important;
+    opacity:1!important;
     pointer-events:auto!important;
+    transform:none!important;
   }
 
-  /* Split panels already use display:none when closed; enforce it at the final layer. */
-  .v55-split:not(.open){
-    display:none!important;
-    visibility:hidden!important;
-    pointer-events:none!important;
-  }
+  #v35-drawer.open,
+  .v55-drawer.open,
   .v55-split.open{
     display:flex!important;
     visibility:visible!important;
+    opacity:1!important;
     pointer-events:auto!important;
+    transform:none!important;
+  }
+
+  .inspector-backdrop:not(.active),
+  #v35-drawer-backdrop:not(.open),
+  .v55-drawer-backdrop:not(.open){
+    display:none!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
   }
 }
 </style>

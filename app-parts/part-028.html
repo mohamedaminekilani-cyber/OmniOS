@@ -4912,36 +4912,73 @@ function ensureReadyForMerge(){
 }
 function buildBundle(){
   const r=ensureReadyForMerge(),aux=r.captureAux?.()||{},meta=state.core?.syncMeta||{};
-  return {protocol:PROTOCOL,generatedAt:iso(),device:device(),state:clone(state),moduleTimes:{...(meta.modules||{})},aux,auxMeta:r.readAuxMeta?.()||{},fingerprint:r.fingerprint?.(state,aux)||''}
+  return {protocol:PROTOCOL,generatedAt:iso(),device:device(),state:clone(state),moduleTimes:{...(meta.modules||{})},recordTimes:clone(meta.records||{})||{},aux,auxMeta:r.readAuxMeta?.()||{},fingerprint:r.fingerprint?.(state,aux)||''}
 }
 function chooseRemote(lt,rt,localId,remoteId){
   if(rt>lt)return true;if(rt<lt)return false;
   return String(remoteId||'')>String(localId||'')
 }
 function same(a,b){try{return JSON.stringify(a)===JSON.stringify(b)}catch(_){return false}}
+function hasOwn(o,k){return !!o&&Object.prototype.hasOwnProperty.call(o,k)}
+function recordArrayEligible(list,r){return Array.isArray(list)&&list.every(x=>!!r.recordId?.(x))}
+function mergeRecordArray(key,localList,remoteList,localRec,remoteRec,localModuleAt,remoteModuleAt,localId,remoteId,generatedAt,r){
+  const lmap=new Map(localList.map(x=>[r.recordId(x),x])),rmap=new Map(remoteList.map(x=>[r.recordId(x),x]));
+  const ids=new Set([...lmap.keys(),...rmap.keys(),...Object.keys(localRec||{}),...Object.keys(remoteRec||{})]),values=new Map(),meta={};
+  ids.forEach(id=>{
+    const lHas=lmap.has(id),rHas=rmap.has(id);
+    const lm=(localRec||{})[id]||(lHas?{at:localModuleAt,deleted:false}:null);
+    const rm=(remoteRec||{})[id]||(rHas?{at:remoteModuleAt||generatedAt,deleted:false}:null);
+    const lKnown=!!lm||lHas,rKnown=!!rm||rHas;
+    let takeRemote=false;
+    if(rKnown&&!lKnown)takeRemote=true;
+    else if(rKnown&&lKnown)takeRemote=chooseRemote(when(lm?.at),when(rm?.at),localId,remoteId);
+    const chosen=takeRemote?rm:lm;
+    if(chosen)meta[id]={at:chosen.at||(takeRemote?(remoteModuleAt||generatedAt):localModuleAt)||generatedAt,deleted:!!chosen.deleted};
+    if(chosen?.deleted)return;
+    const value=takeRemote?rmap.get(id):lmap.get(id);
+    if(value!==undefined)values.set(id,clone(value))
+  });
+  const remoteOrder=chooseRemote(when(localModuleAt),when(remoteModuleAt),localId,remoteId);
+  const order=(remoteOrder?[...rmap.keys(),...lmap.keys()]:[...lmap.keys(),...rmap.keys()]),seen=new Set(),list=[];
+  order.forEach(id=>{if(!seen.has(id)&&values.has(id)){seen.add(id);list.push(values.get(id))}});
+  values.forEach((value,id)=>{if(!seen.has(id))list.push(value)});
+  return {list,meta}
+}
 
 async function mergeBundle(remote){
   if(!remote||remote.protocol!==PROTOCOL||!remote.state)return {changed:false,modules:[],aux:[]};
   const r=ensureReadyForMerge(),localId=device().id,remoteId=remote.device?.id||'';
-  const localMeta=r.ensureSyncMeta?.()||{modules:{}},localTimes={...(localMeta.modules||{})},remoteTimes={...(remote.moduleTimes||remote.state?.core?.syncMeta?.modules||{})};
+  const localMeta=r.ensureSyncMeta?.()||{modules:{},records:{}},localTimes={...(localMeta.modules||{})},remoteTimes={...(remote.moduleTimes||remote.state?.core?.syncMeta?.modules||{})};
+  const localRecords=localMeta.records||{},remoteRecords=remote.recordTimes||remote.state?.core?.syncMeta?.records||{},mergedRecords=clone(localRecords)||{};
   const keys=new Set([...(r.stateKeys?.(state)||[]),...(r.stateKeys?.(remote.state)||[])]),stateChanges=[],mergedTimes={...localTimes};
   for(const k of keys){
-    const lt=when(localTimes[k]),rt=when(remoteTimes[k]);
-    if(chooseRemote(lt,rt,localId,remoteId)&&!same(state[k],remote.state[k]))stateChanges.push([k,clone(remote.state[k])]);
-    if(rt>lt||(rt===lt&&String(remoteId)>String(localId)))mergedTimes[k]=remoteTimes[k]||localTimes[k]||remote.generatedAt;
+    const localHas=hasOwn(state,k),remoteHas=hasOwn(remote.state,k),lt=when(localTimes[k]),rt=when(remoteTimes[k]);
+    if(remoteHas){
+      const lv=state[k],rv=remote.state[k],recordMerge=Array.isArray(lv)&&Array.isArray(rv)&&recordArrayEligible(lv,r)&&recordArrayEligible(rv,r)&&(localRecords[k]||remoteRecords[k]);
+      if(recordMerge){
+        const merged=mergeRecordArray(k,lv,rv,localRecords[k]||{},remoteRecords[k]||{},localTimes[k]||'',remoteTimes[k]||'',localId,remoteId,remote.generatedAt,r);
+        mergedRecords[k]=merged.meta;
+        if(!same(lv,merged.list))stateChanges.push([k,merged.list])
+      }else if((!localHas||chooseRemote(lt,rt,localId,remoteId))&&!same(lv,rv)){
+        stateChanges.push([k,clone(rv)])
+      }
+    }
+    if(remoteHas&&(rt>lt||(rt===lt&&String(remoteId)>String(localId))))mergedTimes[k]=remoteTimes[k]||localTimes[k]||remote.generatedAt;
     else mergedTimes[k]=localTimes[k]||remoteTimes[k]||remote.generatedAt;
   }
 
   const localAux=r.captureAux?.()||{},localAuxMeta=r.readAuxMeta?.()||{},remoteAux=remote.aux||{},remoteAuxMeta=remote.auxMeta||{};
   const auxKeys=new Set([...Object.keys(localAux),...Object.keys(remoteAux),...Object.keys(localAuxMeta),...Object.keys(remoteAuxMeta)]),auxChanges=[],mergedAuxMeta={...localAuxMeta};
   for(const k of auxKeys){
+    const localHas=hasOwn(localAux,k),remoteHas=hasOwn(remoteAux,k),remoteKnows=remoteHas||hasOwn(remoteAuxMeta,k);
+    if(!remoteKnows)continue;
     const lm=localAuxMeta[k]||{},rm=remoteAuxMeta[k]||{};
-    const lt=when(lm.at),rt=when(rm.at),take=chooseRemote(lt,rt,localId,remoteId);
+    const lt=when(lm.at),rt=when(rm.at||(remoteHas?remote.generatedAt:'')),take=chooseRemote(lt,rt,localId,remoteId);
     if(take){
       const deleted=!!rm.deleted;
       const next=deleted?null:remoteAux[k];
-      const current=Object.prototype.hasOwnProperty.call(localAux,k)?localAux[k]:null;
-      if(deleted?Object.prototype.hasOwnProperty.call(localAux,k):current!==next)auxChanges.push([k,next,deleted]);
+      const current=localHas?localAux[k]:null;
+      if(deleted?localHas:current!==next)auxChanges.push([k,next,deleted]);
       mergedAuxMeta[k]={at:rm.at||remote.generatedAt,deleted};
     }
   }
@@ -4954,6 +4991,7 @@ async function mergeBundle(remote){
     state.core=state.core&&typeof state.core==='object'?state.core:{};
     state.core.syncMeta=state.core.syncMeta&&typeof state.core.syncMeta==='object'?state.core.syncMeta:{};
     state.core.syncMeta.modules=mergedTimes;
+    state.core.syncMeta.records=mergedRecords;
     state.core.syncMeta.updatedAt=[state.core.syncMeta.updatedAt,remote.generatedAt,iso()].filter(Boolean).sort().pop();
     for(const [k,v,deleted] of auxChanges){
       try{if(deleted)localStorage.removeItem(k);else localStorage.setItem(k,String(v??''))}catch(_){}
@@ -5001,7 +5039,7 @@ async function ensurePeer(){
   return peerReady
 }
 function validIncomingSecret(conn,secret){
-  if(pendingSession&&pendingSession.secret===secret)return true;
+  if(pendingSession&&pendingSession.secret===secret&&Date.now()-pendingSession.createdAt<5*60*1000)return true;
   return knownSecret(conn.peer)===secret
 }
 function sendBundle(conn,reason='live',force=false){
@@ -5017,7 +5055,9 @@ function scheduleLiveSend(){
 async function handleMessage(conn,msg,expectedSecret){
   if(!msg||msg.protocol!==PROTOCOL)return;
   if(msg.type==='hello'){
+    const pendingMatch=!!(pendingSession&&pendingSession.secret===msg.secret&&Date.now()-pendingSession.createdAt<5*60*1000);
     if(!validIncomingSecret(conn,msg.secret)){try{conn.send({type:'error',protocol:PROTOCOL,message:'Pairing code expired or invalid'})}catch(_){};conn.close();return}
+    if(pendingMatch)pendingSession=null;
     conn.__omniAuth=true;conn.__omniRemoteDevice=msg.device||{};savePair(conn.peer,msg.secret,msg.device);live.set(conn.peer,{conn,auth:true});setLiveUI();
     conn.send({type:'hello-ack',protocol:PROTOCOL,device:device()});sendBundle(conn,'initial',true);setStatus('Device connected · reconciling newest data…','busy');return
   }
@@ -5065,7 +5105,7 @@ async function joinSession(payload){
   modalShell('join');joinView();
   try{
     setStatus('Connecting to the other device…','busy');const p=await ensurePeer();
-    const conn=p.connect(payload.p,{reliable:true,serialization:'json'});bindConnection(conn,{secret:payload.s})
+    const conn=p.connect(payload.p,{reliable:true});bindConnection(conn,{secret:payload.s})
   }catch(e){console.error(e);setStatus('Could not connect to the other device. Generate a new QR code and try again.','error')}
 }
 function parseIncoming(){

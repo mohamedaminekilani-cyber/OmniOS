@@ -467,7 +467,7 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
   const escCSV=v=>`"${String(v??'').replace(/"/g,'""')}"`;
   const snapshot=()=>{
     const clean=JSON.parse(JSON.stringify(state||{}));
-    clean._omniosDatabase={format:'OmniOS Human-Readable Database',version:3,exportedAt:new Date().toISOString(),note:'Portable source of truth: current data, settings, UI customizations and activity history.'};
+    clean._omniosDatabase={format:'Second Brain Human-Readable Database',version:3,exportedAt:new Date().toISOString(),note:'Portable source of truth: current data, settings, UI customizations and activity history.'};
     return clean;
   };
   const databaseText=()=> 'OMNIOS DATABASE\n================\n\n'+JSON.stringify(snapshot(),null,2)+'\n';
@@ -486,7 +486,7 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
     try{
       const start=raw.indexOf('{'); if(start<0)throw new Error('Invalid database');
       const parsed=JSON.parse(raw.slice(start));
-      if(!parsed||!Array.isArray(parsed.entries))throw new Error('Invalid OmniOS database');
+      if(!parsed||!Array.isArray(parsed.entries))throw new Error('Invalid Second Brain database');
       state=parsed;
       try{normalizeState();}catch(e){}
       try{renderAll();}catch(e){}
@@ -494,7 +494,7 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
       try{renderAll();}catch(e){}
       setStatus('Database loaded from local folder');
       return true;
-    }catch(e){console.warn('Could not load OmniOS database',e);setStatus('Could not read database TXT — existing file was not overwritten');return false;}
+    }catch(e){console.warn('Could not load Second Brain database',e);setStatus('Could not read database TXT — existing file was not overwritten');return false;}
   }
   async function performSync(){
     if(!dirHandle)return false;
@@ -508,7 +508,7 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
         await writeFile(dirHandle,DB_CSV,historyCsv());
         setStatus('Auto-saved to local database');
         return true;
-      }catch(e){console.warn('OmniOS database sync failed',e);setStatus('Database folder unavailable — use Save Database');return false;}
+      }catch(e){console.warn('Second Brain database sync failed',e);setStatus('Database folder unavailable — use Save Database');return false;}
       finally{syncing=false;syncPromise=null;}
     })();
     return syncPromise;

@@ -6032,11 +6032,19 @@ function internetFallback(){
 }
 
 function makeAdapter(pc,dc,sid){
-  const id='wifi:'+sid;
+  const id='wifi:'+sid,chunkMap=new Map(),CHUNK_SIZE=48*1024;
   const conn={
     peer:id,peerConnection:pc,__omniAuth:true,__omniLastSent:'',__omniLastRecv:'',
     get open(){return dc.readyState==='open'},
-    send(obj){if(dc.readyState==='open')dc.send(JSON.stringify(obj))},
+    send(obj){
+      if(dc.readyState!=='open')throw new Error('Local data channel is not open');
+      const raw=JSON.stringify(obj);
+      if(raw.length<=CHUNK_SIZE){dc.send(raw);return}
+      const chunkId=randomHex(8),total=Math.ceil(raw.length/CHUNK_SIZE);
+      for(let index=0;index<total;index++){
+        dc.send(JSON.stringify({type:'__omni_chunk',id:chunkId,index,total,data:raw.slice(index*CHUNK_SIZE,(index+1)*CHUNK_SIZE)}))
+      }
+    },
     close(){try{dc.close()}catch(_){}try{pc.close()}catch(_){}}
   };
   dc.onopen=()=>{
@@ -6045,13 +6053,22 @@ function makeAdapter(pc,dc,sid){
   };
   dc.onmessage=async e=>{
     let msg;try{msg=typeof e.data==='string'?JSON.parse(e.data):e.data}catch(_){return}
+    if(msg?.type==='__omni_chunk'){
+      const row=chunkMap.get(msg.id)||{parts:new Array(Number(msg.total)||0),received:0,at:Date.now()};
+      if(!row.parts[msg.index]){row.parts[msg.index]=String(msg.data||'');row.received++}
+      chunkMap.set(msg.id,row);
+      for(const [key,val] of chunkMap)if(Date.now()-val.at>120000)chunkMap.delete(key);
+      if(row.received<row.parts.length)return;
+      chunkMap.delete(msg.id);
+      try{msg=JSON.parse(row.parts.join(''))}catch(_){return}
+    }
     if(!msg||msg.protocol!==PROTOCOL)return;
     if(msg.type==='bundle'&&msg.bundle){
       if(msg.bundle.fingerprint&&msg.bundle.fingerprint===conn.__omniLastRecv)return;
-      conn.__omniLastRecv=msg.bundle.fingerprint||'';
       try{
         setProgress(92,'Comparing data');logProgress('Comparing newest records');
         const result=await api()?.merge?.(msg.bundle);
+        conn.__omniLastRecv=msg.bundle.fingerprint||'';
         if(result?.changed)sendBundle(true);
         conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
         stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Direct encrypted connection on your Wi-Fi.','ok');setProgress(100,'Synced');logProgress(result?.changed?'Newest data applied':'Both devices already match')
@@ -6104,10 +6121,10 @@ function activateAssistedFallback(signalConn,sid,initiator=false){
     const inner=msg.payload;
     if(inner.type==='bundle'&&inner.bundle){
       if(inner.bundle.fingerprint&&inner.bundle.fingerprint===conn.__omniLastRecv)return;
-      conn.__omniLastRecv=inner.bundle.fingerprint||'';
       try{
         setProgress(93,'Comparing data');logProgress('Comparing newest records over assisted channel');
         const result=await api()?.merge?.(inner.bundle);
+        conn.__omniLastRecv=inner.bundle.fingerprint||'';
         if(result?.changed)sendBundle(true);
         conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
         stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Encrypted peer connection is live.','ok');
@@ -6152,8 +6169,13 @@ function sendBundle(force=false){
   const conn=liveConn;if(!conn?.open)return;
   const bundle=api()?.bundle?.();if(!bundle)return;
   if(!force&&bundle.fingerprint&&bundle.fingerprint===conn.__omniLastSent)return;
-  conn.__omniLastSent=bundle.fingerprint||'';
-  conn.send({type:'bundle',protocol:PROTOCOL,reason:'local-wifi',bundle})
+  try{
+    conn.send({type:'bundle',protocol:PROTOCOL,reason:'local-wifi',bundle});
+    conn.__omniLastSent=bundle.fingerprint||''
+  }catch(e){
+    console.warn('Second Brain local send failed',e);
+    stage(3,'Transfer paused','The current change could not be sent. Keep both devices open and retry.','error')
+  }
 }
 function scheduleSend(){clearTimeout(sendTimer);sendTimer=setTimeout(()=>sendBundle(false),350)}
 

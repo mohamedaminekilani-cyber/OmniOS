@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#18181b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="OmniOS">
+<meta name="apple-mobile-web-app-title" content="Second Brain">
 <link id="omnios-apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
 <script id="omnios-pwa-icon-early">
 (function(){
@@ -36,7 +36,7 @@
 })();
 </script>
 <link rel="manifest" href="./manifest.webmanifest">
-<title>OmniOS</title>
+<title>Second Brain</title>
 <script id="omnios-accent-early">
 (function(){
   try{
@@ -81,14 +81,14 @@ html.omnios-has-boot-icon .omnios-boot-mark img{display:block;animation:omniosBo
 </style>
 </head>
 <body>
-<main class="boot" id="omnios-boot-screen" role="status" aria-live="polite" aria-label="Loading OmniOS">
+<main class="boot" id="omnios-boot-screen" role="status" aria-live="polite" aria-label="Loading Second Brain">
 <div class="omnios-boot-card">
   <div class="omnios-boot-mark" aria-hidden="true"><img id="omnios-index-boot-icon" alt=""></div>
-  <div class="omnios-boot-brand">Omni<span>OS</span></div>
+  <div class="omnios-boot-brand">Second <span>Brain</span></div>
   <div class="omnios-boot-copy">Preparing your workspace…</div>
-  <div class="omnios-boot-track" role="progressbar" aria-label="Loading OmniOS" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="omnios-boot-progress"></i></div>
+  <div class="omnios-boot-track" role="progressbar" aria-label="Loading Second Brain" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="omnios-boot-progress"></i></div>
   <div id="fill"></div><div id="status" aria-live="polite">Preparing · 0%</div>
-  <div class="error" id="error" role="alert"><strong>OmniOS couldn't finish loading.</strong><p id="omnios-load-error-copy">Check your connection, then retry. A validated offline snapshot will be used automatically when available.</p><div class="error-actions"><button id="omnios-retry-btn" type="button">Retry</button><button id="omnios-reset-cache-btn" type="button" class="secondary">Reset app cache</button></div></div>
+  <div class="error" id="error" role="alert"><strong>Second Brain couldn't finish loading.</strong><p id="omnios-load-error-copy">Check your connection, then retry. A validated offline snapshot will be used automatically when available.</p><div class="error-actions"><button id="omnios-retry-btn" type="button">Retry</button><button id="omnios-reset-cache-btn" type="button" class="secondary">Reset app cache</button></div></div>
 </div>
 </main>
 <script>
@@ -97,6 +97,9 @@ try{const raw=localStorage.getItem('omnios_loading_icon_v1')||'',src=window.__om
 <script>
 (()=>{
 const PARTS=Array.from({length:28},function(_,i){return './app-parts/part-'+String(i+1).padStart(3,'0')+'.html'});
+const BUILD_ID='second-brain-v64-2026-09-25';
+const RELEASE_MANIFEST='./release-manifest.json';
+let releaseHashes=null;
 const SNAPSHOT_PREFIX='omnios-app-snapshot-v1-';
 const SNAPSHOT_SLOT_KEY='omnios_app_snapshot_slot_v1';
 const SNAPSHOT_META='./__omnios_snapshot_meta__';
@@ -133,6 +136,25 @@ function validatePart(text,index){
   if(head.includes('<title>sign in')||head.includes('captive portal')||head.includes('network login'))return false;
   return true;
 }
+async function gitBlobSha(text){
+  const body=new TextEncoder().encode(text),prefix=new TextEncoder().encode('blob '+body.byteLength+'\0'),all=new Uint8Array(prefix.length+body.length);
+  all.set(prefix);all.set(body,prefix.length);
+  const digest=new Uint8Array(await crypto.subtle.digest('SHA-1',all));
+  return Array.from(digest,b=>b.toString(16).padStart(2,'0')).join('')
+}
+async function loadReleaseManifest(){
+  if(releaseHashes)return releaseHashes;
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),8000);
+  try{
+    const res=await fetch(RELEASE_MANIFEST,{cache:'no-store',credentials:'same-origin',signal:ctrl.signal});
+    if(!res.ok)throw new Error('Release manifest HTTP '+res.status);
+    const m=await res.json();
+    if(!m||m.schema!==1||m.buildId!==BUILD_ID||!Array.isArray(m.parts)||m.parts.length!==PARTS.length)throw new Error('Release manifest does not match this loader');
+    const map=new Map(m.parts.map(x=>[String(x.path||''),String(x.gitBlobSha||'').toLowerCase()]));
+    for(const p of PARTS)if(!/^[0-9a-f]{40}$/.test(map.get(p)||''))throw new Error('Release manifest is incomplete');
+    releaseHashes=map;return map
+  }finally{clearTimeout(timer)}
+}
 async function fetchAttempt(url,index,timeoutMs){
   const ctrl=typeof AbortController!=='undefined'?new AbortController():null;
   const timer=ctrl?setTimeout(function(){ctrl.abort()},timeoutMs):null;
@@ -145,6 +167,8 @@ async function fetchAttempt(url,index,timeoutMs){
     if(type&&!type.includes('text/html')&&!type.includes('text/plain'))throw new Error('Unexpected content type for '+url);
     const text=await response.text();
     if(!validatePart(text,index))throw new Error('Content validation failed for '+url);
+    const expected=releaseHashes?.get(url);
+    if(!expected||await gitBlobSha(text)!==expected)throw new Error('Release integrity check failed for '+url);
     return text;
   }finally{
     if(timer)clearTimeout(timer);
@@ -158,6 +182,7 @@ async function fetchPart(url,index){
   throw lastError||new Error('Could not load '+url);
 }
 async function fetchFreshSet(){
+  await loadReleaseManifest();
   const texts=new Array(PARTS.length);
   const errors=[];
   let next=0,done=0;
@@ -184,7 +209,7 @@ async function readSlot(slot){
     const metaResponse=await cache.match(SNAPSHOT_META);
     if(!metaResponse)return null;
     const meta=await metaResponse.json();
-    if(!meta||meta.version!==1||!Array.isArray(meta.parts)||meta.parts.length!==PARTS.length)return null;
+    if(!meta||meta.version!==2||meta.buildId!==BUILD_ID||!Array.isArray(meta.parts)||meta.parts.length!==PARTS.length)return null;
     const texts=new Array(PARTS.length);
     for(let i=0;i<PARTS.length;i++){
       const response=await cache.match(PARTS[i]);
@@ -196,7 +221,7 @@ async function readSlot(slot){
     }
     return texts;
   }catch(e){
-    console.warn('OmniOS snapshot read failed',e);
+    console.warn('Second Brain snapshot read failed',e);
     return null;
   }
 }
@@ -222,7 +247,7 @@ async function writeSnapshot(texts){
   try{
     await caches.delete(name);
     const cache=await caches.open(name);
-    const meta={version:1,savedAt:new Date().toISOString(),parts:[]};
+    const meta={version:2,buildId:BUILD_ID,savedAt:new Date().toISOString(),parts:[]};
     for(let i=0;i<PARTS.length;i++){
       const text=texts[i];
       meta.parts.push({length:text.length,hash:hashText(text)});
@@ -234,7 +259,7 @@ async function writeSnapshot(texts){
     try{localStorage.setItem(SNAPSHOT_SLOT_KEY,target)}catch(_){}
     return true;
   }catch(e){
-    console.warn('OmniOS snapshot write failed',e);
+    console.warn('Second Brain snapshot write failed',e);
     try{await caches.delete(name)}catch(_){}
     return false;
   }
@@ -274,25 +299,30 @@ function carryLoaderIntoApp(html){
   let out=addRootClass(html,rootClasses);
   out=out.replace(/<\/head>/i,gateCss+'\n</head>');
   out=out.replace(/<body([^>]*)>/i,function(m,attrs){return '<body'+attrs+'>\n'+bootHtml});
+  out=out.replace(/<\/body>/i,'<script src="./secure-vault-v64.js"><\\/script><script src="./second-brain-v64.js"><\\/script></body>');
   return out;
 }
 
 (async()=>{
   try{
-    let texts=null;
+    let texts=await readSnapshot();
     let freshError=null;
-    try{
-      texts=await fetchFreshSet();
-      setProgress(PARTS.length,'Validated');
-      await writeSnapshot(texts);
-    }catch(e){
-      freshError=e;
-      console.warn('Fresh OmniOS load failed; trying complete snapshot',e);
-      if(status)status.textContent=navigator.onLine?'Fresh build unavailable · opening saved copy…':'Offline · opening saved copy…';
-      if(progress)progress.style.width='100%';
-      texts=await readSnapshot();
+    if(texts){
+      setProgress(PARTS.length,'Opening verified release');
+    }else{
+      try{
+        texts=await fetchFreshSet();
+        setProgress(PARTS.length,'Verified');
+        await writeSnapshot(texts);
+      }catch(e){
+        freshError=e;
+        console.warn('Fresh Second Brain load failed; checking verified snapshot',e);
+        if(status)status.textContent=navigator.onLine?'Current release unavailable · checking saved copy…':'Offline · checking saved copy…';
+        if(progress)progress.style.width='100%';
+        texts=await readSnapshot();
+      }
     }
-    if(!texts)throw freshError||new Error('No validated app snapshot is available');
+    if(!texts)throw freshError||new Error('No verified app release is available');
     const html=carryLoaderIntoApp(texts.join(''));
     document.open();
     document.write(html);
@@ -303,8 +333,8 @@ function carryLoaderIntoApp(html){
     const copy=document.getElementById('omnios-load-error-copy');
     const offline=!navigator.onLine;
     if(copy)copy.textContent=offline
-      ? 'This device is offline and no complete saved app copy was available. Reconnect once, then Retry. Your OmniOS data is not deleted.'
-      : 'A complete app build could not be validated. Retry first; if it repeats, reset only the app cache. Your OmniOS data is not deleted.';
+      ? 'This device is offline and no complete saved app copy was available. Reconnect once, then Retry. Your Second Brain data is not deleted.'
+      : 'A complete app build could not be validated. Retry first; if it repeats, reset only the app cache. Your Second Brain data is not deleted.';
     const error=document.getElementById('error');if(error)error.style.display='block';
     if(status)status.textContent=offline?'Offline · saved copy unavailable':'Load failed · app files could not be validated';
     retryBtn?.focus?.();

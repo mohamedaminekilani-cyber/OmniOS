@@ -510,6 +510,10 @@ function syncBaseline35(){
   return at||new Date().toISOString()
 }
 function syncStateKeys35(s=state){return Object.keys(s||{}).filter(k=>k!=='core'&&!String(k).startsWith('__')&&typeof s[k]!=='function').sort()}
+function nestedRecordKeys35(rootKey,value){
+  if(!value||typeof value!=='object'||Array.isArray(value))return[];
+  return Object.keys(value).filter(k=>Array.isArray(value[k])&&value[k].every(x=>!!syncRecordId35(x))).map(k=>rootKey+'.'+k)
+}
 function syncRecordId35(x){return x&&typeof x==='object'&&x.id!=null?String(x.id):''}
 function initializeRecordMeta35(key,list,base){
   if(!Array.isArray(list))return;
@@ -524,7 +528,15 @@ function changedStateKeys35(a,b){
 function ensureSyncMeta35(){
   ensureV35State();
   const base=syncBaseline35(),m=state.core.syncMeta.modules;
-  syncStateKeys35(state).forEach(k=>{if(!m[k])m[k]=base;initializeRecordMeta35(k,state[k],base)});
+  syncStateKeys35(state).forEach(k=>{
+    if(!m[k])m[k]=base;
+    initializeRecordMeta35(k,state[k],base);
+    nestedRecordKeys35(k,state[k]).forEach(path=>{
+      const sub=path.slice(k.length+1);
+      if(!m[path])m[path]=m[k]||base;
+      initializeRecordMeta35(path,state[k]?.[sub],base)
+    })
+  });
   state.core.syncMeta.updatedAt=state.core.syncMeta.updatedAt||base;
   return state.core.syncMeta
 }
@@ -543,7 +555,20 @@ function touchRecordMeta35(key,prevList,nextList,at){
 }
 function touchSyncStateKeys35(keys,at=new Date().toISOString(),prevState=null,nextState=state){
   const meta=ensureSyncMeta35(),m=meta.modules;
-  (keys||[]).forEach(k=>{if(k&&k!=='core'){m[k]=at;touchRecordMeta35(k,prevState?.[k],nextState?.[k],at)}});
+  (keys||[]).forEach(k=>{if(k&&k!=='core'){
+    m[k]=at;
+    touchRecordMeta35(k,prevState?.[k],nextState?.[k],at);
+    const prev=prevState?.[k],next=nextState?.[k];
+    const nested=new Set([...nestedRecordKeys35(k,prev),...nestedRecordKeys35(k,next)]);
+    nested.forEach(path=>{
+      const sub=path.slice(k.length+1);
+      const a=prev?.[sub],b=next?.[sub];
+      if(JSON.stringify(a)!==JSON.stringify(b)){
+        m[path]=at;
+        touchRecordMeta35(path,a,b,at)
+      }
+    })
+  }});
   meta.updatedAt=at
 }
 function readAuxMeta35(){
@@ -591,15 +616,47 @@ function installTopbar35(){
 /* ---------- local IndexedDB Data Center ---------- */
 const DB35='OmniOS_Local_v35',STORE_STATE='state',STORE_SNAPS='snapshots';let db35=null,backupDir35=null,mirrorBusy35=false;
 function openDB35(){if(db35)return Promise.resolve(db35);return new Promise((resolve,reject)=>{if(!('indexedDB'in window)){reject(new Error('IndexedDB unavailable'));return}const q=indexedDB.open(DB35,1);q.onupgradeneeded=()=>{const d=q.result;if(!d.objectStoreNames.contains(STORE_STATE))d.createObjectStore(STORE_STATE);if(!d.objectStoreNames.contains(STORE_SNAPS))d.createObjectStore(STORE_SNAPS,{keyPath:'id'})};q.onsuccess=()=>{db35=q.result;resolve(db35)};q.onerror=()=>reject(q.error)})}
-async function idbPut35(store,key,val){const d=await openDB35();return new Promise((res,rej)=>{const tx=d.transaction(store,'readwrite');const s=tx.objectStore(store);const q=key===null?s.put(val):s.put(val,key);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
+async function idbPut35(store,key,val){const d=await openDB35();return new Promise((res,rej)=>{const tx=d.transaction(store,'readwrite');const st=tx.objectStore(store);const q=key===null?st.put(val):st.put(val,key);let result; q.onsuccess=()=>{result=q.result};q.onerror=()=>rej(q.error);tx.oncomplete=()=>res(result);tx.onerror=()=>rej(tx.error||q.error);tx.onabort=()=>rej(tx.error||new Error('IndexedDB transaction aborted'))})}
 async function idbGet35(store,key){const d=await openDB35();return new Promise((res,rej)=>{const q=d.transaction(store).objectStore(store).get(key);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
 async function idbAll35(store){const d=await openDB35();return new Promise((res,rej)=>{const q=d.transaction(store).objectStore(store).getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>rej(q.error)})}
-async function idbDelete35(store,key){const d=await openDB35();return new Promise((res,rej)=>{const q=d.transaction(store,'readwrite').objectStore(store).delete(key);q.onsuccess=()=>res();q.onerror=()=>rej(q.error)})}
+async function idbDelete35(store,key){const d=await openDB35();return new Promise((res,rej)=>{const tx=d.transaction(store,'readwrite');const q=tx.objectStore(store).delete(key);q.onerror=()=>rej(q.error);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error||q.error);tx.onabort=()=>rej(tx.error||new Error('IndexedDB transaction aborted'))})}
 async function folderPermission35(h){try{return (await h.queryPermission({mode:'readwrite'}))==='granted'}catch(_){return false}}
 async function loadBackupFolder35(){try{const h=await idbGet35(STORE_STATE,'backup-folder-handle');if(h&&await folderPermission35(h))backupDir35=h}catch(_){}}
 async function writeFolderFile35(name,text,type='application/json'){if(!backupDir35)return false;const h=await backupDir35.getFileHandle(name,{create:true});const w=await h.createWritable();await w.write(new Blob([text],{type}));await w.close();return true}
 function activityCsv35(){const rows=[['timestamp','label','modules']];(state.core?.changeLog||[]).forEach(x=>rows.push([x.at||'',x.label||'',(x.modules||[]).join('; ')]));return rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n')+'\n'}
-async function mirrorBackupFolder35(){if(!backupDir35||mirrorBusy35)return false;mirrorBusy35=true;try{if(!(await folderPermission35(backupDir35))){backupDir35=null;return false}const payload={format:'OmniOS Local Mirror',version:35,savedAt:new Date().toISOString(),state:clone(state)};await writeFolderFile35('OmniOS_Latest.json',JSON.stringify(payload,null,2));await writeFolderFile35('OmniOS_Activity.csv',activityCsv35(),'text/csv;charset=utf-8');return true}catch(e){console.warn('Folder mirror failed',e);return false}finally{mirrorBusy35=false}}
+function backupPayload35(kind='portable'){
+  const aux=captureAux35(),auxMeta=ensureAuxMeta35();
+  return {
+    format:kind==='mirror'?'Second Brain Local Mirror':'Second Brain Portable Backup',
+    version:36,
+    exportedAt:new Date().toISOString(),
+    state:clone(state),
+    aux,
+    auxMeta,
+    manifest:{
+      includes:['state','auxiliary module data','auxiliary sync metadata'],
+      excludes:['device pairing identity','push device identity','transport/cache keys','browser cache assets'],
+      note:'Device credentials and transport identity are intentionally device-local.'
+    }
+  }
+}
+async function persistStateDurably35(){
+  const raw=JSON.stringify(state),at=new Date().toISOString();
+  storage.setItem('omnios_v3_state',raw);
+  storage.setItem('omnios_v3_backup',JSON.stringify({version:3,savedAt:at,state}));
+  if(storage.getItem('omnios_v3_state')!==raw)throw new Error('State persistence verification failed');
+  return at
+}
+function applyAuxDurably35(changes){
+  for(const [k,v,deleted] of changes||[]){
+    if(!auxSnapshotKey35(k))continue;
+    if(deleted)localStorage.removeItem(k);else localStorage.setItem(k,String(v??''));
+    const after=localStorage.getItem(k);
+    if(deleted?after!==null:after!==String(v??''))throw new Error('Auxiliary persistence verification failed for '+k)
+  }
+  return true
+}
+async function mirrorBackupFolder35(){if(!backupDir35||mirrorBusy35)return false;mirrorBusy35=true;try{if(!(await folderPermission35(backupDir35))){backupDir35=null;return false}const payload=backupPayload35('mirror');await writeFolderFile35('SecondBrain_Latest.json',JSON.stringify(payload,null,2));await writeFolderFile35('SecondBrain_Activity.csv',activityCsv35(),'text/csv;charset=utf-8');return true}catch(e){console.warn('Folder mirror failed',e);return false}finally{mirrorBusy35=false}}
 async function connectBackupFolder35(){if(!window.showDirectoryPicker){window.toast?.('Direct folder mirroring is not supported here. Use Export backup instead.');return false}try{const h=await showDirectoryPicker({mode:'readwrite'});backupDir35=h;await idbPut35(STORE_STATE,'backup-folder-handle',h);await mirrorBackupFolder35();window.toast?.('Backup folder connected. Current OmniOS data was mirrored; no file was imported.');renderDataCenter35();return true}catch(e){if(e?.name!=='AbortError')console.warn(e);return false}}
 let persistTimer35;
 const AUTO_SNAPSHOT_DELAY35=1200,MAX_AUTO_SNAPS35=80,MAX_MANUAL_SNAPS35=20;
@@ -608,8 +665,8 @@ let autoSnapshotTimer35=null,autoSnapshotPending35=new Set(),autoSnapshotBase35=
 function auxSnapshotKey35(key){
   key=String(key||'');
   if(!/^omnios_/i.test(key))return false;
-  if(['omnios_v3_state','omnios_v3_backup','omnios_ui_preferences_v1','omnios_v35_full_reset_at',SYNC_AUX_META_KEY35,'omnios_sync_device_v1','omnios_sync_pairs_v1'].includes(key))return false;
-  if(/storage_test|parts?_cache|startup|boot_cache/i.test(key))return false;
+  if(['omnios_v3_state','omnios_v3_backup','omnios_ui_preferences_v1','omnios_v35_full_reset_at',SYNC_AUX_META_KEY35,'omnios_sync_device_v1','omnios_sync_pairs_v1','omnios_push_device_v1'].includes(key))return false;
+  if(/storage_test|parts?_cache|startup|boot_cache|sync_|pair|relay|transport|push_(device|subscription|token|endpoint)/i.test(key))return false;
   return true
 }
 function captureAux35(){
@@ -807,6 +864,8 @@ window.OmniRecovery35={
   makeSnapshot:(label,opts)=>makeSnapshot35(label,opts),
   captureAux:()=>captureAux35(),
   restoreAux:(aux)=>restoreAux35(aux),
+  applyAuxDurably:(changes)=>applyAuxDurably35(changes),
+  persistStateDurably:()=>persistStateDurably35(),
   readAuxMeta:()=>ensureAuxMeta35(),
   writeAuxMeta:(m)=>writeAuxMeta35(m),
   ensureSyncMeta:()=>ensureSyncMeta35(),
@@ -817,8 +876,8 @@ window.OmniRecovery35={
 };
 async function restoreSnapshot35(id){const all=await idbAll35(STORE_SNAPS),snap=all.find(x=>x.id===id);if(!snap)return;if(!confirm(`Restore snapshot from ${new Date(snap.at).toLocaleString()}? Current state can be recovered with Undo during this session.`))return;undo35.push(clone(state));state=clone(snap.state);restoreAux35(snap.aux);if(snap.auxMeta)writeAuxMeta35(snap.auxMeta);ensureV35State();lastCommitted35=clone(state);autoSnapshotBase35=clone(state);autoSnapshotBase35.__auxSnapshot35=captureAux35();autoSnapshotLastFP35=fingerprint35(state,autoSnapshotBase35.__auxSnapshot35);saveGuard35=true;(window.saveState?.__v35?null:null);const baseCurrent=window.saveState;saveGuard35=false;window.saveState();renderAll?.();renderNewView35(activeView35());window.toast?.('Snapshot restored')}
 function download35(name,text,type='application/json'){const blob=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-function exportBackup35(){const payload={format:'OmniOS Portable Backup',version:35,exportedAt:new Date().toISOString(),state:clone(state)};download35(`OmniOS_Backup_${todayKey()}.json`,JSON.stringify(payload,null,2));window.toast?.('Portable backup exported')}
-function importBackup35(){const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.onchange=async()=>{const f=inp.files?.[0];if(!f)return;try{const p=JSON.parse(await f.text());const imported=p.state||p;if(!imported||!Array.isArray(imported.entries))throw new Error('Not an OmniOS backup');if(!confirm('Restore this backup? Your current state is added to Undo history first.'))return;undo35.push(clone(state));state=clone(imported);ensureV35State();lastCommitted35=clone(state);window.saveState();await makeSnapshot35('Imported backup');renderAll?.();renderNewView35(activeView35());window.toast?.('Backup restored')}catch(e){alert('Could not import backup: '+e.message)}};inp.click()}
+function exportBackup35(){const payload=backupPayload35('portable');download35(`SecondBrain_Backup_${todayKey()}.json`,JSON.stringify(payload,null,2));window.toast?.('Complete portable backup exported')}
+function importBackup35(){const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.onchange=async()=>{const f=inp.files?.[0];if(!f)return;try{const p=JSON.parse(await f.text());const imported=p.state||p;if(!imported||!Array.isArray(imported.entries))throw new Error('Not a Second Brain backup');if(!confirm('Restore this backup? Your current state is added to Undo history first.'))return;undo35.push(clone(state));await makeSnapshot35('Before backup restore',{kind:'pre-restore'});state=clone(imported);if(p.aux&&typeof p.aux==='object'){const current=captureAux35(),changes=[];for(const k of new Set([...Object.keys(current),...Object.keys(p.aux)])){if(!Object.prototype.hasOwnProperty.call(p.aux,k))changes.push([k,null,true]);else changes.push([k,p.aux[k],false])}applyAuxDurably35(changes)}if(p.auxMeta)writeAuxMeta35(p.auxMeta);ensureV35State();lastCommitted35=clone(state);window.saveState();await persistStateDurably35();await makeSnapshot35('Imported backup');renderAll?.();renderNewView35(activeView35());window.toast?.('Backup restored and verified')}catch(e){alert('Could not import backup: '+e.message)}};inp.click()}
 async function storageInfo35(){let usage=0,quota=0,persisted=false;try{const e=await navigator.storage?.estimate?.();usage=e?.usage||0;quota=e?.quota||0;persisted=await navigator.storage?.persisted?.()}catch(_){}return{usage,quota,persisted}}
 let idbRecovered35=false;
 function time35(v){const n=Date.parse(String(v||''));return Number.isFinite(n)?n:0}

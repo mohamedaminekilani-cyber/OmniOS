@@ -2090,16 +2090,27 @@ document.addEventListener('click', (event) => {
 
 // ================= INIT =================
 // ================= PASSWORD MANAGER =================
-// Stored in plain state (same place as everything else in OmniOS, e.g. localStorage) — there is
-// no real encryption here. That's fine for a personal offline planner, but it's worth being
-// upfront about: don't rely on this for anything you'd protect with a dedicated password vault.
+// LEGACY LOCAL-ONLY MODULE: existing password records are still stored in plain local state.
+// They are intentionally excluded from general device sync and portable backup. New secure
+// storage must use the encrypted vault migration before this module can be considered safe.
 let passwordSearch = '';
 let visiblePasswordIds = new Set();
 
 function genPassword(length = 16) {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
+    const cryptoObj = globalThis.crypto;
+    if (!cryptoObj?.getRandomValues) throw new Error('Secure random generator unavailable');
     let out = '';
-    for (let i = 0; i < length; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    const max = Math.floor(256 / chars.length) * chars.length;
+    while (out.length < length) {
+        const bytes = new Uint8Array(Math.max(16, length - out.length));
+        cryptoObj.getRandomValues(bytes);
+        for (const n of bytes) {
+            if (n >= max) continue;
+            out += chars[n % chars.length];
+            if (out.length >= length) break;
+        }
+    }
     return out;
 }
 
@@ -2153,7 +2164,7 @@ function openPasswordModal(id = null) {
         <div class="form-group">
             <label class="form-label">Password</label>
             <div style="display:flex;gap:6px">
-                <input class="form-input" id="pw-password" type="text" value="${escapeHtml(p?.password || '')}" style="font-family:monospace">
+                <input class="form-input" id="pw-password" type="password" autocomplete="new-password" value="${escapeHtml(p?.password || '')}" style="font-family:monospace">
                 <button type="button" class="btn btn-sm" id="pw-generate">🎲 Generate</button>
             </div>
         </div>

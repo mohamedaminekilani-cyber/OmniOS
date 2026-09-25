@@ -5095,6 +5095,3805 @@ const QR_SRC='https://cdn.jsdelivr.net/npm/qrcanvas@3';
 const DEVICE_KEY='omnios_sync_device_v1';
 const PAIRS_KEY='omnios_sync_pairs_v1';
 const TURN_KEY='omnios_sync_turn_v1';
+const SYNC_SCOPE_KEY='omnios_sync_scope_v2';
+const SYNC_LIFE_META_KEY='omnios_sync_life_meta_v2';
+const SYNC_PAGE_SPECS=[
+  {id:'tasks',label:'Tasks',icon:'✓',keys:['entries']},
+  {id:'planner',label:'Planner',icon:'▦',keys:[],lifeKeys:['inbox','timeBlocks','reviews','annualPlans','todayPins']},
+  {id:'projects',label:'Projects',icon:'◫',keys:['projects','lifeAreas'],lifeKeys:['projects','areas']},
+  {id:'calendar',label:'Calendar',icon:'□',keys:['calendarEvents']},
+  {id:'habits',label:'Habits',icon:'⚡',keys:['habits']},
+  {id:'routine',label:'Routine',icon:'↻',keys:['routines','planCompleted']},
+  {id:'focus',label:'Focus',icon:'◉',keys:['focusTime','focusSessions','focusDaily','focusGuard']},
+  {id:'notes',label:'Notes',icon:'✎',keys:['notes']},
+  {id:'nutrition',label:'Nutrition',icon:'🥗',keys:['dietCategories','dietDayNotes','dietFoods','dietHydration','dietLog','dietMeals','dietPlan','dietPrep']},
+  {id:'grocery',label:'Grocery & Pantry',icon:'🛒',keys:['groceryCategories','groceryLists','pantry']},
+  {id:'finance',label:'Finance',icon:'
+const DATA_OPEN_TIMEOUT=6500;
+let peer=null,peerReady=null,pendingSession=null,syncModal=null,sendTimer=null,warmPromise=null,lastJoinPayload=null;
+const live=new Map();
+
+const clone=v=>{try{return JSON.parse(JSON.stringify(v))}catch(_){return null}};
+const iso=()=>new Date().toISOString();
+const when=v=>{const n=Date.parse(String(v||''));return Number.isFinite(n)?n:0};
+const randHex=(bytes=18)=>{const a=new Uint8Array(bytes);crypto.getRandomValues(a);return [...a].map(x=>x.toString(16).padStart(2,'0')).join('')};
+const b64urlEncode=text=>btoa(unescape(encodeURIComponent(text))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const b64urlDecode=text=>decodeURIComponent(escape(atob(String(text).replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(String(text).length/4)*4,'='))));
+
+function preconnectSyncOrigins(){
+  ['https://unpkg.com','https://cdn.jsdelivr.net','https://0.peerjs.com'].forEach(href=>{
+    if(document.head.querySelector('link[data-omni-sync-preconnect="'+href+'"]'))return;
+    const l=document.createElement('link');l.rel='preconnect';l.href=href;l.crossOrigin='anonymous';l.dataset.omniSyncPreconnect=href;document.head.appendChild(l)
+  })
+}
+function configuredTurnServers(){
+  try{
+    const parsed=JSON.parse(localStorage.getItem(TURN_KEY)||'null');
+    const list=Array.isArray(parsed)?parsed:Array.isArray(parsed?.iceServers)?parsed.iceServers:[];
+    return list.filter(x=>x&&x.urls&&(x.username||String(Array.isArray(x.urls)?x.urls[0]:x.urls).startsWith('stun:')))
+  }catch(_){return[]}
+}
+function rtcConfig(){
+  return {
+    iceServers:[
+      {urls:['stun:stun.cloudflare.com:3478']},
+      {urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']},
+      ...configuredTurnServers()
+    ],
+    iceCandidatePoolSize:8,
+    bundlePolicy:'max-bundle',
+    rtcpMuxPolicy:'require',
+    sdpSemantics:'unified-plan'
+  }
+}
+function stablePeerId(){return 'omnios-'+device().id}
+
+
+function loadScript(id,src,ready){
+  if(ready())return Promise.resolve();
+  return new Promise((resolve,reject)=>{
+    let s=document.getElementById(id);
+    if(s){
+      if(ready())return resolve();
+      s.addEventListener('load',()=>ready()?resolve():reject(new Error('Library did not initialize')),{once:true});
+      s.addEventListener('error',()=>reject(new Error('Could not load sync library')),{once:true});
+      return;
+    }
+    s=document.createElement('script');s.id=id;s.src=src;s.async=true;s.crossOrigin='anonymous';
+    s.onload=()=>ready()?resolve():reject(new Error('Library did not initialize'));
+    s.onerror=()=>reject(new Error('Could not load sync library'));
+    document.head.appendChild(s);
+  })
+}
+async function loadPeer(){await loadScript('omni-peerjs-v72',PEER_SRC,()=>typeof window.Peer==='function')}
+async function loadQR(){await loadScript('omni-qrcanvas-v72',QR_SRC,()=>!!window.qrcanvas?.qrcanvas)}
+
+function device(){
+  let d=null;try{d=JSON.parse(localStorage.getItem(DEVICE_KEY)||'null')}catch(_){}
+  if(!d?.id){
+    const id=randHex(16);
+    d={id,name:/iPhone|iPad|Android|Mobile/i.test(navigator.userAgent)?'Mobile device':'Computer',createdAt:iso()};
+    try{localStorage.setItem(DEVICE_KEY,JSON.stringify(d))}catch(_){}
+  }
+  return d
+}
+function pairs(){try{const x=JSON.parse(localStorage.getItem(PAIRS_KEY)||'[]');return Array.isArray(x)?x:[]}catch(_){return[]}}
+function savePair(peerId,secret,remoteDevice){
+  if(!peerId||!secret)return;
+  const list=pairs(),i=list.findIndex(x=>x.peerId===peerId);
+  const row={peerId,secret,deviceId:remoteDevice?.id||'',name:remoteDevice?.name||'Paired device',pairedAt:i>=0?list[i].pairedAt:iso(),lastSeenAt:iso()};
+  if(i>=0)list[i]={...list[i],...row};else list.push(row);
+  try{localStorage.setItem(PAIRS_KEY,JSON.stringify(list.slice(-8)))}catch(_){}
+}
+function knownSecret(peerId){return pairs().find(x=>x.peerId===peerId)?.secret||''}
+
+function recovery(){return window.OmniRecovery35||null}
+function ensureReadyForMerge(){
+  const r=recovery();if(!r)throw new Error('Recovery layer is not ready yet');
+  r.ensureSyncMeta?.();return r
+}
+
+function defaultSyncScope(){const out={};SYNC_PAGE_SPECS.forEach(p=>out[p.id]=true);return out}
+function normalizeSyncScope(value){
+  const out=defaultSyncScope();
+  if(value&&typeof value==='object')SYNC_PAGE_SPECS.forEach(p=>{if(Object.prototype.hasOwnProperty.call(value,p.id))out[p.id]=value[p.id]!==false});
+  return out
+}
+function syncScope(){
+  try{return normalizeSyncScope(JSON.parse(localStorage.getItem(SYNC_SCOPE_KEY)||'null'))}catch(_){return defaultSyncScope()}
+}
+function saveSyncScope(value){
+  const next=normalizeSyncScope(value);
+  try{localStorage.setItem(SYNC_SCOPE_KEY,JSON.stringify(next))}catch(_){}
+  return next
+}
+function syncPageForStateKey(key){
+  for(const p of SYNC_PAGE_SPECS)if((p.keys||[]).includes(key))return p.id;
+  return 'settings'
+}
+function syncPageForLifeKey(key){
+  for(const p of SYNC_PAGE_SPECS)if((p.lifeKeys||[]).includes(key))return p.id;
+  return 'life'
+}
+function syncPageForAuxKey(key){
+  const k=String(key||'').toLowerCase();
+  if(/bible|scripture|verse|meditat|atlas/.test(k))return 'bible';
+  if(/diet|nutrition|food|meal|pantry/.test(k))return 'nutrition';
+  if(/workout|exercise|gym|weight/.test(k))return 'workout';
+  if(/calendar|planner/.test(k))return 'calendar';
+  if(/routine/.test(k))return 'routine';
+  if(/habit/.test(k))return 'habits';
+  if(/note/.test(k))return 'notes';
+  if(/budget|finance|wallet|bill|payment/.test(k))return 'finance';
+  if(/password/.test(k))return 'passwords';
+  if(/icon|cover|brand|pwa|personal|theme|appearance|welcome/.test(k))return 'settings';
+  return 'settings'
+}
+function scopeAllowsPage(page,localScope,remoteScope){
+  return (localScope?.[page]!==false)&&(remoteScope?.[page]!==false)
+}
+function syncStateSubset(source,scope){
+  const out={};
+  if(source?.core)out.core={syncMeta:clone(source.core.syncMeta||{})};
+  Object.keys(source||{}).forEach(k=>{
+    if(k==='core'||String(k).startsWith('__')||typeof source[k]==='function')return;
+    if(k==='life'){
+      const lifeOut={};
+      Object.keys(source.life||{}).forEach(sk=>{if(scope[syncPageForLifeKey(sk)]!==false)lifeOut[sk]=clone(source.life[sk])});
+      if(Object.keys(lifeOut).length)out.life=lifeOut;
+      return
+    }
+    if(scope[syncPageForStateKey(k)]!==false)out[k]=clone(source[k])
+  });
+  return out
+}
+function filterSyncMap(map,scope){
+  const out={};
+  Object.entries(map||{}).forEach(([k,v])=>{if(k==='life'||scope[syncPageForStateKey(k)]!==false)out[k]=clone(v)});
+  return out
+}
+function filterSyncAux(aux,scope){
+  const out={};Object.entries(aux||{}).forEach(([k,v])=>{if(scope[syncPageForAuxKey(k)]!==false)out[k]=v});return out
+}
+function lifeValueFingerprint(v){try{return JSON.stringify(v)}catch(_){return String(v)}}
+function readLifeSyncMeta(){
+  try{const x=JSON.parse(localStorage.getItem(SYNC_LIFE_META_KEY)||'{}');return x&&typeof x==='object'?x:{}}catch(_){return{}}
+}
+function writeLifeSyncMeta(meta){try{localStorage.setItem(SYNC_LIFE_META_KEY,JSON.stringify(meta||{}))}catch(_){}}
+function refreshLifeSyncMeta(life=state.life||{}){
+  const meta=readLifeSyncMeta(),now=iso();
+  Object.keys(life||{}).forEach(k=>{
+    const fp=lifeValueFingerprint(life[k]),old=meta[k];
+    if(!old||old.fp!==fp)meta[k]={at:old?.fp===undefined?(state.core?.syncMeta?.modules?.life||now):now,fp}
+  });
+  Object.keys(meta).forEach(k=>{if(!Object.prototype.hasOwnProperty.call(life,k))delete meta[k]});
+  writeLifeSyncMeta(meta);return meta
+}
+function filteredLifeTimes(scope){
+  const meta=refreshLifeSyncMeta(),out={};
+  Object.entries(meta).forEach(([k,v])=>{if(scope[syncPageForLifeKey(k)]!==false)out[k]=v.at||''});
+  return out
+}
+function buildBundle(){
+  const r=ensureReadyForMerge(),scope=syncScope(),auxAll=r.captureAux?.()||{},meta=state.core?.syncMeta||{};
+  const stateOut=syncStateSubset(state,scope),aux=filterSyncAux(auxAll,scope);
+  const moduleTimes=filterSyncMap(meta.modules||{},scope),recordTimes=filterSyncMap(meta.records||{},scope);
+  const auxMetaAll=r.readAuxMeta?.()||{},auxMeta={};
+  Object.entries(auxMetaAll).forEach(([k,v])=>{if(scope[syncPageForAuxKey(k)]!==false)auxMeta[k]=clone(v)});
+  return {
+    protocol:PROTOCOL,generatedAt:iso(),device:device(),syncPages:scope,state:stateOut,
+    moduleTimes,recordTimes,lifeTimes:filteredLifeTimes(scope),aux,auxMeta,
+    fingerprint:r.fingerprint?.(stateOut,aux)||''
+  }
+}
+function chooseRemote(lt,rt,localId,remoteId){
+  if(rt>lt)return true;if(rt<lt)return false;
+  return String(remoteId||'')>String(localId||'')
+}
+function same(a,b){try{return JSON.stringify(a)===JSON.stringify(b)}catch(_){return false}}
+function hasOwn(o,k){return !!o&&Object.prototype.hasOwnProperty.call(o,k)}
+function recordArrayEligible(list,r){return Array.isArray(list)&&list.every(x=>!!r.recordId?.(x))}
+function mergeRecordArray(key,localList,remoteList,localRec,remoteRec,localModuleAt,remoteModuleAt,localId,remoteId,generatedAt,r){
+  const lmap=new Map(localList.map(x=>[r.recordId(x),x])),rmap=new Map(remoteList.map(x=>[r.recordId(x),x]));
+  const ids=new Set([...lmap.keys(),...rmap.keys(),...Object.keys(localRec||{}),...Object.keys(remoteRec||{})]),values=new Map(),meta={};
+  ids.forEach(id=>{
+    const lHas=lmap.has(id),rHas=rmap.has(id);
+    const lm=(localRec||{})[id]||(lHas?{at:localModuleAt,deleted:false}:null);
+    const rm=(remoteRec||{})[id]||(rHas?{at:remoteModuleAt||generatedAt,deleted:false}:null);
+    const lKnown=!!lm||lHas,rKnown=!!rm||rHas;
+    let takeRemote=false;
+    if(rKnown&&!lKnown)takeRemote=true;
+    else if(rKnown&&lKnown)takeRemote=chooseRemote(when(lm?.at),when(rm?.at),localId,remoteId);
+    const chosen=takeRemote?rm:lm;
+    if(chosen)meta[id]={at:chosen.at||(takeRemote?(remoteModuleAt||generatedAt):localModuleAt)||generatedAt,deleted:!!chosen.deleted};
+    if(chosen?.deleted)return;
+    const value=takeRemote?rmap.get(id):lmap.get(id);
+    if(value!==undefined)values.set(id,clone(value))
+  });
+  const remoteOrder=chooseRemote(when(localModuleAt),when(remoteModuleAt),localId,remoteId);
+  const order=(remoteOrder?[...rmap.keys(),...lmap.keys()]:[...lmap.keys(),...rmap.keys()]),seen=new Set(),list=[];
+  order.forEach(id=>{if(!seen.has(id)&&values.has(id)){seen.add(id);list.push(values.get(id))}});
+  values.forEach((value,id)=>{if(!seen.has(id))list.push(value)});
+  return {list,meta}
+}
+
+async function mergeBundle(remote){
+  if(!remote||remote.protocol!==PROTOCOL||!remote.state)return {changed:false,modules:[],aux:[],pages:[]};
+  const r=ensureReadyForMerge(),localId=device().id,remoteId=remote.device?.id||'',localScope=syncScope(),remoteScope=normalizeSyncScope(remote.syncPages);
+  const localMeta=r.ensureSyncMeta?.()||{modules:{},records:{}},localTimes={...(localMeta.modules||{})},remoteTimes={...(remote.moduleTimes||remote.state?.core?.syncMeta?.modules||{})};
+  const localRecords=localMeta.records||{},remoteRecords=remote.recordTimes||remote.state?.core?.syncMeta?.records||{},mergedRecords=clone(localRecords)||{};
+  const keys=new Set([...(r.stateKeys?.(state)||[]),...(r.stateKeys?.(remote.state)||[])]),stateChanges=[],mergedTimes={...localTimes},changedPages=new Set();
+
+  for(const k of keys){
+    if(k==='life'){
+      if(!hasOwn(remote.state,'life'))continue;
+      const lv=state.life&&typeof state.life==='object'?state.life:{},rv=remote.state.life&&typeof remote.state.life==='object'?remote.state.life:{};
+      const localLifeMeta=refreshLifeSyncMeta(lv),remoteLifeTimes=remote.lifeTimes||{},next=clone(lv)||{};let changed=false;
+      for(const sk of Object.keys(rv)){
+        const page=syncPageForLifeKey(sk);
+        if(!scopeAllowsPage(page,localScope,remoteScope))continue;
+        const lt=when(localLifeMeta[sk]?.at||localTimes.life),rt=when(remoteLifeTimes[sk]||remoteTimes.life||remote.generatedAt);
+        if((!hasOwn(lv,sk)||chooseRemote(lt,rt,localId,remoteId))&&!same(lv[sk],rv[sk])){
+          next[sk]=clone(rv[sk]);changed=true;changedPages.add(page);
+          localLifeMeta[sk]={at:remoteLifeTimes[sk]||remoteTimes.life||remote.generatedAt,fp:lifeValueFingerprint(rv[sk])}
+        }
+      }
+      if(changed){stateChanges.push(['life',next]);writeLifeSyncMeta(localLifeMeta)}
+      if(scopeAllowsPage('planner',localScope,remoteScope)||scopeAllowsPage('projects',localScope,remoteScope)||scopeAllowsPage('life',localScope,remoteScope)){
+        const lt=when(localTimes.life),rt=when(remoteTimes.life);
+        mergedTimes.life=(rt>lt||(rt===lt&&String(remoteId)>String(localId)))?(remoteTimes.life||localTimes.life||remote.generatedAt):(localTimes.life||remoteTimes.life||remote.generatedAt)
+      }
+      continue
+    }
+
+    const page=syncPageForStateKey(k);
+    if(!scopeAllowsPage(page,localScope,remoteScope))continue;
+    const localHas=hasOwn(state,k),remoteHas=hasOwn(remote.state,k),lt=when(localTimes[k]),rt=when(remoteTimes[k]);
+    if(remoteHas){
+      const lv=state[k],rv=remote.state[k],recordMerge=Array.isArray(lv)&&Array.isArray(rv)&&recordArrayEligible(lv,r)&&recordArrayEligible(rv,r)&&(localRecords[k]||remoteRecords[k]);
+      if(recordMerge){
+        const merged=mergeRecordArray(k,lv,rv,localRecords[k]||{},remoteRecords[k]||{},localTimes[k]||'',remoteTimes[k]||'',localId,remoteId,remote.generatedAt,r);
+        mergedRecords[k]=merged.meta;
+        if(!same(lv,merged.list)){stateChanges.push([k,merged.list]);changedPages.add(page)}
+      }else if((!localHas||chooseRemote(lt,rt,localId,remoteId))&&!same(lv,rv)){
+        stateChanges.push([k,clone(rv)]);changedPages.add(page)
+      }
+    }
+    if(remoteHas&&(rt>lt||(rt===lt&&String(remoteId)>String(localId))) )mergedTimes[k]=remoteTimes[k]||localTimes[k]||remote.generatedAt;
+    else mergedTimes[k]=localTimes[k]||remoteTimes[k]||remote.generatedAt;
+  }
+
+  const localAux=r.captureAux?.()||{},localAuxMeta=r.readAuxMeta?.()||{},remoteAux=remote.aux||{},remoteAuxMeta=remote.auxMeta||{};
+  const auxKeys=new Set([...Object.keys(localAux),...Object.keys(remoteAux),...Object.keys(localAuxMeta),...Object.keys(remoteAuxMeta)]),auxChanges=[],mergedAuxMeta={...localAuxMeta};
+  for(const k of auxKeys){
+    const page=syncPageForAuxKey(k);
+    if(!scopeAllowsPage(page,localScope,remoteScope))continue;
+    const localHas=hasOwn(localAux,k),remoteHas=hasOwn(remoteAux,k),remoteKnows=remoteHas||hasOwn(remoteAuxMeta,k);
+    if(!remoteKnows)continue;
+    const lm=localAuxMeta[k]||{},rm=remoteAuxMeta[k]||{};
+    const lt=when(lm.at),rt=when(rm.at||(remoteHas?remote.generatedAt:'')),take=chooseRemote(lt,rt,localId,remoteId);
+    if(take){
+      const deleted=!!rm.deleted,next=deleted?null:remoteAux[k],current=localHas?localAux[k]:null;
+      if(deleted?localHas:current!==next){auxChanges.push([k,next,deleted]);changedPages.add(page)}
+      mergedAuxMeta[k]={at:rm.at||remote.generatedAt,deleted}
+    }
+  }
+
+  if(!stateChanges.length&&!auxChanges.length)return {changed:false,modules:[],aux:[],pages:[]};
+  await r.makeSnapshot?.('Before selective device sync',{kind:'manual'});
+  window.__omniSyncApplying=true;
+  try{
+    for(const [k,v] of stateChanges)state[k]=v;
+    state.core=state.core&&typeof state.core==='object'?state.core:{};
+    state.core.syncMeta=state.core.syncMeta&&typeof state.core.syncMeta==='object'?state.core.syncMeta:{};
+    state.core.syncMeta.modules=mergedTimes;
+    state.core.syncMeta.records=mergedRecords;
+    state.core.syncMeta.updatedAt=[state.core.syncMeta.updatedAt,remote.generatedAt,iso()].filter(Boolean).sort().pop();
+    for(const [k,v,deleted] of auxChanges){
+      try{if(deleted)localStorage.removeItem(k);else localStorage.setItem(k,String(v??''))}catch(_){}
+    }
+    r.writeAuxMeta?.(mergedAuxMeta);
+    if(typeof normalizeState==='function')normalizeState();
+    if(typeof window.saveState==='function')window.saveState();
+    try{window.renderAll?.()}catch(_){}
+  }finally{window.__omniSyncApplying=false}
+  return {changed:true,modules:stateChanges.map(x=>x[0]),aux:auxChanges.map(x=>x[0]),pages:[...changedPages]}
+}
+
+function setStatus(text,tone='',detail=''){
+  document.querySelectorAll('[data-sync-status]').forEach(el=>{el.textContent=text;el.dataset.tone=tone});
+  if(detail)document.querySelectorAll('[data-sync-detail]').forEach(el=>el.textContent=detail)
+}
+function setStage(stage,text,detail='',tone='busy'){
+  const order=['finding','connecting','syncing','live'],idx=Math.max(0,order.indexOf(stage));
+  document.querySelectorAll('[data-sync-stage]').forEach(el=>{
+    const i=order.indexOf(el.dataset.syncStage);
+    el.classList.toggle('is-done',i>=0&&i<idx);
+    el.classList.toggle('is-active',i===idx)
+  });
+  setStatus(text,tone,detail)
+}
+function setLiveUI(){
+  const b=document.getElementById('omni-sync-btn'),n=[...live.values()].filter(x=>x.auth&&x.conn?.open).length;
+  if(b){b.classList.toggle('is-live',n>0);b.title=n?('Sync · '+n+' device'+(n===1?'':'s')+' connected'):'Sync devices'}
+}
+function closeSyncModal(){syncModal?.remove();syncModal=null}
+function modalShell(mode='host'){
+  closeSyncModal();const ov=document.createElement('div');ov.className='omni-sync-overlay';ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true" aria-labelledby="omni-sync-title"><header class="omni-sync-head"><div><div class="omni-sync-kicker">DEVICE SYNC</div><h3 id="omni-sync-title">'+(mode==='join'?'Connecting devices':'Sync OmniOS')+'</h3><p>'+(mode==='join'?'Keep this screen open while OmniOS connects and reconciles the newest data.':'Scan once with the second device. Both devices compare timestamps and keep the newest data.')+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-sync-status>'+(mode==='join'?'Finding the other device…':'Preparing secure session…')+'</strong><span data-sync-detail>Automatic recovery snapshot is created before incoming data is applied.</span></div></div><div class="omni-sync-stages" aria-label="Sync progress"><div class="omni-sync-stage is-active" data-sync-stage="finding">Finding</div><div class="omni-sync-stage" data-sync-stage="connecting">Connecting</div><div class="omni-sync-stage" data-sync-stage="syncing">Syncing</div><div class="omni-sync-stage" data-sync-stage="live">Live</div></div><div class="omni-sync-content"></div></div></section>';
+  document.body.appendChild(ov);syncModal=ov;ov.querySelector('.omni-sync-close').onclick=closeSyncModal;ov.onclick=e=>{if(e.target===ov)closeSyncModal()};return ov
+}
+function qrView(url){
+  const host=syncModal?.querySelector('.omni-sync-content');if(!host)return;
+  host.innerHTML='<div class="omni-sync-qr-wrap"><div class="omni-sync-qr" id="omni-sync-qr"></div><div class="omni-sync-instructions"><strong>Scan this QR code on the other device</strong><span>It opens OmniOS and starts a direct sync session. Keep both devices online and this page open.</span><div class="omni-sync-actions"><button type="button" class="btn btn-primary" data-sync-copy>Copy sync link</button><button type="button" class="btn" data-sync-new>New code</button></div></div></div><div class="omni-sync-security">One-time pairing secret · data travels over an encrypted WebRTC connection · the QR does not contain your OmniOS data.</div>';
+  const box=host.querySelector('#omni-sync-qr');box.innerHTML='';
+  try{const canvas=window.qrcanvas.qrcanvas({data:url,size:260,correctLevel:'M'});box.appendChild(canvas)}catch(e){box.textContent='QR could not be generated';console.warn(e)}
+  host.querySelector('[data-sync-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(url);setStatus('Sync link copied','ok')}catch(_){setStatus('Could not copy link','error')}};
+  host.querySelector('[data-sync-new]').onclick=()=>startHost(true)
+}
+function joinView(){const host=syncModal?.querySelector('.omni-sync-content');if(host)host.innerHTML='<div class="omni-sync-joining"><div class="omni-sync-spinner"></div><strong>Finding the other device…</strong><span>The newest data on each device will be kept.</span></div>'}
+
+function handlePeerIncoming(conn){
+  if(conn?.metadata?.omniLocalAnswer){
+    conn.on('data',msg=>{
+      if(msg?.type!=='local-answer'||!msg.payload)return;
+      document.dispatchEvent(new CustomEvent('omnios:local-answer-signal',{detail:{payload:msg.payload,conn}}));
+      try{conn.send({type:'local-answer-ack',sid:msg.payload.sid||''})}catch(_){}
+    });
+    return
+  }
+  bindConnection(conn,{incoming:true})
+}
+
+async function ensurePeer(){
+  await loadPeer();
+  if(peer&&!peer.destroyed&&peer.open)return peer;
+  if(peerReady)return peerReady;
+  peerReady=new Promise((resolve,reject)=>{
+    const options={debug:0,host:'0.peerjs.com',port:443,secure:true,path:'/',pingInterval:4000,config:rtcConfig()};
+    let p=new window.Peer(stablePeerId(),options);peer=p;
+    let done=false;
+    let timeout=setTimeout(()=>{if(done)return;done=true;try{p.destroy()}catch(_){};peer=null;reject(new Error('Sync broker timed out'))},PEER_OPEN_TIMEOUT);
+    const wire=current=>{
+      current.on('open',()=>{if(done)return;done=true;clearTimeout(timeout);resolve(current)});
+      current.on('connection',conn=>handlePeerIncoming(conn));
+      current.on('error',err=>{
+        console.warn('OmniOS sync peer',err);
+        if(err?.type==='unavailable-id'&&!done&&current===p){
+          try{current.destroy()}catch(_){}
+          p=new window.Peer(undefined,options);peer=p;wire(p);return
+        }
+        if(!done&&['network','server-error','socket-error','socket-closed'].includes(err?.type)){
+          done=true;clearTimeout(timeout);try{current.destroy()}catch(_){};peer=null;reject(err);return
+        }
+        if(done)setStatus(err?.type==='peer-unavailable'?'Other device is not online yet.':'Sync connection error.','error')
+      });
+      current.on('disconnected',()=>{try{current.reconnect()}catch(_){}});
+    };
+    wire(p)
+  }).finally(()=>{peerReady=null});
+  return peerReady
+}
+async function warmSyncTransport(){
+  if(warmPromise)return warmPromise;
+  preconnectSyncOrigins();
+  warmPromise=Promise.allSettled([loadQR(),ensurePeer()]).then(()=>peer).catch(()=>null);
+  return warmPromise
+}
+
+function validIncomingSecret(conn,secret){
+  if(pendingSession&&pendingSession.secret===secret&&Date.now()-pendingSession.createdAt<5*60*1000)return true;
+  return knownSecret(conn.peer)===secret
+}
+function sendBundle(conn,reason='live',force=false){
+  if(!conn?.open||!conn.__omniAuth)return;
+  const bundle=buildBundle();
+  if(!force&&bundle.fingerprint&&bundle.fingerprint===conn.__omniLastSent)return;
+  conn.__omniLastSent=bundle.fingerprint||'';
+  conn.send({type:'bundle',protocol:PROTOCOL,reason,bundle})
+}
+function scheduleLiveSend(){
+  if(window.__omniSyncApplying)return;clearTimeout(sendTimer);sendTimer=setTimeout(()=>{for(const x of live.values())if(x.auth&&x.conn?.open)sendBundle(x.conn,'live')},550)
+}
+async function handleMessage(conn,msg,expectedSecret){
+  if(!msg||msg.protocol!==PROTOCOL)return;
+  if(msg.type==='hello'){
+    const pendingMatch=!!(pendingSession&&pendingSession.secret===msg.secret&&Date.now()-pendingSession.createdAt<5*60*1000);
+    if(!validIncomingSecret(conn,msg.secret)){try{conn.send({type:'error',protocol:PROTOCOL,message:'Pairing code expired or invalid'})}catch(_){};conn.close();return}
+    if(pendingMatch)pendingSession=null;
+    conn.__omniAuth=true;conn.__omniRemoteDevice=msg.device||{};savePair(conn.peer,msg.secret,msg.device);live.set(conn.peer,{conn,auth:true});setLiveUI();
+    conn.send({type:'hello-ack',protocol:PROTOCOL,device:device()});sendBundle(conn,'initial',true);setStage('syncing','Device connected','Comparing timestamps and applying the newest records…','busy');return
+  }
+  if(msg.type==='hello-ack'){
+    if(!expectedSecret)return;conn.__omniAuth=true;conn.__omniRemoteDevice=msg.device||{};savePair(conn.peer,expectedSecret,msg.device);live.set(conn.peer,{conn,auth:true});setLiveUI();sendBundle(conn,'initial',true);setStage('syncing','Device connected','Comparing timestamps and applying the newest records…','busy');return
+  }
+  if(msg.type==='bundle'&&conn.__omniAuth){
+    if(msg.bundle?.fingerprint&&msg.bundle.fingerprint===conn.__omniLastRecv)return;
+    conn.__omniLastRecv=msg.bundle?.fingerprint||'';
+    try{
+      const result=await mergeBundle(msg.bundle);
+      if(result.changed){sendBundle(conn,'merged',true);setStage('live','Synced · newest data kept',result.modules.length?(result.modules.length+' module'+(result.modules.length===1?'':'s')+' updated'):'Auxiliary data updated','ok')}
+      else setStage('live','Synced · both devices already match','Live changes will continue to transfer.','ok');
+      try{conn.send({type:'ack',protocol:PROTOCOL,at:iso()})}catch(_){}
+    }catch(e){console.error('OmniOS sync merge',e);setStatus('Could not apply synced data. Your pre-sync snapshot is still available.','error')}
+    return
+  }
+  if(msg.type==='ack'&&conn.__omniAuth){const route=await connectionRoute(conn);setStage('live','Live sync active',route==='relay'?'Relay connection · newest changes will continue to transfer':'Direct connection · newest changes will continue to transfer','ok');return}
+  if(msg.type==='error'){setStatus(msg.message||'Sync error','error')}
+}
+async function connectionRoute(conn){
+  try{
+    const pc=conn?.peerConnection;if(!pc?.getStats)return 'direct';
+    const stats=await pc.getStats(),byId=new Map();stats.forEach(x=>byId.set(x.id,x));
+    let pair=null;
+    stats.forEach(x=>{if(x.type==='transport'&&x.selectedCandidatePairId)pair=byId.get(x.selectedCandidatePairId);if(!pair&&x.type==='candidate-pair'&&x.state==='succeeded'&&x.nominated)pair=x});
+    if(!pair)return 'direct';
+    const local=byId.get(pair.localCandidateId),remote=byId.get(pair.remoteCandidateId);
+    return local?.candidateType==='relay'||remote?.candidateType==='relay'?'relay':'direct'
+  }catch(_){return 'direct'}
+}
+function connectionFailedView(message){
+  const host=syncModal?.querySelector('.omni-sync-content');if(!host)return;
+  host.innerHTML='<div class="omni-sync-joining"><strong>Could not reach the other device</strong><span>'+String(message||'Generate a fresh code and try again.')+'</span><div class="omni-sync-retry"><button type="button" class="btn btn-primary" data-sync-retry-now>Try again</button><button type="button" class="btn" data-sync-new-code>New QR code</button></div></div>';
+  host.querySelector('[data-sync-retry-now]')?.addEventListener('click',()=>{if(lastJoinPayload)joinSession(lastJoinPayload);else startHost(true)});
+  host.querySelector('[data-sync-new-code]')?.addEventListener('click',()=>{modalShell('host');startHost(true)})
+}
+function bindConnection(conn,opts={}){
+  if(!conn)return;
+  const expectedSecret=opts.secret||'',quiet=!!opts.quiet;
+  let opened=false;
+  const watchdog=setTimeout(()=>{
+    if(opened||conn.open)return;
+    try{conn.close()}catch(_){}
+    if(!quiet){
+      setStage('connecting','Connection is taking too long.','Direct path did not open quickly enough. Try again or use a configured TURN relay.','error');
+      connectionFailedView('The direct connection did not open in time.')
+    }
+  },DATA_OPEN_TIMEOUT);
+  conn.on('open',async()=>{
+    opened=true;clearTimeout(watchdog);live.set(conn.peer,{conn,auth:false});setLiveUI();
+    if(!quiet)setStage('connecting','Secure channel opened','Authenticating the paired device…','busy');
+    if(expectedSecret)conn.send({type:'hello',protocol:PROTOCOL,secret:expectedSecret,device:device()});
+    setTimeout(async()=>{if(conn.open&&conn.__omniAuth&&!quiet){const route=await connectionRoute(conn);setStage('live','Live sync active',route==='relay'?'Connected through relay':'Direct encrypted connection','ok')}},900)
+  });
+  conn.on('data',msg=>handleMessage(conn,msg,expectedSecret));
+  conn.on('close',()=>{clearTimeout(watchdog);live.delete(conn.peer);setLiveUI();if(![...live.values()].some(x=>x.auth&&x.conn?.open)&&!quiet)setStatus('Sync connection closed','')});
+  conn.on('error',err=>{clearTimeout(watchdog);console.warn('OmniOS sync data channel',err);if(!quiet){setStage('connecting','Device connection error','Try again with both devices online.','error');connectionFailedView('The device connection failed.')}})
+}
+
+function sessionUrl(peerId,secret){
+  const payload=b64urlEncode(JSON.stringify({v:PROTOCOL,p:peerId,s:secret}));
+  const u=new URL(location.href);u.hash='omni-sync='+payload;return u.toString()
+}
+async function startHost(refresh=false){
+  lastJoinPayload=null;
+  const ov=syncModal||modalShell('host');
+  try{
+    setStage('finding','Preparing secure session','Using the already-warmed sync transport when available.','busy');
+    await warmSyncTransport();
+    if(!peer?.open)await ensurePeer();
+    await loadQR();
+    const secret=randHex(24);pendingSession={secret,createdAt:Date.now(),peerId:peer.id};
+    qrView(sessionUrl(peer.id,secret));setStage('finding','Ready · scan the QR code','Waiting for the second device…','')
+  }catch(e){console.error(e);setStatus('Sync could not start. Check the internet connection and try again.','error');const host=ov.querySelector('.omni-sync-content');if(host)host.innerHTML='<button type="button" class="btn btn-primary" data-sync-retry>Try again</button>';host?.querySelector('[data-sync-retry]')?.addEventListener('click',()=>startHost(true))}
+}
+async function joinSession(payload){
+  lastJoinPayload=payload;
+  modalShell('join');joinView();
+  try{
+    setStage('finding','Finding the other device','Contacting the sync broker…','busy');
+    const p=await ensurePeer();
+    setStage('connecting','Connecting securely',configuredTurnServers().length?'Trying direct and relay routes in parallel…':'Trying the fastest direct route first…','busy');
+    const conn=p.connect(payload.p,{reliable:true});bindConnection(conn,{secret:payload.s})
+  }catch(e){console.error(e);setStage('connecting','Could not connect','Generate a new QR code and try again.','error');connectionFailedView('The other device could not be reached.')}
+}
+function parseIncoming(){
+  const raw=String(location.hash||'');const m=raw.match(/(?:^#|&)omni-sync=([^&]+)/);if(!m)return null;
+  try{const p=JSON.parse(b64urlDecode(m[1]));if(p?.v===PROTOCOL&&p.p&&p.s)return p}catch(_){}
+  return null
+}
+function clearIncomingHash(){
+  try{if(/^#omni-sync=/.test(location.hash))history.replaceState(history.state,'',location.pathname+location.search)}catch(_){}
+}
+async function reconnectKnownPairs(){
+  try{
+    const p=await ensurePeer(),list=pairs().filter(x=>x.peerId&&x.secret&&x.peerId!==p.id);
+    for(const item of list.slice(-4)){
+      if(live.has(item.peerId))continue;
+      try{const conn=p.connect(item.peerId,{reliable:true});bindConnection(conn,{secret:item.secret,quiet:true})}catch(_){}
+    }
+  }catch(_){}
+}
+
+function installButton(){
+  const actions=document.querySelector('.topbar-actions');if(!actions||document.getElementById('omni-sync-btn'))return false;
+  const b=document.createElement('button');b.type='button';b.id='omni-sync-btn';b.className='btn btn-sm omni-sync-btn';b.title='Sync devices';b.innerHTML='<span class="omni-sync-icon" aria-hidden="true">⇄</span><span class="omni-sync-label">Sync</span>';
+  b.onclick=()=>{modalShell('host');startHost()};
+  const anchor=document.getElementById('v55-notif-btn')||document.getElementById('settings-topbar-btn');actions.insertBefore(b,anchor||actions.firstChild);setLiveUI();return true
+}
+function init(){
+  device();preconnectSyncOrigins();
+  if(!installButton()){
+    const mo=new MutationObserver(()=>{if(installButton())mo.disconnect()});mo.observe(document.documentElement,{subtree:true,childList:true})
+  }
+  document.addEventListener('omnios:data-changed',scheduleLiveSend);
+  const incoming=parseIncoming();
+  if(incoming){clearIncomingHash();setTimeout(()=>joinSession(incoming),20)}
+  else{
+    const warmQr=()=>loadQR().catch(()=>{});
+    if('requestIdleCallback'in window)requestIdleCallback(warmQr,{timeout:900});else setTimeout(warmQr,180)
+  }
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+window.OmniDeviceSync={
+  open:()=>{modalShell('host');startHost()},
+  openInternet:()=>{modalShell('host');startHost()},
+  connections:()=>[...live.keys()],
+  bundle:buildBundle,
+  merge:remote=>mergeBundle(remote),
+  pageSpecs:()=>clone(SYNC_PAGE_SPECS),
+  selection:()=>syncScope(),
+  setSelection:value=>saveSyncScope(value),
+  loadQR:()=>loadQR(),
+  ensureSignalPeer:()=>ensurePeer(),
+  sendLocalAnswer:async(peerId,payload)=>{
+    const p=await ensurePeer();
+    return await new Promise((resolve,reject)=>{
+      const conn=p.connect(peerId,{reliable:true,metadata:{omniLocalAnswer:true,sid:payload?.sid||''}});
+      let done=false;
+      const finish=(ok,err)=>{if(done)return;done=true;clearTimeout(tm);if(ok)resolve({ok:true,conn,peerId:p.id});else{try{conn.close()}catch(_){};reject(err||new Error('Local answer signaling failed'))}};
+      const tm=setTimeout(()=>finish(false,new Error('Local answer signaling timed out')),4500);
+      conn.on('open',()=>{try{conn.send({type:'local-answer',payload})}catch(e){finish(false,e)}});
+      conn.on('data',msg=>{if(msg?.type==='local-answer-ack'&&msg.sid===payload?.sid)finish(true)});
+      conn.on('error',e=>finish(false,e));
+      conn.on('close',()=>{if(!done)finish(false,new Error('Local answer signaling closed'))})
+    })
+  },
+  configureTurn:iceServers=>{try{localStorage.setItem(TURN_KEY,JSON.stringify(Array.isArray(iceServers)?iceServers:[]));peer?.destroy?.();peer=null;warmPromise=null;return true}catch(_){return false}},
+  clearTurn:()=>{try{localStorage.removeItem(TURN_KEY);peer?.destroy?.();peer=null;warmPromise=null;return true}catch(_){return false}}
+};
+})();
+</script>
+
+
+<style id="omnios-local-wifi-sync-v73-css">
+/* OmniOS v73 — broker-free Local Wi-Fi sync */
+.omni-local-sync .omni-sync-modal{width:min(760px,100%)}
+.omni-local-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:10px 0 0}
+.omni-local-step{padding:5px 6px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);color:var(--text-muted);font-size:.49rem;font-weight:800;text-align:center}
+.omni-local-step.active{border-color:color-mix(in srgb,var(--accent-cyan) 50%,var(--border-color));color:var(--accent-cyan);background:color-mix(in srgb,var(--accent-cyan) 8%,var(--bg-base))}
+.omni-local-step.done{border-color:color-mix(in srgb,var(--accent-green,#10b981) 40%,var(--border-color));color:var(--accent-green,#10b981)}
+.omni-local-card{margin-top:12px;padding:12px;border:1px solid var(--border-color);border-radius:15px;background:var(--bg-base)}
+.omni-local-grid{display:grid;grid-template-columns:minmax(230px,290px) minmax(0,1fr);gap:16px;align-items:center}
+.omni-local-qr{display:grid;place-items:center;padding:9px;border-radius:13px;background:#fff;min-height:250px;overflow:hidden}
+.omni-local-qr canvas{display:block;width:min(100%,270px)!important;height:auto!important;image-rendering:pixelated}
+.omni-local-copy{display:grid;gap:8px;align-content:center;min-width:0}
+.omni-local-copy h4{margin:0;font-size:.9rem;letter-spacing:-.015em}
+.omni-local-copy p{margin:0;color:var(--text-muted);font-size:.64rem;line-height:1.55}
+.omni-local-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:3px}
+.omni-local-actions .btn{min-height:38px}
+.omni-local-badge{display:inline-flex;align-items:center;gap:5px;width:max-content;max-width:100%;padding:5px 8px;border:1px solid color-mix(in srgb,var(--accent-green,#10b981) 34%,var(--border-color));border-radius:999px;color:var(--accent-green,#10b981);font-size:.52rem;font-weight:820}
+.omni-local-note{margin-top:9px;color:var(--text-muted);font-size:.55rem;line-height:1.5}
+.omni-local-camera{display:grid;gap:8px;margin-top:10px;padding:9px;border:1px solid var(--border-color);border-radius:13px;background:var(--bg-surface)}
+.omni-local-camera-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.61rem;font-weight:800}
+.omni-local-camera video{display:block;width:100%;max-height:330px;object-fit:cover;border-radius:10px;background:#000}
+.omni-local-success{display:grid;place-items:center;gap:8px;min-height:250px;text-align:center;padding:18px}
+.omni-local-success .mark{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;background:color-mix(in srgb,var(--accent-green,#10b981) 12%,var(--bg-base));color:var(--accent-green,#10b981);font-size:1.4rem;font-weight:900}
+.omni-local-success strong{font-size:.9rem}.omni-local-success span{max-width:50ch;color:var(--text-muted);font-size:.62rem;line-height:1.5}
+.omni-local-progress{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:9px;margin-top:9px}
+.omni-local-progress-track{height:6px;overflow:hidden;border-radius:999px;background:var(--border-color)}
+.omni-local-progress-track span{display:block;width:0;height:100%;border-radius:inherit;background:var(--accent-cyan);transition:width .28s ease}
+.omni-local-progress>[data-local-progress-text]{min-width:82px;color:var(--text-muted);font-size:.49rem;font-weight:760;text-align:right}
+.omni-local-log{display:grid;gap:3px;margin-top:7px;max-height:82px;overflow:hidden}
+.omni-local-log>div{display:flex;gap:6px;align-items:center;color:var(--text-muted);font-size:.51rem;line-height:1.35}
+.omni-local-log>div span:first-child{width:13px;color:var(--text-muted);font-size:.48rem}.omni-local-log>div.current{color:var(--text-secondary)}.omni-local-log>div.current span:first-child{color:var(--accent-cyan)}
+.omni-pwa-scan-home{display:grid;gap:10px;margin-top:12px}
+.omni-pwa-scan-choice{display:grid;gap:8px;padding:13px;border:1px solid var(--border-color);border-radius:15px;background:var(--bg-base)}
+.omni-pwa-scan-choice.primary{border-color:color-mix(in srgb,var(--accent-cyan) 35%,var(--border-color));background:color-mix(in srgb,var(--accent-cyan) 5%,var(--bg-base))}
+.omni-pwa-scan-choice strong{font-size:.82rem}.omni-pwa-scan-choice p{margin:0;color:var(--text-muted);font-size:.61rem;line-height:1.5}
+.omni-pwa-scanner{position:relative;overflow:hidden;border:1px solid var(--border-color);border-radius:16px;background:#000;aspect-ratio:3/4;max-height:62dvh}
+.omni-pwa-scanner video{width:100%;height:100%;object-fit:cover;display:block}
+.omni-pwa-scan-frame{position:absolute;left:50%;top:50%;width:min(72%,280px);aspect-ratio:1;transform:translate(-50%,-50%);border:2px solid rgba(255,255,255,.9);border-radius:18px;box-shadow:0 0 0 999px rgba(0,0,0,.28),0 0 0 5px rgba(6,182,212,.14);pointer-events:none}
+.omni-pwa-scan-caption{position:absolute;left:12px;right:12px;bottom:12px;padding:7px 9px;border-radius:10px;background:rgba(0,0,0,.68);color:#fff;font-size:.57rem;text-align:center}
+.omni-safari-guard{display:grid;gap:10px;padding:14px;border:1px solid color-mix(in srgb,var(--accent-yellow,#f59e0b) 40%,var(--border-color));border-radius:15px;background:color-mix(in srgb,var(--accent-yellow,#f59e0b) 7%,var(--bg-base))}
+.omni-safari-guard strong{font-size:.82rem}.omni-safari-guard p{margin:0;color:var(--text-muted);font-size:.62rem;line-height:1.55}
+@media(max-width:760px){
+  .omni-local-grid{grid-template-columns:1fr;gap:10px}
+  .omni-local-card{padding:9px}
+  .omni-local-qr{min-height:0;padding:7px}.omni-local-qr canvas{width:min(72vw,250px)!important}
+  .omni-local-copy{text-align:center}.omni-local-badge{margin-inline:auto}.omni-local-actions{justify-content:center}.omni-local-actions .btn{flex:1 1 130px}
+  .omni-local-steps{gap:3px}.omni-local-step{padding:5px 3px;font-size:.45rem}
+}
+</style>
+
+<script id="omnios-local-wifi-sync-v73">
+(function(){
+'use strict';
+if(window.__omniLocalWifiSync73)return;
+window.__omniLocalWifiSync73=true;
+
+const PROTOCOL=1;
+const ANSWER_PREFIX='omnios_local_answer_';
+const CHANNEL_NAME='omnios-local-sync-v1';
+const JSQR_SRC='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+const RELAY_URL='https://omnios-pwa.netlify.app/api/sync/relay';
+let hostSession=null,joinSessionState=null,overlay=null,scannerStop=null,liveConn=null,sendTimer=null,bc=null;
+let relayState=null,relayKeyCache=new Map();
+let progressLog=[];
+
+const api=()=>window.OmniDeviceSync;
+const dev=()=>{try{return JSON.parse(localStorage.getItem('omnios_sync_device_v1')||'null')||{id:'unknown'}}catch(_){return{id:'unknown'}}};
+const randomHex=(n=16)=>{const a=new Uint8Array(n);crypto.getRandomValues(a);return [...a].map(x=>x.toString(16).padStart(2,'0')).join('')};
+const bytesToB64url=bytes=>{let s='';for(let i=0;i<bytes.length;i+=0x8000)s+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+const b64urlToBytes=text=>{const s=atob(String(text).replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(String(text).length/4)*4,'=')),a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return a};
+
+async function pack(obj){
+  const raw=new TextEncoder().encode(JSON.stringify(obj));
+  if('CompressionStream'in window){
+    try{
+      const stream=new Blob([raw]).stream().pipeThrough(new CompressionStream('gzip'));
+      return 'g'+bytesToB64url(new Uint8Array(await new Response(stream).arrayBuffer()))
+    }catch(_){}
+  }
+  return 'j'+bytesToB64url(raw)
+}
+async function unpack(token){
+  const mode=String(token||'').charAt(0),bytes=b64urlToBytes(String(token||'').slice(1));
+  let raw=bytes;
+  if(mode==='g'){
+    if(!('DecompressionStream'in window))throw new Error('This browser cannot open the compressed pairing code.');
+    raw=new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer())
+  }else if(mode!=='j')throw new Error('Invalid local sync code.');
+  return JSON.parse(new TextDecoder().decode(raw))
+}
+function cleanUrl(){const u=new URL(location.href);u.hash='';return u}
+async function payloadUrl(kind,payload){const u=cleanUrl();u.hash='omni-local-'+kind+'='+await pack(payload);return u.toString()}
+async function parseValue(value){
+  const m=String(value||'').match(/omni-local-(offer|answer)=([^&#\s]+)/);
+  if(!m)return null;
+  const data=await unpack(m[2]);return {...data,__kind:m[1]}
+}
+function parseHashRaw(){return String(location.hash||'')}
+function clearHash(){try{if(/#omni-local-(offer|answer)=/.test(location.hash))history.replaceState(history.state,'',location.pathname+location.search)}catch(_){}}
+
+function isStandalonePWA(){
+  return window.matchMedia?.('(display-mode: standalone)')?.matches===true||navigator.standalone===true
+}
+function isAppleMobile(){
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)
+}
+function loadJsQR(){
+  if(typeof window.jsQR==='function')return Promise.resolve(window.jsQR);
+  return new Promise((resolve,reject)=>{
+    let s=document.getElementById('omni-jsqr-v74');
+    if(s){
+      s.addEventListener('load',()=>typeof window.jsQR==='function'?resolve(window.jsQR):reject(new Error('QR decoder unavailable')),{once:true});
+      s.addEventListener('error',()=>reject(new Error('QR decoder unavailable')),{once:true});return
+    }
+    s=document.createElement('script');s.id='omni-jsqr-v74';s.src=JSQR_SRC;s.async=true;s.crossOrigin='anonymous';
+    s.onload=()=>typeof window.jsQR==='function'?resolve(window.jsQR):reject(new Error('QR decoder unavailable'));
+    s.onerror=()=>reject(new Error('QR decoder unavailable'));document.head.appendChild(s)
+  })
+}
+function progressPercent(n){return n<=1?20:n===2?48:n===3?78:100}
+function setProgress(percent,label){
+  const p=Math.max(0,Math.min(100,Number(percent)||0));
+  const bar=overlay?.querySelector('[data-local-progress-bar]'),txt=overlay?.querySelector('[data-local-progress-text]');
+  if(bar)bar.style.width=p+'%';if(txt)txt.textContent=(label||'Sync')+' · '+Math.round(p)+'%'
+}
+function logProgress(message){
+  if(!message)return;progressLog.push({at:new Date(),message:String(message)});progressLog=progressLog.slice(-6);
+  const host=overlay?.querySelector('[data-local-log]');if(host)host.innerHTML=progressLog.map((x,i)=>'<div'+(i===progressLog.length-1?' class="current"':'')+'><span>✓</span><span>'+String(x.message).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))+'</span></div>').join('')
+}
+
+
+function relaySecretForSid(sid){
+  if(hostSession?.sid===sid&&hostSession.secret)return hostSession.secret;
+  if(joinSessionState?.sid===sid&&joinSessionState.secret)return joinSessionState.secret;
+  return ''
+}
+async function relayChannel(sid,secret){
+  const raw=new TextEncoder().encode('omnios-relay-v1|'+String(sid||'')+'|'+String(secret||''));
+  const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',raw));
+  return [...digest.slice(0,24)].map(x=>x.toString(16).padStart(2,'0')).join('')
+}
+async function relayKey(secret){
+  const cacheKey=String(secret||'');
+  if(relayKeyCache.has(cacheKey))return relayKeyCache.get(cacheKey);
+  const raw=new TextEncoder().encode('omnios-relay-key-v1|'+cacheKey);
+  const digest=await crypto.subtle.digest('SHA-256',raw);
+  const key=await crypto.subtle.importKey('raw',digest,{name:'AES-GCM'},false,['encrypt','decrypt']);
+  relayKeyCache.set(cacheKey,key);return key
+}
+async function relaySeal(secret,value){
+  const iv=crypto.getRandomValues(new Uint8Array(12)),key=await relayKey(secret);
+  const raw=new TextEncoder().encode(JSON.stringify(value));
+  const encrypted=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,raw));
+  return bytesToB64url(iv)+'.'+bytesToB64url(encrypted)
+}
+async function relayOpen(secret,sealed){
+  const parts=String(sealed||'').split('.');if(parts.length!==2)throw new Error('Invalid relay payload');
+  const iv=b64urlToBytes(parts[0]),data=b64urlToBytes(parts[1]),key=await relayKey(secret);
+  const raw=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,data);
+  return JSON.parse(new TextDecoder().decode(raw))
+}
+function relayJsonp(channel,after){
+  return new Promise((resolve,reject)=>{
+    const cb='__omniRelay'+randomHex(6),s=document.createElement('script');
+    let done=false;
+    const clean=()=>{try{delete window[cb]}catch(_){window[cb]=undefined}try{s.remove()}catch(_){}};
+    const finish=(ok,value)=>{if(done)return;done=true;clearTimeout(timer);clean();ok?resolve(value):reject(value instanceof Error?value:new Error('Relay request failed'))};
+    window[cb]=data=>finish(true,data);
+    s.async=true;s.src=RELAY_URL+'?channel='+encodeURIComponent(channel)+'&after='+encodeURIComponent(String(after||0))+'&callback='+encodeURIComponent(cb)+'&_='+Date.now();
+    s.onerror=()=>finish(false,new Error('Relay unavailable'));
+    const timer=setTimeout(()=>finish(false,new Error('Relay timed out')),6000);
+    document.head.appendChild(s)
+  })
+}
+async function relaySendEnvelope(sid,secret,type,payload){
+  const st=await beginRelay(sid,secret,hostSession?.sid===sid?'host':'join');
+  const id=randomHex(10),envelope={v:PROTOCOL,type,payload,from:dev()?.id||'unknown',createdAt:Date.now(),id};
+  const sealed=await relaySeal(secret,envelope);
+  try{
+    await fetch(RELAY_URL,{method:'POST',mode:'no-cors',cache:'no-store',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({channel:st.channel,id,from:envelope.from,sealed})});
+    return true
+  }catch(e){console.warn('OmniOS relay send',e);return false}
+}
+function stopRelaySession(){
+  if(!relayState)return;
+  relayState.running=false;clearTimeout(relayState.timer);relayState=null
+}
+async function relayConsumeInner(conn,inner){
+  if(!inner||inner.protocol!==PROTOCOL)return;
+  if(inner.type==='bundle'&&inner.bundle){
+    if(inner.bundle.fingerprint&&inner.bundle.fingerprint===conn.__omniLastRecv)return;
+    conn.__omniLastRecv=inner.bundle.fingerprint||'';
+    try{
+      setProgress(93,'Comparing data');logProgress('Comparing newest records over encrypted relay');
+      const result=await api()?.merge?.(inner.bundle);
+      if(result?.changed)sendBundle(true);
+      conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
+      stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Encrypted fallback route is live.','ok');
+      setProgress(100,'Synced');logProgress(result?.changed?'Newest data applied':'Both devices already match')
+    }catch(err){console.error('Relay sync merge',err);stage(3,'Sync failed','Your automatic pre-sync snapshot is still available.','error')}
+  }else if(inner.type==='ack'){
+    stage(4,'Live sync active','New changes will continue to transfer while both apps stay open.','ok');setProgress(100,'Live')
+  }
+}
+async function activateRelayTransport(sid,secret,initiator=false){
+  try{
+    const st=await beginRelay(sid,secret,hostSession?.sid===sid?'host':'join');
+    if(liveConn?.open&&!liveConn.__relay)return true;
+    if(liveConn?.__relay&&liveConn.open)return true;
+    const conn={
+      peer:'relay:'+sid,__omniAuth:true,__omniLastSent:'',__omniLastRecv:'',__relay:true,
+      get open(){return !!relayState?.running&&relayState.sid===sid},
+      send(obj){relaySendEnvelope(sid,secret,'data',obj)},
+      close(){if(relayState?.sid===sid)stopRelaySession()}
+    };
+    st.conn=conn;st.active=true;liveConn=conn;setButtonLive(true);
+    const b=document.getElementById('omni-sync-btn');if(b)b.title='Sync · Encrypted fallback connected';
+    stage(3,'Encrypted fallback connected','Your network blocked peer-to-peer traffic, so OmniOS switched automatically.','busy');
+    setProgress(86,'Fallback connected');logProgress('Switched to encrypted HTTPS relay');
+    if(initiator)await relaySendEnvelope(sid,secret,'relay-start',{at:Date.now()});
+    setTimeout(()=>sendBundle(true),80);
+    return true
+  }catch(e){
+    console.warn('OmniOS relay fallback',e);
+    return false
+  }
+}
+async function handleRelayEnvelope(st,envelope){
+  if(!envelope||envelope.v!==PROTOCOL||envelope.from===(dev()?.id||'unknown'))return;
+  if(envelope.type==='answer'&&st.role==='host'){
+    await applyAnswer(envelope.payload);return
+  }
+  if(envelope.type==='relay-start'){
+    await activateRelayTransport(st.sid,st.secret,false);return
+  }
+  if(envelope.type==='data'){
+    if(!st.conn?.open)await activateRelayTransport(st.sid,st.secret,false);
+    if(st.conn?.open)await relayConsumeInner(st.conn,envelope.payload)
+  }
+}
+async function beginRelay(sid,secret,role){
+  if(relayState?.running&&relayState.sid===sid&&relayState.secret===secret)return relayState;
+  stopRelaySession();
+  const channel=await relayChannel(sid,secret);
+  const st={sid,secret,role,channel,after:Date.now()-2500,running:true,timer:null,seen:new Set(),conn:null,active:false};
+  relayState=st;
+  const poll=async()=>{
+    if(!st.running||relayState!==st)return;
+    try{
+      const data=await relayJsonp(channel,st.after);
+      if(data?.ok&&Array.isArray(data.messages)){
+        for(const row of data.messages){
+          st.after=Math.max(st.after,Number(row?.at)||0);
+          if(!row?.id||st.seen.has(row.id)||row.from===(dev()?.id||'unknown'))continue;
+          st.seen.add(row.id);if(st.seen.size>80)st.seen=new Set([...st.seen].slice(-50));
+          try{await handleRelayEnvelope(st,await relayOpen(secret,row.sealed))}catch(e){console.warn('Relay message ignored',e)}
+        }
+      }
+    }catch(e){if(st.running)console.warn('OmniOS relay poll',e)}
+    finally{if(st.running&&relayState===st)st.timer=setTimeout(poll,900)}
+  };
+  poll();return st
+}
+
+function localConfig(){
+  return {
+    iceServers:[
+      {urls:['stun:stun.cloudflare.com:3478']},
+      {urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']}
+    ],
+    iceTransportPolicy:'all',
+    iceCandidatePoolSize:4,
+    bundlePolicy:'max-bundle',
+    rtcpMuxPolicy:'require'
+  }
+}
+function waitLocalIce(pc,limit=1400){
+  if(pc.iceGatheringState==='complete')return Promise.resolve();
+  return new Promise(resolve=>{
+    let settled=false;
+    const finish=()=>{if(settled)return;settled=true;clearTimeout(timer);pc.removeEventListener('icegatheringstatechange',onState);resolve()};
+    const onState=()=>{if(pc.iceGatheringState==='complete')finish()};
+    const timer=setTimeout(finish,limit);
+    pc.addEventListener('icegatheringstatechange',onState)
+  })
+}
+function setButtonLive(on){
+  const b=document.getElementById('omni-sync-btn');if(b){b.classList.toggle('is-live',!!on);b.title=on?'Sync · Local Wi-Fi connected':'Sync devices'}
+}
+function stopScanner(){try{scannerStop?.()}catch(_){}scannerStop=null}
+function closeModal(){stopScanner();overlay?.remove();overlay=null}
+function modal(title,subtitle){
+  closeModal();
+  const ov=document.createElement('div');ov.className='omni-sync-overlay omni-local-sync';
+  progressLog=[];ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true"><header class="omni-sync-head"><div><div class="omni-sync-kicker">LOCAL WI-FI SYNC</div><h3>'+title+'</h3><p>'+subtitle+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-local-status>Preparing…</strong><span data-local-detail>Both devices must be connected to the same Wi-Fi network.</span></div></div><div class="omni-local-progress"><div class="omni-local-progress-track"><span data-local-progress-bar></span></div><div data-local-progress-text>Preparing · 0%</div></div><div class="omni-local-steps"><div class="omni-local-step active" data-local-step="1">1 · Offer</div><div class="omni-local-step" data-local-step="2">2 · Response</div><div class="omni-local-step" data-local-step="3">3 · Connect</div><div class="omni-local-step" data-local-step="4">4 · Live</div></div><div class="omni-local-log" data-local-log></div><div class="omni-sync-content"></div></div></section>';
+  document.body.appendChild(ov);overlay=ov;
+  ov.querySelector('.omni-sync-close').onclick=closeModal;ov.onclick=e=>{if(e.target===ov)closeModal()};
+  return ov
+}
+function stage(n,status,detail,tone=''){
+  overlay?.querySelectorAll('[data-local-step]').forEach(el=>{const x=Number(el.dataset.localStep);el.classList.toggle('done',x<n);el.classList.toggle('active',x===n)});
+  const s=overlay?.querySelector('[data-local-status]'),d=overlay?.querySelector('[data-local-detail]');
+  if(s){s.textContent=status||'';s.dataset.tone=tone}if(d&&detail)d.textContent=detail;
+  setProgress(progressPercent(n),status||'Sync')
+}
+async function ensureQr(){await api()?.loadQR?.()}
+function drawQr(box,url){
+  if(!box||!window.qrcanvas?.qrcanvas)return false;box.innerHTML='';
+  try{box.appendChild(window.qrcanvas.qrcanvas({data:url,size:290,correctLevel:'L'}));return true}catch(e){console.warn('Local Wi-Fi QR',e);box.textContent='QR code is too large for this browser.';return false}
+}
+function internetFallback(){
+  closeModal();api()?.openInternet?.()
+}
+
+function makeAdapter(pc,dc,sid){
+  const id='wifi:'+sid;
+  const conn={
+    peer:id,peerConnection:pc,__omniAuth:true,__omniLastSent:'',__omniLastRecv:'',
+    get open(){return dc.readyState==='open'},
+    send(obj){if(dc.readyState==='open')dc.send(JSON.stringify(obj))},
+    close(){try{dc.close()}catch(_){}try{pc.close()}catch(_){}}
+  };
+  dc.onopen=()=>{
+    if(relayState?.sid===sid)stopRelaySession();
+    liveConn=conn;setButtonLive(true);stage(3,'Connected on local Wi-Fi','Exchanging the newest OmniOS data…','busy');setProgress(84,'Connected');logProgress('Local Wi-Fi channel opened');sendBundle(true)
+  };
+  dc.onmessage=async e=>{
+    let msg;try{msg=typeof e.data==='string'?JSON.parse(e.data):e.data}catch(_){return}
+    if(!msg||msg.protocol!==PROTOCOL)return;
+    if(msg.type==='bundle'&&msg.bundle){
+      if(msg.bundle.fingerprint&&msg.bundle.fingerprint===conn.__omniLastRecv)return;
+      conn.__omniLastRecv=msg.bundle.fingerprint||'';
+      try{
+        setProgress(92,'Comparing data');logProgress('Comparing newest records');
+        const result=await api()?.merge?.(msg.bundle);
+        if(result?.changed)sendBundle(true);
+        conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
+        stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Direct encrypted connection on your Wi-Fi.','ok');setProgress(100,'Synced');logProgress(result?.changed?'Newest data applied':'Both devices already match')
+      }catch(err){console.error('Local Wi-Fi merge',err);stage(3,'Sync failed','Your automatic pre-sync snapshot is still available.','error')}
+    }else if(msg.type==='ack'){
+      stage(4,'Live Local Wi-Fi sync','New changes will continue to transfer while both apps stay open.','ok')
+    }
+  };
+  dc.onclose=()=>{if(liveConn===conn)liveConn=null;setButtonLive(false);stage(3,'Local connection closed','Open Sync again to reconnect.','')};
+  dc.onerror=()=>stage(3,'Local connection error','Your Wi-Fi may block device-to-device traffic. Try Internet fallback.','error');
+  pc.oniceconnectionstatechange=()=>{
+    const ice=pc.iceConnectionState;
+    if(ice==='checking'){stage(3,'Checking the local network','Trying direct routes between the phone and PC…','busy');setProgress(76,'Checking network');logProgress('ICE is checking Wi-Fi routes')}
+    if(ice==='connected'||ice==='completed'){stage(3,'Direct route found','Opening the encrypted data channel…','busy');setProgress(81,'Route found');logProgress('Direct Wi-Fi route found')}
+    if(ice==='disconnected'){stage(3,'Wi-Fi route interrupted','Trying to recover the local connection…','busy');logProgress('Local route temporarily disconnected')}
+    if(ice==='failed'){stage(3,'Strict local route blocked','Trying the already-open assisted peer route automatically…','busy');logProgress('ICE failed to establish a strict LAN route');fallbackFromBlockedLocal(sid)}
+  };
+  pc.onconnectionstatechange=()=>{
+    if(pc.connectionState==='failed'){stage(3,'Strict local route blocked','Switching routes automatically…','busy');fallbackFromBlockedLocal(sid)}
+    if(pc.connectionState==='connected'&&!liveConn?.open){stage(3,'Connected on local Wi-Fi','Opening the OmniOS data channel…','busy');setProgress(83,'Connected')}
+  };
+  return conn
+}
+function assistedSignalForSid(sid){
+  if(hostSession?.sid===sid&&hostSession.signalConn?.open)return hostSession.signalConn;
+  if(joinSessionState?.sid===sid&&joinSessionState.signalConn?.open)return joinSessionState.signalConn;
+  return null
+}
+function activateAssistedFallback(signalConn,sid,initiator=false){
+  if(!signalConn?.open)return false;
+  if(liveConn?.__assisted&&liveConn.open)return true;
+  const conn={
+    peer:'assisted:'+sid,
+    peerConnection:signalConn.peerConnection,
+    __omniAuth:true,__omniLastSent:'',__omniLastRecv:'',__assisted:true,
+    get open(){return !!signalConn.open},
+    send(obj){if(signalConn.open)signalConn.send({type:'local-assisted-data',protocol:PROTOCOL,sid,payload:obj})},
+    close(){try{signalConn.close()}catch(_){}}
+  };
+  const consume=async msg=>{
+    if(!msg||msg.protocol!==PROTOCOL||msg.sid!==sid)return;
+    if(msg.type==='local-assisted-start'){
+      if(!liveConn?.__assisted){liveConn=conn;setButtonLive(true)}
+      stage(3,'Assisted direct route active','Strict LAN traffic was blocked, so OmniOS is using the already-open encrypted peer channel.','busy');
+      setProgress(86,'Assisted direct');logProgress('Switched from blocked LAN route to assisted direct channel');
+      if(!initiator)sendBundle(true);
+      return
+    }
+    if(msg.type!=='local-assisted-data'||!msg.payload)return;
+    const inner=msg.payload;
+    if(inner.type==='bundle'&&inner.bundle){
+      if(inner.bundle.fingerprint&&inner.bundle.fingerprint===conn.__omniLastRecv)return;
+      conn.__omniLastRecv=inner.bundle.fingerprint||'';
+      try{
+        setProgress(93,'Comparing data');logProgress('Comparing newest records over assisted channel');
+        const result=await api()?.merge?.(inner.bundle);
+        if(result?.changed)sendBundle(true);
+        conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
+        stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Encrypted peer connection is live.','ok');
+        setProgress(100,'Synced');logProgress(result?.changed?'Newest data applied':'Both devices already match')
+      }catch(err){console.error('Assisted sync merge',err);stage(3,'Sync failed','Your automatic pre-sync snapshot is still available.','error')}
+    }else if(inner.type==='ack'){
+      stage(4,'Live sync active','New changes will continue to transfer while both apps stay open.','ok');
+      setProgress(100,'Live')
+    }
+  };
+  signalConn.on('data',consume);
+  signalConn.on('close',()=>{if(liveConn===conn){liveConn=null;setButtonLive(false)}});
+  liveConn=conn;setButtonLive(true);
+  if(initiator){
+    try{signalConn.send({type:'local-assisted-start',protocol:PROTOCOL,sid})}catch(_){}
+    stage(3,'Switching to assisted direct','The Wi-Fi blocked the strict LAN route; continuing automatically…','busy');
+    setProgress(85,'Switching route');logProgress('Strict LAN route blocked · switching automatically');
+    setTimeout(()=>sendBundle(true),40)
+  }
+  return true
+}
+function fallbackFromBlockedLocal(sid){
+  const signal=assistedSignalForSid(sid);
+  if(signal){
+    stage(3,'Direct Wi-Fi route blocked','Reusing the secure connection that already linked the two devices…','busy');
+    logProgress('Direct LAN route blocked · switching to existing secure channel');
+    return activateAssistedFallback(signal,sid,true)
+  }
+  const secret=relaySecretForSid(sid);
+  if(secret){
+    stage(3,'Peer-to-peer route blocked','Switching to the encrypted HTTPS fallback automatically…','busy');
+    logProgress('Secure peer route unavailable · starting encrypted HTTPS fallback');
+    activateRelayTransport(sid,secret,true).then(ok=>{if(!ok){
+      stage(3,'Connection blocked','Automatic fallback is unavailable. Use Internet fallback.','error');showFallbackOnly()
+    }});
+    return true
+  }
+  stage(3,'Connection blocked','No fallback route is available. Use Internet fallback.','error');showFallbackOnly();return false
+}
+
+function sendBundle(force=false){
+  const conn=liveConn;if(!conn?.open)return;
+  const bundle=api()?.bundle?.();if(!bundle)return;
+  if(!force&&bundle.fingerprint&&bundle.fingerprint===conn.__omniLastSent)return;
+  conn.__omniLastSent=bundle.fingerprint||'';
+  conn.send({type:'bundle',protocol:PROTOCOL,reason:'local-wifi',bundle})
+}
+function scheduleSend(){clearTimeout(sendTimer);sendTimer=setTimeout(()=>sendBundle(false),350)}
+
+function showFallbackOnly(){
+  const host=overlay?.querySelector('.omni-sync-content');if(!host)return;
+  const actions=host.querySelector('.omni-local-actions')||host;
+  if(!host.querySelector('[data-local-internet]')){const b=document.createElement('button');b.type='button';b.className='btn';b.dataset.localInternet='';b.textContent='Use Internet fallback';b.onclick=internetFallback;actions.appendChild(b)}
+}
+function hostView(url,oneScan=false){
+  const host=overlay?.querySelector('.omni-sync-content');if(!host)return;
+  host.innerHTML='<div class="omni-local-card"><div class="omni-local-grid"><div class="omni-local-qr" data-local-qr></div><div class="omni-local-copy"><div class="omni-local-badge">⚡ Local-first · automatic fallback</div><h4>'+(oneScan?'Scan once with your phone':'Scan this on the second device')+'</h4><p>'+(oneScan?'The phone returns the response automatically. OmniOS tries direct Wi-Fi first and switches to an encrypted HTTPS relay only if peer-to-peer traffic is blocked.':'If automatic delivery is unavailable, the second device can still provide a response link to paste here.')+'</p><div class="omni-local-actions"><button type="button" class="btn" data-local-paste>Paste response</button><button type="button" class="btn" data-local-copy>Copy offer</button><button type="button" class="btn" data-local-internet>Internet fallback</button></div></div></div><div class="omni-local-note"><strong>One scan:</strong> the QR contains a one-time pairing secret. Fallback traffic is encrypted in the browser before it reaches the relay.</div></div>';
+  if(!drawQr(host.querySelector('[data-local-qr]'),url))stage(1,'Local code is too large','Use Internet fallback on this browser.','error');
+  host.querySelector('[data-local-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(url);stage(1,'Offer copied','Open it on the second device.','ok')}catch(_){stage(1,'Could not copy offer','Use the QR code instead.','error')}};
+  host.querySelector('[data-local-internet]').onclick=internetFallback;
+  host.querySelector('[data-local-paste]').onclick=async()=>{
+    const value=prompt('Paste the response link from the second device:');if(!value)return;
+    try{const p=await parseValue(value);if(!p||p.__kind!=='answer')throw new Error();await applyAnswer(p)}catch(_){stage(2,'Invalid response','Paste the complete response link.','error')}
+  };
+  if(oneScan)setTimeout(()=>{if(hostSession&&!hostSession.answerApplied&&!liveConn?.open)stage(2,'Waiting for the phone response','It should arrive automatically. If it does not, use Paste response below.','busy')},2800)
+}
+function answerView(url){
+  const host=overlay?.querySelector('.omni-sync-content');if(!host)return;
+  host.innerHTML='<div class="omni-local-card"><div class="omni-local-grid"><div class="omni-local-qr" data-local-qr></div><div class="omni-local-copy"><div class="omni-local-badge">✓ Local offer received</div><h4>Automatic response could not be delivered</h4><p>No need to scan this QR with the PC. Tap <b>Copy response link</b>, then paste it into the PC’s Sync popup.</p><div class="omni-local-actions"><button type="button" class="btn btn-primary" data-local-copy>Copy response link</button><button type="button" class="btn" data-local-internet>Use Internet fallback</button></div></div></div><div class="omni-local-note">This is only the fallback. Normally the phone returns this response automatically after the first QR scan.</div></div>';
+  drawQr(host.querySelector('[data-local-qr]'),url);
+  host.querySelector('[data-local-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(url);stage(2,'Response copied','Paste it into the PC Sync popup.','ok')}catch(_){stage(2,'Could not copy response','Use the QR code as a last resort.','error')}};
+  host.querySelector('[data-local-internet]').onclick=internetFallback
+}
+function deliveredView(){
+  modal('Response delivered','Return to the original OmniOS screen that displayed the first QR code.');
+  stage(2,'Response sent to the original tab','The direct Wi-Fi connection should open there now.','ok');
+  const host=overlay.querySelector('.omni-sync-content');
+  host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response delivered</strong><span>Return to the original OmniOS tab or app window. Keep this page open only if the original window does not connect.</span></div>'
+}
+
+function answerStorageKey(sid){return ANSWER_PREFIX+sid}
+function notifyAnswer(payload){
+  try{localStorage.setItem(answerStorageKey(payload.sid),JSON.stringify(payload))}catch(_){}
+  try{bc?.postMessage({type:'answer',payload})}catch(_){}
+}
+function listenForAnswer(sid){
+  const key=answerStorageKey(sid);
+  const receive=async payload=>{if(!payload||payload.sid!==sid)return;await applyAnswer(payload)};
+  const onStorage=e=>{if(e.key!==key||!e.newValue)return;try{receive(JSON.parse(e.newValue))}catch(_){}};
+  window.addEventListener('storage',onStorage);
+  if('BroadcastChannel'in window){try{bc=bc||new BroadcastChannel(CHANNEL_NAME);bc.onmessage=e=>{if(e.data?.type==='answer')receive(e.data.payload)}}catch(_){}}
+  try{const existing=JSON.parse(localStorage.getItem(key)||'null');if(existing)receive(existing)}catch(_){}
+  hostSession.answerCleanup=()=>{window.removeEventListener('storage',onStorage);try{localStorage.removeItem(key)}catch(_){}}
+}
+async function applyAnswer(payload){
+  if(!hostSession||payload.sid!==hostSession.sid||payload.secret!==hostSession.secret||hostSession.answerApplied)return;
+  hostSession.answerApplied=true;hostSession.answerCleanup?.();
+  if(!liveConn?.open){stage(3,'Phone responded automatically','Opening the direct local Wi-Fi channel…','busy');setProgress(72,'Opening channel')}
+  logProgress('Phone response received');
+  try{await hostSession.pc.setRemoteDescription(payload.answer)}catch(e){console.error(e);if(!liveConn?.open)stage(3,'Could not apply response','Generate a new Local Wi-Fi code and try again.','error');return}
+  const timeout=setTimeout(()=>{if(!liveConn?.open){const ice=hostSession?.pc?.iceConnectionState||'unknown';logProgress('Direct Wi-Fi data channel did not open · ICE '+ice);fallbackFromBlockedLocal(hostSession.sid)}},4200);
+  hostSession.connectTimeout=timeout
+}
+async function startResponseScanner(){
+  stopScanner();
+  const host=overlay?.querySelector('[data-local-camera-host]');if(!host)return;
+  try{
+    const detector=new BarcodeDetector({formats:['qr_code']});
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+    host.innerHTML='<div class="omni-local-camera"><div class="omni-local-camera-head"><span>Point the camera at the response QR</span><button type="button" class="icon-btn" data-local-camera-close>×</button></div><video playsinline muted></video></div>';
+    const video=host.querySelector('video');video.srcObject=stream;await video.play();
+    let stopped=false,busy=false,last=0;
+    const stop=()=>{if(stopped)return;stopped=true;stream.getTracks().forEach(t=>t.stop());host.innerHTML='';scannerStop=null};
+    scannerStop=stop;host.querySelector('[data-local-camera-close]').onclick=stop;
+    const loop=async ts=>{
+      if(stopped)return;
+      if(!busy&&ts-last>250){busy=true;last=ts;try{
+        const codes=await detector.detect(video);
+        for(const code of codes){const p=await parseValue(code.rawValue||'');if(p?.__kind==='answer'&&p.sid===hostSession?.sid){stop();await applyAnswer(p);return}}
+      }catch(_){}finally{busy=false}}
+      requestAnimationFrame(loop)
+    };requestAnimationFrame(loop)
+  }catch(e){console.warn('Local QR scanner',e);stage(2,'Camera scanner unavailable','Use Paste response instead.','error')}
+}
+
+async function startLocalHost(){
+  try{hostSession?.pc?.close?.()}catch(_){}hostSession=null;liveConn=null;stopRelaySession();setButtonLive(false);
+  modal('Start Local Hub','This PC becomes the OmniOS hub. OmniOS tries direct Wi-Fi first and switches automatically if the network blocks it.');
+  stage(1,'Creating local offer','Preparing the direct Wi-Fi connection…','busy');setProgress(8,'Preparing');logProgress('Preparing Local Wi-Fi session');
+  try{
+    const signalPromise=api()?.ensureSignalPeer?.().catch(()=>null);
+    await ensureQr();
+    const pc=new RTCPeerConnection(localConfig()),sid=randomHex(10),secret=randomHex(18);
+    const dc=pc.createDataChannel('omnios-sync',{ordered:true});
+    const conn=makeAdapter(pc,dc,sid);
+    hostSession={pc,dc,conn,sid,secret,answerCleanup:null,connectTimeout:null,answerApplied:false,signalConn:null};
+    beginRelay(sid,secret,'host').catch(e=>console.warn('Relay standby unavailable',e));
+    const offer=await pc.createOffer();await pc.setLocalDescription(offer);await waitLocalIce(pc);setProgress(18,'Offer ready');logProgress('Local WebRTC offer created');
+    const signalPeer=await Promise.race([signalPromise,new Promise(resolve=>setTimeout(()=>resolve(null),1800))]);
+    const payload={v:PROTOCOL,type:'offer',sid,secret,signalPeer:signalPeer?.id||'',offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},from:dev(),createdAt:Date.now()};
+    const url=await payloadUrl('offer',payload);
+    hostView(url,true);listenForAnswer(sid);
+    stage(1,'Scan once inside OmniOS on your phone','The phone response returns automatically. Direct Wi-Fi is preferred; assisted encrypted transport is ready if needed.','ok');setProgress(25,'Waiting for scan');logProgress('QR ready on first device')
+  }catch(e){console.error('Local host',e);stage(1,'Could not create Local Wi-Fi code','Use Internet fallback on this browser.','error');showFallbackOnly()}
+}
+async function joinLocalOffer(payload){
+  modal('Join Local Hub','This device is connecting to the PC. OmniOS prefers direct Wi-Fi and keeps a secure assisted path ready if needed.');
+  stage(2,'Offer received','Creating the response for the PC…','busy');setProgress(42,'QR read');logProgress('PC QR read inside OmniOS');
+  try{
+    await ensureQr();
+    const pc=new RTCPeerConnection(localConfig());joinSessionState={pc,sid:payload.sid,secret:payload.secret,signalConn:null};
+    beginRelay(payload.sid,payload.secret,'join').catch(e=>console.warn('Relay standby unavailable',e));
+    pc.ondatachannel=e=>{joinSessionState.dc=e.channel;joinSessionState.conn=makeAdapter(pc,e.channel,payload.sid)};
+    await pc.setRemoteDescription(payload.offer);
+    const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await waitLocalIce(pc);setProgress(55,'Response ready');logProgress('Phone response created');
+    const response={v:PROTOCOL,type:'answer',sid:payload.sid,secret:payload.secret,answer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},from:dev(),createdAt:Date.now()};
+    stage(2,'Sending response automatically','No second QR scan is needed.','busy');
+    let delivered=false;
+    if(payload.signalPeer&&api()?.sendLocalAnswer){
+      try{
+        const signalResult=await api().sendLocalAnswer(payload.signalPeer,response);
+        joinSessionState.signalConn=signalResult?.conn||null;
+        delivered=true;setProgress(66,'Response sent');logProgress('Response delivered to PC over secure signal channel');
+        if(joinSessionState.signalConn?.open){
+          activateAssistedFallback(joinSessionState.signalConn,payload.sid,true);
+          setProgress(86,'Secure channel ready');logProgress('Sync started immediately on the proven working channel')
+        }
+      }catch(e){console.warn('Primary answer delivery failed',e)}
+    }
+    if(!delivered){
+      try{
+        delivered=await relaySendEnvelope(payload.sid,payload.secret,'answer',response);
+        if(delivered){setProgress(66,'Response sent');logProgress('Response delivered through encrypted relay')}
+      }catch(e){console.warn('Relay answer delivery failed',e)}
+    }
+    if(!delivered){
+      const url=await payloadUrl('answer',response);answerView(url);
+      stage(2,'Automatic response unavailable','Copy the response link and paste it into the PC.','error');return
+    }
+    const host=overlay?.querySelector('.omni-sync-content');
+    if(host)host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response sent automatically</strong><span>Sync starts immediately on the secure connection that delivered the response. OmniOS will upgrade to the local Wi-Fi data channel automatically if it becomes available.</span></div>';
+    stage(3,'Response sent to the PC','Opening the fastest available encrypted route…','ok');
+    setTimeout(()=>{if(!liveConn?.open)fallbackFromBlockedLocal(payload.sid)},4200)
+  }catch(e){console.error('Local join',e);stage(2,'Could not create response','Use Internet fallback.','error');showFallbackOnly()}
+}
+async function handleAnswerHandoff(payload){
+  notifyAnswer(payload);deliveredView()
+}
+async function openMobileSyncHome(){
+  modal('Join Local Hub','Keep the sync inside the installed OmniOS app so it uses this app’s real data.');
+  stage(1,'Ready to join','On the PC, open OmniOS → Sync to start the Local Hub and leave its QR visible.','');
+  setProgress(0,'Ready');
+  const host=overlay.querySelector('.omni-sync-content');
+  host.innerHTML='<div class="omni-pwa-scan-home"><div class="omni-pwa-scan-choice primary"><strong>Scan Local Hub QR</strong><p>Recommended. Uses the camera inside this installed OmniOS PWA, so Safari never opens.</p><button type="button" class="btn btn-primary" data-pwa-scan-now>Open scanner</button></div><div class="omni-pwa-scan-choice"><strong>Use this phone as a Local Hub</strong><p>Show a Hub QR on the phone for another device to join.</p><button type="button" class="btn" data-pwa-show-qr>Show my QR</button></div><div class="omni-pwa-scan-choice"><strong>Paste pairing link</strong><p>Fallback when camera permission is unavailable.</p><button type="button" class="btn" data-pwa-paste>Paste link</button></div></div>';
+  host.querySelector('[data-pwa-scan-now]').onclick=startPwaQrScanner;
+  host.querySelector('[data-pwa-show-qr]').onclick=startLocalHost;
+  host.querySelector('[data-pwa-paste]').onclick=async()=>{
+    const value=prompt('Paste the pairing link shown by the PC:');if(!value)return;
+    try{const p=await parseValue(value);if(p?.__kind!=='offer')throw new Error();logProgress('Pairing link received');await joinLocalOffer(p)}
+    catch(_){stage(1,'Invalid pairing link','Paste the complete OmniOS pairing link from the PC.','error')}
+  }
+}
+async function startPwaQrScanner(){
+  stopScanner();
+  modal('Scan Local Hub QR','Point the phone at the Hub QR shown in OmniOS on your PC.');
+  stage(1,'Opening camera','The scan stays inside the installed OmniOS app.','busy');setProgress(5,'Camera');
+  const host=overlay.querySelector('.omni-sync-content');
+  host.innerHTML='<div class="omni-pwa-scanner"><video playsinline muted autoplay></video><div class="omni-pwa-scan-frame"></div><div class="omni-pwa-scan-caption">Place the PC Local Hub QR inside the frame</div></div><div class="omni-local-actions" style="margin-top:9px"><button type="button" class="btn" data-pwa-stop>Cancel</button><button type="button" class="btn" data-pwa-paste>Paste link</button></div>';
+  const video=host.querySelector('video');
+  let stream=null,stopped=false,busy=false,last=0,detector=null,decoder=null;
+  try{
+    if('BarcodeDetector'in window){
+      try{const formats=await BarcodeDetector.getSupportedFormats?.();if(!formats||formats.includes('qr_code'))detector=new BarcodeDetector({formats:['qr_code']})}catch(_){}
+    }
+    if(!detector)decoder=await loadJsQR();
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:1280}},audio:false});
+    video.srcObject=stream;await video.play();stage(1,'Scanning PC QR','Keep the QR steady inside the frame.','busy');setProgress(12,'Scanning');logProgress('Camera ready inside OmniOS');
+  }catch(e){
+    console.warn('PWA QR scanner',e);stage(1,'Camera scanner unavailable','Allow camera access or use Paste link.','error');setProgress(0,'Camera blocked');return
+  }
+  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
+  const stop=()=>{if(stopped)return;stopped=true;try{stream?.getTracks().forEach(t=>t.stop())}catch(_){}scannerStop=null};
+  scannerStop=stop;
+  host.querySelector('[data-pwa-stop]').onclick=()=>{stop();openMobileSyncHome()};
+  host.querySelector('[data-pwa-paste]').onclick=async()=>{
+    const value=prompt('Paste the pairing link shown by the PC:');if(!value)return;
+    try{const p=await parseValue(value);if(p?.__kind!=='offer')throw new Error();stop();logProgress('Pairing link received');await joinLocalOffer(p)}
+    catch(_){stage(1,'Invalid pairing link','Paste the complete OmniOS pairing link from the PC.','error')}
+  };
+  const found=async raw=>{
+    const p=await parseValue(raw||'');if(!p||p.__kind!=='offer'||p.type!=='offer')return false;
+    stop();setProgress(32,'QR read');logProgress('PC QR detected');await joinLocalOffer(p);return true
+  };
+  const loop=async ts=>{
+    if(stopped)return;
+    if(!busy&&ts-last>120&&video.readyState>=2){
+      busy=true;last=ts;
+      try{
+        if(detector){
+          const codes=await detector.detect(video);
+          for(const code of codes)if(await found(code.rawValue||''))return
+        }else if(decoder){
+          const w=video.videoWidth,h=video.videoHeight;if(w&&h){
+            const scale=Math.min(1,900/Math.max(w,h));canvas.width=Math.max(1,Math.round(w*scale));canvas.height=Math.max(1,Math.round(h*scale));
+            ctx.drawImage(video,0,0,canvas.width,canvas.height);
+            const img=ctx.getImageData(0,0,canvas.width,canvas.height),code=decoder(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+            if(code?.data&&await found(code.data))return
+          }
+        }
+      }catch(e){console.warn('QR frame scan',e)}
+      finally{busy=false}
+    }
+    requestAnimationFrame(loop)
+  };
+  requestAnimationFrame(loop)
+}
+function showSafariPwaGuard(pairingUrl){
+  modal('Open Sync inside OmniOS','This QR was opened in Safari, not in the installed OmniOS app.');
+  stage(1,'Safari is separate from the installed app','Do not sync here if you want the PWA data to be updated.','error');setProgress(0,'Wrong app context');
+  const host=overlay.querySelector('.omni-sync-content');
+  host.innerHTML='<div class="omni-safari-guard"><strong>Use the OmniOS Home Screen app</strong><p>Close this Safari tab. Open OmniOS from your Home Screen, tap <b>Sync</b>, then <b>Scan PC QR</b>. The camera scanner is now built directly into OmniOS.</p><div class="omni-local-actions"><button type="button" class="btn" data-safari-copy>Copy pairing link</button></div></div>';
+  host.querySelector('[data-safari-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(pairingUrl);stage(1,'Pairing link copied','Paste it inside OmniOS → Sync → Paste link.','ok')}catch(_){}}
+}
+
+async function handleIncomingHash(){
+  const raw=parseHashRaw();if(!/#omni-local-(offer|answer)=/.test(raw))return false;
+  const pairingUrl=location.href;
+  try{
+    const payload=await parseValue(raw);
+    if(payload?.__kind==='offer'&&payload.type==='offer'&&isAppleMobile()&&!isStandalonePWA()){
+      clearHash();showSafariPwaGuard(pairingUrl);return true
+    }
+    clearHash();
+    if(payload?.__kind==='offer'&&payload.type==='offer'){await joinLocalOffer(payload);return true}
+    if(payload?.__kind==='answer'&&payload.type==='answer'){await handleAnswerHandoff(payload);return true}
+  }catch(e){console.error('Local Wi-Fi link',e)}
+  return false
+}
+
+function patchSyncButton(){
+  const b=document.getElementById('omni-sync-btn');if(!b)return false;
+  b.dataset.localWifi73='1';b.title='OmniOS Local Hub';
+  b.onclick=e=>{e.preventDefault();if(window.matchMedia('(max-width:760px)').matches)openMobileSyncHome();else startLocalHost()};
+  return true
+}
+function init(){
+  document.addEventListener('omnios:data-changed',scheduleSend);
+  document.addEventListener('omnios:local-answer-signal',e=>{const d=e.detail||{};const p=d.payload||d;if(hostSession&&d.conn){hostSession.signalConn=d.conn;if(p?.sid)activateAssistedFallback(d.conn,p.sid,false)}if(p)applyAnswer(p)});
+  const boot=async()=>{
+    if(await handleIncomingHash())return;
+    if(!patchSyncButton()){const mo=new MutationObserver(()=>{if(patchSyncButton())mo.disconnect()});mo.observe(document.documentElement,{subtree:true,childList:true})}
+    if(window.matchMedia('(max-width:760px)').matches){
+      const warm=()=>loadJsQR().catch(()=>{});
+      if('requestIdleCallback'in window)requestIdleCallback(warm,{timeout:1200});else setTimeout(warm,300)
+    }
+  };
+  boot()
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+
+window.OmniLocalWifiSync73={open:startLocalHost,hub:startLocalHost,scan:startPwaQrScanner,mobile:openMobileSyncHome,join:joinLocalOffer,parse:parseValue};
+})();
+</script>
+
+
+<style id="omnios-v74-uiux-authority">
+/* OmniOS v74 — final UI/UX authority.
+   This layer intentionally comes last so legacy version patches cannot shrink,
+   wrap, or restyle critical controls after the current mobile/desktop system. */
+:root{
+  --ux-font:Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --ux-page-x:18px;
+  --ux-page-y:16px;
+  --ux-gap:12px;
+  --ux-touch:40px;
+  --ux-radius-sm:10px;
+  --ux-radius:14px;
+  --ux-radius-lg:18px;
+  --ux-shadow:0 12px 36px rgba(0,0,0,.16);
+  --ux-muted:#92929c;
+  --ux-divider:color-mix(in srgb,var(--border-light,#3f3f46) 72%,transparent);
+  --ux-control-bg:color-mix(in srgb,var(--bg-elevated,#27272a) 78%,var(--bg-base,#0f0f11));
+}
+html:not([data-theme="light"]){
+  --text-muted:var(--ux-muted)!important;
+  --border-color:#303038!important;
+  --border-light:#45454f!important;
+}
+html[data-theme="light"]{
+  --text-muted:#626c7b!important;
+  --border-color:#d8dde5!important;
+  --border-light:#b9c2cf!important;
+  --ux-divider:#d8dde5;
+  --ux-control-bg:#f1f3f6;
+}
+html,body{font-family:var(--ux-font)!important}
+body{font-size:14px;line-height:1.5}
+button,input,select,textarea{font:inherit}
+h1,h2,h3,h4,h5,h6{line-height:1.22;letter-spacing:-.012em}
+p{line-height:1.58}
+.text-muted,.settings-row-desc,.mini-item-meta,.list-item-date,.v35-card-sub,.v43-card-sub,.v55-card-sub,
+.v35-row-meta,.v43-row-meta,.v55-row-meta,.omni-assistant-status,.omni-chat-welcome p{
+  color:var(--text-muted)!important;
+}
+.text-sm{font-size:.78rem!important;line-height:1.5!important}
+.v35-kicker,.omni-sync-kicker,.bib-atlas-kicker{
+  font-size:.67rem!important;line-height:1.25!important;letter-spacing:.095em!important;
+}
+
+/* Global interactive language */
+.btn,.view-btn,.tab-btn,.icon-btn,.filter-select,.search-input,.form-input,.form-select,.form-textarea,
+.settings-toggle,.v36-cal-mode,.rt-tab,.v603-preset,.bib-icon-btn{
+  min-height:var(--ux-touch)!important;
+  border-radius:var(--ux-radius-sm)!important;
+}
+.btn,.view-btn,.tab-btn,.icon-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  font-weight:650;line-height:1.1;
+}
+.btn,.view-btn,.tab-btn{padding:9px 12px}
+.icon-btn{min-width:var(--ux-touch)!important;padding:0 10px!important}
+.form-input,.form-select,.form-textarea,.filter-select,.search-input{
+  font-size:.86rem!important;line-height:1.35!important;padding:9px 11px!important;
+  border:1px solid var(--border-color)!important;
+  background:var(--bg-base)!important;color:var(--text-primary)!important;
+}
+.form-textarea{line-height:1.5!important}
+.form-label,.form-group label{font-size:.76rem!important;color:var(--text-secondary)!important;font-weight:650!important}
+.form-input::placeholder,.form-textarea::placeholder,.search-input::placeholder{color:var(--text-muted)!important;opacity:1}
+:where(button,input,select,textarea,a,[role="button"],[tabindex]):focus-visible{
+  outline:2px solid var(--accent-cyan)!important;outline-offset:2px!important;
+}
+button:disabled,.btn:disabled,.view-btn:disabled,.tab-btn:disabled{opacity:.48!important;cursor:not-allowed!important}
+.btn-primary{
+  background:var(--accent-cyan)!important;border-color:var(--accent-cyan)!important;
+  color:#071216!important;box-shadow:none!important;
+}
+html:not([data-theme="light"]) .btn-primary{color:#061015!important}
+.btn-danger{box-shadow:none!important}
+
+/* Surfaces: fewer nested boxes, more hierarchy */
+.card,.stat-card,.kpi-card,.finance-card,.diet-card,.workout-kpi,.workout-session-card,.workout-item-card,.note-card,
+.eq-box,.calendar-container,.master-calendar-shell,.v35-card,.v43-card,.v55-card,.v58-card,.rt-card,.goal586-card{
+  border:1px solid var(--border-color)!important;border-radius:var(--ux-radius)!important;
+  box-shadow:none!important;
+}
+.card,.v35-card,.v43-card,.v55-card,.v58-card,.rt-card{padding:14px!important}
+.card-header,.v35-card-head,.v43-card-head,.v55-card-head{gap:10px!important}
+.card-title,.v35-card-title,.v43-card-title,.v55-card-title{font-size:.91rem!important;font-weight:720!important;line-height:1.32!important}
+.empty-state,.v35-empty,.v55-empty{
+  min-height:82px;display:grid;place-items:center;text-align:center;
+  border:1px dashed var(--border-light)!important;border-radius:var(--ux-radius)!important;
+  color:var(--text-muted)!important;padding:22px 16px!important;
+}
+hr{border-color:var(--ux-divider)!important}
+
+/* Main frame */
+.sidebar{border-color:var(--border-color)!important}
+.nav-section{font-size:.65rem!important;letter-spacing:.1em!important;color:var(--text-muted)!important}
+.nav-item{min-height:40px!important;border-radius:10px!important;color:var(--text-secondary)!important}
+.nav-item:hover{color:var(--text-primary)!important}
+.nav-item.active{
+  color:var(--text-primary)!important;
+  background:color-mix(in srgb,var(--accent-cyan) 12%,transparent)!important;
+  border-color:color-mix(in srgb,var(--accent-cyan) 28%,transparent)!important;
+}
+.topbar{
+  min-height:58px!important;border-color:var(--border-color)!important;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+}
+.topbar-title{font-size:1rem!important;font-weight:760!important}
+.view-container{padding:var(--ux-page-y) var(--ux-page-x) 22px!important}
+.v35-page-head,.v43-page-head{
+  margin:0 0 14px!important;gap:12px!important;
+}
+.v35-page-head h3,.v43-page-head h3{font-size:1.18rem!important;margin-bottom:4px!important}
+.v35-page-actions,.toolbar,.dashboard-toolbar,.habit-toolbar,.notes-toolbar{gap:8px!important}
+.toolbar,.dashboard-toolbar,.habit-toolbar,.notes-toolbar{margin-bottom:14px!important}
+
+/* Tabs and segmented controls */
+:is(.tab-btns,.workout-tabs,.v35-segmented,.v43-life-tabs,.rt-tabs,.v58-seg,.v431-tabs,.v36-cal-modes){
+  display:flex!important;align-items:center!important;gap:6px!important;
+  max-width:100%!important;overflow-x:auto!important;overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;
+}
+:is(.tab-btns,.workout-tabs,.v35-segmented,.v43-life-tabs,.rt-tabs,.v58-seg,.v431-tabs,.v36-cal-modes)::-webkit-scrollbar{display:none}
+:is(.tab-btn,.view-btn,.rt-tab,.v36-cal-mode,.v603-preset){
+  flex:0 0 auto!important;white-space:nowrap!important;
+}
+:is(.tab-btn,.view-btn,.rt-tab,.v36-cal-mode,.v603-preset).active{
+  color:var(--text-primary)!important;
+  background:color-mix(in srgb,var(--accent-cyan) 13%,var(--bg-elevated))!important;
+  border-color:color-mix(in srgb,var(--accent-cyan) 35%,var(--border-color))!important;
+}
+
+/* Lists and rows */
+:is(.list-item,.v35-row,.v43-row,.v55-row,.rt-item,.finance-item,.bib-search-hit){
+  min-height:44px;border-radius:11px!important;
+}
+:is(.list-item,.v35-row,.v43-row,.v55-row,.rt-item,.finance-item)[role="button"],
+:is(.list-item,.v35-row,.v43-row,.v55-row,.rt-item,.finance-item).clickable{cursor:pointer}
+.list-item-title,.v35-row-title,.v43-row-title,.v55-row-title{font-size:.82rem!important;line-height:1.35!important}
+
+/* Tables always remain reachable. */
+table{max-width:100%}
+.table-wrap,.set-table-wrap,.v35-table-wrap,.finance-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+th,td{vertical-align:middle}
+
+/* Modals / inspectors */
+.modal-overlay,.omni-sync-overlay{
+  overflow:auto!important;overscroll-behavior:contain!important;
+  padding:18px max(14px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))!important;
+}
+.modal,.omni-sync-modal{
+  width:min(680px,100%)!important;max-width:min(680px,100%)!important;
+  max-height:min(90dvh,900px)!important;border-radius:20px!important;
+  border:1px solid var(--border-light)!important;box-shadow:var(--ux-shadow)!important;
+}
+.modal-header,.omni-sync-head{gap:12px!important}
+.modal-footer{
+  position:sticky!important;bottom:-1px!important;z-index:4!important;
+  display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;
+  background:var(--bg-surface)!important;border-top:1px solid var(--border-color)!important;
+  padding-top:10px!important;padding-bottom:4px!important;
+}
+.inspector-panel{border-color:var(--border-color)!important;box-shadow:var(--ux-shadow)!important}
+.shortcuts-overlay,.modal-overlay,.inspector-backdrop{backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+
+/* Toasts / statuses */
+.toast,.v35-toast,.omni-toast{
+  border:1px solid var(--border-light)!important;border-radius:12px!important;
+  box-shadow:var(--ux-shadow)!important;font-size:.79rem!important;
+}
+.save-status{font-size:.7rem!important;color:var(--text-muted)!important}
+.save-status.saved{color:var(--accent-green)!important}
+.save-status.error{color:var(--accent-red)!important}
+
+/* Tasks */
+.kanban-board{gap:12px!important}
+.kanban-col{border-radius:var(--ux-radius)!important}
+.kanban-card{border-radius:12px!important;padding:11px!important}
+.kanban-card-title{font-size:.84rem!important;line-height:1.35!important}
+.kanban-card-meta{gap:5px!important;flex-wrap:wrap}
+.tag{font-size:.65rem!important;line-height:1.15!important}
+
+/* Routine */
+#view-routine :is(.rt-tab,.btn,.icon-btn){min-height:40px!important}
+#view-routine .rt-card{padding:14px!important}
+#view-routine :is(.rt-step,.rt-item){min-height:44px!important}
+#view-routine input,#view-routine select,#view-routine textarea{font-size:.86rem!important}
+
+/* Calendar: desktop clarity */
+#view-master-calendar .v36-cal-shell{border-radius:var(--ux-radius)!important;overflow:hidden!important}
+#view-master-calendar .v36-cal-toolbar{gap:8px!important}
+#view-master-calendar .v603-calendar-rail{border-color:var(--border-color)!important}
+#view-master-calendar .v36-cal-period{font-size:.92rem!important;font-weight:720!important}
+#view-master-calendar :is(.v36-cal-mode,.v603-preset,.v602-mini-day){min-height:36px}
+
+/* Bible */
+#view-bible{--bib-readable:15.5px}
+#view-bible :is(.bib-tab,.bib-subtab,.bib-icon-btn,.bib-toolbar-v5814 .btn,.bib-toolbar-v5814 .form-input,.bib-toolbar-v5814 .form-select){
+  min-height:40px!important;
+}
+#view-bible :is(.bib-tabs,.bib-subtabs,.bib-toolbar-tabs,.bib-atlas-tabs){
+  overflow-x:auto!important;white-space:nowrap!important;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+#view-bible :is(.bib-tabs,.bib-subtabs,.bib-toolbar-tabs,.bib-atlas-tabs)::-webkit-scrollbar{display:none}
+#view-bible .bib-reader-copy-v5814,
+#view-bible .bib-reader-copy,
+#view-bible .bib-passage,
+#view-bible .bib-verse{
+  font-size:var(--bib-readable)!important;line-height:1.72!important;
+}
+#view-bible :is(.bib-verse-num,.bib-verse-number,.verse-number){
+  color:var(--accent-cyan)!important;font-size:.7em!important;font-weight:760!important;
+}
+#view-bible .bib-reader-meta-v5814{font-size:.72rem!important;color:var(--text-muted)!important}
+#view-bible .bib-reader-header-v5814 h2{font-size:1.35rem!important}
+#view-bible .bib-search-hit{padding:10px!important}
+
+/* Assistant */
+.omni-assistant-panel{border-color:var(--border-color)!important}
+.omni-assistant-head h3{font-size:.95rem!important}
+.omni-assistant-head p{font-size:.72rem!important;color:var(--text-muted)!important}
+.omni-assistant-messages{gap:12px!important}
+.omni-msg{font-size:.84rem!important;line-height:1.5!important}
+.omni-tool-card{font-size:.78rem!important}
+.omni-ai-hint{font-size:.72rem!important;line-height:1.5!important}
+#omni-assistant-input{font-size:16px!important;line-height:1.42!important}
+
+/* Welcome screen */
+#view-today :is(.welcome-card,.today-card,.v35-card),
+#view-dashboard :is(.welcome-card,.v35-card,.card){box-shadow:none!important}
+#view-today .v35-page-head,#view-dashboard .v35-page-head{margin-bottom:12px!important}
+
+/* Desktop widths */
+@media(min-width:761px){
+  .main-content{min-width:0}
+  .view-container{max-width:1600px;width:100%;margin-inline:auto}
+  .modal-footer .btn{min-height:40px!important}
+}
+
+/* Mobile authority */
+@media(max-width:760px){
+  :root{
+    --ux-page-x:10px;
+    --ux-page-y:9px;
+    --ux-gap:9px;
+    --ux-touch:44px;
+    --mobile-nav-h:64px!important;
+  }
+  html,body{width:100%;max-width:100%;overflow-x:hidden!important}
+  body{font-size:14px}
+  .main-content{width:100%!important;max-width:100%!important;height:100dvh!important}
+  .view-container{
+    width:100%!important;max-width:100%!important;
+    padding:var(--ux-page-y) var(--ux-page-x) calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 12px)!important;
+    overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch;
+  }
+
+  /* iOS: every editable control avoids focus zoom. */
+  input,select,textarea,
+  .form-input,.form-select,.form-textarea,.filter-select,.search-input{
+    font-size:16px!important;
+  }
+  :is(.btn,.view-btn,.tab-btn,.icon-btn,.settings-toggle,.v36-cal-mode,.rt-tab,.v603-preset,.bib-icon-btn){
+    min-height:44px!important;
+  }
+  .icon-btn,.settings-toggle,.bib-icon-btn{min-width:44px!important}
+
+  /* Top bar stays compact and useful. */
+  .topbar{
+    min-height:56px!important;height:auto!important;
+    padding:max(8px,env(safe-area-inset-top)) 10px 8px!important;
+    gap:7px!important;
+  }
+  .topbar-title{font-size:.98rem!important;max-width:42vw!important}
+  .topbar-actions{gap:5px!important;min-width:0!important}
+  .topbar-actions .btn,.v35-topbar-icon{min-width:42px!important;padding-inline:9px!important}
+  .save-status{display:none!important}
+
+  /* Bottom nav is one stable layer. */
+  .mobile-nav{
+    position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:1000!important;
+    min-height:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom))!important;
+    padding:5px max(6px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left))!important;
+    background:color-mix(in srgb,var(--bg-surface) 94%,transparent)!important;
+    border-top:1px solid var(--border-color)!important;
+    backdrop-filter:blur(22px) saturate(130%)!important;-webkit-backdrop-filter:blur(22px) saturate(130%)!important;
+    gap:3px!important;
+  }
+  .mobile-nav button{
+    min-width:0!important;min-height:52px!important;padding:5px 4px!important;
+    border:1px solid transparent!important;border-radius:12px!important;
+    color:var(--text-muted)!important;background:transparent!important;
+  }
+  .mobile-nav button.active{
+    color:var(--text-primary)!important;
+    background:color-mix(in srgb,var(--accent-cyan) 12%,transparent)!important;
+    border-color:color-mix(in srgb,var(--accent-cyan) 30%,transparent)!important;
+    box-shadow:none!important;
+  }
+  .mobile-nav button .nav-label{
+    font-size:.63rem!important;line-height:1.12!important;white-space:nowrap!important;
+    overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important;
+  }
+  .mobile-nav :is(.v48-mobile-icon,.nav-icon){width:20px!important;height:20px!important}
+
+  /* Page hierarchy / toolbars */
+  .v35-page-head,.v43-page-head{
+    display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+    gap:8px!important;margin:0 0 10px!important;padding:2px 1px 0!important;
+  }
+  .v35-page-head h3,.v43-page-head h3{font-size:1.08rem!important}
+  .v35-page-head .text-muted,.v43-page-head .text-muted,.v35-page-head .text-sm,.v43-page-head .text-sm{
+    font-size:.75rem!important;line-height:1.48!important;
+  }
+  .v35-kicker{font-size:.62rem!important}
+  .v35-page-actions,.toolbar-group,.dashboard-toolbar,.habit-toolbar,.notes-toolbar{
+    width:100%!important;max-width:100%!important;display:flex!important;flex-wrap:nowrap!important;
+    overflow-x:auto!important;-webkit-overflow-scrolling:touch;scrollbar-width:none!important;gap:6px!important;
+  }
+  .v35-page-actions::-webkit-scrollbar,.toolbar-group::-webkit-scrollbar,
+  .dashboard-toolbar::-webkit-scrollbar,.habit-toolbar::-webkit-scrollbar,.notes-toolbar::-webkit-scrollbar{display:none}
+  .v35-page-actions>*,.toolbar-group>*,.dashboard-toolbar>*,.habit-toolbar>*,.notes-toolbar>*{
+    flex:0 0 auto!important;
+  }
+
+  /* Flatter content and sensible spacing */
+  .card,.v35-card,.v43-card,.v55-card,.v58-card,.rt-card,.finance-card,.note-card,.goal586-card{
+    padding:11px!important;border-radius:14px!important;
+  }
+  :is(.v35-grid,.v43-grid,.v55-grid,.analytics-grid,.grid-2){
+    grid-template-columns:1fr!important;gap:8px!important;
+  }
+  :is(.v35-stat-grid,.v43-kpis,.v55-kpis,.v58-kpis,.rt-kpis,.kpi-grid){
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;
+  }
+  .card-title,.v35-card-title,.v43-card-title,.v55-card-title{font-size:.88rem!important}
+  .text-sm{font-size:.75rem!important}
+  .tag{font-size:.68rem!important}
+
+  /* Mobile sheets */
+  .modal-overlay,.omni-sync-overlay{
+    align-items:flex-end!important;justify-content:center!important;padding:0!important;
+  }
+  .modal,.omni-sync-modal{
+    width:100%!important;max-width:none!important;
+    max-height:94dvh!important;margin:0!important;
+    border-radius:22px 22px 0 0!important;border-bottom:0!important;
+    padding-bottom:max(0px,env(safe-area-inset-bottom))!important;
+  }
+  .modal-header,.omni-sync-head{padding:13px 12px 10px!important}
+  .modal-footer{
+    padding:9px 10px max(9px,env(safe-area-inset-bottom))!important;
+    flex-wrap:wrap!important;
+  }
+  .modal-footer .btn{flex:1 1 auto!important;min-width:96px!important}
+  .inspector-panel{
+    width:100%!important;max-width:none!important;left:0!important;right:0!important;
+    top:auto!important;bottom:0!important;max-height:92dvh!important;
+    border-radius:22px 22px 0 0!important;padding-bottom:max(12px,env(safe-area-inset-bottom))!important;
+  }
+
+  /* Tasks */
+  .kanban-board{display:flex!important;overflow-x:auto!important;scroll-snap-type:x proximity;gap:8px!important}
+  .kanban-col{flex:0 0 min(86vw,340px)!important;scroll-snap-align:start}
+  .eisenhower-grid{grid-template-columns:1fr!important;gap:8px!important}
+
+  /* Calendar: month actually fits the phone. */
+  #view-master-calendar{margin-inline:0!important;width:100%!important}
+  #view-master-calendar .v36-cal-shell{width:100%!important;max-width:100%!important;border-radius:14px!important}
+  #view-master-calendar .v603-calendar-layout{display:block!important;width:100%!important}
+  #view-master-calendar .v603-calendar-rail{display:none!important}
+  #view-master-calendar .v603-calendar-layout.rail-open .v603-calendar-rail{
+    display:flex!important;max-height:70dvh!important;border-bottom:1px solid var(--border-color)!important;
+  }
+  #view-master-calendar .v603-calendar-stage,
+  #view-master-calendar .v603-calendar-stage-inner{width:100%!important;max-width:100%!important;overflow-x:hidden!important}
+  #view-master-calendar .v36-cal-toolbar{padding:7px!important;gap:6px!important}
+  #view-master-calendar .v36-cal-actions{display:flex!important;overflow-x:auto!important;gap:5px!important}
+  #view-master-calendar .v36-cal-actions>*{flex:0 0 auto!important}
+  #view-master-calendar .v36-cal-search{min-width:160px!important;max-width:220px!important}
+  #view-master-calendar .v603-calendar-stage-inner>.v36-month-grid,
+  #view-master-calendar .v36-month-grid{
+    width:100%!important;min-width:0!important;max-width:100%!important;
+    grid-template-columns:repeat(7,minmax(0,1fr))!important;
+  }
+  #view-master-calendar .v36-month-weekday{font-size:.62rem!important;padding:6px 1px!important}
+  #view-master-calendar .v36-month-day{min-width:0!important;min-height:78px!important;padding:4px 2px!important;overflow:hidden!important}
+  #view-master-calendar .v36-month-day-number{font-size:.72rem!important}
+  #view-master-calendar .v36-month-event{
+    min-width:0!important;max-width:100%!important;height:18px!important;min-height:18px!important;
+    padding:2px 3px!important;font-size:.56rem!important;white-space:nowrap!important;
+    overflow:hidden!important;text-overflow:ellipsis!important;border-left-width:2px!important;
+  }
+  #view-master-calendar :is(.v36-week-grid,.v36-day-grid,.v36-time-grid,.v36-week-stage){
+    max-width:100%!important;
+  }
+
+  /* Routine */
+  #view-routine :is(.rt-tab,.btn,.icon-btn,.form-input,.form-select){min-height:44px!important}
+  #view-routine :is(.rt-tabs,.rt-toolbar){overflow-x:auto!important;flex-wrap:nowrap!important}
+  #view-routine .rt-step{font-size:.8rem!important}
+
+  /* Bible: readable and touch-safe. */
+  #view-bible{--bib-readable:16px}
+  #view-bible .bib-toolbar-v5814{padding:7px!important;gap:6px!important}
+  #view-bible .bib-toolbar-v5814 :is(.form-input,.form-select,.btn,.bib-icon-btn){
+    min-height:44px!important;height:44px!important;font-size:12px!important;
+  }
+  #view-bible .bib-toolbar-books-v5814 .bib-toolbar-controls-v5814,
+  #view-bible .bib-toolbar-ref-v5814 .bib-toolbar-controls-v5814,
+  #view-bible .bib-toolbar-tools-v5814 .bib-toolbar-controls-v5814{
+    display:flex!important;grid-template-columns:none!important;overflow-x:auto!important;gap:6px!important;
+  }
+  #view-bible .bib-toolbar-v5814 :is(.form-input,.form-select){min-width:118px!important;flex:1 0 118px!important}
+  #view-bible .bib-icon-btn{width:44px!important;min-width:44px!important}
+  #view-bible .bib-reader-header-v5814{padding:10px 9px!important}
+  #view-bible .bib-reader-header-v5814 h2{font-size:1.3rem!important}
+  #view-bible .bib-reader-meta-v5814{font-size:.72rem!important}
+  #view-bible .bib-reader-head-actions-v5814 .btn{min-height:44px!important;font-size:.7rem!important}
+  #view-bible .bib-reader-scroll-v5814{overflow:visible!important;height:auto!important;max-height:none!important}
+  #view-bible .bib-reader-copy-v5814{padding:12px 10px 22px!important}
+  #view-bible .bib-search-inner-v5814{
+    display:flex!important;grid-template-columns:none!important;overflow-x:auto!important;gap:6px!important;
+  }
+  #view-bible .bib-search-inner-v5814>*{flex:0 0 auto!important}
+  #view-bible .bib-search-inner-v5814 input{flex:1 0 180px!important}
+
+  /* Assistant is a true full-screen mobile workspace. */
+  .omni-assistant-panel{
+    inset:0!important;width:100vw!important;height:100dvh!important;max-height:100dvh!important;
+    border:0!important;border-radius:0!important;box-shadow:none!important;
+  }
+  .omni-assistant-head{
+    min-height:58px!important;padding:max(9px,env(safe-area-inset-top)) 10px 9px!important;
+  }
+  .omni-assistant-messages{padding:12px 10px 16px!important;gap:11px!important}
+  .omni-msg{max-width:91%!important;font-size:14px!important;line-height:1.5!important}
+  .omni-tool-card{width:calc(100% - 28px)!important;margin-left:28px!important;font-size:13px!important}
+  .omni-ai-hint{font-size:12px!important;margin-inline:10px!important}
+  .omni-assistant-composer{
+    padding:7px 8px max(8px,env(safe-area-inset-bottom))!important;
+  }
+  .omni-assistant-input-wrap{min-height:48px!important;border-radius:16px!important}
+  #omni-assistant-input{min-height:44px!important;font-size:16px!important;padding:10px 3px 8px!important}
+  .omni-assistant-send{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important}
+
+  /* Sync */
+  .omni-sync-head h3{font-size:1rem!important}
+  .omni-sync-head p,.omni-sync-security{font-size:.72rem!important;line-height:1.45!important}
+  .omni-sync-body{padding:11px 10px max(14px,env(safe-area-inset-bottom))!important}
+  .omni-sync-stage{font-size:.68rem!important}
+  .omni-sync-actions .btn{min-height:44px!important}
+
+  /* No accidental microscopic utility text on mobile. */
+  .v35-card-sub,.v43-card-sub,.v55-card-sub,.v35-row-meta,.v43-row-meta,.v55-row-meta,
+  .settings-row-desc,.mini-item-meta,.list-item-date,.workout-item-card p,.exercise-meta{
+    font-size:.72rem!important;line-height:1.45!important;
+  }
+}
+@media(max-width:380px){
+  .topbar-title{max-width:34vw!important}
+  :is(.v35-stat-grid,.v43-kpis,.v55-kpis,.v58-kpis,.rt-kpis,.kpi-grid){grid-template-columns:1fr 1fr!important}
+  #view-master-calendar .v36-month-day{min-height:70px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+</style>
+
+<script id="omnios-v74-uiux-authority-js">
+(function(){
+'use strict';
+if(window.__omniUIUX74)return;
+window.__omniUIUX74=true;
+document.documentElement.dataset.omniosUiux='74';
+
+/* Keep the mobile layout tied to the visible viewport without forcing zoom or jumps. */
+function syncViewport(){
+  const vv=window.visualViewport;
+  document.documentElement.style.setProperty('--ux-visible-h',Math.round(vv?.height||window.innerHeight)+'px');
+}
+syncViewport();
+window.visualViewport?.addEventListener('resize',syncViewport,{passive:true});
+window.addEventListener('orientationchange',()=>setTimeout(syncViewport,80),{passive:true});
+
+/* Improve icon-only controls that inherited no accessible name from legacy layers. */
+function accessibleName(el){
+  return (el.getAttribute('aria-label')||el.getAttribute('title')||el.textContent||'').trim();
+}
+function repairSemantics(root=document){
+  root.querySelectorAll?.('button,.icon-btn,[role="button"]').forEach(el=>{
+    if(!accessibleName(el)){
+      const hint=el.dataset?.action||el.dataset?.view||el.dataset?.v432Action||el.id||'Action';
+      el.setAttribute('aria-label',String(hint).replace(/[-_]+/g,' ').trim());
+    }
+  });
+  root.querySelectorAll?.('.modal,.omni-sync-modal').forEach(el=>{
+    if(!el.hasAttribute('role'))el.setAttribute('role','dialog');
+    el.setAttribute('aria-modal','true');
+  });
+}
+
+/* One active bottom-navigation item at a time. The More launcher may be active only
+   while its sheet exists; normal page navigation clears it immediately. */
+function normalizeMobileNav(clicked){
+  const nav=clicked?.closest?.('.mobile-nav');
+  if(!nav)return;
+  const view=clicked.dataset.mobileView||clicked.dataset.v35MobileView||clicked.dataset.view||'';
+  if(!view)return;
+  nav.querySelectorAll('button.active').forEach(b=>{if(b!==clicked)b.classList.remove('active')});
+  clicked.classList.add('active');
+  document.querySelectorAll('#v35-page-launcher').forEach(x=>x.remove());
+  document.body.style.removeProperty('overflow');
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest?.('.mobile-nav button[data-mobile-view],.mobile-nav button[data-v35-mobile-view],.mobile-nav button[data-view]');
+  if(b)normalizeMobileNav(b);
+},true);
+
+/* Keyboard UX for generic dialogs without interfering with feature-specific handlers. */
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Tab')return;
+  const overlay=[...document.querySelectorAll('.modal-overlay.active,.omni-sync-overlay,.shortcuts-overlay.active')]
+    .filter(x=>x.offsetParent!==null).pop();
+  const dialog=overlay?.querySelector('.modal,.omni-sync-modal,.shortcuts-box');
+  if(!dialog)return;
+  const focusable=[...dialog.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(x=>x.offsetParent!==null);
+  if(focusable.length<2)return;
+  const first=focusable[0],last=focusable[focusable.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+},true);
+
+/* When the iOS keyboard opens, keep the active field visible without changing scale. */
+document.addEventListener('focusin',e=>{
+  if(!matchMedia('(max-width:760px)').matches)return;
+  if(!e.target.matches?.('input,textarea,select,[contenteditable="true"]'))return;
+  setTimeout(()=>e.target.scrollIntoView?.({block:'nearest',inline:'nearest',behavior:'smooth'}),120);
+},true);
+
+repairSemantics();
+const observer=new MutationObserver(records=>{
+  const roots=[];
+  for(const r of records)for(const n of r.addedNodes)if(n.nodeType===1)roots.push(n);
+  roots.slice(0,12).forEach(repairSemantics);
+});
+observer.observe(document.body,{subtree:true,childList:true});
+
+/* Keep browser chrome coherent with active theme. */
+function themeChrome(){
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(!meta)return;
+  const light=document.documentElement.dataset.theme==='light';
+  meta.setAttribute('content',light?'#f5f7fa':'#0f0f11');
+}
+themeChrome();
+new MutationObserver(themeChrome).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+})();
+</script>
+
+
+<style id="omnios-v75-chrome-clearance">
+/* OmniOS v75 — measured top/bottom chrome clearance.
+   Fixed chrome and popups use the real rendered heights instead of hard-coded guesses. */
+:root{
+  --ux-topbar-h:58px;
+  --ux-bottomnav-h:0px;
+  --ux-visible-h:100dvh;
+}
+
+/* Full-screen overlays must sit ABOVE persistent app chrome. */
+.modal-overlay{z-index:2147483000!important}
+.inspector-backdrop{z-index:2147482850!important}
+.inspector-panel{z-index:2147482900!important}
+.shortcuts-overlay{z-index:2147483000!important}
+.v44-cover-dialog{z-index:2147483000!important}
+.omni-assistant-panel{z-index:2147483100!important}
+.omni-sync-overlay{z-index:2147483200!important}
+
+@media(max-width:760px){
+  /* Canonical chrome stacking: page < sheets < header < bottom dock < modal overlays. */
+  .topbar{
+    z-index:2147481900!important;
+    position:relative!important;
+  }
+  .mobile-nav{
+    z-index:2147482000!important;
+    position:fixed!important;
+  }
+
+  /* Page content always clears the ACTUAL bottom dock height. */
+  .view-container{
+    padding-bottom:calc(var(--ux-bottomnav-h,64px) + 14px)!important;
+    scroll-padding-top:12px!important;
+    scroll-padding-bottom:calc(var(--ux-bottomnav-h,64px) + 16px)!important;
+  }
+  .view.active{
+    scroll-padding-top:12px!important;
+    scroll-padding-bottom:calc(var(--ux-bottomnav-h,64px) + 16px)!important;
+  }
+  :is(
+    input,textarea,select,button,a,[role="button"],[tabindex],
+    .card,.v35-card,.v43-card,.v55-card,.rt-card,.list-item,.v35-row,.v43-row,.v55-row
+  ){
+    scroll-margin-top:calc(var(--ux-topbar-h,56px) + 12px)!important;
+    scroll-margin-bottom:calc(var(--ux-bottomnav-h,64px) + 14px)!important;
+  }
+
+  /* Generic dialogs overlay the banners instead of being trapped underneath them. */
+  .modal-overlay{
+    inset:0!important;
+    padding:max(8px,env(safe-area-inset-top)) 0 0!important;
+    align-items:flex-end!important;
+  }
+  .modal{
+    max-height:calc(var(--ux-visible-h,100dvh) - max(8px,env(safe-area-inset-top)))!important;
+    overflow:hidden!important;
+    display:flex!important;
+    flex-direction:column!important;
+  }
+  .modal-header{flex:0 0 auto!important}
+  .modal>:is(.modal-body,.v45-modal-body,.v55-modal-body),
+  .modal>.form-scroll,
+  .modal>.modal-content{
+    min-height:0!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  /* Legacy modals often place fields directly inside .modal. Keep the whole sheet scrollable
+     when there is no dedicated body, while sticky footer/header remain reachable. */
+  .modal:not(:has(> .modal-body)):not(:has(> .v45-modal-body)):not(:has(> .v55-modal-body)){
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  .modal-footer{
+    flex:0 0 auto!important;
+    bottom:0!important;
+  }
+
+  /* Inspector is also above persistent chrome. */
+  .inspector-panel{
+    z-index:2147482900!important;
+    max-height:var(--ux-visible-h,100dvh)!important;
+    height:auto!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+
+  /* "More" is intentionally BETWEEN top and bottom banners, never behind either. */
+  #v35-page-launcher{
+    top:var(--ux-topbar-h,56px)!important;
+    bottom:var(--ux-bottomnav-h,64px)!important;
+    height:auto!important;
+    max-height:calc(var(--ux-visible-h,100dvh) - var(--ux-topbar-h,56px) - var(--ux-bottomnav-h,64px))!important;
+    z-index:2147481800!important;
+    overflow:hidden!important;
+  }
+  #v35-page-launcher :is(.v35-page-launcher-sheet,.v35-launcher-sheet,.v35-page-launcher-panel){
+    max-height:100%!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+    padding-bottom:14px!important;
+  }
+
+  /* Calendar mobile tools: backdrop below the sheet, both between persistent banners. */
+  #view-master-calendar .v603-mobile-sheet-backdrop{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    z-index:2147481650!important;
+  }
+  #view-master-calendar .v603-calendar-rail{
+    top:calc(var(--ux-topbar-h,56px) + 8px)!important;
+    bottom:calc(var(--ux-bottomnav-h,64px) + 8px)!important;
+    height:auto!important;
+    max-height:none!important;
+    min-height:0!important;
+    z-index:2147481700!important;
+    overscroll-behavior:contain!important;
+    border-radius:18px!important;
+  }
+
+  /* Bible passage tools use the same measured safe region. */
+  #view-bible .bib-side-v5814{
+    bottom:calc(var(--ux-bottomnav-h,64px) + 7px)!important;
+    max-height:min(
+      650px,
+      calc(var(--ux-visible-h,100dvh) - var(--ux-topbar-h,56px) - var(--ux-bottomnav-h,64px) - 20px)
+    )!important;
+    z-index:2147481700!important;
+  }
+  #view-bible .bib-mobile-tools-backdrop-v67{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    z-index:2147481600!important;
+  }
+
+  /* Full-screen Assistant intentionally overlays both app banners. */
+  .omni-assistant-panel{
+    inset:0!important;
+    top:0!important;
+    bottom:0!important;
+    width:100vw!important;
+    height:var(--ux-visible-h,100dvh)!important;
+    max-height:var(--ux-visible-h,100dvh)!important;
+  }
+
+  /* Sync/modal sheets overlay app chrome, but respect the iPhone safe areas internally. */
+  .omni-sync-overlay{
+    inset:0!important;
+    padding:max(8px,env(safe-area-inset-top)) 0 0!important;
+    align-items:flex-end!important;
+  }
+  .omni-sync-modal{
+    max-height:calc(var(--ux-visible-h,100dvh) - max(8px,env(safe-area-inset-top)))!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+
+  /* Floating controls near the bottom must also clear the measured dock. */
+  :is(.toast-container,.omni-toast-stack,.floating-actions,.fab-stack){
+    bottom:calc(var(--ux-bottomnav-h,64px) + 12px)!important;
+  }
+}
+</style>
+
+<script id="omnios-v75-chrome-clearance-js">
+(function(){
+'use strict';
+if(window.__omniChromeClearance75)return;
+window.__omniChromeClearance75=true;
+
+const root=document.documentElement;
+const mq=window.matchMedia('(max-width:760px)');
+let topEl=null,navEl=null;
+let raf=0;
+
+function shown(el){
+  if(!el)return false;
+  const s=getComputedStyle(el);
+  return s.display!=='none'&&s.visibility!=='hidden'&&el.getClientRects().length>0;
+}
+function px(n){return Math.max(0,Math.ceil(Number(n)||0))+'px'}
+
+function measure(){
+  cancelAnimationFrame(raf);
+  raf=requestAnimationFrame(()=>{
+    const vv=window.visualViewport;
+    const visibleH=Math.max(1,Math.round(vv?.height||window.innerHeight||document.documentElement.clientHeight||1));
+    root.style.setProperty('--ux-visible-h',visibleH+'px');
+
+    if(!mq.matches){
+      root.style.setProperty('--ux-topbar-h','0px');
+      root.style.setProperty('--ux-bottomnav-h','0px');
+      return;
+    }
+
+    const top=document.querySelector('.topbar');
+    const nav=document.querySelector('.mobile-nav');
+    const topH=shown(top)?top.getBoundingClientRect().height:0;
+    const navH=shown(nav)?nav.getBoundingClientRect().height:0;
+    root.style.setProperty('--ux-topbar-h',px(topH));
+    root.style.setProperty('--ux-bottomnav-h',px(navH));
+  });
+}
+
+const ro=typeof ResizeObserver==='function'?new ResizeObserver(measure):null;
+function bindChrome(){
+  const nextTop=document.querySelector('.topbar');
+  const nextNav=document.querySelector('.mobile-nav');
+  if(nextTop!==topEl){if(topEl)try{ro?.unobserve(topEl)}catch(_){};topEl=nextTop;if(topEl)ro?.observe(topEl)}
+  if(nextNav!==navEl){if(navEl)try{ro?.unobserve(navEl)}catch(_){};navEl=nextNav;if(navEl)ro?.observe(navEl)}
+  measure();
+}
+bindChrome();
+
+mq.addEventListener?.('change',bindChrome);
+window.addEventListener('resize',measure,{passive:true});
+window.addEventListener('orientationchange',()=>setTimeout(bindChrome,80),{passive:true});
+window.visualViewport?.addEventListener('resize',measure,{passive:true});
+window.visualViewport?.addEventListener('scroll',measure,{passive:true});
+
+const mo=new MutationObserver(records=>{
+  let chromeChanged=false;
+  for(const r of records){
+    for(const n of r.addedNodes){
+      if(n.nodeType!==1)continue;
+      if(n.matches?.('.topbar,.mobile-nav')||n.querySelector?.('.topbar,.mobile-nav')){chromeChanged=true;break}
+    }
+    if(chromeChanged)break;
+  }
+  if(chromeChanged)bindChrome();
+});
+mo.observe(document.body,{childList:true,subtree:true});
+
+/* If a focused page control would land underneath fixed chrome, nudge its own
+   scroll container just enough to keep the complete control visible. */
+function nearestScroller(el){
+  for(let p=el.parentElement;p&&p!==document.body;p=p.parentElement){
+    const s=getComputedStyle(p),oy=s.overflowY;
+    if((oy==='auto'||oy==='scroll')&&p.scrollHeight>p.clientHeight+2)return p;
+  }
+  return document.scrollingElement||document.documentElement;
+}
+function reveal(el){
+  if(!mq.matches||!el?.getBoundingClientRect)return;
+  const vv=window.visualViewport;
+  const vpTop=vv?.offsetTop||0;
+  const vpBottom=vpTop+(vv?.height||window.innerHeight);
+  const inOverlay=!!el.closest('.modal,.inspector-panel,.omni-assistant-panel,.omni-sync-modal,#welcome63');
+  const topH=inOverlay?8:(parseFloat(getComputedStyle(root).getPropertyValue('--ux-topbar-h'))||0)+8;
+  const bottomH=inOverlay?8:(parseFloat(getComputedStyle(root).getPropertyValue('--ux-bottomnav-h'))||0)+10;
+  const upper=vpTop+topH,lower=vpBottom-bottomH;
+  const r=el.getBoundingClientRect();
+  let delta=0;
+  if(r.bottom>lower)delta=r.bottom-lower;
+  else if(r.top<upper)delta=r.top-upper;
+  if(Math.abs(delta)<1)return;
+  const scroller=nearestScroller(el);
+  try{scroller.scrollBy({top:delta,behavior:'smooth'})}
+  catch(_){scroller.scrollTop+=delta}
+}
+document.addEventListener('focusin',e=>{
+  if(!e.target.matches?.('input,textarea,select,button,[role="button"],[contenteditable="true"]'))return;
+  setTimeout(()=>reveal(e.target),140);
+},true);
+
+setTimeout(bindChrome,80);
+setTimeout(bindChrome,500);
+})();
+</script>
+
+
+<style id="omnios-v76-bible-read-toolbar-fix">
+/* OmniOS v76 — Bible Read selector bar.
+   Keep navigation controls in normal document flow and prevent the selector
+   surface from covering the reader/header below it. */
+@media(max-width:760px){
+  #view-bible .bib-read-v5814{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:10px!important;
+    overflow:visible!important;
+  }
+
+  #view-bible .bib-toolbar-v5814{
+    position:static!important;
+    inset:auto!important;
+    top:auto!important;
+    left:auto!important;
+    right:auto!important;
+    z-index:auto!important;
+    isolation:auto!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin:0 0 2px!important;
+    padding:8px!important;
+    gap:7px!important;
+    overflow:visible!important;
+    border-radius:14px!important;
+    box-sizing:border-box!important;
+  }
+
+  #view-bible .bib-toolbar-group-v5814{
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    gap:5px!important;
+  }
+
+  #view-bible .bib-toolbar-controls-v5814{
+    box-sizing:border-box!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    min-height:52px!important;
+    margin:0!important;
+    padding:4px!important;
+    gap:5px!important;
+    overflow:visible!important;
+  }
+
+  /* Previous | Book | Chapter | Next */
+  #view-bible .bib-toolbar-books-v5814 .bib-toolbar-controls-v5814{
+    display:grid!important;
+    grid-template-columns:44px minmax(0,1fr) minmax(76px,88px) 44px!important;
+    align-items:center!important;
+    overflow:visible!important;
+  }
+
+  #view-bible .bib-toolbar-books-v5814 #bib-book,
+  #view-bible .bib-toolbar-books-v5814 #bib-chapter{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    height:44px!important;
+    min-height:44px!important;
+    margin:0!important;
+    padding:7px 28px 7px 9px!important;
+    flex:none!important;
+    font-size:16px!important;
+    line-height:1.2!important;
+  }
+
+  #view-bible .bib-toolbar-books-v5814 .bib-icon-btn{
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    margin:0!important;
+    padding:0!important;
+  }
+
+  /* Reference/search and tools stay in their own rows; no horizontal strip can
+     escape the toolbar and visually sit over the reader. */
+  #view-bible .bib-toolbar-ref-v5814 .bib-toolbar-controls-v5814{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 44px minmax(58px,auto)!important;
+    align-items:center!important;
+    overflow:visible!important;
+  }
+  #view-bible .bib-toolbar-tools-v5814 .bib-toolbar-controls-v5814{
+    display:grid!important;
+    grid-template-columns:44px 44px minmax(58px,auto) minmax(72px,1fr)!important;
+    align-items:center!important;
+    overflow:visible!important;
+  }
+  #view-bible .bib-toolbar-ref-v5814 :is(.form-input,.form-select),
+  #view-bible .bib-toolbar-tools-v5814 :is(.form-input,.form-select){
+    min-width:0!important;
+    width:100%!important;
+    flex:none!important;
+  }
+
+  /* The reader begins after the complete selector surface. */
+  #view-bible .bib-search-v5814{
+    position:relative!important;
+    z-index:auto!important;
+    margin:0!important;
+  }
+  #view-bible .bib-read-grid-v5814{
+    position:relative!important;
+    z-index:auto!important;
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0!important;
+  }
+  #view-bible .bib-reader-pane-v5814{
+    position:relative!important;
+    z-index:auto!important;
+    margin:0!important;
+  }
+}
+
+@media(max-width:390px){
+  #view-bible .bib-toolbar-v5814{padding:7px!important}
+  #view-bible .bib-toolbar-controls-v5814{padding:3px!important;gap:4px!important}
+  #view-bible .bib-toolbar-books-v5814 .bib-toolbar-controls-v5814{
+    grid-template-columns:42px minmax(0,1fr) 78px 42px!important;
+  }
+  #view-bible .bib-toolbar-books-v5814 .bib-icon-btn{
+    width:42px!important;min-width:42px!important;max-width:42px!important;
+  }
+  #view-bible .bib-toolbar-books-v5814 #bib-book,
+  #view-bible .bib-toolbar-books-v5814 #bib-chapter{
+    padding-left:8px!important;
+    padding-right:25px!important;
+  }
+}
+</style>
+
+
+<style id="omnios-v77-bible-read-desktop-toolbar-fix">
+/* OmniOS v77 — Bible Read selector bar, desktop + tablet.
+   The selector belongs to the page flow; it must never cover the reader grid. */
+@media(min-width:761px){
+  #view-bible .bib-read-v5814{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:14px!important;
+    overflow:visible!important;
+  }
+
+  #view-bible .bib-toolbar-v5814{
+    position:static!important;
+    top:auto!important;
+    left:auto!important;
+    right:auto!important;
+    inset:auto!important;
+    z-index:auto!important;
+    isolation:auto!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:10px!important;
+    gap:10px!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+    border-radius:15px!important;
+    box-shadow:none!important;
+  }
+
+  #view-bible .bib-toolbar-group-v5814{
+    min-width:0!important;
+    width:100%!important;
+    margin:0!important;
+    gap:6px!important;
+  }
+
+  #view-bible .bib-toolbar-controls-v5814{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    min-height:46px!important;
+    margin:0!important;
+    padding:4px!important;
+    gap:6px!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+  }
+
+  #view-bible .bib-toolbar-books-v5814 .bib-toolbar-controls-v5814{
+    display:grid!important;
+    grid-template-columns:40px minmax(180px,1fr) minmax(92px,110px) 40px!important;
+    align-items:center!important;
+  }
+
+  #view-bible .bib-toolbar-books-v5814 #bib-book,
+  #view-bible .bib-toolbar-books-v5814 #bib-chapter{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    height:38px!important;
+    min-height:38px!important;
+    margin:0!important;
+    padding:6px 30px 6px 10px!important;
+    flex:none!important;
+  }
+
+  #view-bible .bib-toolbar-books-v5814 .bib-icon-btn{
+    width:40px!important;
+    min-width:40px!important;
+    max-width:40px!important;
+    height:38px!important;
+    min-height:38px!important;
+    margin:0!important;
+    padding:0!important;
+  }
+
+  #view-bible .bib-toolbar-ref-v5814 .bib-toolbar-controls-v5814{
+    display:grid!important;
+    grid-template-columns:minmax(150px,1fr) 40px minmax(64px,auto)!important;
+    align-items:center!important;
+  }
+
+  #view-bible .bib-toolbar-tools-v5814 .bib-toolbar-controls-v5814{
+    display:grid!important;
+    grid-template-columns:40px 40px minmax(64px,auto) minmax(90px,1fr)!important;
+    align-items:center!important;
+  }
+
+  #view-bible .bib-toolbar-ref-v5814 :is(.form-input,.form-select),
+  #view-bible .bib-toolbar-tools-v5814 :is(.form-input,.form-select){
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    flex:none!important;
+  }
+
+  #view-bible .bib-search-v5814{
+    position:relative!important;
+    z-index:auto!important;
+    margin:0!important;
+  }
+
+  #view-bible .bib-read-grid-v5814{
+    position:relative!important;
+    z-index:auto!important;
+    margin:0!important;
+    padding:0!important;
+    min-width:0!important;
+  }
+
+  #view-bible .bib-reader-pane-v5814,
+  #view-bible .bib-side-v5814{
+    scroll-margin-top:12px!important;
+  }
+
+  /* Reader/sidebar heights no longer subtract an imaginary sticky toolbar. */
+  #view-bible .bib-reader-pane-v5814{
+    height:clamp(600px,calc(100dvh - var(--ux-topbar-h,58px) - 120px),900px)!important;
+  }
+  #view-bible .bib-side-v5814{
+    top:calc(var(--ux-topbar-h,58px) + 12px)!important;
+    max-height:calc(100dvh - var(--ux-topbar-h,58px) - 28px)!important;
+  }
+}
+
+/* Mid-width desktop/tablet: keep selector groups stacked but still in flow. */
+@media(min-width:761px) and (max-width:980px){
+  #view-bible .bib-toolbar-v5814{
+    grid-template-columns:1fr!important;
+  }
+  #view-bible .bib-toolbar-tools-v5814{min-width:0!important}
+  #view-bible .bib-toolbar-tools-row-v5814{justify-content:flex-start!important}
+}
+</style>
+
+
+<style id="omnios-v78-bible-mobile-multiselect">
+@media(max-width:760px){
+  #view-bible .bib-reader-copy-v5814 .bib-verse-row.v573{
+    position:relative!important;
+    cursor:pointer!important;
+    touch-action:manipulation!important;
+    transition:background .12s ease,border-color .12s ease,box-shadow .12s ease!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+  #view-bible .bib-reader-copy-v5814 .bib-verse-row.v573.selected{
+    background:color-mix(in srgb,var(--accent-cyan) 11%,var(--bg-surface))!important;
+    border-color:color-mix(in srgb,var(--accent-cyan) 42%,var(--border-color))!important;
+    box-shadow:inset 3px 0 0 var(--accent-cyan)!important;
+  }
+  #view-bible .bib-reader-copy-v5814 .bib-verse-row.v573.selected .bib-vnum{
+    color:var(--accent-cyan)!important;
+    font-weight:850!important;
+  }
+  #view-bible .bib-reader-copy-v5814 .bib-verse-row.v573.selected::after{
+    content:'✓';
+    position:absolute;
+    top:7px;
+    right:7px;
+    width:18px;
+    height:18px;
+    display:grid;
+    place-items:center;
+    border-radius:999px;
+    background:var(--accent-cyan);
+    color:#071216;
+    font-size:11px;
+    font-weight:900;
+    pointer-events:none;
+  }
+  #view-bible .bib-reader-copy-v5814 .bib-verse-row.v573 .bib-vtext{
+    padding-right:20px!important;
+  }
+}
+</style>
+
+<style id="omnios-v79-daily-verse-ui">
+.bib-daily-verse-v79{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:16px;padding:17px 18px;border:1px solid color-mix(in srgb,var(--accent-cyan) 28%,var(--border-color));border-radius:18px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent-cyan) 9%,var(--bg-surface)),var(--bg-surface));}
+.bib-daily-verse-kicker-v79{font-size:.67rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--accent-cyan);}
+.bib-daily-verse-v79 blockquote{margin:8px 0 5px;font-family:Georgia,serif;font-size:1.03rem;line-height:1.65;color:var(--text-primary);}
+.bib-daily-verse-ref-v79{font-size:.72rem;font-weight:760;color:var(--text-secondary);}
+.bib-daily-verse-actions-v79{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+.v79-today-verse-card{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:16px!important;border-color:color-mix(in srgb,var(--accent-cyan) 26%,var(--border-color))!important;background:linear-gradient(135deg,color-mix(in srgb,var(--accent-cyan) 8%,var(--bg-surface)),var(--bg-surface))!important;}
+.v79-verse-theme{display:inline-flex;margin-left:7px;padding:3px 7px;border-radius:999px;background:color-mix(in srgb,var(--accent-cyan) 11%,transparent);color:var(--accent-cyan);font-size:.61rem;vertical-align:middle;}
+.v79-today-verse-text{margin-top:9px;font-family:Georgia,serif;font-size:1rem;line-height:1.58;color:var(--text-primary);}
+.v79-today-verse-ref{margin-top:6px;font-size:.69rem;font-weight:760;color:var(--text-secondary);}
+.v79-today-verse-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+.w63-daily-verse-v79{display:block;width:min(100%,650px);margin:16px 0 0;padding:13px 14px;border:1px solid color-mix(in srgb,var(--accent-cyan,#06b6d4) 25%,var(--border-color,#3f3f46));border-radius:14px;background:color-mix(in srgb,var(--accent-cyan,#06b6d4) 7%,var(--bg-elevated,#27272a));color:inherit;text-align:left;font:inherit;cursor:pointer;transition:background .15s,border-color .15s,transform .15s;}
+.w63-daily-verse-v79:hover{transform:translateY(-1px);background:color-mix(in srgb,var(--accent-cyan,#06b6d4) 10%,var(--bg-elevated,#27272a));border-color:color-mix(in srgb,var(--accent-cyan,#06b6d4) 42%,var(--border-color,#3f3f46));}
+.w63-daily-verse-v79 span{display:block;font-size:.58rem;font-weight:820;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-cyan,#06b6d4);}
+.w63-daily-verse-v79 strong{display:block;margin-top:7px;font-family:Georgia,serif;font-size:.82rem;line-height:1.52;font-weight:500;color:var(--text-primary,#f4f4f5);}
+.w63-daily-verse-v79 em{display:block;margin-top:6px;font-style:normal;font-size:.58rem;font-weight:720;color:var(--text-muted,#92929c);}
+@media(max-width:760px){.bib-daily-verse-v79,.v79-today-verse-card{grid-template-columns:1fr!important;gap:10px!important;padding:13px!important}.bib-daily-verse-v79 blockquote,.v79-today-verse-text{font-size:.96rem!important;line-height:1.62!important}.bib-daily-verse-actions-v79,.v79-today-verse-actions{justify-content:flex-start!important}.w63-daily-verse-v79{margin-top:13px;padding:12px}.w63-daily-verse-v79 strong{font-size:.78rem;line-height:1.5}}
+</style>
+
+<style id="omnios-v80-welcome-personalized-verse">
+#welcome63 .w80-welcome-verse{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:18px;
+  margin:12px 0;
+  padding:17px 18px;
+  border:1px solid color-mix(in srgb,var(--accent-cyan,#06b6d4) 26%,var(--border-color,#3f3f46));
+  border-radius:18px;
+  background:
+    radial-gradient(420px 180px at 0% 100%,color-mix(in srgb,var(--accent-cyan,#06b6d4) 10%,transparent),transparent 72%),
+    color-mix(in srgb,var(--bg-base,#0f0f11) 96%,var(--bg-elevated,#27272a) 4%);
+}
+#welcome63 .w80-welcome-verse-main{min-width:0}
+#welcome63 .w80-welcome-verse-kicker{
+  font-size:.6rem;font-weight:820;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-cyan,#06b6d4)
+}
+#welcome63 .w80-welcome-verse blockquote{
+  margin:8px 0 6px;max-width:900px;font-family:Georgia,serif;font-size:.94rem;font-weight:500;line-height:1.6;color:var(--text-primary,#f4f4f5)
+}
+#welcome63 .w80-welcome-verse-ref{font-size:.63rem;font-weight:760;color:var(--text-secondary,#a1a1aa)}
+#welcome63 .w80-welcome-verse-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+#welcome63 .w80-welcome-verse-actions .w63-btn{min-height:40px;white-space:nowrap}
+@media(max-width:820px){
+  #welcome63 .w80-welcome-verse{grid-template-columns:1fr;gap:11px;margin:10px 0;padding:14px 15px;border-radius:16px}
+  #welcome63 .w80-welcome-verse blockquote{font-size:.86rem;line-height:1.58}
+  #welcome63 .w80-welcome-verse-actions{justify-content:flex-start}
+}
+@media(max-width:430px){
+  #welcome63 .w80-welcome-verse{padding:13px 14px}
+  #welcome63 .w80-welcome-verse-actions{display:grid;grid-template-columns:1fr 1fr}
+  #welcome63 .w80-welcome-verse-actions .w63-btn{width:100%}
+}
+</style>
+
+<style id="omnios-v76-mobile-safe-cards">
+/* OmniOS v76 — one mobile contract for every opening card/panel.
+   The real top and bottom chrome stay visible; opened content owns only the safe region between them. */
+@media(max-width:760px){
+  :root{--omni-open-gap:8px}
+
+  /* Backdrops never cover the persistent top or bottom navigation. */
+  :is(.modal-overlay,.shortcuts-overlay,.v44-cover-dialog,.omni-sync-overlay,.inspector-backdrop,.omni-assistant-backdrop){
+    top:var(--ux-topbar-h,56px)!important;
+    bottom:var(--ux-bottomnav-h,64px)!important;
+    left:0!important;
+    right:0!important;
+    height:auto!important;
+    z-index:2147481750!important;
+  }
+
+  /* Generic modal cards occupy the measured safe region. */
+  .modal-overlay{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    padding:var(--omni-open-gap)!important;
+    align-items:stretch!important;
+    justify-content:center!important;
+    overflow:hidden!important;
+  }
+  .modal-overlay>.modal{
+    width:min(720px,100%)!important;
+    max-width:100%!important;
+    height:100%!important;
+    max-height:100%!important;
+    min-height:0!important;
+    margin:0 auto!important;
+    border-radius:18px!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  .modal-overlay>.modal>.modal-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+    flex:0 0 auto!important;
+    background:var(--bg-surface)!important;
+    padding-top:4px!important;
+  }
+
+  /* Keep every standard modal close button comfortably tappable. */
+  .modal-header :is(
+    [data-close],[data-v45-close],[data-pantry-close],
+    .modal-close,.icon-btn[aria-label="Close"]
+  ){
+    width:44px!important;
+    min-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    flex:0 0 44px!important;
+    position:relative!important;
+    z-index:32!important;
+  }
+
+  /* Inspector becomes a safe-area card instead of a full-height desktop drawer. */
+  .inspector-panel{
+    top:calc(var(--ux-topbar-h,56px) + var(--omni-open-gap))!important;
+    bottom:calc(var(--ux-bottomnav-h,64px) + var(--omni-open-gap))!important;
+    left:var(--omni-open-gap)!important;
+    right:var(--omni-open-gap)!important;
+    width:auto!important;
+    max-width:none!important;
+    height:auto!important;
+    max-height:none!important;
+    border:1px solid var(--border-light)!important;
+    border-radius:18px!important;
+    z-index:2147481800!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  .inspector-close{
+    position:sticky!important;
+    top:0!important;
+    margin-left:auto!important;
+    z-index:35!important;
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    display:grid!important;
+    place-items:center!important;
+    background:var(--bg-elevated)!important;
+    border:1px solid var(--border-color)!important;
+  }
+  .inspector-backdrop{z-index:2147481750!important}
+
+  /* Page-cover dialogs follow the same safe-region contract. */
+  .v44-cover-dialog{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    padding:var(--omni-open-gap)!important;
+    align-items:stretch!important;
+    justify-content:center!important;
+    z-index:2147481750!important;
+  }
+  .v44-cover-dialog-card{
+    width:min(720px,100%)!important;
+    height:100%!important;
+    max-height:100%!important;
+    min-height:0!important;
+    border-radius:18px!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  .v44-cover-dialog-head{
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+    background:var(--bg-surface)!important;
+  }
+  .v44-cover-close{
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    flex:0 0 44px!important;
+    display:grid!important;
+    place-items:center!important;
+  }
+
+  /* Sync no longer overlays either persistent banner. */
+  .omni-sync-overlay{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    padding:var(--omni-open-gap)!important;
+    place-items:stretch center!important;
+    align-items:stretch!important;
+    z-index:2147481750!important;
+  }
+  .omni-sync-modal{
+    width:min(720px,100%)!important;
+    height:100%!important;
+    max-height:100%!important;
+    min-height:0!important;
+    border-radius:18px!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  .omni-sync-head{
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+    background:var(--bg-surface)!important;
+  }
+  .omni-sync-close{
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    flex:0 0 44px!important;
+    display:grid!important;
+    place-items:center!important;
+  }
+
+  /* Assistant behaves like every other opening mobile card. */
+  .omni-assistant-backdrop{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    z-index:2147481750!important;
+  }
+  .omni-assistant-panel{
+    top:calc(var(--ux-topbar-h,56px) + var(--omni-open-gap))!important;
+    bottom:calc(var(--ux-bottomnav-h,64px) + var(--omni-open-gap))!important;
+    left:var(--omni-open-gap)!important;
+    right:var(--omni-open-gap)!important;
+    width:auto!important;
+    max-width:none!important;
+    height:auto!important;
+    max-height:none!important;
+    border-radius:18px!important;
+    z-index:2147481800!important;
+  }
+  .omni-assistant-head{
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+  }
+  .omni-assistant-close{
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    flex:0 0 44px!important;
+  }
+
+  /* Keyboard shortcuts: same bounded card and an always-visible close action. */
+  .shortcuts-overlay{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    padding:var(--omni-open-gap)!important;
+    align-items:stretch!important;
+    justify-content:center!important;
+    z-index:2147481750!important;
+  }
+  .shortcuts-box{
+    position:relative!important;
+    width:min(600px,100%)!important;
+    max-width:100%!important;
+    height:100%!important;
+    max-height:100%!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+    border-radius:18px!important;
+  }
+  .omni-safe-card-close{
+    position:sticky!important;
+    top:0!important;
+    z-index:35!important;
+    margin:0 0 8px auto!important;
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    border:1px solid var(--border-color)!important;
+    border-radius:12px!important;
+    background:var(--bg-elevated)!important;
+    color:var(--text-primary)!important;
+    font:inherit!important;
+    font-size:1rem!important;
+  }
+
+  /* Bible passage tools fill the same measured region and keep their close row pinned. */
+  #view-bible .bib-mobile-tools-backdrop-v67{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    z-index:2147481650!important;
+  }
+  #view-bible .bib-side-v5814{
+    top:calc(var(--ux-topbar-h,56px) + var(--omni-open-gap))!important;
+    bottom:calc(var(--ux-bottomnav-h,64px) + var(--omni-open-gap))!important;
+    left:var(--omni-open-gap)!important;
+    right:var(--omni-open-gap)!important;
+    width:auto!important;
+    height:auto!important;
+    max-height:none!important;
+    min-height:0!important;
+    border-radius:18px!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  #view-bible .bib-mobile-tools-close-v67{
+    position:sticky!important;
+    top:-8px!important;
+    z-index:35!important;
+    min-height:48px!important;
+  }
+
+  /* Calendar menu already follows this pattern; reinforce its close control. */
+  #view-master-calendar .v603-mobile-sheet-close{
+    position:relative!important;
+    z-index:35!important;
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+  }
+
+  /* Persistent chrome always remains above opening cards. */
+  .topbar{z-index:2147481900!important}
+  .mobile-nav{z-index:2147482000!important}
+}
+</style>
+
+<script id="omnios-v76-mobile-safe-cards-js">
+(function(){
+  'use strict';
+  if(window.__omniMobileSafeCards76)return;
+  window.__omniMobileSafeCards76=true;
+
+  const mobile=()=>matchMedia('(max-width:760px)').matches;
+
+  function ensureShortcutsClose(){
+    if(!mobile())return;
+    const box=document.querySelector('#shortcuts-overlay .shortcuts-box');
+    if(!box||box.querySelector('.omni-safe-card-close'))return;
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='omni-safe-card-close';
+    b.setAttribute('aria-label','Close keyboard shortcuts');
+    b.textContent='✕';
+    b.addEventListener('click',()=>{
+      const existing=document.getElementById('shortcuts-close-btn');
+      if(existing)existing.click();
+      else{
+        const ov=document.getElementById('shortcuts-overlay');
+        ov?.classList.remove('open');
+        ov?.setAttribute('aria-hidden','true');
+      }
+    });
+    box.insertBefore(b,box.firstChild);
+  }
+
+  function refresh(){
+    if(!mobile())return;
+    ensureShortcutsClose();
+  }
+
+  const mo=new MutationObserver(()=>requestAnimationFrame(refresh));
+  if(document.body)mo.observe(document.body,{childList:true,subtree:true});
+  addEventListener('resize',refresh,{passive:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh,{once:true});
+  else refresh();
+
+  window.OmniMobileSafeCards76={refresh};
+})();
+</script>
+
+
+<style id="omnios-v76-mobile-safe-cards-legacy">
+@media(max-width:760px){
+  /* Older drawer backdrops also respect persistent chrome. */
+  :is(#v35-drawer-backdrop,.v55-drawer-backdrop,.v55-overlay,.omnios-group-modal-backdrop){
+    top:var(--ux-topbar-h,56px)!important;
+    bottom:var(--ux-bottomnav-h,64px)!important;
+    left:0!important;
+    right:0!important;
+    height:auto!important;
+    z-index:2147481750!important;
+  }
+
+  /* Legacy side drawers become bounded mobile cards. */
+  :is(#v35-drawer,.v55-drawer,.v55-split){
+    top:calc(var(--ux-topbar-h,56px) + 8px)!important;
+    bottom:calc(var(--ux-bottomnav-h,64px) + 8px)!important;
+    left:8px!important;
+    right:8px!important;
+    width:auto!important;
+    max-width:none!important;
+    height:auto!important;
+    max-height:none!important;
+    border:1px solid var(--border-light)!important;
+    border-radius:18px!important;
+    z-index:2147481800!important;
+    overflow:hidden!important;
+  }
+  :is(.v35-drawer-head,.v55-drawer-head,.v55-split-head){
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+    flex:0 0 auto!important;
+    background:var(--bg-surface)!important;
+  }
+  :is(.v35-drawer-head,.v55-drawer-head,.v55-split-head) :is(.icon-btn,button[aria-label*="Close"],button[title*="Close"]){
+    width:44px!important;
+    min-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    flex:0 0 44px!important;
+  }
+  :is(.v35-drawer-body,.v55-drawer-body,.v55-split-body){
+    min-height:0!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+
+  /* Command palette is a safe-region card with an always-visible top area. */
+  .v55-overlay{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    padding:8px!important;
+    align-items:stretch!important;
+    justify-content:center!important;
+  }
+  .v55-palette{
+    position:relative!important;
+    width:min(820px,100%)!important;
+    height:100%!important;
+    max-height:100%!important;
+    min-height:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    border-radius:18px!important;
+  }
+  .v55-palette-head{
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+    flex:0 0 auto!important;
+    padding-right:58px!important;
+    background:var(--bg-surface)!important;
+  }
+  .v55-palette-results{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+
+  /* Legacy grouping modal gets the same bounded layout. */
+  .omnios-group-modal-backdrop{
+    inset:var(--ux-topbar-h,56px) 0 var(--ux-bottomnav-h,64px) 0!important;
+    padding:8px!important;
+    align-items:stretch!important;
+    justify-content:center!important;
+  }
+  .omnios-group-modal{
+    position:relative!important;
+    width:min(600px,100%)!important;
+    height:100%!important;
+    max-height:100%!important;
+    min-height:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    border-radius:18px!important;
+    overflow:hidden!important;
+  }
+  .omnios-group-modal-head{
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+    flex:0 0 auto!important;
+    padding-right:64px!important;
+    background:var(--bg-surface,var(--card-bg,#0f172a))!important;
+  }
+  .omnios-group-modal-body{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+  }
+  .omnios-group-modal-foot{flex:0 0 auto!important}
+
+  /* Shared injected × for legacy panels that did not originally have one. */
+  .omni-safe-legacy-close{
+    position:absolute!important;
+    top:10px!important;
+    right:10px!important;
+    z-index:40!important;
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    border:1px solid var(--border-color)!important;
+    border-radius:12px!important;
+    background:var(--bg-elevated)!important;
+    color:var(--text-primary)!important;
+    font:inherit!important;
+    font-size:1rem!important;
+  }
+}
+</style>
+
+<script id="omnios-v76-mobile-safe-cards-legacy-js">
+(function(){
+  'use strict';
+  if(window.__omniMobileSafeLegacyCards76)return;
+  window.__omniMobileSafeLegacyCards76=true;
+  const mobile=()=>matchMedia('(max-width:760px)').matches;
+
+  function addClose(host,closeFn,label){
+    if(!host||host.querySelector(':scope > .omni-safe-legacy-close'))return;
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='omni-safe-legacy-close';
+    b.setAttribute('aria-label',label||'Close panel');
+    b.textContent='✕';
+    b.addEventListener('click',closeFn);
+    host.insertBefore(b,host.firstChild);
+  }
+
+  function refresh(){
+    if(!mobile())return;
+
+    const palette=document.querySelector('.v55-overlay .v55-palette');
+    if(palette){
+      addClose(palette,()=>{
+        const ov=palette.closest('.v55-overlay');
+        ov?.classList.remove('open');
+      },'Close command panel');
+    }
+
+    document.querySelectorAll('.omnios-group-modal-backdrop .omnios-group-modal').forEach(modal=>{
+      addClose(modal,()=>{
+        const bd=modal.closest('.omnios-group-modal-backdrop');
+        bd?.classList.remove('is-open');
+      },'Close group dialog');
+    });
+  }
+
+  const mo=new MutationObserver(()=>requestAnimationFrame(refresh));
+  if(document.body)mo.observe(document.body,{childList:true,subtree:true});
+  addEventListener('resize',refresh,{passive:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh,{once:true});
+  else refresh();
+})();
+</script>
+
+
+<style id="omnios-v81-menu-safezone-welcome-later">
+@media(max-width:760px){
+  /* Menu follows the same measured safe region as every other opening card. */
+  #v35-page-launcher{
+    top:calc(var(--ux-topbar-h,56px) + 8px)!important;
+    right:8px!important;
+    bottom:calc(var(--ux-bottomnav-h,64px) + 8px)!important;
+    left:8px!important;
+    width:auto!important;
+    height:auto!important;
+    max-height:none!important;
+    padding:0!important;
+    align-items:stretch!important;
+    justify-content:stretch!important;
+    overflow:hidden!important;
+    border-radius:18px!important;
+    z-index:2147481800!important;
+  }
+  #v35-page-launcher .v35-launcher-sheet{
+    width:100%!important;
+    height:100%!important;
+    max-height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    border:1px solid var(--border-light)!important;
+    border-radius:18px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    overflow:hidden!important;
+  }
+  #v35-page-launcher .v35-launcher-grab{flex:0 0 auto!important}
+  #v35-page-launcher .v35-launcher-head{
+    position:relative!important;
+    flex:0 0 auto!important;
+    z-index:20!important;
+    background:var(--bg-surface)!important;
+  }
+  #v35-page-launcher .v35-launcher-search-wrap{
+    flex:0 0 auto!important;
+    background:var(--bg-surface)!important;
+  }
+  #v35-page-launcher .v35-launcher-body{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:16px!important;
+  }
+  #v35-page-launcher .v35-launcher-close{
+    width:44px!important;
+    min-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    flex:0 0 44px!important;
+  }
+
+  /* The launcher backdrop/card stays below the header and above the bottom dock. */
+  .topbar{z-index:2147481900!important}
+  .mobile-nav{z-index:2147482000!important}
+
+  #welcome63 .w63-actions .w63-btn-later{
+    color:var(--text-muted)!important;
+    border-style:dashed!important;
+  }
+}
+</style>
+
+
+<style id="omnios-v82-menu-safezone-edge-fix">
+@media(max-width:760px){
+  /* MENU: the outer launcher is only the safe-zone backdrop. */
+  #v35-page-launcher{
+    position:fixed!important;
+    top:var(--ux-topbar-h,56px)!important;
+    right:0!important;
+    bottom:var(--ux-bottomnav-h,64px)!important;
+    left:0!important;
+    width:auto!important;
+    height:auto!important;
+    max-width:none!important;
+    max-height:none!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    overflow:hidden!important;
+    align-items:initial!important;
+    justify-content:initial!important;
+    background:rgba(2,5,10,.50)!important;
+    backdrop-filter:blur(5px)!important;
+    -webkit-backdrop-filter:blur(5px)!important;
+    z-index:2147481800!important;
+    box-sizing:border-box!important;
+  }
+
+  /* MENU: the actual card is independently inset INSIDE that safe zone. */
+  #v35-page-launcher>.v35-launcher-sheet{
+    position:absolute!important;
+    top:8px!important;
+    right:8px!important;
+    bottom:8px!important;
+    left:8px!important;
+    inset:8px!important;
+    width:auto!important;
+    height:auto!important;
+    max-width:none!important;
+    max-height:none!important;
+    min-width:0!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    box-sizing:border-box!important;
+    display:flex!important;
+    flex-direction:column!important;
+    overflow:hidden!important;
+    border:1px solid var(--border-light)!important;
+    border-radius:18px!important;
+    background:var(--bg-surface)!important;
+    box-shadow:0 24px 70px rgba(0,0,0,.46)!important;
+  }
+
+  #v35-page-launcher .v35-launcher-grab{
+    flex:0 0 auto!important;
+    margin-top:8px!important;
+  }
+
+  #v35-page-launcher .v35-launcher-head{
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+    flex:0 0 auto!important;
+    background:var(--bg-surface)!important;
+    padding-top:8px!important;
+  }
+
+  #v35-page-launcher .v35-launcher-search-wrap{
+    position:relative!important;
+    z-index:20!important;
+    flex:0 0 auto!important;
+    background:var(--bg-surface)!important;
+  }
+
+  #v35-page-launcher .v35-launcher-body{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    padding-bottom:16px!important;
+    scrollbar-width:none!important;
+  }
+  #v35-page-launcher .v35-launcher-body::-webkit-scrollbar{display:none!important}
+
+  #v35-page-launcher .v35-launcher-close{
+    position:relative!important;
+    z-index:35!important;
+    width:44px!important;
+    min-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    flex:0 0 44px!important;
+  }
+
+  /* Keep both persistent banners physically above the menu. */
+  .topbar{z-index:2147481900!important}
+  .mobile-nav{z-index:2147482000!important}
+
+  /* Remove the thin right-edge artefact on mobile pages.
+     The app already has its own background, so the decorative scanline layer is unnecessary here. */
+  html:not([data-theme="light"]) body::after{
+    content:none!important;
+    display:none!important;
+  }
+
+  html,body,.main-content,.view-container{
+    max-width:100%!important;
+    border-right:0!important;
+    scrollbar-width:none!important;
+  }
+  body,.main-content,.view-container{
+    overflow-x:hidden!important;
+  }
+  .view-container::-webkit-scrollbar,
+  .main-content::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  html::-webkit-scrollbar{
+    width:0!important;
+    height:0!important;
+    display:none!important;
+  }
+
+  /* Prevent fractional-width content from painting a 1px seam at the viewport edge. */
+  .main-content,.view-container,.view,.view.active{
+    width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+}
+</style>
+
+
+<style id="omnios-v83-hide-closed-drawer-edges">
+@media(max-width:760px){
+  /* Closed side panels are not rendered at all on mobile. */
+  .inspector-panel:not(.open),
+  #v35-drawer:not(.open),
+  .v55-drawer:not(.open),
+  .v55-split:not(.open){
+    display:none!important;
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+    transform:none!important;
+    box-shadow:none!important;
+    border-color:transparent!important;
+  }
+
+  .inspector-panel.open{
+    display:block!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    transform:none!important;
+  }
+
+  #v35-drawer.open,
+  .v55-drawer.open,
+  .v55-split.open{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    transform:none!important;
+  }
+
+  .inspector-backdrop:not(.active),
+  #v35-drawer-backdrop:not(.open),
+  .v55-drawer-backdrop:not(.open){
+    display:none!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
+}
+</style>
+
+
+<style id="omnios-v85-hide-closed-menu">
+@media(max-width:760px){
+  /* A closed Menu must have zero rendered footprint. */
+  #v35-page-launcher:not(.open){
+    display:none!important;
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+    position:fixed!important;
+    inset:auto!important;
+    width:0!important;
+    height:0!important;
+    max-width:0!important;
+    max-height:0!important;
+    overflow:hidden!important;
+    background:transparent!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    border:0!important;
+    box-shadow:none!important;
+  }
+
+  #v35-page-launcher:not(.open)>.v35-launcher-sheet{
+    display:none!important;
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+    width:0!important;
+    height:0!important;
+    inset:auto!important;
+    transform:none!important;
+    border:0!important;
+    box-shadow:none!important;
+  }
+
+  /* Only the explicit open state is allowed to render the launcher. */
+  #v35-page-launcher.open{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    top:var(--ux-topbar-h,56px)!important;
+    right:0!important;
+    bottom:var(--ux-bottomnav-h,64px)!important;
+    left:0!important;
+    width:auto!important;
+    height:auto!important;
+    max-width:none!important;
+    max-height:none!important;
+  }
+
+  #v35-page-launcher.open>.v35-launcher-sheet{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+  }
+}
+</style>
+
+
+<style id="omnios-v86-today-active-projects-ui">
+/* Today → Active projects: dedicated, touch-friendly project cards. */
+#view-today .v86-today-projects{
+  overflow:hidden!important;
+}
+#view-today .v86-projects-head{
+  align-items:center!important;
+  margin-bottom:12px!important;
+}
+#view-today .v86-projects-all{
+  flex:0 0 auto!important;
+}
+#view-today .v86-project-list{
+  display:grid;
+  gap:8px;
+}
+#view-today .v86-project-card{
+  position:relative;
+  width:100%;
+  min-width:0;
+  display:grid;
+  grid-template-columns:4px minmax(0,1fr) 22px;
+  gap:10px;
+  align-items:center;
+  padding:11px 11px 11px 0;
+  border:1px solid var(--border-color);
+  border-radius:13px;
+  background:var(--bg-base);
+  color:var(--text-primary);
+  font:inherit;
+  text-align:left;
+  cursor:pointer;
+  overflow:hidden;
+  box-sizing:border-box;
+  transition:border-color .15s ease,background .15s ease,transform .12s ease;
+}
+#view-today .v86-project-card:hover{
+  border-color:color-mix(in srgb,var(--accent-cyan) 34%,var(--border-color));
+  background:var(--bg-elevated);
+}
+#view-today .v86-project-card:active{transform:scale(.992)}
+#view-today .v86-project-accent{
+  align-self:stretch;
+  width:4px;
+  min-height:56px;
+  border-radius:0 99px 99px 0;
+  background:var(--v86-project-color,#64748b);
+}
+#view-today .v86-project-main{display:block;min-width:0}
+#view-today .v86-project-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+#view-today .v86-project-copy{display:block;min-width:0}
+#view-today .v86-project-area{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  min-width:0;
+  color:var(--text-muted);
+  font-size:.55rem;
+  font-weight:720;
+  line-height:1.2;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#view-today .v86-project-area i{
+  width:7px;
+  height:7px;
+  flex:0 0 7px;
+  border-radius:50%;
+}
+#view-today .v86-project-title{
+  display:block;
+  margin-top:4px;
+  min-width:0;
+  font-size:.78rem;
+  line-height:1.25;
+  font-weight:780;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#view-today .v86-project-percent{
+  flex:0 0 auto;
+  min-width:38px;
+  padding:4px 7px;
+  border:1px solid var(--border-color);
+  border-radius:999px;
+  background:var(--bg-elevated);
+  color:var(--text-secondary);
+  font-size:.58rem;
+  font-weight:780;
+  text-align:center;
+}
+#view-today .v86-project-outcome{
+  display:-webkit-box;
+  margin-top:5px;
+  color:var(--text-secondary);
+  font-size:.61rem;
+  line-height:1.4;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+#view-today .v86-project-meta{
+  display:flex;
+  align-items:center;
+  gap:5px 10px;
+  flex-wrap:wrap;
+  margin-top:7px;
+  color:var(--text-muted);
+  font-size:.56rem;
+  line-height:1.3;
+}
+#view-today .v86-project-meta>span:not(:first-child)::before{
+  content:"";
+  display:inline-block;
+  width:3px;
+  height:3px;
+  margin:0 6px 1px 0;
+  border-radius:50%;
+  background:var(--text-muted);
+  opacity:.55;
+}
+#view-today .v86-project-due.warn{color:var(--accent-yellow)}
+#view-today .v86-project-due.danger{color:var(--accent-red);font-weight:720}
+#view-today .v86-project-progress{
+  display:block;
+  width:100%;
+  height:5px;
+  margin-top:8px;
+  overflow:hidden;
+  border-radius:999px;
+  background:var(--bg-hover);
+}
+#view-today .v86-project-progress i{
+  display:block;
+  height:100%;
+  min-width:0;
+  border-radius:inherit;
+  background:linear-gradient(90deg,var(--accent-cyan),color-mix(in srgb,var(--accent-cyan) 45%,#7c3aed));
+}
+#view-today .v86-project-chevron{
+  color:var(--text-muted);
+  font-size:1.2rem;
+  line-height:1;
+  text-align:center;
+}
+#view-today .v86-project-empty{
+  display:grid;
+  gap:5px;
+  place-items:start;
+  padding:14px;
+  border:1px dashed var(--border-light);
+  border-radius:13px;
+  color:var(--text-muted);
+}
+#view-today .v86-project-empty strong{color:var(--text-primary);font-size:.76rem}
+#view-today .v86-project-empty span{font-size:.62rem;line-height:1.45}
+#view-today .v86-project-empty .btn{margin-top:4px}
+
+@media(max-width:760px){
+  #view-today .v86-today-projects{
+    padding:13px!important;
+  }
+  #view-today .v86-projects-head{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    gap:8px!important;
+  }
+  #view-today .v86-projects-head .v58-card-title{
+    font-size:.9rem!important;
+  }
+  #view-today .v86-projects-head .v58-card-sub{
+    max-width:34ch;
+    font-size:.64rem!important;
+  }
+  #view-today .v86-projects-all{
+    min-height:38px!important;
+    padding-inline:9px!important;
+    font-size:.62rem!important;
+  }
+  #view-today .v86-project-list{gap:8px}
+  #view-today .v86-project-card{
+    grid-template-columns:4px minmax(0,1fr) 16px;
+    gap:9px;
+    padding:11px 9px 11px 0;
+    border-radius:14px;
+  }
+  #view-today .v86-project-title{
+    font-size:.8rem;
+    white-space:normal;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+  }
+  #view-today .v86-project-percent{
+    min-width:36px;
+    padding:4px 6px;
+  }
+  #view-today .v86-project-outcome{
+    font-size:.62rem;
+    -webkit-line-clamp:1;
+  }
+  #view-today .v86-project-meta{
+    display:grid;
+    grid-template-columns:auto auto;
+    justify-content:start;
+    column-gap:10px;
+    row-gap:4px;
+    font-size:.57rem;
+  }
+  #view-today .v86-project-meta>span::before{
+    content:none!important;
+    display:none!important;
+  }
+  #view-today .v86-project-due{
+    grid-column:1/-1;
+  }
+}
+</style>
+
+
+<style id="omnios-v87-mobile-habits-month-view">
+@media(max-width:760px){
+  /* Habits header: keep Week / Month visible instead of letting the toolbar scroll them away. */
+  #view-habits .habit-toolbar{
+    width:100%!important;
+    max-width:100%!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:10px!important;
+    overflow:visible!important;
+    margin-bottom:12px!important;
+  }
+  #view-habits .habit-toolbar>div:first-child{
+    width:100%!important;
+    min-width:0!important;
+  }
+  #view-habits .habit-toolbar>div:first-child h3{
+    margin:0 0 3px!important;
+    font-size:1.08rem!important;
+  }
+  #view-habits .habit-toolbar>div:first-child .text-muted{
+    font-size:.7rem!important;
+    line-height:1.4!important;
+  }
+
+  #view-habits .habit-toolbar .toolbar-group{
+    width:100%!important;
+    max-width:100%!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto!important;
+    gap:6px!important;
+    overflow:visible!important;
+    padding:3px!important;
+    border:1px solid var(--border-color)!important;
+    border-radius:14px!important;
+    background:var(--bg-base)!important;
+  }
+  #view-habits .habit-toolbar .toolbar-group>[data-habitview]{
+    width:100%!important;
+    min-width:0!important;
+    min-height:42px!important;
+    padding:7px 8px!important;
+    justify-content:center!important;
+    border:1px solid transparent!important;
+    border-radius:10px!important;
+    font-size:.7rem!important;
+    font-weight:720!important;
+    white-space:nowrap!important;
+    background:transparent!important;
+  }
+  #view-habits .habit-toolbar .toolbar-group>[data-habitview].active{
+    color:var(--text-primary)!important;
+    background:color-mix(in srgb,var(--accent-cyan) 13%,var(--bg-elevated))!important;
+    border-color:color-mix(in srgb,var(--accent-cyan) 34%,var(--border-color))!important;
+  }
+  #view-habits .habit-toolbar .toolbar-group>.btn-primary{
+    min-width:44px!important;
+    width:44px!important;
+    height:42px!important;
+    min-height:42px!important;
+    padding:0!important;
+    font-size:0!important;
+    justify-content:center!important;
+    border-radius:10px!important;
+  }
+  #view-habits .habit-toolbar .toolbar-group>.btn-primary::after{
+    content:"+";
+    font-size:1.2rem;
+    line-height:1;
+    font-weight:760;
+  }
+
+  /* Summary remains compact above either habit view. */
+  #view-habits .habit-summary-grid{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important;
+    margin-bottom:10px!important;
+  }
+  #view-habits .habit-summary{
+    min-width:0!important;
+    padding:10px!important;
+    border-radius:12px!important;
+  }
+
+  /* Phone-native monthly presentation. */
+  #view-habits .v34-habit-month-shell{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow:visible!important;
+  }
+  #view-habits .v34-habit-month-toolbar{
+    display:grid!important;
+    grid-template-columns:auto minmax(0,1fr)!important;
+    grid-template-areas:
+      "nav title"
+      "hint hint"!important;
+    align-items:center!important;
+    gap:7px 9px!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin:0 0 10px!important;
+    padding:0!important;
+  }
+  #view-habits .v34-habit-month-nav{
+    grid-area:nav!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:4px!important;
+    min-width:0!important;
+  }
+  #view-habits .v34-habit-month-nav .btn{
+    width:38px!important;
+    min-width:38px!important;
+    height:38px!important;
+    min-height:38px!important;
+    padding:0!important;
+    justify-content:center!important;
+    font-size:.72rem!important;
+  }
+  #view-habits .v34-habit-month-nav #habit-today{
+    width:auto!important;
+    min-width:54px!important;
+    padding-inline:8px!important;
+    font-size:.62rem!important;
+  }
+  #view-habits .v34-habit-month-title{
+    grid-area:title!important;
+    min-width:0!important;
+    text-align:right!important;
+    font-size:.82rem!important;
+    font-weight:780!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  #view-habits .v34-habit-month-toolbar>.text-muted{
+    grid-area:hint!important;
+    width:100%!important;
+    font-size:.6rem!important;
+    line-height:1.35!important;
+  }
+
+  #view-habits .v34-habit-month-cards{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:9px!important;
+    width:100%!important;
+    max-width:100%!important;
+  }
+  #view-habits .v34-habit-month-card{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    padding:11px!important;
+    margin:0!important;
+    border-radius:14px!important;
+    overflow:hidden!important;
+  }
+  #view-habits .v34-habit-month-card-head{
+    display:grid!important;
+    grid-template-columns:auto minmax(0,1fr) auto!important;
+    align-items:center!important;
+    gap:8px!important;
+    margin-bottom:9px!important;
+  }
+  #view-habits .v34-habit-month-name{
+    min-width:0!important;
+    font-size:.78rem!important;
+    font-weight:760!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  #view-habits .v34-habit-month-meta{
+    font-size:.57rem!important;
+    white-space:nowrap!important;
+    text-align:right!important;
+  }
+  #view-habits .v34-habit-streak{
+    margin-top:2px!important;
+    font-size:.55rem!important;
+  }
+
+  #view-habits .v34-habit-mini-calendar{
+    width:100%!important;
+    max-width:100%!important;
+    display:grid!important;
+    grid-template-columns:repeat(7,minmax(0,1fr))!important;
+    gap:3px!important;
+    overflow:visible!important;
+  }
+  #view-habits .v34-habit-weekday{
+    min-width:0!important;
+    padding:2px 0 4px!important;
+    text-align:center!important;
+    color:var(--text-muted)!important;
+    font-size:.52rem!important;
+    font-weight:700!important;
+    overflow:hidden!important;
+  }
+  #view-habits .v34-habit-blank{
+    width:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    aspect-ratio:1/1!important;
+  }
+  #view-habits .v34-habit-month-day{
+    position:relative!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    aspect-ratio:1/1!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:0!important;
+    border-radius:9px!important;
+    font-size:.62rem!important;
+    touch-action:manipulation!important;
+  }
+  #view-habits .v34-habit-month-day.is-done{
+    background:color-mix(in srgb,var(--accent-green) 15%,var(--bg-elevated))!important;
+    border-color:color-mix(in srgb,var(--accent-green) 42%,var(--border-color))!important;
+  }
+  #view-habits .v34-habit-month-day.is-today{
+    box-shadow:inset 0 0 0 2px var(--accent-cyan)!important;
+  }
+  #view-habits .v34-habit-month-day .v34-dot{
+    position:absolute!important;
+    bottom:3px!important;
+    right:4px!important;
+    font-size:.38rem!important;
+  }
+
+  /* If a saved desktop preference uses the 31-day matrix, keep it usable on mobile. */
+  #view-habits .v34-habit-matrix-wrap{
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-inline:contain!important;
+    border-radius:12px!important;
+  }
+}
+</style>
+
+<script id="omnios-v87-mobile-habits-month-view-js">
+(function(){
+  'use strict';
+  if(window.__omniMobileHabitMonth87)return;
+  window.__omniMobileHabitMonth87=true;
+
+  function polish(){
+    if(!matchMedia('(max-width:760px)').matches)return;
+    const view=document.getElementById('view-habits');
+    if(!view)return;
+    const week=view.querySelector('[data-habitview="week"]');
+    const month=view.querySelector('[data-habitview="calendar"]');
+    if(week){
+      week.innerHTML='Week';
+      week.setAttribute('aria-label','Weekly habits view');
+    }
+    if(month){
+      month.innerHTML='Month';
+      month.setAttribute('aria-label','Monthly habits view');
+    }
+    const add=view.querySelector('.habit-toolbar .toolbar-group>.btn-primary');
+    if(add){
+      add.setAttribute('aria-label','New habit');
+      add.title='New habit';
+    }
+  }
+
+  const mo=new MutationObserver(()=>requestAnimationFrame(polish));
+  if(document.body)mo.observe(document.body,{childList:true,subtree:true});
+  addEventListener('resize',polish,{passive:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',polish,{once:true});
+  else polish();
+})();
+</script>
+
+</body>
+</html>,keys:['transactions','budgetCategories','wallets','bills','paymentPlans']},
+  {id:'workout',label:'Workout',icon:'🏋',keys:['workouts','workoutTemplates','workoutExercises','gymMembership','weightLog']},
+  {id:'goals',label:'Goals & Wishlist',icon:'🎯',keys:['goals','wishlist','wishlistCategories']},
+  {id:'life',label:'Life Hub',icon:'◎',keys:['activityLog'],lifeKeys:['people','home','health','learning','travel','money','documents','journal','importantDates','vehicles','decisions','someday','automation']},
+  {id:'relations',label:'Relations',icon:'⌁',keys:['relations']},
+  {id:'bible',label:'Bible',icon:'▥',keys:['meditation']},
+  {id:'templates',label:'Templates',icon:'▦',keys:['templates','customFields']},
+  {id:'passwords',label:'Passwords',icon:'▣',keys:['passwords']},
+  {id:'settings',label:'Settings & personalization',icon:'⚙',keys:['settings','customIcons','brandingLogo','organizeV40','ui','v55','v56','trash']}
+];
 const PEER_OPEN_TIMEOUT=7000;
 const DATA_OPEN_TIMEOUT=6500;
 let peer=null,peerReady=null,pendingSession=null,syncModal=null,sendTimer=null,warmPromise=null,lastJoinPayload=null;

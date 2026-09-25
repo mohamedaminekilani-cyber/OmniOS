@@ -6204,18 +6204,22 @@ async function joinLocalOffer(payload){
         }
       }catch(e){console.warn('Primary answer delivery failed',e)}
     }
-    if(!delivered){
-      try{
-        delivered=await relaySendEnvelope(payload.sid,payload.secret,'answer',response);
-        if(delivered){setProgress(66,'Response sent');logProgress('Response delivered through encrypted relay')}
-      }catch(e){console.warn('Relay answer delivery failed',e)}
-    }
+    // Back up the response even if peer signaling acknowledged it.
+    // Its acknowledgement does not prove that the PC applied the WebRTC answer.
+    try{
+      const relaySent=await relaySendEnvelope(payload.sid,payload.secret,'answer',response);
+      if(relaySent){delivered=true;logProgress('Encrypted response backup sent to PC')}
+    }catch(e){console.warn('Relay answer backup failed',e)}
     if(!delivered){
       const url=await payloadUrl('answer',response);answerView(url);
       stage(2,'Automatic response unavailable','Copy the response link and paste it into the PC.','error');return
     }
     const host=overlay?.querySelector('.omni-sync-content');
-    if(host)host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response sent automatically</strong><span>Sync starts immediately on the secure connection that delivered the response. OmniOS will upgrade to the local Wi-Fi data channel automatically if it becomes available.</span></div>';
+    if(host){
+      const answerLink=await payloadUrl('answer',response);
+      host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response sent automatically</strong><span>Keep both apps open. If the PC still says it is waiting for the phone response, copy this link and paste it into the PC’s Sync window.</span><button type="button" class="btn" data-copy-response>Copy response link</button></div>';
+      host.querySelector('[data-copy-response]').onclick=async()=>{try{await navigator.clipboard.writeText(answerLink);stage(2,'Response copied','Paste the link into the PC’s Sync window.','ok')}catch(_){prompt('Copy this response link and paste it into the PC:',answerLink)}};
+    }
     stage(3,'Response sent to the PC','Opening the fastest available encrypted route…','ok');
     setTimeout(()=>{if(!liveConn?.open)fallbackFromBlockedLocal(payload.sid)},4200)
   }catch(e){console.error('Local join',e);stage(2,'Could not create response','Use Internet fallback.','error');showFallbackOnly()}

@@ -687,7 +687,7 @@ function auxSnapshotKey35(key){
   key=String(key||'');
   if(!/^omnios_/i.test(key))return false;
   if(['omnios_v3_state','omnios_v3_backup','omnios_ui_preferences_v1','omnios_v35_full_reset_at',SYNC_AUX_META_KEY35,'omnios_sync_device_v1','omnios_sync_pairs_v1','omnios_push_device_v1'].includes(key))return false;
-  if(/storage_test|parts?_cache|startup|boot_cache|sync_|pair|relay|transport|push_(device|subscription|token|endpoint)/i.test(key))return false;
+  if(/storage_test|parts?_cache|startup|boot_cache|sync_|pair|relay|transport|push_/i.test(key))return false;
   return true
 }
 function captureAux35(){

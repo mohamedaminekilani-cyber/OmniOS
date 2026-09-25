@@ -630,21 +630,47 @@ async function folderPermission35(h){try{return (await h.queryPermission({mode:'
 async function loadBackupFolder35(){try{const h=await idbGet35(STORE_STATE,'backup-folder-handle');if(h&&await folderPermission35(h))backupDir35=h}catch(_){}}
 async function writeFolderFile35(name,text,type='application/json'){if(!backupDir35)return false;const h=await backupDir35.getFileHandle(name,{create:true});const w=await h.createWritable();await w.write(new Blob([text],{type}));await w.close();return true}
 function activityCsv35(){const rows=[['timestamp','label','modules']];(state.core?.changeLog||[]).forEach(x=>rows.push([x.at||'',x.label||'',(x.modules||[]).join('; ')]));return rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n')+'\n'}
-function backupPayload35(kind='portable'){
-  const aux=captureAux35(),auxMeta=ensureAuxMeta35(),portableState=clone(state);
+const USER_ASSET_CACHE35='omnios-user-assets-v1';
+function blobToDataUrl35(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||''));r.onerror=()=>reject(r.error||new Error('Asset encoding failed'));r.readAsDataURL(blob)})}
+async function captureUserAssets35(){
+  const out=[];
+  if(!('caches'in window))return out;
+  try{
+    const cache=await caches.open(USER_ASSET_CACHE35),requests=await cache.keys();
+    for(const request of requests){
+      const response=await cache.match(request);if(!response)continue;
+      const blob=await response.blob();
+      out.push({url:request.url,type:blob.type||response.headers.get('content-type')||'application/octet-stream',data:await blobToDataUrl35(blob)})
+    }
+  }catch(e){console.warn('User asset backup capture failed',e)}
+  return out
+}
+async function restoreUserAssets35(assets){
+  if(!Array.isArray(assets)||!('caches'in window))return;
+  const cache=await caches.open(USER_ASSET_CACHE35),existing=await cache.keys();
+  await Promise.all(existing.map(req=>cache.delete(req)));
+  for(const item of assets){
+    if(!item?.url||!/^data:/i.test(String(item.data||'')))continue;
+    const blob=await fetch(item.data).then(r=>r.blob());
+    await cache.put(item.url,new Response(blob,{headers:{'Content-Type':item.type||blob.type||'application/octet-stream','Cache-Control':'no-store'}}))
+  }
+}
+async function backupPayload35(kind='portable'){
+  const aux=captureAux35(),auxMeta=ensureAuxMeta35(),portableState=clone(state),assets=await captureUserAssets35();
   // Legacy password records are intentionally excluded from general backups until
   // they are migrated into an encrypted vault.
   if(portableState&&Object.prototype.hasOwnProperty.call(portableState,'passwords'))delete portableState.passwords;
   return {
     format:kind==='mirror'?'Second Brain Local Mirror':'Second Brain Portable Backup',
-    version:36,
+    version:37,
     exportedAt:new Date().toISOString(),
     state:portableState,
     aux,
     auxMeta,
+    assets,
     manifest:{
-      includes:['state','auxiliary module data','auxiliary sync metadata'],
-      excludes:['legacy plaintext password records','device pairing identity','push device identity','transport/cache keys','browser cache assets'],
+      includes:['state','auxiliary module data','auxiliary sync metadata','custom user asset bytes'],
+      excludes:['legacy plaintext password records','device pairing identity','push device identity','transport/cache keys','transient application caches'],
       note:'Device credentials and transport identity are intentionally device-local.'
     }
   }
@@ -677,7 +703,7 @@ function applyAuxDurably35(changes){
     throw e
   }
 }
-async function mirrorBackupFolder35(){if(!backupDir35||mirrorBusy35)return false;mirrorBusy35=true;try{if(!(await folderPermission35(backupDir35))){backupDir35=null;return false}const payload=backupPayload35('mirror');await writeFolderFile35('SecondBrain_Latest.json',JSON.stringify(payload,null,2));await writeFolderFile35('SecondBrain_Activity.csv',activityCsv35(),'text/csv;charset=utf-8');return true}catch(e){console.warn('Folder mirror failed',e);return false}finally{mirrorBusy35=false}}
+async function mirrorBackupFolder35(){if(!backupDir35||mirrorBusy35)return false;mirrorBusy35=true;try{if(!(await folderPermission35(backupDir35))){backupDir35=null;return false}const payload=await backupPayload35('mirror');await writeFolderFile35('SecondBrain_Latest.json',JSON.stringify(payload,null,2));await writeFolderFile35('SecondBrain_Activity.csv',activityCsv35(),'text/csv;charset=utf-8');return true}catch(e){console.warn('Folder mirror failed',e);return false}finally{mirrorBusy35=false}}
 async function connectBackupFolder35(){if(!window.showDirectoryPicker){window.toast?.('Direct folder mirroring is not supported here. Use Export backup instead.');return false}try{const h=await showDirectoryPicker({mode:'readwrite'});backupDir35=h;await idbPut35(STORE_STATE,'backup-folder-handle',h);await mirrorBackupFolder35();window.toast?.('Backup folder connected. Current Second Brain data was mirrored; no file was imported.');renderDataCenter35();return true}catch(e){if(e?.name!=='AbortError')console.warn(e);return false}}
 let persistTimer35;
 const AUTO_SNAPSHOT_DELAY35=1200,MAX_AUTO_SNAPS35=80,MAX_MANUAL_SNAPS35=20,MAX_PRESYNC_SNAPS35=20;
@@ -900,8 +926,8 @@ window.OmniRecovery35={
 };
 async function restoreSnapshot35(id){const all=await idbAll35(STORE_SNAPS),snap=all.find(x=>x.id===id);if(!snap)return;if(!confirm(`Restore snapshot from ${new Date(snap.at).toLocaleString()}? Current state can be recovered with Undo during this session.`))return;undo35.push(clone(state));state=clone(snap.state);restoreAux35(snap.aux);if(snap.auxMeta)writeAuxMeta35(snap.auxMeta);ensureV35State();lastCommitted35=clone(state);autoSnapshotBase35=clone(state);autoSnapshotBase35.__auxSnapshot35=captureAux35();autoSnapshotLastFP35=fingerprint35(state,autoSnapshotBase35.__auxSnapshot35);saveGuard35=true;(window.saveState?.__v35?null:null);const baseCurrent=window.saveState;saveGuard35=false;window.saveState();renderAll?.();renderNewView35(activeView35());window.toast?.('Snapshot restored')}
 function download35(name,text,type='application/json'){const blob=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-function exportBackup35(){const payload=backupPayload35('portable');download35(`SecondBrain_Backup_${todayKey()}.json`,JSON.stringify(payload,null,2));window.toast?.('Complete portable backup exported')}
-function importBackup35(){const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.onchange=async()=>{const f=inp.files?.[0];if(!f)return;try{const p=JSON.parse(await f.text());const imported=p.state||p;if(!imported||!Array.isArray(imported.entries))throw new Error('Not a Second Brain backup');if(!confirm('Restore this backup? Your current state is added to Undo history first.'))return;undo35.push(clone(state));await makeSnapshot35('Before backup restore',{kind:'pre-restore'});const localOnlyPasswords=Array.isArray(state.passwords)?clone(state.passwords):[];state=clone(imported);if(!Object.prototype.hasOwnProperty.call(imported,'passwords'))state.passwords=localOnlyPasswords;if(p.aux&&typeof p.aux==='object'){const current=captureAux35(),changes=[];for(const k of new Set([...Object.keys(current),...Object.keys(p.aux)])){if(!Object.prototype.hasOwnProperty.call(p.aux,k))changes.push([k,null,true]);else changes.push([k,p.aux[k],false])}applyAuxDurably35(changes)}if(p.auxMeta)writeAuxMetaDurably35(p.auxMeta);ensureV35State();lastCommitted35=clone(state);window.saveState();await persistStateDurably35();await makeSnapshot35('Imported backup');renderAll?.();renderNewView35(activeView35());window.toast?.('Backup restored and verified')}catch(e){alert('Could not import backup: '+e.message)}};inp.click()}
+async function exportBackup35(){try{const payload=await backupPayload35('portable');download35(`SecondBrain_Backup_${todayKey()}.json`,JSON.stringify(payload,null,2));window.toast?.('Complete portable backup exported')}catch(e){console.error('Portable backup export failed',e);window.toast?.('Backup export failed · '+String(e?.message||e))}}
+function importBackup35(){const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.onchange=async()=>{const f=inp.files?.[0];if(!f)return;try{const p=JSON.parse(await f.text());const imported=p.state||p;if(!imported||!Array.isArray(imported.entries))throw new Error('Not a Second Brain backup');if(!confirm('Restore this backup? Your current state is added to Undo history first.'))return;undo35.push(clone(state));await makeSnapshot35('Before backup restore',{kind:'pre-restore'});const localOnlyPasswords=Array.isArray(state.passwords)?clone(state.passwords):[];state=clone(imported);if(!Object.prototype.hasOwnProperty.call(imported,'passwords'))state.passwords=localOnlyPasswords;if(p.aux&&typeof p.aux==='object'){const current=captureAux35(),changes=[];for(const k of new Set([...Object.keys(current),...Object.keys(p.aux)])){if(!Object.prototype.hasOwnProperty.call(p.aux,k))changes.push([k,null,true]);else changes.push([k,p.aux[k],false])}applyAuxDurably35(changes)}if(p.auxMeta)writeAuxMetaDurably35(p.auxMeta);if(Array.isArray(p.assets))await restoreUserAssets35(p.assets);ensureV35State();lastCommitted35=clone(state);window.saveState();await persistStateDurably35();await makeSnapshot35('Imported backup');renderAll?.();renderNewView35(activeView35());window.toast?.('Backup restored and verified')}catch(e){alert('Could not import backup: '+e.message)}};inp.click()}
 async function storageInfo35(){let usage=0,quota=0,persisted=false;try{const e=await navigator.storage?.estimate?.();usage=e?.usage||0;quota=e?.quota||0;persisted=await navigator.storage?.persisted?.()}catch(_){}return{usage,quota,persisted}}
 let idbRecovered35=false;
 function time35(v){const n=Date.parse(String(v||''));return Number.isFinite(n)?n:0}

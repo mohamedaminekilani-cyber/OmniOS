@@ -1575,7 +1575,11 @@ function localKey(d=new Date()){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 function weekStart(d=new Date()){
-  const x=new Date(d);x.setHours(12,0,0,0);const off=(x.getDay()+6)%7;x.setDate(x.getDate()-off);return localKey(x);
+  const x=new Date(d);x.setHours(12,0,0,0);
+  let pref='monday';
+  try{pref=typeof getSetting==='function'?getSetting('calendar.weekStart','monday'):(state?.settings?.calendar?.weekStart||'monday')}catch(_){}
+  const first=pref==='sunday'?0:1,off=(x.getDay()-first+7)%7;
+  x.setDate(x.getDate()-off);return localKey(x);
 }
 function monthKey(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
 function stateRef(){return state;}
@@ -1597,7 +1601,7 @@ function cycleKey(r,d=new Date()){
 }
 function cycleMap(r,d=new Date()){r.log=r.log&&typeof r.log==='object'?r.log:{};const k=cycleKey(r,d);r.log[k]=r.log[k]&&typeof r.log[k]==='object'?r.log[k]:{};return r.log[k]}
 function cycleProgress(r,d=new Date()){const m=cycleMap(r,d),total=A(r.items).length,done=A(r.items).filter(i=>!!m[i.id]).length;return{done,total,pct:total?Math.round(done/total*100):0,map:m}}
-function resetText(r){return r.frequency==='weekly'?'Resets at the start of each week':r.frequency==='monthly'?'Resets at the start of each month':'Resets every day'}
+function resetText(r){if(r.frequency==='weekly'){let p='monday';try{p=typeof getSetting==='function'?getSetting('calendar.weekStart','monday'):(state?.settings?.calendar?.weekStart||'monday')}catch(_){}return 'Resets every '+(p==='sunday'?'Sunday':'Monday')}return r.frequency==='monthly'?'Resets at the start of each month':'Resets every day'}
 function freqLabel(r){
   if(r.frequency==='daily')return 'Daily';
   if(r.frequency==='weekly'){const ds=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];return r.days.length?'Weekly · '+r.days.map(x=>ds[x]).join(', '):'Weekly'}

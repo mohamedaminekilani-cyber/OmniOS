@@ -87,7 +87,7 @@ export default async (req: Request, _context: Context) => {
       let nextCursor = cursor;
       for (const item of candidates) {
         const row = await store.get(item.key, { type: "json" }) as RelayRecord | null;
-        if (row) { messages.push(row); nextCursor = item.tail; }
+        if (row) { messages.push({ ...row, cursor: item.tail } as RelayRecord & { cursor: string }); nextCursor = item.tail; }
       }
       const stale = listed.blobs
         .map(x => ({ key: x.key, at: Number(x.key.slice(prefix.length, prefix.length + 13)) || 0 }))

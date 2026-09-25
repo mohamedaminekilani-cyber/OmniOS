@@ -5180,8 +5180,11 @@ function ensureReadyForMerge(){
   r.ensureSyncMeta?.();return r
 }
 function buildBundle(){
-  const r=ensureReadyForMerge(),aux=r.captureAux?.()||{},meta=state.core?.syncMeta||{};
-  return {protocol:PROTOCOL,generatedAt:iso(),device:device(),state:clone(state),moduleTimes:{...(meta.modules||{})},recordTimes:clone(meta.records||{})||{},aux,auxMeta:r.readAuxMeta?.()||{},fingerprint:r.fingerprint?.(state,aux)||''}
+  const r=ensureReadyForMerge(),aux=r.captureAux?.()||{},meta=state.core?.syncMeta||{},syncState=clone(state);
+  if(syncState&&Object.prototype.hasOwnProperty.call(syncState,'passwords'))delete syncState.passwords;
+  const moduleTimes={...(meta.modules||{})};delete moduleTimes.passwords;
+  const recordTimes=clone(meta.records||{})||{};delete recordTimes.passwords;
+  return {protocol:PROTOCOL,generatedAt:iso(),device:device(),state:syncState,moduleTimes,recordTimes,aux,auxMeta:r.readAuxMeta?.()||{},fingerprint:r.fingerprint?.(syncState,aux)||''}
 }
 function chooseRemote(lt,rt,localId,remoteId){
   if(rt>lt)return true;if(rt<lt)return false;
@@ -5215,21 +5218,51 @@ function mergeRecordArray(key,localList,remoteList,localRec,remoteRec,localModul
 }
 
 async function mergeBundle(remote){
-  if(!remote||remote.protocol!==PROTOCOL||!remote.state)return {changed:false,modules:[],aux:[]};
+  if(!remote||remote.protocol!==PROTOCOL||!remote.state)return {changed:false,metadataChanged:false,modules:[],aux:[]};
   const r=ensureReadyForMerge(),localId=device().id,remoteId=remote.device?.id||'';
   const localMeta=r.ensureSyncMeta?.()||{modules:{},records:{}},localTimes={...(localMeta.modules||{})},remoteTimes={...(remote.moduleTimes||remote.state?.core?.syncMeta?.modules||{})};
   const localRecords=localMeta.records||{},remoteRecords=remote.recordTimes||remote.state?.core?.syncMeta?.records||{},mergedRecords=clone(localRecords)||{};
   const keys=new Set([...(r.stateKeys?.(state)||[]),...(r.stateKeys?.(remote.state)||[])]),stateChanges=[],mergedTimes={...localTimes};
+
   for(const k of keys){
     const localHas=hasOwn(state,k),remoteHas=hasOwn(remote.state,k),lt=when(localTimes[k]),rt=when(remoteTimes[k]);
     if(remoteHas){
-      const lv=state[k],rv=remote.state[k],recordMerge=Array.isArray(lv)&&Array.isArray(rv)&&recordArrayEligible(lv,r)&&recordArrayEligible(rv,r)&&(localRecords[k]||remoteRecords[k]);
-      if(recordMerge){
-        const merged=mergeRecordArray(k,lv,rv,localRecords[k]||{},remoteRecords[k]||{},localTimes[k]||'',remoteTimes[k]||'',localId,remoteId,remote.generatedAt,r);
-        mergedRecords[k]=merged.meta;
-        if(!same(lv,merged.list))stateChanges.push([k,merged.list])
-      }else if((!localHas||chooseRemote(lt,rt,localId,remoteId))&&!same(lv,rv)){
-        stateChanges.push([k,clone(rv)])
+      const lv=state[k],rv=remote.state[k];
+
+      // Nested ID-based collections (for example life.people and life.projects) merge
+      // independently so unrelated edits on two devices cannot erase each other.
+      if(lv&&rv&&typeof lv==='object'&&typeof rv==='object'&&!Array.isArray(lv)&&!Array.isArray(rv)){
+        const mergedObj=clone(lv)||{},childKeys=new Set([...Object.keys(lv),...Object.keys(rv)]);
+        let usedNestedMerge=false;
+        for(const child of childKeys){
+          const la=lv[child],ra=rv[child],path=k+'.'+child;
+          if(Array.isArray(la)&&Array.isArray(ra)&&recordArrayEligible(la,r)&&recordArrayEligible(ra,r)&&(localRecords[path]||remoteRecords[path])){
+            const merged=mergeRecordArray(path,la,ra,localRecords[path]||{},remoteRecords[path]||{},localTimes[path]||localTimes[k]||'',remoteTimes[path]||remoteTimes[k]||'',localId,remoteId,remote.generatedAt,r);
+            mergedObj[child]=merged.list;
+            mergedRecords[path]=merged.meta;
+            const lct=when(localTimes[path]||localTimes[k]),rct=when(remoteTimes[path]||remoteTimes[k]);
+            mergedTimes[path]=rct>lct||(rct===lct&&String(remoteId)>String(localId))?(remoteTimes[path]||remoteTimes[k]||remote.generatedAt):(localTimes[path]||localTimes[k]||remote.generatedAt);
+            usedNestedMerge=true;
+          }else if(!hasOwn(lv,child)){
+            mergedObj[child]=clone(ra);
+          }else if(hasOwn(rv,child)&&chooseRemote(lt,rt,localId,remoteId)){
+            mergedObj[child]=clone(ra);
+          }
+        }
+        if(usedNestedMerge){
+          if(!same(lv,mergedObj))stateChanges.push([k,mergedObj]);
+        }else if((!localHas||chooseRemote(lt,rt,localId,remoteId))&&!same(lv,rv)){
+          stateChanges.push([k,clone(rv)]);
+        }
+      }else{
+        const recordMerge=Array.isArray(lv)&&Array.isArray(rv)&&recordArrayEligible(lv,r)&&recordArrayEligible(rv,r)&&(localRecords[k]||remoteRecords[k]);
+        if(recordMerge){
+          const merged=mergeRecordArray(k,lv,rv,localRecords[k]||{},remoteRecords[k]||{},localTimes[k]||'',remoteTimes[k]||'',localId,remoteId,remote.generatedAt,r);
+          mergedRecords[k]=merged.meta;
+          if(!same(lv,merged.list))stateChanges.push([k,merged.list])
+        }else if((!localHas||chooseRemote(lt,rt,localId,remoteId))&&!same(lv,rv)){
+          stateChanges.push([k,clone(rv)])
+        }
       }
     }
     if(remoteHas&&(rt>lt||(rt===lt&&String(remoteId)>String(localId))))mergedTimes[k]=remoteTimes[k]||localTimes[k]||remote.generatedAt;
@@ -5252,8 +5285,10 @@ async function mergeBundle(remote){
     }
   }
 
-  if(!stateChanges.length&&!auxChanges.length)return {changed:false,modules:[],aux:[]};
-  await r.makeSnapshot?.('Before device sync',{kind:'manual'});
+  const metadataChanged=!same(localTimes,mergedTimes)||!same(localRecords,mergedRecords)||!same(localAuxMeta,mergedAuxMeta);
+  if(!stateChanges.length&&!auxChanges.length&&!metadataChanged)return {changed:false,metadataChanged:false,modules:[],aux:[]};
+
+  await r.makeSnapshot?.('Before device sync',{kind:'pre-sync'});
   window.__omniSyncApplying=true;
   try{
     for(const [k,v] of stateChanges)state[k]=v;
@@ -5262,15 +5297,22 @@ async function mergeBundle(remote){
     state.core.syncMeta.modules=mergedTimes;
     state.core.syncMeta.records=mergedRecords;
     state.core.syncMeta.updatedAt=[state.core.syncMeta.updatedAt,remote.generatedAt,iso()].filter(Boolean).sort().pop();
-    for(const [k,v,deleted] of auxChanges){
-      try{if(deleted)localStorage.removeItem(k);else localStorage.setItem(k,String(v??''))}catch(_){}
-    }
+
+    // Apply auxiliary values and core state with verification. A failed durable write now
+    // rejects the merge instead of being reported as "Synced".
+    r.applyAuxDurably?.(auxChanges);
     r.writeAuxMeta?.(mergedAuxMeta);
     if(typeof normalizeState==='function')normalizeState();
     if(typeof window.saveState==='function')window.saveState();
+    await r.persistStateDurably?.();
     try{window.renderAll?.()}catch(_){}
-  }finally{window.__omniSyncApplying=false}
-  return {changed:true,modules:stateChanges.map(x=>x[0]),aux:auxChanges.map(x=>x[0])}
+  }catch(e){
+    console.error('Device sync commit failed',e);
+    throw e;
+  }finally{
+    window.__omniSyncApplying=false
+  }
+  return {changed:!!(stateChanges.length||auxChanges.length),metadataChanged,modules:stateChanges.map(x=>x[0]),aux:auxChanges.map(x=>x[0])}
 }
 
 function setStatus(text,tone='',detail=''){

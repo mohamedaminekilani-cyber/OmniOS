@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "OmniOS",
-  "short_name": "OmniOS",
-  "description": "Local-first personal operating system for tasks, calendar, finance, habits, notes and planning.",
+  "name": "Second Brain",
+  "short_name": "Second Brain",
+  "description": "Local-first Second Brain for tasks, calendar, finance, habits, notes and planning.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -2398,7 +2398,7 @@ function hideWelcomeUntilTomorrow(){
   try{localStorage.setItem(WELCOME_HIDE_DAY_KEY,welcomeDayKey())}catch(_){}
   close()
 }
-function show(){document.getElementById('welcome63')?.remove();const x=data(),o=document.createElement('div'),dv=window.OmniDailyVerse79?.today?.()||null,profileName=String(x.s?.settings?.profile?.name||'').trim(),logo=x.s?.brandingLogo||x.s?.customIcons?.logo||'',sum=[x.agenda.length?x.agenda.length+' scheduled':'',x.tasks.length?x.tasks.length+' tasks due':'',x.routines.length?x.routines.length+' routines':''].filter(Boolean).join(' · ')||'Your day is open';o.id='welcome63';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');o.setAttribute('aria-label','Today briefing');o.innerHTML=`<div class="w63-shell"><div class="w63-top"><div class="w63-brand"><div class="w63-mark">${logo?`<img src="${E(logo)}" alt="">`:'✦'}</div><span>Second Brain</span></div><button type="button" class="w63-x" data-w63close aria-label="Close welcome screen">✕</button></div><main class="w63-main"><section class="w63-hero"><div class="w63-intro"><div class="w63-date">${E(x.d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}))}</div><h1>${g(x.d.getHours())}${profileName?', '+E(profileName):''}.</h1><div class="w63-summary">${E(sum)}. Here is your day at a glance.</div><div class="w63-actions"><button class="w63-btn primary" data-w63go="today">Start with Today</button><button class="w63-btn" data-w63close>Enter workspace</button><button class="w63-btn w63-btn-later" data-w63tomorrow>Hide until tomorrow</button></div></div><aside class="w63-next"><div><div class="w63-label">Next on your schedule</div><div class="w63-time">${x.next?E(tm(x.next.time)):x.agenda.length?'Done for now':'Open day'}</div><div class="w63-next-title">${x.next?E(x.next.t):x.agenda.length?'No more timed items today.':'Nothing scheduled today.'}</div>${x.next?`<div class="w63-muted">${E(x.next.k)}${x.next.dur?' · '+E(x.next.dur+' min'):''}</div>`:''}</div><button class="w63-link" data-w63go="master-calendar">View calendar →</button></aside></section>${dv?`<section class="w80-welcome-verse" aria-label="Verse of the day"><div class="w80-welcome-verse-main"><div class="w80-welcome-verse-kicker">Verse of the day · ${E(dv.theme)}</div><blockquote>${E(dv.text)}</blockquote><div class="w80-welcome-verse-ref">${E(dv.ref)}</div></div><div class="w80-welcome-verse-actions"><button type="button" class="w63-btn" data-w80verse="read">Read in Bible</button><button type="button" class="w63-btn" data-w80verse="meditate">Meditate</button></div></section>`:''}<section class="w63-stats"><div class="w63-stat"><span>Schedule</span><strong>${x.agenda.length}</strong></div><div class="w63-stat"><span>Tasks due</span><strong>${x.tasks.length}</strong></div><div class="w63-stat"><span>Habits</span><strong>${x.hd}/${x.habits.length}</strong></div><div class="w63-stat"><span>Focus today</span><strong>${Math.round(x.focus)}m</strong></div></section><section class="w63-grid"><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Today’s agenda</div><div class="w63-sub">Events and time blocks</div></div><button class="w63-link" data-w63go="master-calendar">Calendar</button></div>${rowsAgenda(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Priority tasks</div><div class="w63-sub">Pinned, urgent and due first</div></div><button class="w63-link" data-w63go="tasks">Tasks</button></div>${rowsTasks(x)}</div></div><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Routines</div><div class="w63-sub">Today’s progress</div></div><button class="w63-link" data-w63go="routine">Routine</button></div>${rowsR(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Habits</div><div class="w63-sub">${x.hd} completed today</div></div><button class="w63-link" data-w63go="habits">Habits</button></div>${rowsH(x)}</div></div></section></main></div>`;document.body.appendChild(o);o.addEventListener('click',e=>{if(e.target===o)close()});o.querySelectorAll('[data-w63close]').forEach(b=>b.onclick=close);o.querySelectorAll('[data-w63tomorrow]').forEach(b=>b.onclick=hideWelcomeUntilTomorrow);o.querySelectorAll('[data-w63go]').forEach(b=>b.onclick=()=>go(b.dataset.w63go));o.querySelectorAll('[data-w80verse]').forEach(b=>b.onclick=()=>{const mode=b.dataset.w80verse;close();setTimeout(()=>{if(mode==='meditate')window.OmniDailyVerse79?.meditate?.(dv?.ref);else window.OmniDailyVerse79?.read?.(dv?.ref)},100)});requestAnimationFrame(()=>requestAnimationFrame(()=>o.classList.add('open')))}
+function show(){document.getElementById('welcome63')?.remove();const x=data(),o=document.createElement('div'),dv=window.OmniDailyVerse79?.today?.()||null,profileName=String(x.s?.settings?.profile?.name||'').trim(),profileAvatar=String(x.s?.settings?.profile?.avatar||''),logo=x.s?.brandingLogo||x.s?.customIcons?.logo||'',sum=[x.agenda.length?x.agenda.length+' scheduled':'',x.tasks.length?x.tasks.length+' tasks due':'',x.routines.length?x.routines.length+' routines':''].filter(Boolean).join(' · ')||'Your day is open';o.id='welcome63';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');o.setAttribute('aria-label','Today briefing');o.innerHTML=`<div class="w63-shell"><div class="w63-top"><div class="w63-brand"><div class="w63-mark">${logo?`<img src="${E(logo)}" alt="">`:'✦'}</div><span>Second Brain</span></div><button type="button" class="w63-x" data-w63close aria-label="Close welcome screen">✕</button></div><main class="w63-main"><section class="w63-hero"><div class="w63-intro"><div class="w63-date">${E(x.d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}))}</div>${profileAvatar?`<img class="w93-welcome-avatar" src="${E(profileAvatar)}" alt="">`:''}<h1>${g(x.d.getHours())}${profileName?', '+E(profileName):''}.</h1><div class="w63-summary">${E(sum)}. Here is your day at a glance.</div><div class="w63-actions"><button class="w63-btn primary" data-w63go="today">Start with Today</button><button class="w63-btn" data-w63close>Enter workspace</button><button class="w63-btn w63-btn-later" data-w63tomorrow>Hide until tomorrow</button></div></div><aside class="w63-next"><div><div class="w63-label">Next on your schedule</div><div class="w63-time">${x.next?E(tm(x.next.time)):x.agenda.length?'Done for now':'Open day'}</div><div class="w63-next-title">${x.next?E(x.next.t):x.agenda.length?'No more timed items today.':'Nothing scheduled today.'}</div>${x.next?`<div class="w63-muted">${E(x.next.k)}${x.next.dur?' · '+E(x.next.dur+' min'):''}</div>`:''}</div><button class="w63-link" data-w63go="master-calendar">View calendar →</button></aside></section>${dv?`<section class="w80-welcome-verse" aria-label="Verse of the day"><div class="w80-welcome-verse-main"><div class="w80-welcome-verse-kicker">Verse of the day · ${E(dv.theme)}</div><blockquote>${E(dv.text)}</blockquote><div class="w80-welcome-verse-ref">${E(dv.ref)}</div></div><div class="w80-welcome-verse-actions"><button type="button" class="w63-btn" data-w80verse="read">Read in Bible</button><button type="button" class="w63-btn" data-w80verse="meditate">Meditate</button></div></section>`:''}<section class="w63-stats"><div class="w63-stat"><span>Schedule</span><strong>${x.agenda.length}</strong></div><div class="w63-stat"><span>Tasks due</span><strong>${x.tasks.length}</strong></div><div class="w63-stat"><span>Habits</span><strong>${x.hd}/${x.habits.length}</strong></div><div class="w63-stat"><span>Focus today</span><strong>${Math.round(x.focus)}m</strong></div></section><section class="w63-grid"><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Today’s agenda</div><div class="w63-sub">Events and time blocks</div></div><button class="w63-link" data-w63go="master-calendar">Calendar</button></div>${rowsAgenda(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Priority tasks</div><div class="w63-sub">Pinned, urgent and due first</div></div><button class="w63-link" data-w63go="tasks">Tasks</button></div>${rowsTasks(x)}</div></div><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Routines</div><div class="w63-sub">Today’s progress</div></div><button class="w63-link" data-w63go="routine">Routine</button></div>${rowsR(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Habits</div><div class="w63-sub">${x.hd} completed today</div></div><button class="w63-link" data-w63go="habits">Habits</button></div>${rowsH(x)}</div></div></section></main></div>`;document.body.appendChild(o);o.addEventListener('click',e=>{if(e.target===o)close()});o.querySelectorAll('[data-w63close]').forEach(b=>b.onclick=close);o.querySelectorAll('[data-w63tomorrow]').forEach(b=>b.onclick=hideWelcomeUntilTomorrow);o.querySelectorAll('[data-w63go]').forEach(b=>b.onclick=()=>go(b.dataset.w63go));o.querySelectorAll('[data-w80verse]').forEach(b=>b.onclick=()=>{const mode=b.dataset.w80verse;close();setTimeout(()=>{if(mode==='meditate')window.OmniDailyVerse79?.meditate?.(dv?.ref);else window.OmniDailyVerse79?.read?.(dv?.ref)},100)});requestAnimationFrame(()=>requestAnimationFrame(()=>o.classList.add('open')))}
 function close(){const o=document.getElementById('welcome63');if(o){o.classList.remove('open');setTimeout(()=>o.remove(),250)}}function go(v){close();setTimeout(()=>window.switchView?.(v),100)}function ready(){if(window.__welcome63Shown)return;if(welcomeHiddenToday()){window.__welcome63Shown=1;return}let n=0;const q=()=>{n++;if((document.documentElement.classList.contains('omnios-ready')&&!document.getElementById('omnios-boot-screen'))||n>70){window.__welcome63Shown=1;if(!welcomeHiddenToday())setTimeout(show,100)}else setTimeout(q,80)};q()}window.OmniWelcome={open:show,close,refresh:show};document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
 })();
 </script>
@@ -10067,3 +10067,142 @@ window.SecondBrainA11y={repair:repairLabels,syncDialog};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
+
+
+<style id="omnios-v93-avatar-ui">
+/* ===== Second Brain v93 — People + user profile avatars ===== */
+.v35-record-identity{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+}
+.v35-record-type-icon{
+  width:36px;
+  height:36px;
+  display:grid;
+  place-items:center;
+  flex:0 0 36px;
+  border-radius:50%;
+  background:var(--bg-elevated);
+  font-size:1rem;
+}
+.v35-person-avatar,
+.profile-avatar-preview{
+  position:relative;
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+  border:1px solid var(--border-color);
+  border-radius:50%;
+  background:color-mix(in srgb,var(--accent-cyan) 10%,var(--bg-elevated));
+  color:var(--text-secondary);
+  font-weight:800;
+  letter-spacing:.01em;
+}
+.v35-person-avatar{
+  width:40px;
+  height:40px;
+  font-size:.72rem;
+}
+.v35-person-avatar img,
+.profile-avatar-preview img,
+.w93-welcome-avatar{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+}
+.v35-person-avatar-detail{
+  width:58px;
+  height:58px;
+  font-size:.9rem;
+}
+.v35-avatar-editor,
+.profile-avatar-editor{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:14px;
+  padding:12px;
+  border:1px solid var(--border-color);
+  border-radius:14px;
+  background:var(--bg-base);
+}
+.v35-avatar-preview,
+.profile-avatar-preview{
+  width:76px;
+  height:76px;
+  flex:0 0 76px;
+  font-size:1.05rem;
+}
+.v35-avatar-controls,
+.profile-avatar-copy{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+.v35-avatar-controls strong,
+.profile-avatar-copy strong{
+  font-size:.8rem;
+  color:var(--text-primary);
+}
+.v35-avatar-controls small,
+.profile-avatar-copy small{
+  font-size:.64rem;
+  line-height:1.4;
+  color:var(--text-muted);
+}
+.v35-avatar-buttons,
+.profile-avatar-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:3px;
+}
+.v35-avatar-buttons label,
+.profile-avatar-actions label{
+  cursor:pointer;
+}
+.w93-welcome-avatar{
+  width:58px;
+  height:58px;
+  margin:12px 0 8px;
+  border-radius:50%;
+  border:1px solid var(--border-light);
+  box-shadow:0 8px 22px rgba(0,0,0,.18);
+}
+
+@media(max-width:760px){
+  .v35-avatar-editor,
+  .profile-avatar-editor{
+    align-items:flex-start;
+    gap:11px;
+    padding:10px;
+  }
+  .v35-avatar-preview,
+  .profile-avatar-preview{
+    width:64px;
+    height:64px;
+    flex-basis:64px;
+  }
+  .v35-avatar-buttons,
+  .profile-avatar-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    width:100%;
+  }
+  .v35-avatar-buttons .btn,
+  .profile-avatar-actions .btn{
+    width:100%;
+    min-width:0;
+    justify-content:center;
+  }
+  .v35-person-avatar{width:38px;height:38px}
+  .v35-person-avatar-detail{width:54px;height:54px}
+  .w93-welcome-avatar{width:52px;height:52px;margin:10px 0 7px}
+}
+</style>

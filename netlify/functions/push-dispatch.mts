@@ -45,6 +45,7 @@ export default async () => {
   const { blobs } = await store.list({ prefix: "device/" });
   const now = Date.now();
   const graceMs = 15 * 60 * 1000;
+  const missedWindowMs = 24 * 60 * 60 * 1000;
 
   for (const blob of blobs) {
     const record = await store.get(blob.key, { type: "json" }) as DeviceRecord | null;
@@ -57,19 +58,29 @@ export default async () => {
 
     for (const item of schedules) {
       const at = Date.parse(item.fireAt);
-      if (!Number.isFinite(at) || at > now || at < now - graceMs || sent[item.id]) continue;
+      if (!Number.isFinite(at) || at > now) continue;
+      const occurrenceKey = item.id + "@" + item.fireAt;
+      if (sent[occurrenceKey]) continue;
 
+      const lateBy = now - at;
+      if (lateBy > missedWindowMs) {
+        sent[occurrenceKey] = "expired:" + new Date().toISOString();
+        changed = true;
+        continue;
+      }
+
+      const missed = lateBy > graceMs;
       try {
         await webpush.sendNotification(record.subscription, JSON.stringify({
-          title: item.title || "OmniOS reminder",
-          body: item.body || "You have something scheduled in OmniOS.",
+          title: missed ? ("Missed · " + (item.title || "Second Brain reminder")) : (item.title || "Second Brain reminder"),
+          body: missed ? ((item.body || "You had something scheduled in Second Brain.") + " · Scheduled earlier today.") : (item.body || "You have something scheduled in Second Brain."),
           view: item.view || "reminders",
-          tag: item.tag || item.id
+          tag: item.tag || occurrenceKey
         }), { TTL: 86400 });
-        sent[item.id] = new Date().toISOString();
+        sent[occurrenceKey] = (missed ? "missed:" : "sent:") + new Date().toISOString();
         changed = true;
       } catch (error: any) {
-        console.error("OmniOS push dispatch", blob.key, error?.statusCode || error);
+        console.error("Second Brain push dispatch", blob.key, error?.statusCode || error);
         if (isGone(error)) { invalid = true; break; }
       }
     }

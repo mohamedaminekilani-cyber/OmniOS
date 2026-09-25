@@ -625,17 +625,20 @@ async function loadBackupFolder35(){try{const h=await idbGet35(STORE_STATE,'back
 async function writeFolderFile35(name,text,type='application/json'){if(!backupDir35)return false;const h=await backupDir35.getFileHandle(name,{create:true});const w=await h.createWritable();await w.write(new Blob([text],{type}));await w.close();return true}
 function activityCsv35(){const rows=[['timestamp','label','modules']];(state.core?.changeLog||[]).forEach(x=>rows.push([x.at||'',x.label||'',(x.modules||[]).join('; ')]));return rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n')+'\n'}
 function backupPayload35(kind='portable'){
-  const aux=captureAux35(),auxMeta=ensureAuxMeta35();
+  const aux=captureAux35(),auxMeta=ensureAuxMeta35(),portableState=clone(state);
+  // Legacy password records are intentionally excluded from general backups until
+  // they are migrated into an encrypted vault.
+  if(portableState&&Object.prototype.hasOwnProperty.call(portableState,'passwords'))delete portableState.passwords;
   return {
     format:kind==='mirror'?'Second Brain Local Mirror':'Second Brain Portable Backup',
     version:36,
     exportedAt:new Date().toISOString(),
-    state:clone(state),
+    state:portableState,
     aux,
     auxMeta,
     manifest:{
       includes:['state','auxiliary module data','auxiliary sync metadata'],
-      excludes:['device pairing identity','push device identity','transport/cache keys','browser cache assets'],
+      excludes:['legacy plaintext password records','device pairing identity','push device identity','transport/cache keys','browser cache assets'],
       note:'Device credentials and transport identity are intentionally device-local.'
     }
   }
@@ -659,7 +662,7 @@ function applyAuxDurably35(changes){
 async function mirrorBackupFolder35(){if(!backupDir35||mirrorBusy35)return false;mirrorBusy35=true;try{if(!(await folderPermission35(backupDir35))){backupDir35=null;return false}const payload=backupPayload35('mirror');await writeFolderFile35('SecondBrain_Latest.json',JSON.stringify(payload,null,2));await writeFolderFile35('SecondBrain_Activity.csv',activityCsv35(),'text/csv;charset=utf-8');return true}catch(e){console.warn('Folder mirror failed',e);return false}finally{mirrorBusy35=false}}
 async function connectBackupFolder35(){if(!window.showDirectoryPicker){window.toast?.('Direct folder mirroring is not supported here. Use Export backup instead.');return false}try{const h=await showDirectoryPicker({mode:'readwrite'});backupDir35=h;await idbPut35(STORE_STATE,'backup-folder-handle',h);await mirrorBackupFolder35();window.toast?.('Backup folder connected. Current OmniOS data was mirrored; no file was imported.');renderDataCenter35();return true}catch(e){if(e?.name!=='AbortError')console.warn(e);return false}}
 let persistTimer35;
-const AUTO_SNAPSHOT_DELAY35=1200,MAX_AUTO_SNAPS35=80,MAX_MANUAL_SNAPS35=20;
+const AUTO_SNAPSHOT_DELAY35=1200,MAX_AUTO_SNAPS35=80,MAX_MANUAL_SNAPS35=20,MAX_PRESYNC_SNAPS35=20;
 let autoSnapshotTimer35=null,autoSnapshotPending35=new Set(),autoSnapshotBase35=null,autoSnapshotLastFP35='';
 
 function auxSnapshotKey35(key){
@@ -781,9 +784,11 @@ function persistIDB35(reason='save'){
 async function trimSnapshots35(all){
   all.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
   const autos=all.filter(s=>s.kind==='auto'||/^Automatic\b/i.test(s.label||''));
-  const manuals=all.filter(s=>!(s.kind==='auto'||/^Automatic\b/i.test(s.label||'')));
+  const presync=all.filter(s=>s.kind==='pre-sync'||s.kind==='pre-restore');
+  const manuals=all.filter(s=>!(s.kind==='auto'||s.kind==='pre-sync'||s.kind==='pre-restore'||/^Automatic\b/i.test(s.label||'')));
   const keep=new Set([
     ...autos.slice(0,MAX_AUTO_SNAPS35).map(s=>s.id),
+    ...presync.slice(0,MAX_PRESYNC_SNAPS35).map(s=>s.id),
     ...manuals.slice(0,MAX_MANUAL_SNAPS35).map(s=>s.id)
   ]);
   for(const old of all)if(!keep.has(old.id))await idbDelete35(STORE_SNAPS,old.id)

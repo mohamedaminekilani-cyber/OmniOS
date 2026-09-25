@@ -378,7 +378,7 @@ async function syncPush(){
   try{
     var sub=await subscription();if(!sub)return;
     await postPush({action:'sync',deviceId:deviceId(),subscription:sub.toJSON(),timezone:timezone(),schedules:collectSchedules()});
-  }catch(e){console.warn('OmniOS push sync',e)}
+  }catch(e){console.warn('Second Brain push sync',e)}
 }
 function queueSync(){clearTimeout(syncTimer);syncTimer=setTimeout(syncPush,1200)}
 function pushStatusText(){

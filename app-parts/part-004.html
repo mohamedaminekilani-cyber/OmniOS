@@ -609,7 +609,7 @@ let autoSnapshotTimer35=null,autoSnapshotPending35=new Set(),autoSnapshotBase35=
 function auxSnapshotKey35(key){
   key=String(key||'');
   if(!/^omnios_/i.test(key))return false;
-  if(['omnios_v3_state','omnios_v3_backup','omnios_ui_preferences_v1','omnios_v35_full_reset_at',SYNC_AUX_META_KEY35,'omnios_sync_device_v1','omnios_sync_pairs_v1','omnios_push_device_v1','omnios_turn_servers_v1','omnios_app_snapshot_slot_v1'].includes(key))return false;
+  if(['omnios_v3_state','omnios_v3_backup','omnios_ui_preferences_v1','omnios_v35_full_reset_at',SYNC_AUX_META_KEY35,'omnios_sync_device_v1','omnios_sync_pairs_v1','omnios_push_device_v1','omnios_push_secret_v1','omnios_turn_servers_v1','omnios_app_snapshot_slot_v1'].includes(key))return false;
   if(/storage_test|parts?_cache|startup|boot_cache|local_answer|pairing|transport|relay_cursor/i.test(key))return false;
   return true
 }

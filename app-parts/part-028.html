@@ -5701,7 +5701,7 @@ const CHANNEL_NAME='omnios-local-sync-v1';
 const JSQR_SRC='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
 const RELAY_URL='https://omnios-pwa.netlify.app/api/sync/relay';
 let hostSession=null,joinSessionState=null,overlay=null,scannerStop=null,liveConn=null,sendTimer=null,bc=null;
-let relayState=null,relayKeyCache=new Map();
+let relayState=null,relayKeyCache=new Map(),relayChunkInbox=new Map();
 let progressLog=[];
 
 const api=()=>window.OmniDeviceSync;
@@ -5826,6 +5826,27 @@ async function relaySendEnvelope(sid,secret,type,payload){
     return true
   }catch(e){console.warn('Second Brain relay send',e);return false}
 }
+function relayHash64(text){let h=2166136261;for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),16777619);return (h>>>0).toString(16)}
+async function relaySendData64(sid,secret,obj){
+  const raw=JSON.stringify(obj);
+  if(raw.length<=450000)return relaySendEnvelope(sid,secret,'data',obj);
+  const id=randomHex(10),size=300000,total=Math.ceil(raw.length/size),checksum=relayHash64(raw);
+  for(let i=0;i<total;i++){
+    const ok=await relaySendEnvelope(sid,secret,'data-chunk',{id,index:i,total,checksum,data:raw.slice(i*size,(i+1)*size)});
+    if(!ok)return false
+  }
+  return true
+}
+function relayChunkConsume64(payload){
+  if(!payload?.id||!Number.isInteger(payload.index)||!Number.isInteger(payload.total)||payload.total<1||payload.total>1000)return null;
+  let row=relayChunkInbox.get(payload.id);if(!row){row={parts:new Array(payload.total),received:0,total:payload.total,checksum:payload.checksum||'',at:Date.now()};relayChunkInbox.set(payload.id,row)}
+  if(row.total!==payload.total)return null;
+  if(row.parts[payload.index]===undefined){row.parts[payload.index]=String(payload.data||'');row.received++}
+  for(const [key,value] of relayChunkInbox)if(Date.now()-value.at>120000)relayChunkInbox.delete(key);
+  if(row.received!==row.total)return null;
+  relayChunkInbox.delete(payload.id);const raw=row.parts.join('');if(row.checksum&&relayHash64(raw)!==row.checksum)throw new Error('Relay chunk checksum mismatch');
+  return JSON.parse(raw)
+}
 function stopRelaySession(){
   if(!relayState)return;
   relayState.running=false;clearTimeout(relayState.timer);relayState=null
@@ -5833,18 +5854,19 @@ function stopRelaySession(){
 async function relayConsumeInner(conn,inner){
   if(!inner||inner.protocol!==PROTOCOL)return;
   if(inner.type==='bundle'&&inner.bundle){
-    if(inner.bundle.fingerprint&&inner.bundle.fingerprint===conn.__omniLastRecv)return;
-    conn.__omniLastRecv=inner.bundle.fingerprint||'';
+    const fp=inner.bundle.fingerprint||'';if(fp&&fp===conn.__omniLastRecv)return;
     try{
-      setProgress(93,'Comparing data');logProgress('Comparing newest records over encrypted relay');
+      setProgress(93,'Comparing data');logProgress('Comparing selected records over encrypted relay');
       const result=await api()?.merge?.(inner.bundle);
+      conn.__omniLastRecv=fp;
       if(result?.changed)sendBundle(true);
-      conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
-      stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Encrypted fallback route is live.','ok');
-      setProgress(100,'Synced');logProgress(result?.changed?'Newest data applied':'Both devices already match')
-    }catch(err){console.error('Relay sync merge',err);stage(3,'Sync failed','Your automatic pre-sync snapshot is still available.','error')}
+      conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString(),fingerprint:fp});
+      stage(4,result?.changed?'Synced · changes committed':'Synced · both devices match','Encrypted fallback route is live.','ok');
+      setProgress(100,'Synced');logProgress(result?.changed?'Changes durably committed':'Both devices already match')
+    }catch(err){conn.__omniLastRecv='';console.error('Relay sync merge',err);stage(3,'Sync not committed','No success acknowledgement was sent. Retry is safe.','error');throw err}
   }else if(inner.type==='ack'){
-    stage(4,'Live sync active','New changes will continue to transfer while both apps stay open.','ok');setProgress(100,'Live')
+    if(inner.fingerprint&&conn.__omniPendingSent===inner.fingerprint){conn.__omniLastSent=inner.fingerprint;conn.__omniPendingSent=''}
+    stage(4,'Live sync active','Acknowledged changes are durable while both apps stay open.','ok');setProgress(100,'Live')
   }
 }
 async function activateRelayTransport(sid,secret,initiator=false){
@@ -5853,9 +5875,9 @@ async function activateRelayTransport(sid,secret,initiator=false){
     if(liveConn?.open&&!liveConn.__relay)return true;
     if(liveConn?.__relay&&liveConn.open)return true;
     const conn={
-      peer:'relay:'+sid,__omniAuth:true,__omniLastSent:'',__omniLastRecv:'',__relay:true,
+      peer:'relay:'+sid,__omniAuth:true,__omniLastSent:'',__omniPendingSent:'',__omniLastRecv:'',__relay:true,
       get open(){return !!relayState?.running&&relayState.sid===sid},
-      send(obj){relaySendEnvelope(sid,secret,'data',obj)},
+      send(obj){relaySendData64(sid,secret,obj).catch(e=>{console.warn('Second Brain relay data send',e);conn.__omniPendingSent=''})},
       close(){if(relayState?.sid===sid)stopRelaySession()}
     };
     st.conn=conn;st.active=true;liveConn=conn;setButtonLive(true);
@@ -5872,15 +5894,13 @@ async function activateRelayTransport(sid,secret,initiator=false){
 }
 async function handleRelayEnvelope(st,envelope){
   if(!envelope||envelope.v!==PROTOCOL||envelope.from===(dev()?.id||'unknown'))return;
-  if(envelope.type==='answer'&&st.role==='host'){
-    await applyAnswer(envelope.payload);return
-  }
-  if(envelope.type==='relay-start'){
-    await activateRelayTransport(st.sid,st.secret,false);return
-  }
-  if(envelope.type==='data'){
+  if(envelope.type==='answer'&&st.role==='host'){await applyAnswer(envelope.payload);return}
+  if(envelope.type==='relay-start'){await activateRelayTransport(st.sid,st.secret,false);return}
+  if(envelope.type==='data'||envelope.type==='data-chunk'){
     if(!st.conn?.open)await activateRelayTransport(st.sid,st.secret,false);
-    if(st.conn?.open)await relayConsumeInner(st.conn,envelope.payload)
+    if(!st.conn?.open)return;
+    const inner=envelope.type==='data'?envelope.payload:relayChunkConsume64(envelope.payload);
+    if(inner)await relayConsumeInner(st.conn,inner)
   }
 }
 async function beginRelay(sid,secret,role){
@@ -5896,13 +5916,14 @@ async function beginRelay(sid,secret,role){
       st.failures=0;
       if(data?.ok&&Array.isArray(data.messages)){
         for(const row of data.messages){
-          if(!row?.id||st.seen.has(row.id)||row.from===(dev()?.id||'unknown'))continue;
+          if(!row?.id){continue}
+          if(st.seen.has(row.id)||row.from===(dev()?.id||'unknown')){if(row.cursor)st.cursor=String(row.cursor);continue}
           try{
             await handleRelayEnvelope(st,await relayOpen(secret,row.sealed));
-            st.seen.add(row.id);if(st.seen.size>120)st.seen=new Set([...st.seen].slice(-80))
-          }catch(e){console.warn('Relay message ignored',e)}
+            st.seen.add(row.id);if(st.seen.size>120)st.seen=new Set([...st.seen].slice(-80));
+            if(row.cursor)st.cursor=String(row.cursor)
+          }catch(e){console.warn('Relay message processing paused for retry',e);break}
         }
-        if(data.cursor)st.cursor=String(data.cursor)
       }
     }catch(e){if(st.running){st.failures++;console.warn('Second Brain relay poll',e)}}
     finally{
@@ -6051,7 +6072,7 @@ function activateAssistedFallback(signalConn,sid,initiator=false){
   const conn={
     peer:'assisted:'+sid,
     peerConnection:signalConn.peerConnection,
-    __omniAuth:true,__omniLastSent:'',__omniLastRecv:'',__assisted:true,
+    __omniAuth:true,__omniLastSent:'',__omniPendingSent:'',__omniLastRecv:'',__assisted:true,
     get open(){return !!signalConn.open},
     send(obj){if(signalConn.open)signalConn.send({type:'local-assisted-data',protocol:PROTOCOL,sid,payload:obj})},
     close(){try{signalConn.close()}catch(_){}}
@@ -6068,19 +6089,18 @@ function activateAssistedFallback(signalConn,sid,initiator=false){
     if(msg.type!=='local-assisted-data'||!msg.payload)return;
     const inner=msg.payload;
     if(inner.type==='bundle'&&inner.bundle){
-      if(inner.bundle.fingerprint&&inner.bundle.fingerprint===conn.__omniLastRecv)return;
-      conn.__omniLastRecv=inner.bundle.fingerprint||'';
+      const fp=inner.bundle.fingerprint||'';if(fp&&fp===conn.__omniLastRecv)return;
       try{
-        setProgress(93,'Comparing data');logProgress('Comparing newest records over assisted channel');
-        const result=await api()?.merge?.(inner.bundle);
+        setProgress(93,'Comparing data');logProgress('Comparing selected records over assisted channel');
+        const result=await api()?.merge?.(inner.bundle);conn.__omniLastRecv=fp;
         if(result?.changed)sendBundle(true);
-        conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
-        stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Encrypted peer connection is live.','ok');
-        setProgress(100,'Synced');logProgress(result?.changed?'Newest data applied':'Both devices already match')
-      }catch(err){console.error('Assisted sync merge',err);stage(3,'Sync failed','Your automatic pre-sync snapshot is still available.','error')}
+        conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString(),fingerprint:fp});
+        stage(4,result?.changed?'Synced · changes committed':'Synced · both devices match','Encrypted peer connection is live.','ok');
+        setProgress(100,'Synced');logProgress(result?.changed?'Changes durably committed':'Both devices already match')
+      }catch(err){conn.__omniLastRecv='';console.error('Assisted sync merge',err);stage(3,'Sync not committed','No success acknowledgement was sent. Retry is safe.','error')}
     }else if(inner.type==='ack'){
-      stage(4,'Live sync active','New changes will continue to transfer while both apps stay open.','ok');
-      setProgress(100,'Live')
+      if(inner.fingerprint&&conn.__omniPendingSent===inner.fingerprint){conn.__omniLastSent=inner.fingerprint;conn.__omniPendingSent=''}
+      stage(4,'Live sync active','Acknowledged changes are durable while both apps stay open.','ok');setProgress(100,'Live')
     }
   };
   signalConn.on('data',consume);

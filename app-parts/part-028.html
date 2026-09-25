@@ -5097,18 +5097,7 @@ const PAIRS_KEY='omnios_sync_pairs_v1';
 const TURN_KEY='omnios_sync_turn_v1';
 const SYNC_SCOPE_KEY='omnios_sync_scope_v2';
 const SYNC_LIFE_META_KEY='omnios_sync_life_meta_v2';
-const SYNC_PAGE_SPECS=[
-  {id:'tasks',label:'Tasks',icon:'✓',keys:['entries']},
-  {id:'planner',label:'Planner',icon:'▦',keys:[],lifeKeys:['inbox','timeBlocks','reviews','annualPlans','todayPins']},
-  {id:'projects',label:'Projects',icon:'◫',keys:['projects','lifeAreas'],lifeKeys:['projects','areas']},
-  {id:'calendar',label:'Calendar',icon:'□',keys:['calendarEvents']},
-  {id:'habits',label:'Habits',icon:'⚡',keys:['habits']},
-  {id:'routine',label:'Routine',icon:'↻',keys:['routines','planCompleted']},
-  {id:'focus',label:'Focus',icon:'◉',keys:['focusTime','focusSessions','focusDaily','focusGuard']},
-  {id:'notes',label:'Notes',icon:'✎',keys:['notes']},
-  {id:'nutrition',label:'Nutrition',icon:'🥗',keys:['dietCategories','dietDayNotes','dietFoods','dietHydration','dietLog','dietMeals','dietPlan','dietPrep']},
-  {id:'grocery',label:'Grocery & Pantry',icon:'🛒',keys:['groceryCategories','groceryLists','pantry']},
-  {id:'finance',label:'Finance',icon:'
+const SYNC_PAGE_SPECS=[{"id":"tasks","label":"Tasks","icon":"✓","keys":["entries"]},{"id":"planner","label":"Planner","icon":"▦","keys":[],"lifeKeys":["inbox","timeBlocks","reviews","annualPlans","todayPins"]},{"id":"projects","label":"Projects","icon":"◫","keys":["projects","lifeAreas"],"lifeKeys":["projects","areas"]},{"id":"calendar","label":"Calendar","icon":"□","keys":["calendarEvents"]},{"id":"habits","label":"Habits","icon":"⚡","keys":["habits"]},{"id":"routine","label":"Routine","icon":"↻","keys":["routines","planCompleted"]},{"id":"focus","label":"Focus","icon":"◉","keys":["focusTime","focusSessions","focusDaily","focusGuard"]},{"id":"notes","label":"Notes","icon":"✎","keys":["notes"]},{"id":"nutrition","label":"Nutrition","icon":"🥗","keys":["dietCategories","dietDayNotes","dietFoods","dietHydration","dietLog","dietMeals","dietPlan","dietPrep"]},{"id":"grocery","label":"Grocery & Pantry","icon":"🛒","keys":["groceryCategories","groceryLists","pantry"]},{"id":"finance","label":"Finance","icon":"💰","keys":["transactions","budgetCategories","wallets","bills","paymentPlans"]},{"id":"workout","label":"Workout","icon":"🏋","keys":["workouts","workoutTemplates","workoutExercises","gymMembership","weightLog"]},{"id":"goals","label":"Goals & Wishlist","icon":"🎯","keys":["goals","wishlist","wishlistCategories"]},{"id":"life","label":"Life Hub","icon":"◎","keys":["activityLog"],"lifeKeys":["people","home","health","learning","travel","money","documents","journal","importantDates","vehicles","decisions","someday","automation"]},{"id":"relations","label":"Relations","icon":"⌁","keys":["relations"]},{"id":"bible","label":"Bible","icon":"▥","keys":["meditation"]},{"id":"templates","label":"Templates","icon":"▦","keys":["templates","customFields"]},{"id":"passwords","label":"Passwords","icon":"▣","keys":["passwords"]},{"id":"settings","label":"Settings & personalization","icon":"⚙","keys":["settings","customIcons","brandingLogo","organizeV40","ui","v55","v56","trash"]}];
 const DATA_OPEN_TIMEOUT=6500;
 let peer=null,peerReady=null,pendingSession=null,syncModal=null,sendTimer=null,warmPromise=null,lastJoinPayload=null;
 const live=new Map();

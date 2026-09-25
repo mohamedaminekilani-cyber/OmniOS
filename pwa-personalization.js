@@ -13,6 +13,7 @@ var APP_ICON_INSTALL_URL='omnios_app_icon_install_url_v1';
 var ICON_SERVICE='https://omnios-pwa.netlify.app/api/icon';
 var BOOT_ICON_KEY='omnios_loading_icon_v1';
 var DEVICE_KEY='omnios_push_device_v1';
+var PUSH_SECRET_KEY='omnios_push_secret_v1';
 var PUSH_PUBLIC_KEY='BFspp6Cwz1U5Ewgen29Pyq05WaD15s0VEN6HBA4wo9XiVHZIy6gR_dygjshuOX-lfpE8f3_EwsxtXYoJvPbIqwU';
 var PUSH_ENDPOINT='https://omnios-pwa.netlify.app/api/push/register';
 var syncTimer=0;
@@ -62,6 +63,16 @@ function deviceId(){
     try{localStorage.setItem(DEVICE_KEY,id)}catch(_){}
   }
   return id.replace(/[^a-zA-Z0-9_-]/g,'').slice(0,120);
+}
+function pushOwnerSecret(){
+  var secret='';
+  try{secret=localStorage.getItem(PUSH_SECRET_KEY)||''}catch(_){}
+  if(!secret){
+    var bytes=new Uint8Array(32);crypto.getRandomValues(bytes);
+    secret=Array.from(bytes,function(b){return b.toString(16).padStart(2,'0')}).join('');
+    try{localStorage.setItem(PUSH_SECRET_KEY,secret)}catch(_){}
+  }
+  return secret;
 }
 function timezone(){
   try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'}catch(_){return'UTC'}
@@ -204,8 +215,8 @@ function assetCardHtml(){
   try{app=safeImageUrl(localStorage.getItem(APP_ICON_PREVIEW)||'',true);boot=safeImageUrl(localStorage.getItem(BOOT_ICON_KEY)||'',true);installUrl=safeInstallUrl(localStorage.getItem(APP_ICON_INSTALL_URL)||'')}catch(_){}
   return '<div class="card settings-section" id="omnios-pwa-assets-card">'+
     '<h3 class="card-title mb-4">App & startup icons</h3>'+
-    '<div class="settings-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="omni-pwa-preview">'+(app?'<img src="'+esc(app)+'" alt="Home Screen icon preview">':'<img src="./icons/icon-192.png" alt="Default OmniOS icon">')+'</div><div><div class="settings-row-label">Home Screen app icon</div><div class="settings-row-desc">Upload a square icon. This preview is the icon prepared for the next Home Screen installation.</div></div></div><div class="omni-pwa-actions"><input id="omni-pwa-icon-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="omni-pwa-icon-upload">'+(app?'Replace':'Upload')+'</button>'+(app?'<button type="button" class="btn btn-sm" id="omni-pwa-icon-reset">Reset</button>':'')+'</div></div>'+
-    '<div class="settings-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="omni-pwa-preview">'+(boot?'<img src="'+esc(boot)+'" alt="Loading icon preview">':'<span>↻</span>')+'</div><div><div class="settings-row-label">Loading screen icon</div><div class="settings-row-desc">Replaces the spinner icon on the single OmniOS loading screen.</div></div></div><div class="omni-pwa-actions"><input id="omni-boot-icon-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="omni-boot-icon-upload">'+(boot?'Replace':'Upload')+'</button>'+(boot?'<button type="button" class="btn btn-sm" id="omni-boot-icon-reset">Reset</button>':'')+'</div></div>'+
+    '<div class="settings-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="omni-pwa-preview">'+(app?'<img src="'+esc(app)+'" alt="Home Screen icon preview">':'<img src="./icons/icon-192.png" alt="Default Second Brain icon">')+'</div><div><div class="settings-row-label">Home Screen app icon</div><div class="settings-row-desc">Upload a square icon. This preview is the icon prepared for the next Home Screen installation.</div></div></div><div class="omni-pwa-actions"><input id="omni-pwa-icon-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="omni-pwa-icon-upload">'+(app?'Replace':'Upload')+'</button>'+(app?'<button type="button" class="btn btn-sm" id="omni-pwa-icon-reset">Reset</button>':'')+'</div></div>'+
+    '<div class="settings-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="omni-pwa-preview">'+(boot?'<img src="'+esc(boot)+'" alt="Loading icon preview">':'<span>↻</span>')+'</div><div><div class="settings-row-label">Loading screen icon</div><div class="settings-row-desc">Replaces the spinner icon on the single Second Brain loading screen.</div></div></div><div class="omni-pwa-actions"><input id="omni-boot-icon-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="omni-boot-icon-upload">'+(boot?'Replace':'Upload')+'</button>'+(boot?'<button type="button" class="btn btn-sm" id="omni-boot-icon-reset">Reset</button>':'')+'</div></div>'+
     '<div class="settings-meta-line">'+(app?'✓ Custom icon uploaded to a real install URL. On iPhone, the existing Home Screen icon cannot change live. Remove the old copy, open the install link in Safari, then Share → Add to Home Screen.':'Upload an icon here before adding OmniOS to the Home Screen.')+'</div>'+
     (app&&installUrl?'<div class="omni-pwa-actions" style="justify-content:flex-start;margin-top:10px"><a class="btn btn-sm" id="omni-pwa-install-link" href="'+esc(installUrl)+'" target="_blank" rel="noopener">Open install page</a><button type="button" class="btn btn-sm" id="omni-pwa-copy-install">Copy install link</button></div>':'')+
     '</div>';
@@ -242,20 +253,14 @@ function pushBackendReady(){
 }
 async function postPush(payload){
   var same=location.hostname==='omnios-pwa.netlify.app';
-  var opts={method:'POST',body:JSON.stringify(payload),credentials:'omit'};
-  if(same){
-    opts.headers={'Content-Type':'application/json'};
-  }else{
-    opts.mode='no-cors';
-    opts.headers={'Content-Type':'text/plain;charset=UTF-8'};
-  }
-  var response=await fetch(same?'/api/push/register':PUSH_ENDPOINT,opts);
-  if(same){
+  var body=Object.assign({},payload,{ownerSecret:pushOwnerSecret()});
+  var ctrl=new AbortController(),timer=setTimeout(function(){ctrl.abort()},8000);
+  try{
+    var response=await fetch(same?'/api/push/register':PUSH_ENDPOINT,{method:'POST',mode:'cors',body:JSON.stringify(body),credentials:'omit',headers:{'Content-Type':'application/json'},signal:ctrl.signal});
     var data={};try{data=await response.json()}catch(_){}
-    if(!response.ok||data.ok===false)throw new Error(data.error||'Push service request failed');
+    if(!response.ok||data.ok===false)throw new Error(data.error||('Push service HTTP '+response.status));
     return data;
-  }
-  return {ok:true,opaque:true};
+  }finally{clearTimeout(timer)}
 }
 function addSchedule(out,id,date,time,title,body,view,advanceMinutes){
   if(!date)return;
@@ -301,12 +306,12 @@ function collectSchedules(){
         }else if(r.type==='goal'){
           advance=2*1440;
         }
-        addSchedule(out,'rem:'+r.type+':'+r.id,r.date,r.time||'09:00',r.title,r.meta||'OmniOS reminder','reminders',advance);
+        addSchedule(out,'rem:'+r.type+':'+r.id,r.date,r.time||'09:00',r.title,r.meta||'Second Brain reminder','reminders',advance);
       });
     }else{
       (st.entries||[]).filter(function(x){return x.status!=='completed'&&!x.completed&&(x.dueDate||x.date)}).forEach(function(x){
         if(n.taskReminders===false)return;
-        addSchedule(out,'task:'+x.id,x.dueDate||x.date,x.time||'09:00','Task: '+(x.title||'Task'),'Due in OmniOS','tasks',Number(x.reminderMinutes)||0);
+        addSchedule(out,'task:'+x.id,x.dueDate||x.date,x.time||'09:00','Task: '+(x.title||'Task'),'Due in Second Brain','tasks',Number(x.reminderMinutes)||0);
       });
       (st.calendarEvents||[]).forEach(function(x){
         if(n.eventReminders===false)return;
@@ -330,7 +335,7 @@ function collectSchedules(){
     });
   }
   if(n.dailySummary!==false){
-    for(var ds=0;ds<60;ds++){var dd=addDays(new Date(),ds);addSchedule(out,'daily-summary',localDate(dd),n.dailySummaryTime||'08:00','OmniOS daily summary','Open Today to review tasks, calendar and priorities.','today',0)}
+    for(var ds=0;ds<60;ds++){var dd=addDays(new Date(),ds);addSchedule(out,'daily-summary',localDate(dd),n.dailySummaryTime||'08:00','Second Brain daily summary','Open Today to review tasks, calendar and priorities.','today',0)}
   }
   if(n.weeklyReview!==false){
     for(var wr=0;wr<60;wr++){var wd=addDays(new Date(),wr);if(wd.getDay()===Number(n.weeklyReviewDay||0))addSchedule(out,'weekly-review',localDate(wd),n.weeklyReviewTime||'18:00','Weekly review','Review your week and prepare the next one.','planner',0)}
@@ -353,7 +358,7 @@ async function enablePush(){
   var reg=await navigator.serviceWorker.ready;
   var sub=await reg.pushManager.getSubscription();
   if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToBytes(PUSH_PUBLIC_KEY)});
-  if(!(await pushBackendReady()))throw new Error('The OmniOS push service is not online yet. Try again after the latest deployment finishes.');
+  if(!(await pushBackendReady()))throw new Error('The Second Brain push service is not online yet. Try again after the latest deployment finishes.');
   settings().pushEnabled=true;
   safeSave();
   await postPush({action:'register',deviceId:deviceId(),subscription:sub.toJSON(),timezone:timezone(),schedules:collectSchedules()});
@@ -371,7 +376,7 @@ async function disablePush(){
 async function testPush(){
   if(Notification.permission!=='granted'){await enablePush();if(Notification.permission!=='granted')return}
   var sub=await subscription();if(!sub){await enablePush();sub=await subscription();if(!sub)return}
-  try{if(!(await pushBackendReady()))throw new Error('The OmniOS push service is not online yet.');await postPush({action:'test',deviceId:deviceId(),subscription:sub.toJSON(),timezone:timezone(),schedules:collectSchedules()});toast('Test push requested.')}catch(e){toast(e.message||'Could not request a test push')}
+  try{if(!(await pushBackendReady()))throw new Error('The Second Brain push service is not online yet.');await postPush({action:'test',deviceId:deviceId(),subscription:sub.toJSON(),timezone:timezone(),schedules:collectSchedules()});toast('Test push requested.')}catch(e){toast(e.message||'Could not request a test push')}
 }
 async function syncPush(){
   var n=settings();if(!n.pushEnabled||Notification.permission!=='granted')return;
@@ -392,10 +397,10 @@ function pushStatusText(){
 function pushCardHtml(){
   var s=pushStatusText(),enabled=settings().pushEnabled;
   return '<div class="card settings-section" id="omnios-push-settings-card">'+
-    '<div class="flex-between" style="margin-bottom:10px"><div><h3 class="card-title" style="margin:0">System push notifications</h3><div class="settings-row-desc">Receive OmniOS reminders on the Lock Screen and Notification Center, including while the PWA is closed.</div></div><span class="omni-push-status '+s.cls+'" id="omni-push-status">'+esc(s.label)+'</span></div>'+
-    '<div class="settings-row"><div><div class="settings-row-label">Background push</div><div class="settings-row-desc">Syncs only the notification subscription and upcoming reminder title/time to the OmniOS push service. Your main OmniOS database stays local.</div></div><div class="omni-pwa-actions"><button type="button" class="btn btn-sm btn-primary" id="omni-push-enable">'+(enabled?'Resync':'Enable push')+'</button><button type="button" class="btn btn-sm" id="omni-push-test" '+(!enabled?'disabled':'')+'>Test</button>'+(enabled?'<button type="button" class="btn btn-sm" id="omni-push-disable">Disable</button>':'')+'</div></div>'+
+    '<div class="flex-between" style="margin-bottom:10px"><div><h3 class="card-title" style="margin:0">System push notifications</h3><div class="settings-row-desc">Receive Second Brain reminders on the Lock Screen and Notification Center, including while the PWA is closed.</div></div><span class="omni-push-status '+s.cls+'" id="omni-push-status">'+esc(s.label)+'</span></div>'+
+    '<div class="settings-row"><div><div class="settings-row-label">Background push</div><div class="settings-row-desc">Syncs only the notification subscription and upcoming reminder title/time to the Second Brain push service. Your main Second Brain database stays local.</div></div><div class="omni-pwa-actions"><button type="button" class="btn btn-sm btn-primary" id="omni-push-enable">'+(enabled?'Resync':'Enable push')+'</button><button type="button" class="btn btn-sm" id="omni-push-test" '+(!enabled?'disabled':'')+'>Test</button>'+(enabled?'<button type="button" class="btn btn-sm" id="omni-push-disable">Disable</button>':'')+'</div></div>'+
     '<div class="settings-row"><div><div class="settings-row-label">Routine reminders</div><div class="settings-row-desc">Schedule notifications for enabled daily, weekly and monthly routines.</div></div><button type="button" class="settings-toggle '+(settings().routineReminders!==false?'on':'')+'" id="omni-routine-push-toggle" role="switch" aria-checked="'+(settings().routineReminders!==false?'true':'false')+'"></button></div>'+
-    (iosNeedsInstall()?'<div class="settings-meta-line">On iPhone/iPad, Web Push is available from the Home Screen version of OmniOS. Install the PWA first, open it from the icon, then tap Enable push.</div>':'')+
+    (iosNeedsInstall()?'<div class="settings-meta-line">On iPhone/iPad, Web Push is available from the Home Screen version of Second Brain. Install the PWA first, open it from the icon, then tap Enable push.</div>':'')+
     '</div>';
 }
 function renderPushCard(){

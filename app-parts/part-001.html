@@ -2992,10 +2992,11 @@ function saveState() {
     const selectionEnd = typeof active?.selectionEnd === 'number' ? active.selectionEnd : null;
     try {
         normalizeState();
+        window.SecondBrainSync?.capture();
         storage.setItem('omnios_v3_state', JSON.stringify(state));
         storage.setItem('omnios_v3_backup', JSON.stringify({ version:3, savedAt: new Date().toISOString(), state }));
         setSaveStatus(storageIsPersistent ? 'Saved locally' : 'Session only', storageIsPersistent ? 'saved' : 'error');
-    } catch (e) { console.error('OmniOS save failed:', e); setSaveStatus('Storage issue','error'); }
+    } catch (e) { console.error('OmniOS save failed:', e); setSaveStatus('Not saved — storage is full or unavailable','error'); window.toast?.('Changes could not be saved. Export a backup before closing.'); throw e; }
     applyAppearance();
     renderAll();
     // Full renders used to steal focus from the control being edited. Restore it

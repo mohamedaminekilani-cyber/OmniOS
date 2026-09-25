@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import {createHash} from 'node:crypto';
+const sha=s=>createHash('sha256').update(s).digest('hex');
+let html=Array.from({length:28},(_,i)=>fs.readFileSync(`app-parts/part-${String(i+1).padStart(3,'0')}.html`,'utf8')).join('');
+html=html.replace(/<script\b[^>]*\bsrc=["'](\.\/)?(js\/[^"']+|pwa-personalization\.js)["'][^>]*><\/script>/gi,(_,prefix,file)=>'<script>\n'+fs.readFileSync(file,'utf8').replace(/<\/script/gi,'<\\/script')+'\n</script>');
+const hash=sha(html),file=`app.${hash.slice(0,20)}.html`;
+fs.rmSync('dist',{recursive:true,force:true});fs.mkdirSync('dist');
+fs.writeFileSync('dist/'+file,html);
+fs.writeFileSync('dist/release.json',JSON.stringify({version:1,file,sha256:hash,bytes:Buffer.byteLength(html)}));
+for(const name of ['index.html','sw.js','manifest.webmanifest','pwa-personalization.js','icons'])fs.cpSync(name,'dist/'+name,{recursive:true});
+console.log(`Built ${file} (${Buffer.byteLength(html)} bytes); application scripts are release-atomic.`);

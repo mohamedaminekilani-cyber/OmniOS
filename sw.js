@@ -1,4 +1,4 @@
-const SHELL_CACHE='second-brain-shell-v2';
+const SHELL_CACHE='second-brain-shell-v3';
 const USER_ASSET_CACHE='omnios-user-assets-v1';
 const SNAPSHOT_PREFIX='omnios-app-snapshot-v1-';
 const CORE=[
@@ -24,7 +24,7 @@ self.addEventListener('install',event=>{
 self.addEventListener('activate',event=>{
   event.waitUntil((async()=>{
     for(const key of await caches.keys()){
-      const keep=key===SHELL_CACHE||key===USER_ASSET_CACHE||key.startsWith(SNAPSHOT_PREFIX);
+      const keep=key===SHELL_CACHE||key===USER_ASSET_CACHE||key==='secondbrain-releases-v1'||key.startsWith(SNAPSHOT_PREFIX);
       if(!keep)await caches.delete(key);
     }
     await self.clients.claim();
@@ -60,7 +60,7 @@ self.addEventListener('fetch',event=>{
 
   // App fragments are owned by index.html's validated two-slot snapshot loader.
   // Do not add a second, independent caching layer here.
-  if(isAppPart(url))return;
+  if(isAppPart(url)||/\/app\.[a-f0-9]+\.html$/.test(url.pathname)||url.pathname.endsWith('/release.json'))return;
 
   if(url.pathname.endsWith('/omnios-user-icon-192.png')){
     event.respondWith(userIconResponse(event.request));

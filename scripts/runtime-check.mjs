@@ -1,0 +1,16 @@
+import {JSDOM,VirtualConsole} from 'jsdom';
+import {indexedDB,IDBKeyRange} from 'fake-indexeddb';
+import {webcrypto} from 'node:crypto';import fs from 'node:fs';
+const dir='dist/',file=JSON.parse(fs.readFileSync(dir+'release.json')).file;
+const vc=new VirtualConsole();let errors=[];vc.on('jsdomError',e=>{if(e.type==='unhandled-exception'){errors.push(e.message);console.log(e.stack)}});vc.on('error',(...a)=>console.log('APP ERROR',...a));
+const dom=new JSDOM(fs.readFileSync(dir+file,'utf8'),{url:'https://example.org/OmniOS/',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:vc,beforeParse(w){w.indexedDB=indexedDB;w.IDBKeyRange=IDBKeyRange;Object.defineProperty(w,'crypto',{value:webcrypto});w.TextEncoder=TextEncoder;w.TextDecoder=TextDecoder;w.structuredClone=structuredClone;w.matchMedia=()=>({matches:false,addListener(){},removeListener(){},addEventListener(){},removeEventListener(){}});w.ResizeObserver=class{observe(){}disconnect(){}};w.IntersectionObserver=class{observe(){}disconnect(){}};w.scrollTo=()=>{};w.fetch=async()=>{throw Error('Offline smoke test')};w.alert=console.log;w.confirm=()=>false;}});
+await new Promise(r=>setTimeout(r,2500));console.log('TITLE',dom.window.document.title,'ERRORS',errors.length,'VAULT',!!dom.window.SecondBrainPasswords,'SYNC',!!dom.window.SecondBrainSync);if(!dom.window.SecondBrainPasswords||!dom.window.SecondBrainSync)throw Error('New modules did not initialize');
+const w=dom.window;w.eval("state.passwords=[{id:'test-login',site:'Synthetic test',password:'test-only-secret'}];saveState();SecondBrainPasswords.edit()");
+w.document.querySelector('#sb-vault-pass').value='synthetic-test-passphrase-123';w.document.querySelector('#sb-vault-confirm').value='synthetic-test-passphrase-123';w.document.querySelector('[data-unlock]').click();
+for(let i=0;i<100&&!w.eval('!!state.passwordVault');i++)await new Promise(r=>setTimeout(r,100));
+await new Promise(r=>setTimeout(r,500));
+if(!w.eval('!!state.passwordVault')||w.eval('state.passwords.length')!==0)throw Error('Vault migration failed: '+w.document.querySelector('[data-error]')?.textContent);
+const saved=w.localStorage.getItem('omnios_v3_state');if(saved.includes('test-only-secret'))throw Error('Plaintext credentials persisted after migration');
+const unlocked=await w.SecondBrainCrypto.open(JSON.parse(saved).passwordVault,'synthetic-test-passphrase-123');if(unlocked.value[0].password!=='test-only-secret')throw Error('Migration lost credentials');
+w.SecondBrainPasswords.lock();console.log('Vault migration, encrypted persistence and unlock passed.');
+dom.window.close();if(errors.length)process.exitCode=1;

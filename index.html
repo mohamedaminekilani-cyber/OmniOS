@@ -243,7 +243,7 @@ window.resetOmniAppCache=async function(){
   try{
     if('caches'in window){
       const keys=await caches.keys();
-      await Promise.all(keys.filter(function(k){return k!==USER_ASSET_CACHE&&(k.indexOf('omnios-')===0||k.indexOf('omnios-app-')===0)}).map(function(k){return caches.delete(k)}));
+      await Promise.all(keys.filter(function(k){return k!==USER_ASSET_CACHE&&(k==='secondbrain-releases-v1'||k.indexOf('omnios-')===0||k.indexOf('omnios-app-')===0)}).map(function(k){return caches.delete(k)}));
     }
     try{localStorage.removeItem(SNAPSHOT_SLOT_KEY)}catch(_){}
     try{
@@ -279,21 +279,34 @@ function carryLoaderIntoApp(html){
 
 (async()=>{
   try{
-    let texts=null;
-    let freshError=null;
-    try{
-      texts=await fetchFreshSet();
-      setProgress(PARTS.length,'Validated');
-      await writeSnapshot(texts);
-    }catch(e){
-      freshError=e;
-      console.warn('Fresh Second Brain load failed; trying complete snapshot',e);
-      if(status)status.textContent=navigator.onLine?'Fresh build unavailable · opening saved copy…':'Offline · opening saved copy…';
-      if(progress)progress.style.width='100%';
-      texts=await readSnapshot();
+    const releaseCache=await caches.open('secondbrain-releases-v1');
+    const activeKey=new URL('./__active_release__',location.href).href;
+    async function installed(){
+      const pointer=await releaseCache.match(activeKey);if(!pointer)return null;
+      const m=await pointer.json(),r=await releaseCache.match(new URL(m.file,location.href).href);
+      if(!r)return null;const text=await r.text();
+      return await verified(m,text)?{m,text}:null;
     }
-    if(!texts)throw freshError||new Error('No validated app snapshot is available');
-    const html=carryLoaderIntoApp(texts.join(''));
+    async function verified(m,text){
+      if(m?.version!==1||!/^app\.[a-f0-9]{20}\.html$/.test(m.file)||!/^[a-f0-9]{64}$/.test(m.sha256))return false;
+      const bytes=new TextEncoder().encode(text);if(bytes.length!==m.bytes)return false;
+      const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('');return hash===m.sha256;
+    }
+    async function latest(){
+      const r=await fetch('./release.json',{cache:'no-store',signal:AbortSignal.timeout(12000)});if(!r.ok)throw Error('Release manifest unavailable');const m=await r.json();
+      if(!/^app\.[a-f0-9]{20}\.html$/.test(m.file||''))throw Error('Invalid release manifest');
+      const url=new URL(m.file,location.href).href;
+      const app=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(20000)});if(!app.ok)throw Error('Release unavailable');const text=await app.text();
+      if(!await verified(m,text))throw Error('Release checksum failed');
+      await releaseCache.put(url,new Response(text,{headers:{'Content-Type':'text/html'}}));
+      await releaseCache.put(activeKey,new Response(JSON.stringify(m)));
+      return {m,text};
+    }
+    let saved=await installed();
+    const loaded=saved||await latest();
+    const html=carryLoaderIntoApp(loaded.text);
+    // Open a verified offline copy immediately. Stage complete updates only.
+    if(saved)setTimeout(()=>latest().then(next=>{if(next.m.sha256!==saved.m.sha256){const b=document.createElement('button');b.className='btn btn-primary';b.textContent='Update ready — reload';b.style.cssText='position:fixed;bottom:24px;right:24px;z-index:99999';b.onclick=()=>location.reload();document.body.append(b)}}).catch(e=>console.info('Using installed release',e.message)),1500);
     document.open();
     document.write(html);
     document.close();

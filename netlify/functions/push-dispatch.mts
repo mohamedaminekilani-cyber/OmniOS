@@ -83,8 +83,9 @@ export default async () => {
 
     if (changed) {
       const recent = Object.entries(sent)
+        .filter(([,at]) => Date.parse(at)>now-48*60*60*1000)
         .sort((a,b) => String(b[1]).localeCompare(String(a[1])))
-        .slice(0, 600);
+        .slice(0, 2000);
       record.sent = Object.fromEntries(recent);
       record.updatedAt = new Date().toISOString();
       await store.setJSON(blob.key, record);

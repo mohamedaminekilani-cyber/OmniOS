@@ -2115,6 +2115,7 @@ function genPassword(length = 16) {
 }
 
 function renderPasswords() {
+    if(window.SecondBrainPasswords)return window.SecondBrainPasswords.render();
     const list = document.getElementById('password-list');
     if (!list) return;
     const q = passwordSearch.toLowerCase();
@@ -2156,6 +2157,7 @@ function renderPasswords() {
 document.getElementById('password-search')?.addEventListener('input', e => { passwordSearch = e.target.value; renderPasswords(); });
 
 function openPasswordModal(id = null) {
+    if(window.SecondBrainPasswords)return window.SecondBrainPasswords.edit(id);
     const p = id ? state.passwords.find(x => String(x.id) === String(id)) : null;
     const ov = budgetModalShell(p ? 'Edit Password' : 'Add Password', `
         <div class="form-group"><label class="form-label">Site / service</label><input class="form-input" id="pw-site" value="${escapeHtml(p?.site || '')}" placeholder="e.g. Gmail, Netflix"></div>

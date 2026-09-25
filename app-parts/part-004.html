@@ -499,10 +499,10 @@ function updateNavControls35(){const b=document.getElementById('v35-back-btn'),f
 
 /* ---------- multi-level undo / redo + change history ---------- */
 let undo35=[],redo35=[],lastCommitted35=clone(state),saveGuard35=false;
-function comparable35(s){const c=clone(s)||{};if(c.core){delete c.core.changeLog;delete c.core.localDB;delete c.core.syncMeta}return c}
+function comparable35(s){const c=clone(s)||{};if(c.core){delete c.core.changeLog;delete c.core.localDB;delete c.core.syncMeta;delete c.core.syncV2}return c}
 function changedModules35(a,b){
   const keys=[['entries','Tasks'],['calendarEvents','Calendar'],['transactions','Finance'],['habits','Habits'],['workouts','Workout'],['notes','Notes'],['goals','Goals'],['groceryLists','Grocery'],['wishlist','Wishlist'],['pantry','Pantry'],['routines','Routines'],['life','Life OS'],['settings','Settings']];
-  return keys.filter(([k])=>JSON.stringify(a?.[k])!==JSON.stringify(b?.[k])).map(([,l])=>l)
+  const labels=Object.fromEntries(keys);return [...new Set([...Object.keys(a||{}),...Object.keys(b||{})])].filter(k=>k!=='core'&&JSON.stringify(a?.[k])!==JSON.stringify(b?.[k])).map(k=>labels[k]||k)
 }
 const SYNC_AUX_META_KEY35='omnios_sync_aux_meta_v1';
 function syncBaseline35(){
@@ -604,9 +604,9 @@ function automationPass35(){
 }
 function addChangeLog35(mods){ensureV35State();state.core.changeLog.push({id:uid('chg'),at:new Date().toISOString(),modules:mods,label:mods.length?`Updated ${mods.join(', ')}`:'Saved changes'});state.core.changeLog=state.core.changeLog.slice(-250)}
 function installUndo35(){
-  if(window.saveState?.__v35)return;const base=window.saveState;const wrapped=function(){if(saveGuard35)return base.apply(this,arguments);ensureV35State();automationPass35();const now=clone(state);const mods=changedModules35(comparable35(lastCommitted35),comparable35(now)),syncKeys=changedStateKeys35(lastCommitted35,now);if(syncKeys.length&&!window.__omniSyncApplying)touchSyncStateKeys35(syncKeys,new Date().toISOString(),lastCommitted35,now);if(mods.length){undo35.push(clone(lastCommitted35));undo35=undo35.slice(-60);redo35=[];addChangeLog35(mods)}saveGuard35=true;const r=base.apply(this,arguments);saveGuard35=false;lastCommitted35=clone(state);updateUndoControls35();persistIDB35('save');if(mods.length)scheduleAutoSnapshot35(mods);if(syncKeys.length&&!window.__omniSyncApplying)queueMicrotask(()=>document.dispatchEvent(new CustomEvent('omnios:data-changed',{detail:{modules:syncKeys}})));return r};wrapped.__v35=true;window.saveState=wrapped;
-  window.omniUndo=function(){if(!undo35.length){window.toast?.('Nothing to undo');return}const cur=clone(state),prev=undo35.pop();redo35.push(cur);state=clone(prev);ensureV35State();saveGuard35=true;base();saveGuard35=false;lastCommitted35=clone(state);state.core.changeLog.push({id:uid('chg'),at:new Date().toISOString(),modules:['System'],label:'Undo'});updateUndoControls35();renderAll?.();renderNewView35(activeView35());persistIDB35('undo');window.toast?.('↶ Undone')};
-  window.omniRedo=function(){if(!redo35.length){window.toast?.('Nothing to redo');return}const cur=clone(state),next=redo35.pop();undo35.push(cur);state=clone(next);ensureV35State();saveGuard35=true;base();saveGuard35=false;lastCommitted35=clone(state);state.core.changeLog.push({id:uid('chg'),at:new Date().toISOString(),modules:['System'],label:'Redo'});updateUndoControls35();renderAll?.();renderNewView35(activeView35());persistIDB35('redo');window.toast?.('↷ Redone')};
+  if(window.saveState?.__v35)return;const base=window.saveState;const wrapped=function(){if(saveGuard35)return base.apply(this,arguments);ensureV35State();automationPass35();const now=clone(state);const mods=changedModules35(comparable35(lastCommitted35),comparable35(now)),syncKeys=changedStateKeys35(lastCommitted35,now);if(syncKeys.length&&!window.__omniSyncApplying)touchSyncStateKeys35(syncKeys,new Date().toISOString(),lastCommitted35,now);if(mods.length){undo35.push(clone(lastCommitted35));undo35=undo35.slice(-60);redo35=[];addChangeLog35(mods)}let r;saveGuard35=true;try{r=base.apply(this,arguments)}finally{saveGuard35=false}lastCommitted35=clone(state);updateUndoControls35();persistIDB35('save');if(mods.length)scheduleAutoSnapshot35(mods);if(syncKeys.length&&!window.__omniSyncApplying)queueMicrotask(()=>document.dispatchEvent(new CustomEvent('omnios:data-changed',{detail:{modules:syncKeys}})));return r};wrapped.__v35=true;window.saveState=wrapped;
+  window.omniUndo=function(){if(!undo35.length){window.toast?.('Nothing to undo');return}const cur=clone(state),prev=undo35.pop();redo35.push(cur);state=clone(prev);ensureV35State();saveGuard35=true;try{base()}finally{saveGuard35=false}lastCommitted35=clone(state);state.core.changeLog.push({id:uid('chg'),at:new Date().toISOString(),modules:['System'],label:'Undo'});updateUndoControls35();renderAll?.();renderNewView35(activeView35());persistIDB35('undo');window.toast?.('↶ Undone')};
+  window.omniRedo=function(){if(!redo35.length){window.toast?.('Nothing to redo');return}const cur=clone(state),next=redo35.pop();undo35.push(cur);state=clone(next);ensureV35State();saveGuard35=true;try{base()}finally{saveGuard35=false}lastCommitted35=clone(state);state.core.changeLog.push({id:uid('chg'),at:new Date().toISOString(),modules:['System'],label:'Redo'});updateUndoControls35();renderAll?.();renderNewView35(activeView35());persistIDB35('redo');window.toast?.('↷ Redone')};
   document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey))return;const tag=document.activeElement?.tagName;if(['INPUT','TEXTAREA','SELECT'].includes(tag))return;if(e.key.toLowerCase()==='z'&&e.shiftKey){e.preventDefault();window.omniRedo()}else if(e.key.toLowerCase()==='z'){e.preventDefault();window.omniUndo()}else if(e.key.toLowerCase()==='y'){e.preventDefault();window.omniRedo()}},true)
 }
 function updateUndoControls35(){const u=document.getElementById('v35-undo-btn'),r=document.getElementById('v35-redo-btn'),h=document.getElementById('v35-history-btn');if(u)u.disabled=!undo35.length;if(r)r.disabled=!redo35.length;if(h)h.dataset.count=String(Math.min(99,state.core?.changeLog?.length||0))}
@@ -676,12 +676,16 @@ async function backupPayload35(kind='portable'){
   }
 }
 async function persistStateDurably35(){
-  const raw=JSON.stringify(state),at=new Date().toISOString();
-  storage.setItem('omnios_v3_state',raw);
-  storage.setItem('omnios_v3_backup',JSON.stringify({version:3,savedAt:at,state}));
-  if(storage.getItem('omnios_v3_state')!==raw)throw new Error('State persistence verification failed');
+  const raw=JSON.stringify(state),at=new Date().toISOString(),oldState=storage.getItem('omnios_v3_state'),oldBackup=storage.getItem('omnios_v3_backup');
+  if(!storageIsPersistent)throw Error('Persistent browser storage is unavailable');
+  try{
+    storage.setItem('omnios_v3_state',raw);storage.setItem('omnios_v3_backup',JSON.stringify({version:3,savedAt:at,state}));
+    if(storage.getItem('omnios_v3_state')!==raw)throw Error('State persistence verification failed');
+    await idbPut35(STORE_STATE,'latest',{version:38,savedAt:at,state:clone(state),aux:captureAux35(),auxMeta:ensureAuxMeta35()});
+  }catch(error){for(const[k,v]of [['omnios_v3_state',oldState],['omnios_v3_backup',oldBackup]]){try{if(v===null)storage.removeItem(k);else storage.setItem(k,v)}catch(_){}}throw error}
   return at
 }
+
 function applyAuxDurably35(changes){
   const before=new Map();
   for(const [k] of changes||[]){
@@ -713,7 +717,7 @@ function auxSnapshotKey35(key){
   key=String(key||'');
   if(!/^omnios_/i.test(key))return false;
   if(['omnios_v3_state','omnios_v3_backup','omnios_ui_preferences_v1','omnios_v35_full_reset_at',SYNC_AUX_META_KEY35,'omnios_sync_device_v1','omnios_sync_pairs_v1','omnios_push_device_v1'].includes(key))return false;
-  if(/storage_test|parts?_cache|startup|boot_cache|sync_|pair|relay|transport|push_/i.test(key))return false;
+  if(/storage_test|parts?_cache|startup|boot_cache|sync_|pair|relay|transport|push_|local_answer_|app_snapshot_/i.test(key))return false;
   return true
 }
 function captureAux35(){
@@ -737,7 +741,7 @@ function restoreAux35(aux){
 }
 function snapshotStateComparable35(s){
   const clean=comparable35(s);
-  if(clean?.core?.ui)delete clean.core.ui.savedAt;
+  if(clean?.core?.ui)delete clean.core.ui.savedAt;if(clean?.core)delete clean.core.syncV2;
   return clean
 }
 function fingerprint35(stateValue=state,auxValue=captureAux35()){
@@ -910,6 +914,7 @@ function installAutoSnapshotFallback35(){
   window.addEventListener('pagehide',()=>{if(autoSnapshotTimer35){clearTimeout(autoSnapshotTimer35);commitAutoSnapshot35()}});
 }
 window.OmniRecovery35={
+  clearUndo:()=>{undo35=[];redo35=[];lastCommitted35=clone(state);updateUndoControls35()},
   makeSnapshot:(label,opts)=>makeSnapshot35(label,opts),
   captureAux:()=>captureAux35(),
   restoreAux:(aux)=>restoreAux35(aux),
@@ -924,10 +929,31 @@ window.OmniRecovery35={
   recordId:(x)=>syncRecordId35(x),
   fingerprint:(s,aux)=>fingerprint35(s,aux)
 };
-async function restoreSnapshot35(id){const all=await idbAll35(STORE_SNAPS),snap=all.find(x=>x.id===id);if(!snap)return;if(!confirm(`Restore snapshot from ${new Date(snap.at).toLocaleString()}? Current state can be recovered with Undo during this session.`))return;undo35.push(clone(state));state=clone(snap.state);restoreAux35(snap.aux);if(snap.auxMeta)writeAuxMeta35(snap.auxMeta);ensureV35State();lastCommitted35=clone(state);autoSnapshotBase35=clone(state);autoSnapshotBase35.__auxSnapshot35=captureAux35();autoSnapshotLastFP35=fingerprint35(state,autoSnapshotBase35.__auxSnapshot35);saveGuard35=true;(window.saveState?.__v35?null:null);const baseCurrent=window.saveState;saveGuard35=false;window.saveState();renderAll?.();renderNewView35(activeView35());window.toast?.('Snapshot restored')}
+async function restoreSnapshot35(id){const all=await idbAll35(STORE_SNAPS),snap=all.find(x=>x.id===id);if(!snap)return;if(!confirm(`Restore snapshot from ${new Date(snap.at).toLocaleString()}? A recovery snapshot will be saved first.`))return;try{await restoreDocument35(snap);window.toast?.('Snapshot restored and verified')}catch(e){window.toast?.('Restore failed: '+e.message)}}
 function download35(name,text,type='application/json'){const blob=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-async function exportBackup35(){try{const payload=await backupPayload35('portable');download35(`SecondBrain_Backup_${todayKey()}.json`,JSON.stringify(payload,null,2));window.toast?.('Complete portable backup exported')}catch(e){console.error('Portable backup export failed',e);window.toast?.('Backup export failed · '+String(e?.message||e))}}
-function importBackup35(){const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.onchange=async()=>{const f=inp.files?.[0];if(!f)return;try{const p=JSON.parse(await f.text());const imported=p.state||p;if(!imported||!Array.isArray(imported.entries))throw new Error('Not a Second Brain backup');if(!confirm('Restore this backup? Your current state is added to Undo history first.'))return;undo35.push(clone(state));await makeSnapshot35('Before backup restore',{kind:'pre-restore'});const localOnlyPasswords=Array.isArray(state.passwords)?clone(state.passwords):[];state=clone(imported);if(!Object.prototype.hasOwnProperty.call(imported,'passwords'))state.passwords=localOnlyPasswords;if(p.aux&&typeof p.aux==='object'){const current=captureAux35(),changes=[];for(const k of new Set([...Object.keys(current),...Object.keys(p.aux)])){if(!Object.prototype.hasOwnProperty.call(p.aux,k))changes.push([k,null,true]);else changes.push([k,p.aux[k],false])}applyAuxDurably35(changes)}if(p.auxMeta)writeAuxMetaDurably35(p.auxMeta);if(Array.isArray(p.assets))await restoreUserAssets35(p.assets);ensureV35State();lastCommitted35=clone(state);window.saveState();await persistStateDurably35();await makeSnapshot35('Imported backup');renderAll?.();renderNewView35(activeView35());window.toast?.('Backup restored and verified')}catch(e){alert('Could not import backup: '+e.message)}};inp.click()}
+async function exportBackup35(){try{const payload=await backupPayload35('portable');download35(`SecondBrain_Backup_${todayKey()}.json`,JSON.stringify(payload,null,2));window.toast?.(state.passwords?.length?'Backup exported. Legacy passwords excluded: encrypt them in Passwords first.':'Complete portable backup exported')}catch(e){console.error('Portable backup export failed',e);window.toast?.('Backup export failed · '+String(e?.message||e))}}
+function validateRestore35(value){
+  if(!value||typeof value!=='object'||!Array.isArray(value.entries))throw Error('Not a Second Brain backup');
+  const walk=(v,depth=0)=>{if(depth>60)throw Error('Backup is too deeply nested');if(v&&typeof v==='object')for(const k of Object.keys(v)){if(['__proto__','constructor','prototype'].includes(k))throw Error('Unsafe backup property');walk(v[k],depth+1)}};walk(value);
+}
+async function restoreDocument35(p){
+  const imported=p.state||p;validateRestore35(imported);
+  const before=clone(state),aux=captureAux35(),assets=Array.isArray(p.assets)?await captureUserAssets35():null;
+  await makeSnapshot35('Before backup restore',{kind:'pre-restore'});
+  try{
+    state=clone(imported);
+    if(!Object.hasOwn(imported,'passwords'))state.passwords=clone(before.passwords||[]);
+    if(!Object.hasOwn(imported,'passwordVault')&&before.passwordVault)state.passwordVault=clone(before.passwordVault);
+    if(p.aux&&typeof p.aux==='object')applyAuxDurably35([...new Set([...Object.keys(aux),...Object.keys(p.aux)])].map(k=>[k,p.aux[k],!Object.hasOwn(p.aux,k)]));
+    if(assets)await restoreUserAssets35(p.assets);
+    ensureV35State();window.SecondBrainSync?.capture();await persistStateDurably35();
+    undo35.push(before);lastCommitted35=clone(state);window.SecondBrainPasswords?.lock();window.OmniBibleReloadFromStorage?.();renderAll?.();renderNewView35(activeView35());
+  }catch(error){
+    state=before;try{const current=captureAux35();applyAuxDurably35([...new Set([...Object.keys(current),...Object.keys(aux)])].map(k=>[k,aux[k],!Object.hasOwn(aux,k)]));if(assets)await restoreUserAssets35(assets);window.SecondBrainSync?.capture();await persistStateDurably35()}catch(recoveryError){console.error('Restore rollback failed',recoveryError)}throw error;
+  }
+}
+function importBackup35(){const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.onchange=async()=>{const f=inp.files?.[0];if(!f)return;try{if(f.size>32*1024*1024)throw Error('Backup exceeds 32 MB');const p=JSON.parse(await f.text());validateRestore35(p.state||p);if(!confirm('Restore this backup? A recovery snapshot of current data will be saved first.'))return;await restoreDocument35(p);window.toast?.('Backup restored and verified')}catch(e){alert('Could not import backup: '+e.message)}};inp.click()}
+
 async function storageInfo35(){let usage=0,quota=0,persisted=false;try{const e=await navigator.storage?.estimate?.();usage=e?.usage||0;quota=e?.quota||0;persisted=await navigator.storage?.persisted?.()}catch(_){}return{usage,quota,persisted}}
 let idbRecovered35=false;
 function time35(v){const n=Date.parse(String(v||''));return Number.isFinite(n)?n:0}

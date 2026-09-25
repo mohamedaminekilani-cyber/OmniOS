@@ -6,6 +6,7 @@ html=html.replace(/<script\b[^>]*\bsrc=["'](\.\/)?(js\/[^"']+|pwa-personalizatio
 const hash=sha(html),file=`app.${hash.slice(0,20)}.html`;
 fs.rmSync('dist',{recursive:true,force:true});fs.mkdirSync('dist');
 fs.writeFileSync('dist/'+file,html);
-fs.writeFileSync('dist/release.json',JSON.stringify({version:1,file,sha256:hash,bytes:Buffer.byteLength(html)}));
+const commit=(process.env.GITHUB_SHA||process.env.COMMIT_SHA||'').trim()||null;
+fs.writeFileSync('dist/release.json',JSON.stringify({version:1,file,sha256:hash,bytes:Buffer.byteLength(html),commit,builtAt:new Date().toISOString()}));
 for(const name of ['index.html','sw.js','manifest.webmanifest','pwa-personalization.js','icons'])fs.cpSync(name,'dist/'+name,{recursive:true});
 console.log(`Built ${file} (${Buffer.byteLength(html)} bytes); application scripts are release-atomic.`);

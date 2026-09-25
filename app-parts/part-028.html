@@ -5179,9 +5179,43 @@ function ensureReadyForMerge(){
   const r=recovery();if(!r)throw new Error('Recovery layer is not ready yet');
   r.ensureSyncMeta?.();return r
 }
+const SYNC_SELECTION_KEY64='secondbrain_sync_selection_v64';
+const SYNC_GROUPS64={
+  tasks:['entries'],calendar:['calendarEvents','timeBlocks'],routines:['routines'],habits:['habits'],
+  finance:['transactions','budgets','accounts','bills','subscriptions','savingsGoals'],
+  notes:['notes','documents'],nutrition:['pantry','groceryLists','dietHydration','nutrition','recipes','mealPlans'],
+  fitness:['workouts'],life:['life','goals','people','projects'],settings:['settings']
+};
+function syncSelection64(){
+  const defaults={tasks:true,calendar:true,routines:true,habits:true,finance:true,notes:true,nutrition:true,fitness:true,life:true,settings:true,bible:true,personalization:true,passwords:false};
+  try{return {...defaults,...JSON.parse(localStorage.getItem(SYNC_SELECTION_KEY64)||'{}'),passwords:!!JSON.parse(localStorage.getItem(SYNC_SELECTION_KEY64)||'{}')?.passwords}}catch(_){return defaults}
+}
+function saveSyncSelection64(value){try{localStorage.setItem(SYNC_SELECTION_KEY64,JSON.stringify({...syncSelection64(),...(value||{})}))}catch(_){}}
+function stateGroup64(key){
+  for(const [group,keys] of Object.entries(SYNC_GROUPS64))if(keys.includes(key))return group;
+  return 'system'
+}
+function auxAllowed64(key,sel){
+  key=String(key||'');
+  if(/push_device|sync_device|sync_pairs|turn_servers|local_answer|pairing|transport|relay_cursor|snapshot_slot/i.test(key))return false;
+  if(/bible/i.test(key))return !!sel.bible;
+  if(/icon|cover|brand|personal|loading_icon|app_icon/i.test(key))return !!sel.personalization;
+  return true
+}
 function buildBundle(){
-  const r=ensureReadyForMerge(),aux=r.captureAux?.()||{},meta=state.core?.syncMeta||{};
-  return {protocol:PROTOCOL,generatedAt:iso(),device:device(),state:clone(state),moduleTimes:{...(meta.modules||{})},recordTimes:clone(meta.records||{})||{},aux,auxMeta:r.readAuxMeta?.()||{},fingerprint:r.fingerprint?.(state,aux)||''}
+  const r=ensureReadyForMerge(),sel=syncSelection64(),full=clone(state),filtered={};
+  Object.keys(full||{}).forEach(k=>{
+    if(k==='passwords')return;
+    const group=stateGroup64(k);
+    if(group==='system'||sel[group]!==false)filtered[k]=full[k]
+  });
+  const captured=r.captureAux?.()||{},aux={};
+  Object.entries(captured).forEach(([k,v])=>{if(auxAllowed64(k,sel))aux[k]=v});
+  const meta=state.core?.syncMeta||{},moduleTimes={},recordTimes={};
+  Object.keys(filtered).forEach(k=>{if(meta.modules?.[k])moduleTimes[k]=meta.modules[k];if(meta.records?.[k])recordTimes[k]=clone(meta.records[k])});
+  let secureVault=null;
+  if(sel.passwords){try{secureVault=JSON.parse(localStorage.getItem('secondbrain_password_vault_v1')||'null')}catch(_){}}
+  return {protocol:PROTOCOL,generatedAt:iso(),device:device(),selection:sel,state:filtered,moduleTimes,recordTimes,aux,auxMeta:r.readAuxMeta?.()||{},secureVault,fingerprint:r.fingerprint?.(filtered,{...aux,__secureVault:secureVault})||''}
 }
 function chooseRemote(lt,rt,localId,remoteId){
   if(rt>lt)return true;if(rt<lt)return false;
@@ -5189,6 +5223,29 @@ function chooseRemote(lt,rt,localId,remoteId){
 }
 function same(a,b){try{return JSON.stringify(a)===JSON.stringify(b)}catch(_){return false}}
 function hasOwn(o,k){return !!o&&Object.prototype.hasOwnProperty.call(o,k)}
+function plainObject64(v){return !!v&&typeof v==='object'&&!Array.isArray(v)}
+function itemId64(x,r){return r.recordId?.(x)||((x&&typeof x==='object'&&(x.id??x.uid??x.key))!=null?String(x.id??x.uid??x.key):'')}
+function arrayOfRecords64(v,r){return Array.isArray(v)&&v.length>0&&v.every(x=>!!itemId64(x,r))}
+function deepMergePreserve64(localValue,remoteValue,takeRemote,r){
+  if(Array.isArray(localValue)&&Array.isArray(remoteValue)){
+    if(arrayOfRecords64(localValue,r)||arrayOfRecords64(remoteValue,r)){
+      const lm=new Map(localValue.map(x=>[itemId64(x,r),x]).filter(x=>x[0])),rm=new Map(remoteValue.map(x=>[itemId64(x,r),x]).filter(x=>x[0]));
+      const order=takeRemote?[...rm.keys(),...lm.keys()]:[...lm.keys(),...rm.keys()],seen=new Set(),out=[];
+      for(const id of order){if(seen.has(id))continue;seen.add(id);if(lm.has(id)&&rm.has(id))out.push(deepMergePreserve64(lm.get(id),rm.get(id),takeRemote,r));else out.push(clone(lm.has(id)?lm.get(id):rm.get(id)))}
+      return out
+    }
+    return clone(takeRemote?remoteValue:localValue)
+  }
+  if(plainObject64(localValue)&&plainObject64(remoteValue)){
+    const out={},keys=new Set([...Object.keys(localValue),...Object.keys(remoteValue)]);
+    for(const k of keys){
+      if(hasOwn(localValue,k)&&hasOwn(remoteValue,k))out[k]=deepMergePreserve64(localValue[k],remoteValue[k],takeRemote,r);
+      else out[k]=clone(hasOwn(localValue,k)?localValue[k]:remoteValue[k])
+    }
+    return out
+  }
+  return clone(takeRemote?remoteValue:localValue)
+}
 function recordArrayEligible(list,r){return Array.isArray(list)&&list.every(x=>!!r.recordId?.(x))}
 function mergeRecordArray(key,localList,remoteList,localRec,remoteRec,localModuleAt,remoteModuleAt,localId,remoteId,generatedAt,r){
   const lmap=new Map(localList.map(x=>[r.recordId(x),x])),rmap=new Map(remoteList.map(x=>[r.recordId(x),x]));
@@ -5204,7 +5261,9 @@ function mergeRecordArray(key,localList,remoteList,localRec,remoteRec,localModul
     const chosen=takeRemote?rm:lm;
     if(chosen)meta[id]={at:chosen.at||(takeRemote?(remoteModuleAt||generatedAt):localModuleAt)||generatedAt,deleted:!!chosen.deleted};
     if(chosen?.deleted)return;
-    const value=takeRemote?rmap.get(id):lmap.get(id);
+    let value;
+    if(lHas&&rHas&&!lm?.deleted&&!rm?.deleted)value=deepMergePreserve64(lmap.get(id),rmap.get(id),takeRemote,r);
+    else value=takeRemote?rmap.get(id):lmap.get(id);
     if(value!==undefined)values.set(id,clone(value))
   });
   const remoteOrder=chooseRemote(when(localModuleAt),when(remoteModuleAt),localId,remoteId);
@@ -5213,64 +5272,96 @@ function mergeRecordArray(key,localList,remoteList,localRec,remoteRec,localModul
   values.forEach((value,id)=>{if(!seen.has(id))list.push(value)});
   return {list,meta}
 }
-
-async function mergeBundle(remote){
+function rawSet64(key,value){
+  const proto=window.Storage?.prototype,raw=proto?.setItem?.__base||proto?.setItem;
+  if(raw)return raw.call(localStorage,key,value);
+  return localStorage.setItem(key,value)
+}
+function rawRemove64(key){
+  const proto=window.Storage?.prototype,raw=proto?.removeItem?.__base||proto?.removeItem;
+  if(raw)return raw.call(localStorage,key);
+  return localStorage.removeItem(key)
+}
+function rehydrateAux64(changedKeys){
+  if((changedKeys||[]).some(k=>/bible/i.test(k))){
+    try{if(typeof B!=='undefined'){const x=JSON.parse(localStorage.getItem('omnios_bible_v571')||'null');if(x&&typeof x==='object')B=x}}catch(e){console.warn('Bible rehydrate after sync failed',e)}
+  }
+  document.dispatchEvent(new CustomEvent('omnios:remote-applied',{detail:{aux:changedKeys||[]}}))
+}
+async function mergeBundleNow64(remote){
   if(!remote||remote.protocol!==PROTOCOL||!remote.state)return {changed:false,modules:[],aux:[]};
-  const r=ensureReadyForMerge(),localId=device().id,remoteId=remote.device?.id||'';
+  const r=ensureReadyForMerge(),localId=device().id,remoteId=remote.device?.id||'',generatedAt=remote.generatedAt||iso();
   const localMeta=r.ensureSyncMeta?.()||{modules:{},records:{}},localTimes={...(localMeta.modules||{})},remoteTimes={...(remote.moduleTimes||remote.state?.core?.syncMeta?.modules||{})};
   const localRecords=localMeta.records||{},remoteRecords=remote.recordTimes||remote.state?.core?.syncMeta?.records||{},mergedRecords=clone(localRecords)||{};
-  const keys=new Set([...(r.stateKeys?.(state)||[]),...(r.stateKeys?.(remote.state)||[])]),stateChanges=[],mergedTimes={...localTimes};
+  const keys=new Set([...(r.stateKeys?.(state)||[]),...Object.keys(remote.state||{})]),stateChanges=[],mergedTimes={...localTimes};
   for(const k of keys){
-    const localHas=hasOwn(state,k),remoteHas=hasOwn(remote.state,k),lt=when(localTimes[k]),rt=when(remoteTimes[k]);
-    if(remoteHas){
-      const lv=state[k],rv=remote.state[k],recordMerge=Array.isArray(lv)&&Array.isArray(rv)&&recordArrayEligible(lv,r)&&recordArrayEligible(rv,r)&&(localRecords[k]||remoteRecords[k]);
-      if(recordMerge){
-        const merged=mergeRecordArray(k,lv,rv,localRecords[k]||{},remoteRecords[k]||{},localTimes[k]||'',remoteTimes[k]||'',localId,remoteId,remote.generatedAt,r);
-        mergedRecords[k]=merged.meta;
-        if(!same(lv,merged.list))stateChanges.push([k,merged.list])
-      }else if((!localHas||chooseRemote(lt,rt,localId,remoteId))&&!same(lv,rv)){
-        stateChanges.push([k,clone(rv)])
-      }
-    }
-    if(remoteHas&&(rt>lt||(rt===lt&&String(remoteId)>String(localId))))mergedTimes[k]=remoteTimes[k]||localTimes[k]||remote.generatedAt;
-    else mergedTimes[k]=localTimes[k]||remoteTimes[k]||remote.generatedAt;
+    if(k==='passwords'||!hasOwn(remote.state,k))continue;
+    const localHas=hasOwn(state,k),lv=state[k],rv=remote.state[k],lt=when(localTimes[k]),rt=when(remoteTimes[k]),take=chooseRemote(lt,rt,localId,remoteId);
+    const recordMerge=Array.isArray(lv)&&Array.isArray(rv)&&recordArrayEligible(lv,r)&&recordArrayEligible(rv,r)&&(localRecords[k]||remoteRecords[k]);
+    let next;
+    if(recordMerge){
+      const merged=mergeRecordArray(k,lv,rv,localRecords[k]||{},remoteRecords[k]||{},localTimes[k]||'',remoteTimes[k]||'',localId,remoteId,generatedAt,r);
+      mergedRecords[k]=merged.meta;next=merged.list
+    }else if(localHas)next=deepMergePreserve64(lv,rv,take,r);
+    else next=clone(rv);
+    if(!same(lv,next))stateChanges.push([k,next]);
+    if(rt>lt||(rt===lt&&String(remoteId)>String(localId)))mergedTimes[k]=remoteTimes[k]||localTimes[k]||generatedAt;
+    else mergedTimes[k]=localTimes[k]||remoteTimes[k]||generatedAt
   }
 
   const localAux=r.captureAux?.()||{},localAuxMeta=r.readAuxMeta?.()||{},remoteAux=remote.aux||{},remoteAuxMeta=remote.auxMeta||{};
   const auxKeys=new Set([...Object.keys(localAux),...Object.keys(remoteAux),...Object.keys(localAuxMeta),...Object.keys(remoteAuxMeta)]),auxChanges=[],mergedAuxMeta={...localAuxMeta};
   for(const k of auxKeys){
-    const localHas=hasOwn(localAux,k),remoteHas=hasOwn(remoteAux,k),remoteKnows=remoteHas||hasOwn(remoteAuxMeta,k);
-    if(!remoteKnows)continue;
-    const lm=localAuxMeta[k]||{},rm=remoteAuxMeta[k]||{};
-    const lt=when(lm.at),rt=when(rm.at||(remoteHas?remote.generatedAt:'')),take=chooseRemote(lt,rt,localId,remoteId);
-    if(take){
-      const deleted=!!rm.deleted;
-      const next=deleted?null:remoteAux[k];
-      const current=localHas?localAux[k]:null;
-      if(deleted?localHas:current!==next)auxChanges.push([k,next,deleted]);
-      mergedAuxMeta[k]={at:rm.at||remote.generatedAt,deleted};
-    }
+    if(!auxAllowed64(k,remote.selection||syncSelection64()))continue;
+    const localHas=hasOwn(localAux,k),remoteHas=hasOwn(remoteAux,k),remoteKnows=remoteHas||hasOwn(remoteAuxMeta,k);if(!remoteKnows)continue;
+    const lm=localAuxMeta[k]||{},rm=remoteAuxMeta[k]||{},lt=when(lm.at),rt=when(rm.at||(remoteHas?generatedAt:'')),take=chooseRemote(lt,rt,localId,remoteId);
+    if(take){const deleted=!!rm.deleted,next=deleted?null:remoteAux[k],current=localHas?localAux[k]:null;if(deleted?localHas:current!==next)auxChanges.push([k,next,deleted]);mergedAuxMeta[k]={at:rm.at||generatedAt,deleted}}
   }
 
-  if(!stateChanges.length&&!auxChanges.length)return {changed:false,modules:[],aux:[]};
-  await r.makeSnapshot?.('Before device sync',{kind:'manual'});
+  let vaultChange=null;
+  if(remote.selection?.passwords&&remote.secureVault){
+    let localVault=null;try{localVault=JSON.parse(localStorage.getItem('secondbrain_password_vault_v1')||'null')}catch(_){}
+    if(!localVault||when(remote.secureVault.updatedAt)>when(localVault.updatedAt))vaultChange=clone(remote.secureVault)
+  }
+  const nextMeta={modules:mergedTimes,records:mergedRecords,updatedAt:[localMeta.updatedAt,generatedAt,iso()].filter(Boolean).sort().pop()};
+  const metaChanged=!same(localMeta.modules||{},mergedTimes)||!same(localMeta.records||{},mergedRecords)||!same(localAuxMeta,mergedAuxMeta);
+  if(!stateChanges.length&&!auxChanges.length&&!vaultChange&&!metaChanged)return {changed:false,modules:[],aux:[]};
+
+  await r.makeSnapshot?.('Before device sync',{kind:'pre-sync'});
+  const previousState=clone(state),previousRaw=localStorage.getItem('omnios_v3_state'),previousAux={};
+  for(const [k] of auxChanges)previousAux[k]={had:localStorage.getItem(k)!==null,value:localStorage.getItem(k)};
+  const previousVault=localStorage.getItem('secondbrain_password_vault_v1');
   window.__omniSyncApplying=true;
   try{
     for(const [k,v] of stateChanges)state[k]=v;
     state.core=state.core&&typeof state.core==='object'?state.core:{};
     state.core.syncMeta=state.core.syncMeta&&typeof state.core.syncMeta==='object'?state.core.syncMeta:{};
-    state.core.syncMeta.modules=mergedTimes;
-    state.core.syncMeta.records=mergedRecords;
-    state.core.syncMeta.updatedAt=[state.core.syncMeta.updatedAt,remote.generatedAt,iso()].filter(Boolean).sort().pop();
-    for(const [k,v,deleted] of auxChanges){
-      try{if(deleted)localStorage.removeItem(k);else localStorage.setItem(k,String(v??''))}catch(_){}
-    }
+    Object.assign(state.core.syncMeta,nextMeta);
+    for(const [k,v,deleted] of auxChanges){if(deleted)rawRemove64(k);else rawSet64(k,String(v??''));const check=localStorage.getItem(k);if(deleted?check!==null:check!==String(v??''))throw new Error('Could not persist synced auxiliary data: '+k)}
     r.writeAuxMeta?.(mergedAuxMeta);
+    if(vaultChange){rawSet64('secondbrain_password_vault_v1',JSON.stringify(vaultChange));if(localStorage.getItem('secondbrain_password_vault_v1')!==JSON.stringify(vaultChange))throw new Error('Could not persist encrypted vault')}
     if(typeof normalizeState==='function')normalizeState();
     if(typeof window.saveState==='function')window.saveState();
+    const saved=JSON.parse(localStorage.getItem('omnios_v3_state')||'null');
+    if(!saved||!same(saved.core?.syncMeta?.modules,state.core?.syncMeta?.modules)||!same(saved.core?.syncMeta?.records,state.core?.syncMeta?.records))throw new Error('Synced state was not durably committed');
+    for(const [k] of stateChanges)if(!same(saved[k],state[k]))throw new Error('Synced module was not durably committed: '+k);
+    rehydrateAux64(auxChanges.map(x=>x[0]));
     try{window.renderAll?.()}catch(_){}
+  }catch(e){
+    state=previousState;
+    try{if(previousRaw==null)rawRemove64('omnios_v3_state');else rawSet64('omnios_v3_state',previousRaw)}catch(_){}
+    for(const [k,old] of Object.entries(previousAux)){try{if(old.had)rawSet64(k,old.value);else rawRemove64(k)}catch(_){}}
+    try{if(previousVault==null)rawRemove64('secondbrain_password_vault_v1');else rawSet64('secondbrain_password_vault_v1',previousVault)}catch(_){}
+    throw e
   }finally{window.__omniSyncApplying=false}
-  return {changed:true,modules:stateChanges.map(x=>x[0]),aux:auxChanges.map(x=>x[0])}
+  return {changed:true,modules:stateChanges.map(x=>x[0]),aux:auxChanges.map(x=>x[0]),metadataOnly:!stateChanges.length&&!auxChanges.length&&!vaultChange}
+}
+let mergeQueue64=Promise.resolve();
+function mergeBundle(remote){
+  const run=()=>mergeBundleNow64(remote);
+  const result=mergeQueue64.then(run,run);
+  mergeQueue64=result.catch(()=>{});
+  return result
 }
 
 function setStatus(text,tone='',detail=''){

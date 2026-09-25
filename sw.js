@@ -1,4 +1,4 @@
-const SHELL_CACHE='omnios-shell-v1';
+const SHELL_CACHE='second-brain-shell-v2';
 const USER_ASSET_CACHE='omnios-user-assets-v1';
 const SNAPSHOT_PREFIX='omnios-app-snapshot-v1-';
 const CORE=[
@@ -78,7 +78,7 @@ self.addEventListener('fetch',event=>{
     }catch(_){
       const cached=event.request.mode==='navigate'
         ? await shell.match('./index.html')
-        : await shell.match(event.request);
+        : await shell.match(event.request,{ignoreSearch:event.request.destination==='script'});
       return cached||Response.error();
     }
   })());
@@ -89,9 +89,9 @@ self.addEventListener('push',event=>{
   try{data=event.data?.json?.()||{}}catch(_){
     try{data={body:event.data?.text?.()||''}}catch(__){}
   }
-  const title=data.title||'OmniOS reminder';
+  const title=data.title||'Second Brain reminder';
   const options={
-    body:data.body||'You have something scheduled in OmniOS.',
+    body:data.body||'You have something scheduled in Second Brain.',
     icon:'./omnios-user-icon-192.png',
     badge:'./icons/icon-192.png',
     tag:data.tag||'omnios-reminder',

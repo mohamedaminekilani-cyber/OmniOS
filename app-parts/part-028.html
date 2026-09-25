@@ -1601,13 +1601,16 @@ function resetText(r){return r.frequency==='weekly'?'Resets at the start of each
 function freqLabel(r){
   if(r.frequency==='daily')return 'Daily';
   if(r.frequency==='weekly'){const ds=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];return r.days.length?'Weekly · '+r.days.map(x=>ds[x]).join(', '):'Weekly'}
-  return `Monthly · day ${r.dayOfMonth||1}`;
+  const day=Math.max(1,Math.min(31,Number(r.dayOfMonth||1)));return `Monthly · day ${day}${day>28?' · last valid day in shorter months':''}`;
 }
 function dueToday(r,d=new Date()){
   if(r.archived)return false;
   if(r.frequency==='daily')return true;
   if(r.frequency==='weekly')return r.days.length?r.days.includes(d.getDay()):d.getDay()===1;
-  return Number(r.dayOfMonth||1)===d.getDate();
+  const configured=Math.max(1,Math.min(31,Number(r.dayOfMonth||1)));
+  const lastDay=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+  const effective=Math.min(configured,lastDay);
+  return effective===d.getDate();
 }
 function getRoutine(id){return normalize().find(r=>String(r.id)===String(id))}
 function getStep(r,id){return A(r?.items).find(i=>String(i.id)===String(id))}
@@ -5403,8 +5406,8 @@ function sendBundle(conn,reason='live',force=false){
   if(!conn?.open||!conn.__omniAuth)return;
   const bundle=buildBundle();
   if(!force&&bundle.fingerprint&&bundle.fingerprint===conn.__omniLastSent)return;
-  conn.__omniLastSent=bundle.fingerprint||'';
-  conn.send({type:'bundle',protocol:PROTOCOL,reason,bundle})
+  conn.send({type:'bundle',protocol:PROTOCOL,reason,bundle});
+  conn.__omniLastSent=bundle.fingerprint||''
 }
 function scheduleLiveSend(){
   if(window.__omniSyncApplying)return;clearTimeout(sendTimer);sendTimer=setTimeout(()=>{for(const x of live.values())if(x.auth&&x.conn?.open)sendBundle(x.conn,'live')},550)
@@ -5423,9 +5426,9 @@ async function handleMessage(conn,msg,expectedSecret){
   }
   if(msg.type==='bundle'&&conn.__omniAuth){
     if(msg.bundle?.fingerprint&&msg.bundle.fingerprint===conn.__omniLastRecv)return;
-    conn.__omniLastRecv=msg.bundle?.fingerprint||'';
     try{
       const result=await mergeBundle(msg.bundle);
+      conn.__omniLastRecv=msg.bundle?.fingerprint||'';
       if(result.changed){sendBundle(conn,'merged',true);setStage('live','Synced · newest data kept',result.modules.length?(result.modules.length+' module'+(result.modules.length===1?'':'s')+' updated'):'Auxiliary data updated','ok')}
       else setStage('live','Synced · both devices already match','Live changes will continue to transfer.','ok');
       try{conn.send({type:'ack',protocol:PROTOCOL,at:iso()})}catch(_){}
@@ -5758,10 +5761,10 @@ async function relayConsumeInner(conn,inner){
   if(!inner||inner.protocol!==PROTOCOL)return;
   if(inner.type==='bundle'&&inner.bundle){
     if(inner.bundle.fingerprint&&inner.bundle.fingerprint===conn.__omniLastRecv)return;
-    conn.__omniLastRecv=inner.bundle.fingerprint||'';
     try{
       setProgress(93,'Comparing data');logProgress('Comparing newest records over encrypted relay');
       const result=await api()?.merge?.(inner.bundle);
+      conn.__omniLastRecv=inner.bundle.fingerprint||'';
       if(result?.changed)sendBundle(true);
       conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
       stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Encrypted fallback route is live.','ok');

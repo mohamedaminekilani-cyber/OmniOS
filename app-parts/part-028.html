@@ -5762,7 +5762,7 @@ function progressPercent(n){return n<=1?20:n===2?48:n===3?78:100}
 function setProgress(percent,label){
   const p=Math.max(0,Math.min(100,Number(percent)||0));
   const bar=overlay?.querySelector('[data-local-progress-bar]'),txt=overlay?.querySelector('[data-local-progress-text]');
-  if(bar)bar.style.width=p+'%';if(txt)txt.textContent=(label||'Sync')+' · '+Math.round(p)+'%'
+  if(bar)bar.style.width=p+'%';if(txt)txt.textContent=(label||'Sync')
 }
 function logProgress(message){
   if(!message)return;progressLog.push({at:new Date(),message:String(message)});progressLog=progressLog.slice(-6);
@@ -5941,11 +5941,11 @@ function setButtonLive(on){
   const b=document.getElementById('omni-sync-btn');if(b){b.classList.toggle('is-live',!!on);b.title=on?'Sync · Local Wi-Fi connected':'Sync devices'}
 }
 function stopScanner(){try{scannerStop?.()}catch(_){}scannerStop=null}
-function closeModal(){stopScanner();overlay?.remove();overlay=null}
+function closeModal(){stopScanner();if(!liveConn?.open){try{hostSession?.answerCleanup?.()}catch(_){}try{clearTimeout(hostSession?.connectTimeout)}catch(_){}try{hostSession?.pc?.close?.()}catch(_){}try{joinSessionState?.pc?.close?.()}catch(_){}hostSession=null;joinSessionState=null;stopRelaySession()}overlay?.remove();overlay=null}
 function modal(title,subtitle){
   closeModal();
   const ov=document.createElement('div');ov.className='omni-sync-overlay omni-local-sync';
-  progressLog=[];ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true"><header class="omni-sync-head"><div><div class="omni-sync-kicker">LOCAL WI-FI SYNC</div><h3>'+title+'</h3><p>'+subtitle+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-local-status>Preparing…</strong><span data-local-detail>Both devices must be connected to the same Wi-Fi network.</span></div></div><div class="omni-local-progress"><div class="omni-local-progress-track"><span data-local-progress-bar></span></div><div data-local-progress-text>Preparing · 0%</div></div><div class="omni-local-steps"><div class="omni-local-step active" data-local-step="1">1 · Offer</div><div class="omni-local-step" data-local-step="2">2 · Response</div><div class="omni-local-step" data-local-step="3">3 · Connect</div><div class="omni-local-step" data-local-step="4">4 · Live</div></div><div class="omni-local-log" data-local-log></div><div class="omni-sync-content"></div></div></section>';
+  progressLog=[];ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true"><header class="omni-sync-head"><div><div class="omni-sync-kicker">LOCAL WI-FI SYNC</div><h3>'+title+'</h3><p>'+subtitle+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-local-status>Preparing…</strong><span data-local-detail>Both devices must be connected to the same Wi-Fi network.</span></div></div><div class="omni-local-progress"><div class="omni-local-progress-track"><span data-local-progress-bar></span></div><div data-local-progress-text>Preparing</div></div><div class="omni-local-steps"><div class="omni-local-step active" data-local-step="1">1 · Offer</div><div class="omni-local-step" data-local-step="2">2 · Response</div><div class="omni-local-step" data-local-step="3">3 · Connect</div><div class="omni-local-step" data-local-step="4">4 · Live</div></div><div class="omni-local-log" data-local-log></div><div class="omni-sync-content"></div></div></section>';
   document.body.appendChild(ov);overlay=ov;
   try{window.__secondBrainInstallSyncSelection64?.(ov)}catch(_){}
   ov.querySelector('.omni-sync-close').onclick=closeModal;ov.onclick=e=>{if(e.target===ov)closeModal()};
@@ -5967,36 +5967,66 @@ function internetFallback(){
 }
 
 function makeAdapter(pc,dc,sid){
-  const id='wifi:'+sid;
+  const id='wifi:'+sid,chunks=new Map(),sendQueue=[];let pumping=false;
+  function hashLocal64(text){let h=2166136261;for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),16777619);return (h>>>0).toString(16)}
+  function pump(){
+    if(pumping||dc.readyState!=='open')return;pumping=true;
+    try{
+      while(sendQueue.length&&dc.readyState==='open'&&dc.bufferedAmount<256*1024)dc.send(sendQueue.shift())
+    }finally{pumping=false}
+    if(sendQueue.length&&dc.readyState==='open')setTimeout(pump,20)
+  }
+  function queueObject(obj){
+    if(dc.readyState!=='open')return;
+    const raw=JSON.stringify(obj);
+    if(raw.length<=44000){sendQueue.push(raw);pump();return}
+    const transfer=randomHex(10),size=30000,total=Math.ceil(raw.length/size),checksum=hashLocal64(raw);
+    for(let i=0;i<total;i++)sendQueue.push(JSON.stringify({__omniChunk64:1,id:transfer,index:i,total,checksum,data:raw.slice(i*size,(i+1)*size)}));
+    pump()
+  }
+  function decodeIncoming(data){
+    let msg;try{msg=typeof data==='string'?JSON.parse(data):data}catch(_){return null}
+    if(!msg?.__omniChunk64)return msg;
+    if(!msg.id||!Number.isInteger(msg.index)||!Number.isInteger(msg.total)||msg.total<1||msg.total>2000)return null;
+    let row=chunks.get(msg.id);if(!row){row={parts:new Array(msg.total),received:0,total:msg.total,checksum:msg.checksum||'',at:Date.now()};chunks.set(msg.id,row)}
+    if(row.total!==msg.total)return null;
+    if(row.parts[msg.index]===undefined){row.parts[msg.index]=String(msg.data||'');row.received++}
+    for(const [key,value] of chunks)if(Date.now()-value.at>120000)chunks.delete(key);
+    if(row.received!==row.total)return null;
+    chunks.delete(msg.id);const raw=row.parts.join('');if(row.checksum&&hashLocal64(raw)!==row.checksum)throw new Error('Chunk checksum mismatch');
+    try{return JSON.parse(raw)}catch(_){return null}
+  }
   const conn={
-    peer:id,peerConnection:pc,__omniAuth:true,__omniLastSent:'',__omniLastRecv:'',
+    peer:id,peerConnection:pc,__omniAuth:true,__omniLastSent:'',__omniPendingSent:'',__omniLastRecv:'',
     get open(){return dc.readyState==='open'},
-    send(obj){if(dc.readyState==='open')dc.send(JSON.stringify(obj))},
+    send(obj){queueObject(obj)},
     close(){try{dc.close()}catch(_){}try{pc.close()}catch(_){}}
   };
+  try{dc.bufferedAmountLowThreshold=96*1024;dc.addEventListener('bufferedamountlow',pump)}catch(_){}
   dc.onopen=()=>{
     if(relayState?.sid===sid)stopRelaySession();
-    liveConn=conn;setButtonLive(true);stage(3,'Connected on local Wi-Fi','Exchanging the newest OmniOS data…','busy');setProgress(84,'Connected');logProgress('Local Wi-Fi channel opened');sendBundle(true)
+    liveConn=conn;setButtonLive(true);stage(3,'Connected on local Wi-Fi','Exchanging selected Second Brain data…','busy');setProgress(84,'Connected');logProgress('Local Wi-Fi channel opened');sendBundle(true)
   };
   dc.onmessage=async e=>{
-    let msg;try{msg=typeof e.data==='string'?JSON.parse(e.data):e.data}catch(_){return}
+    let msg;try{msg=decodeIncoming(e.data)}catch(err){console.warn('Second Brain chunk decode',err);return}
     if(!msg||msg.protocol!==PROTOCOL)return;
     if(msg.type==='bundle'&&msg.bundle){
-      if(msg.bundle.fingerprint&&msg.bundle.fingerprint===conn.__omniLastRecv)return;
-      conn.__omniLastRecv=msg.bundle.fingerprint||'';
+      const fp=msg.bundle.fingerprint||'';if(fp&&fp===conn.__omniLastRecv)return;
       try{
-        setProgress(92,'Comparing data');logProgress('Comparing newest records');
+        setProgress(92,'Comparing data');logProgress('Comparing selected records');
         const result=await api()?.merge?.(msg.bundle);
+        conn.__omniLastRecv=fp;
         if(result?.changed)sendBundle(true);
-        conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
-        stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Direct encrypted connection on your Wi-Fi.','ok');setProgress(100,'Synced');logProgress(result?.changed?'Newest data applied':'Both devices already match')
-      }catch(err){console.error('Local Wi-Fi merge',err);stage(3,'Sync failed','Your automatic pre-sync snapshot is still available.','error')}
+        conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString(),fingerprint:fp});
+        stage(4,result?.changed?'Synced · changes committed':'Synced · both devices match','Direct encrypted connection on your Wi-Fi.','ok');setProgress(100,'Synced');logProgress(result?.changed?'Changes durably committed':'Both devices already match')
+      }catch(err){conn.__omniLastRecv='';console.error('Local Wi-Fi merge',err);stage(3,'Sync not committed','No success acknowledgement was sent. Retry is safe.','error')}
     }else if(msg.type==='ack'){
-      stage(4,'Live Local Wi-Fi sync','New changes will continue to transfer while both apps stay open.','ok')
+      if(msg.fingerprint&&conn.__omniPendingSent===msg.fingerprint){conn.__omniLastSent=msg.fingerprint;conn.__omniPendingSent=''}
+      stage(4,'Live Local Wi-Fi sync','Acknowledged changes are durable while both apps stay open.','ok')
     }
   };
   dc.onclose=()=>{if(liveConn===conn)liveConn=null;setButtonLive(false);stage(3,'Local connection closed','Open Sync again to reconnect.','')};
-  dc.onerror=()=>stage(3,'Local connection error','Your Wi-Fi may block device-to-device traffic. Try Internet fallback.','error');
+  dc.onerror=()=>stage(3,'Local connection error','Your Wi-Fi may block device-to-device traffic. Automatic fallback will be attempted.','error');
   pc.oniceconnectionstatechange=()=>{
     const ice=pc.iceConnectionState;
     if(ice==='checking'){stage(3,'Checking the local network','Trying direct routes between the phone and PC…','busy');setProgress(76,'Checking network');logProgress('ICE is checking Wi-Fi routes')}
@@ -6006,7 +6036,7 @@ function makeAdapter(pc,dc,sid){
   };
   pc.onconnectionstatechange=()=>{
     if(pc.connectionState==='failed'){stage(3,'Strict local route blocked','Switching routes automatically…','busy');fallbackFromBlockedLocal(sid)}
-    if(pc.connectionState==='connected'&&!liveConn?.open){stage(3,'Connected on local Wi-Fi','Opening the OmniOS data channel…','busy');setProgress(83,'Connected')}
+    if(pc.connectionState==='connected'&&!liveConn?.open){stage(3,'Connected on local Wi-Fi','Opening the Second Brain data channel…','busy');setProgress(83,'Connected')}
   };
   return conn
 }
@@ -6086,9 +6116,10 @@ function fallbackFromBlockedLocal(sid){
 function sendBundle(force=false){
   const conn=liveConn;if(!conn?.open)return;
   const bundle=api()?.bundle?.();if(!bundle)return;
-  if(!force&&bundle.fingerprint&&bundle.fingerprint===conn.__omniLastSent)return;
-  conn.__omniLastSent=bundle.fingerprint||'';
-  conn.send({type:'bundle',protocol:PROTOCOL,reason:'local-wifi',bundle})
+  const fp=bundle.fingerprint||'';
+  if(!force&&fp&&(fp===conn.__omniLastSent||fp===conn.__omniPendingSent))return;
+  try{conn.__omniPendingSent=fp;conn.send({type:'bundle',protocol:PROTOCOL,reason:'local-wifi',bundle})}
+  catch(e){conn.__omniPendingSent='';throw e}
 }
 function scheduleSend(){clearTimeout(sendTimer);sendTimer=setTimeout(()=>sendBundle(false),350)}
 

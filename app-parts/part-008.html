@@ -41,17 +41,17 @@ function init55(){
  ensure55();ensureStudioView();ensureStudioNav();setupManifest55();applyTheme55();installVersionHistory55();installSaveAutomations55();installRender55();installSwitch55();installShortcuts55();postRender55();
  document.documentElement.dataset.omniosVersion='55';
  if(state.v55.settings.homeView)state.settings.appearance.startView=state.v55.settings.homeView;
- setInterval(()=>{try{renderNotificationBadge55();if(document.visibilityState==='visible'&&state.v55.settings.smartNotifications){const severe=derivedNotifications55().filter(n=>n.severity==='danger');const key='v55_notice_'+today();if(severe.length&&storage.getItem(key)!=='1'&&window.Notification?.permission==='granted'){new Notification('OmniOS needs attention',{body:`${severe.length} urgent item${severe.length===1?'':'s'} need review.`});storage.setItem(key,'1')}}}catch(_){}},60000);
+ setInterval(()=>{try{renderNotificationBadge55();if(document.visibilityState==='visible'&&state.v55.settings.smartNotifications){const severe=derivedNotifications55().filter(n=>n.severity==='danger');const key='v55_notice_'+today();if(severe.length&&storage.getItem(key)!=='1'&&window.Notification?.permission==='granted'){new Notification('Second Brain needs attention',{body:`${severe.length} urgent item${severe.length===1?'':'s'} need review.`});storage.setItem(key,'1')}}}catch(_){}},60000);
  setTimeout(()=>{if(state.v55.privacy.enabled)lockApp55()},160);
  const obs=new MutationObserver(()=>{clearTimeout(obs._t);obs._t=setTimeout(()=>{try{ensureStudioNav();ensureNotificationButton55();enhanceMobileMore55()}catch(_){}},30)});const nav=document.querySelector('.nav-menu');if(nav)obs.observe(nav,{childList:true,subtree:true});
 }
 V55.openStudio=()=>window.switchView('studio');V55.assistant=openLocalAssistant55;V55.recipeScaler=openRecipeScaler55;V55.barcode=openBarcode55;V55.documentViewer=openDocumentViewer55;V55.habitModes=openHabitModesList55;V55.lock=lockApp55;
-try{init55()}catch(e){console.error('OmniOS v55 initialization failed',e)}
+try{init55()}catch(e){console.error('Second Brain v55 initialization failed',e)}
 })();
 </script>
 
 <style id="omnios-v56-audit-css">
-/* ===== OmniOS v56 — product-quality audit layer ===== */
+/* ===== Second Brain v56 — product-quality audit layer ===== */
 :root{--v56-safe-bottom:max(14px,env(safe-area-inset-bottom))}
 button{touch-action:manipulation}
 button:disabled,.btn.is-busy,.icon-btn.is-busy{opacity:.55!important;cursor:wait!important;pointer-events:none!important}
@@ -173,7 +173,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
 
-<!-- OmniOS v56.1 — Calendar filter state + multi-select reliability fix -->
+<!-- Second Brain v56.1 — Calendar filter state + multi-select reliability fix -->
 <style id="omnios-v561-calendar-filter-fix-css">
 #view-master-calendar .v36-cal-filter-panel{align-items:center}
 #view-master-calendar .v36-cal-filter-chip{position:relative;transition:border-color .14s ease,background .14s ease,color .14s ease,box-shadow .14s ease}
@@ -305,7 +305,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 
 <style id="omnios-v56-task-kanban-dnd-css">
-/* ===== OmniOS v56 — Tasks spacing + status drag/drop ===== */
+/* ===== Second Brain v56 — Tasks spacing + status drag/drop ===== */
 #view-tasks > .toolbar{
   margin:0 0 14px!important;
   padding:10px 12px!important;
@@ -541,7 +541,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
 <style id="omnios-v56-premium-task-board-css">
-/* ===== OmniOS v56 — Premium status board ===== */
+/* ===== Second Brain v56 — Premium status board ===== */
 #view-tasks .kanban-board{
   grid-template-columns:repeat(3,minmax(260px,1fr))!important;
   gap:14px!important;
@@ -734,9 +734,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 
 
-<!-- ===== OmniOS v57.2 — Native Bible Text Reader ===== -->
+<!-- ===== Second Brain v57.2 — Native Bible Text Reader ===== -->
 <style id="omnios-v571-bible-css">
-/* OmniOS v57.1 — stable, isolated Bible & Meditation UI */
+/* Second Brain v57.1 — stable, isolated Bible & Meditation UI */
 #view-bible{min-width:0;--bib-accent:#d3a55e;--bib-accent-soft:rgba(211,165,94,.12);--bib-blue:#7aa7ff;--bib-green:#72d5a5;--bib-rose:#ed9aae;--bib-violet:#ab98ef}
 #view-bible *{box-sizing:border-box}
 .bib-shell{display:flex;flex-direction:column;gap:12px;min-width:0;max-width:100%}
@@ -818,7 +818,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </style>
 
 <style id="omnios-v574-bible-scroll-highlight-css">
-/* ===== OmniOS v57.4 — Bible scroll fade + stronger highlights ===== */
+/* ===== Second Brain v57.4 — Bible scroll fade + stronger highlights ===== */
 /* Sticky reader controls should visually cover content, not let verses ghost through. */
 #view-bible .bib-reader-toolbar.v573{
   position:sticky!important;

@@ -158,7 +158,7 @@ window.OmniV34={openViewCustomizer:openViewCustomizerV34,applyViewOptions:applyV
 
 <style id="omnios-v35-lifeos-css">
 /* ============================================================
-   OmniOS v35 — Life OS architecture, history navigation,
+   Second Brain v35 — Life OS architecture, history navigation,
    multi-level undo/redo, local Data Center, coherent navigation.
    ============================================================ */
 :root{
@@ -200,8 +200,9 @@ window.OmniV34={openViewCustomizer:openViewCustomizerV34,applyViewOptions:applyV
 .v35-card-head{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:11px}
 .v35-card-title{font-size:.84rem;font-weight:750;min-width:0}
 .v35-card-sub{font-size:.64rem;color:var(--text-muted);line-height:1.45;margin-top:2px}
-.v35-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:12px}
+.v35-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin-bottom:12px}
 .v35-stat{padding:12px;border:1px solid var(--border-color);border-radius:11px;background:var(--bg-base)}
+.v35-stat-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.v35-stat-actions .btn{min-height:30px;padding:4px 8px;font-size:.58rem}
 .v35-stat-label{font-size:.58rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em}
 .v35-stat-value{font-size:1.35rem;font-weight:800;margin-top:5px}
 .v35-list{display:flex;flex-direction:column;gap:7px}
@@ -510,6 +511,10 @@ function syncBaseline35(){
   return at||new Date().toISOString()
 }
 function syncStateKeys35(s=state){return Object.keys(s||{}).filter(k=>k!=='core'&&!String(k).startsWith('__')&&typeof s[k]!=='function').sort()}
+function nestedRecordKeys35(rootKey,value){
+  if(!value||typeof value!=='object'||Array.isArray(value))return[];
+  return Object.keys(value).filter(k=>Array.isArray(value[k])&&value[k].every(x=>!!syncRecordId35(x))).map(k=>rootKey+'.'+k)
+}
 function syncRecordId35(x){return x&&typeof x==='object'&&x.id!=null?String(x.id):''}
 function initializeRecordMeta35(key,list,base){
   if(!Array.isArray(list))return;
@@ -524,7 +529,15 @@ function changedStateKeys35(a,b){
 function ensureSyncMeta35(){
   ensureV35State();
   const base=syncBaseline35(),m=state.core.syncMeta.modules;
-  syncStateKeys35(state).forEach(k=>{if(!m[k])m[k]=base;initializeRecordMeta35(k,state[k],base)});
+  syncStateKeys35(state).forEach(k=>{
+    if(!m[k])m[k]=base;
+    initializeRecordMeta35(k,state[k],base);
+    nestedRecordKeys35(k,state[k]).forEach(path=>{
+      const sub=path.slice(k.length+1);
+      if(!m[path])m[path]=m[k]||base;
+      initializeRecordMeta35(path,state[k]?.[sub],base)
+    })
+  });
   state.core.syncMeta.updatedAt=state.core.syncMeta.updatedAt||base;
   return state.core.syncMeta
 }
@@ -543,7 +556,20 @@ function touchRecordMeta35(key,prevList,nextList,at){
 }
 function touchSyncStateKeys35(keys,at=new Date().toISOString(),prevState=null,nextState=state){
   const meta=ensureSyncMeta35(),m=meta.modules;
-  (keys||[]).forEach(k=>{if(k&&k!=='core'){m[k]=at;touchRecordMeta35(k,prevState?.[k],nextState?.[k],at)}});
+  (keys||[]).forEach(k=>{if(k&&k!=='core'){
+    m[k]=at;
+    touchRecordMeta35(k,prevState?.[k],nextState?.[k],at);
+    const prev=prevState?.[k],next=nextState?.[k];
+    const nested=new Set([...nestedRecordKeys35(k,prev),...nestedRecordKeys35(k,next)]);
+    nested.forEach(path=>{
+      const sub=path.slice(k.length+1);
+      const a=prev?.[sub],b=next?.[sub];
+      if(JSON.stringify(a)!==JSON.stringify(b)){
+        m[path]=at;
+        touchRecordMeta35(path,a,b,at)
+      }
+    })
+  }});
   meta.updatedAt=at
 }
 function readAuxMeta35(){
@@ -557,10 +583,15 @@ function ensureAuxMeta35(){
 }
 function writeAuxMeta35(meta){
   try{
-    const proto=window.Storage?.prototype,raw=proto?.setItem?.__base||proto?.setItem;
-    if(raw)raw.call(localStorage,SYNC_AUX_META_KEY35,JSON.stringify(meta||{}));
-    else localStorage.setItem(SYNC_AUX_META_KEY35,JSON.stringify(meta||{}))
-  }catch(_){}
+    const proto=window.Storage?.prototype,raw=proto?.setItem?.__base||proto?.setItem,value=JSON.stringify(meta||{});
+    if(raw)raw.call(localStorage,SYNC_AUX_META_KEY35,value);
+    else localStorage.setItem(SYNC_AUX_META_KEY35,value);
+    return localStorage.getItem(SYNC_AUX_META_KEY35)===value
+  }catch(_){return false}
+}
+function writeAuxMetaDurably35(meta){
+  if(!writeAuxMeta35(meta))throw new Error('Auxiliary sync metadata persistence failed');
+  return true
 }
 function stampAux35(key,deleted=false,at=new Date().toISOString()){
   if(!key||!auxSnapshotKey35(key))return;
@@ -591,25 +622,98 @@ function installTopbar35(){
 /* ---------- local IndexedDB Data Center ---------- */
 const DB35='OmniOS_Local_v35',STORE_STATE='state',STORE_SNAPS='snapshots';let db35=null,backupDir35=null,mirrorBusy35=false;
 function openDB35(){if(db35)return Promise.resolve(db35);return new Promise((resolve,reject)=>{if(!('indexedDB'in window)){reject(new Error('IndexedDB unavailable'));return}const q=indexedDB.open(DB35,1);q.onupgradeneeded=()=>{const d=q.result;if(!d.objectStoreNames.contains(STORE_STATE))d.createObjectStore(STORE_STATE);if(!d.objectStoreNames.contains(STORE_SNAPS))d.createObjectStore(STORE_SNAPS,{keyPath:'id'})};q.onsuccess=()=>{db35=q.result;resolve(db35)};q.onerror=()=>reject(q.error)})}
-async function idbPut35(store,key,val){const d=await openDB35();return new Promise((res,rej)=>{const tx=d.transaction(store,'readwrite');const s=tx.objectStore(store);const q=key===null?s.put(val):s.put(val,key);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
+async function idbPut35(store,key,val){const d=await openDB35();return new Promise((res,rej)=>{const tx=d.transaction(store,'readwrite');const st=tx.objectStore(store);const q=key===null?st.put(val):st.put(val,key);let result; q.onsuccess=()=>{result=q.result};q.onerror=()=>rej(q.error);tx.oncomplete=()=>res(result);tx.onerror=()=>rej(tx.error||q.error);tx.onabort=()=>rej(tx.error||new Error('IndexedDB transaction aborted'))})}
 async function idbGet35(store,key){const d=await openDB35();return new Promise((res,rej)=>{const q=d.transaction(store).objectStore(store).get(key);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
 async function idbAll35(store){const d=await openDB35();return new Promise((res,rej)=>{const q=d.transaction(store).objectStore(store).getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>rej(q.error)})}
-async function idbDelete35(store,key){const d=await openDB35();return new Promise((res,rej)=>{const q=d.transaction(store,'readwrite').objectStore(store).delete(key);q.onsuccess=()=>res();q.onerror=()=>rej(q.error)})}
+async function idbDelete35(store,key){const d=await openDB35();return new Promise((res,rej)=>{const tx=d.transaction(store,'readwrite');const q=tx.objectStore(store).delete(key);q.onerror=()=>rej(q.error);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error||q.error);tx.onabort=()=>rej(tx.error||new Error('IndexedDB transaction aborted'))})}
 async function folderPermission35(h){try{return (await h.queryPermission({mode:'readwrite'}))==='granted'}catch(_){return false}}
 async function loadBackupFolder35(){try{const h=await idbGet35(STORE_STATE,'backup-folder-handle');if(h&&await folderPermission35(h))backupDir35=h}catch(_){}}
 async function writeFolderFile35(name,text,type='application/json'){if(!backupDir35)return false;const h=await backupDir35.getFileHandle(name,{create:true});const w=await h.createWritable();await w.write(new Blob([text],{type}));await w.close();return true}
 function activityCsv35(){const rows=[['timestamp','label','modules']];(state.core?.changeLog||[]).forEach(x=>rows.push([x.at||'',x.label||'',(x.modules||[]).join('; ')]));return rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n')+'\n'}
-async function mirrorBackupFolder35(){if(!backupDir35||mirrorBusy35)return false;mirrorBusy35=true;try{if(!(await folderPermission35(backupDir35))){backupDir35=null;return false}const payload={format:'OmniOS Local Mirror',version:35,savedAt:new Date().toISOString(),state:clone(state)};await writeFolderFile35('OmniOS_Latest.json',JSON.stringify(payload,null,2));await writeFolderFile35('OmniOS_Activity.csv',activityCsv35(),'text/csv;charset=utf-8');return true}catch(e){console.warn('Folder mirror failed',e);return false}finally{mirrorBusy35=false}}
-async function connectBackupFolder35(){if(!window.showDirectoryPicker){window.toast?.('Direct folder mirroring is not supported here. Use Export backup instead.');return false}try{const h=await showDirectoryPicker({mode:'readwrite'});backupDir35=h;await idbPut35(STORE_STATE,'backup-folder-handle',h);await mirrorBackupFolder35();window.toast?.('Backup folder connected. Current OmniOS data was mirrored; no file was imported.');renderDataCenter35();return true}catch(e){if(e?.name!=='AbortError')console.warn(e);return false}}
+const USER_ASSET_CACHE35='omnios-user-assets-v1';
+function blobToDataUrl35(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||''));r.onerror=()=>reject(r.error||new Error('Asset encoding failed'));r.readAsDataURL(blob)})}
+async function captureUserAssets35(){
+  const out=[];
+  if(!('caches'in window))return out;
+  try{
+    const cache=await caches.open(USER_ASSET_CACHE35),requests=await cache.keys();
+    for(const request of requests){
+      const response=await cache.match(request);if(!response)continue;
+      const blob=await response.blob();
+      out.push({url:request.url,type:blob.type||response.headers.get('content-type')||'application/octet-stream',data:await blobToDataUrl35(blob)})
+    }
+  }catch(e){console.warn('User asset backup capture failed',e)}
+  return out
+}
+async function restoreUserAssets35(assets){
+  if(!Array.isArray(assets)||!('caches'in window))return;
+  const cache=await caches.open(USER_ASSET_CACHE35),existing=await cache.keys();
+  await Promise.all(existing.map(req=>cache.delete(req)));
+  for(const item of assets){
+    if(!item?.url||!/^data:/i.test(String(item.data||'')))continue;
+    const blob=await fetch(item.data).then(r=>r.blob());
+    await cache.put(item.url,new Response(blob,{headers:{'Content-Type':item.type||blob.type||'application/octet-stream','Cache-Control':'no-store'}}))
+  }
+}
+async function backupPayload35(kind='portable'){
+  const aux=captureAux35(),auxMeta=ensureAuxMeta35(),portableState=clone(state),assets=await captureUserAssets35();
+  // Legacy password records are intentionally excluded from general backups until
+  // they are migrated into an encrypted vault.
+  if(portableState&&Object.prototype.hasOwnProperty.call(portableState,'passwords'))delete portableState.passwords;
+  return {
+    format:kind==='mirror'?'Second Brain Local Mirror':'Second Brain Portable Backup',
+    version:37,
+    exportedAt:new Date().toISOString(),
+    state:portableState,
+    aux,
+    auxMeta,
+    assets,
+    manifest:{
+      includes:['state','auxiliary module data','auxiliary sync metadata','custom user asset bytes'],
+      excludes:['legacy plaintext password records','device pairing identity','push device identity','transport/cache keys','transient application caches'],
+      note:'Device credentials and transport identity are intentionally device-local.'
+    }
+  }
+}
+async function persistStateDurably35(){
+  const raw=JSON.stringify(state),at=new Date().toISOString();
+  storage.setItem('omnios_v3_state',raw);
+  storage.setItem('omnios_v3_backup',JSON.stringify({version:3,savedAt:at,state}));
+  if(storage.getItem('omnios_v3_state')!==raw)throw new Error('State persistence verification failed');
+  return at
+}
+function applyAuxDurably35(changes){
+  const before=new Map();
+  for(const [k] of changes||[]){
+    if(!auxSnapshotKey35(k))continue;
+    before.set(k,localStorage.getItem(k))
+  }
+  try{
+    for(const [k,v,deleted] of changes||[]){
+      if(!auxSnapshotKey35(k))continue;
+      if(deleted)localStorage.removeItem(k);else localStorage.setItem(k,String(v??''));
+      const after=localStorage.getItem(k);
+      if(deleted?after!==null:after!==String(v??''))throw new Error('Auxiliary persistence verification failed for '+k)
+    }
+    return true
+  }catch(e){
+    for(const [k,oldValue] of before){
+      try{if(oldValue===null)localStorage.removeItem(k);else localStorage.setItem(k,oldValue)}catch(_){}
+    }
+    throw e
+  }
+}
+async function mirrorBackupFolder35(){if(!backupDir35||mirrorBusy35)return false;mirrorBusy35=true;try{if(!(await folderPermission35(backupDir35))){backupDir35=null;return false}const payload=await backupPayload35('mirror');await writeFolderFile35('SecondBrain_Latest.json',JSON.stringify(payload,null,2));await writeFolderFile35('SecondBrain_Activity.csv',activityCsv35(),'text/csv;charset=utf-8');return true}catch(e){console.warn('Folder mirror failed',e);return false}finally{mirrorBusy35=false}}
+async function connectBackupFolder35(){if(!window.showDirectoryPicker){window.toast?.('Direct folder mirroring is not supported here. Use Export backup instead.');return false}try{const h=await showDirectoryPicker({mode:'readwrite'});backupDir35=h;await idbPut35(STORE_STATE,'backup-folder-handle',h);await mirrorBackupFolder35();window.toast?.('Backup folder connected. Current Second Brain data was mirrored; no file was imported.');renderDataCenter35();return true}catch(e){if(e?.name!=='AbortError')console.warn(e);return false}}
 let persistTimer35;
-const AUTO_SNAPSHOT_DELAY35=1200,MAX_AUTO_SNAPS35=80,MAX_MANUAL_SNAPS35=20;
+const AUTO_SNAPSHOT_DELAY35=1200,MAX_AUTO_SNAPS35=80,MAX_MANUAL_SNAPS35=20,MAX_PRESYNC_SNAPS35=20;
 let autoSnapshotTimer35=null,autoSnapshotPending35=new Set(),autoSnapshotBase35=null,autoSnapshotLastFP35='';
 
 function auxSnapshotKey35(key){
   key=String(key||'');
   if(!/^omnios_/i.test(key))return false;
-  if(['omnios_v3_state','omnios_v3_backup','omnios_ui_preferences_v1','omnios_v35_full_reset_at',SYNC_AUX_META_KEY35,'omnios_sync_device_v1','omnios_sync_pairs_v1'].includes(key))return false;
-  if(/storage_test|parts?_cache|startup|boot_cache/i.test(key))return false;
+  if(['omnios_v3_state','omnios_v3_backup','omnios_ui_preferences_v1','omnios_v35_full_reset_at',SYNC_AUX_META_KEY35,'omnios_sync_device_v1','omnios_sync_pairs_v1','omnios_push_device_v1'].includes(key))return false;
+  if(/storage_test|parts?_cache|startup|boot_cache|sync_|pair|relay|transport|push_/i.test(key))return false;
   return true
 }
 function captureAux35(){
@@ -724,9 +828,11 @@ function persistIDB35(reason='save'){
 async function trimSnapshots35(all){
   all.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
   const autos=all.filter(s=>s.kind==='auto'||/^Automatic\b/i.test(s.label||''));
-  const manuals=all.filter(s=>!(s.kind==='auto'||/^Automatic\b/i.test(s.label||'')));
+  const presync=all.filter(s=>s.kind==='pre-sync'||s.kind==='pre-restore');
+  const manuals=all.filter(s=>!(s.kind==='auto'||s.kind==='pre-sync'||s.kind==='pre-restore'||/^Automatic\b/i.test(s.label||'')));
   const keep=new Set([
     ...autos.slice(0,MAX_AUTO_SNAPS35).map(s=>s.id),
+    ...presync.slice(0,MAX_PRESYNC_SNAPS35).map(s=>s.id),
     ...manuals.slice(0,MAX_MANUAL_SNAPS35).map(s=>s.id)
   ]);
   for(const old of all)if(!keep.has(old.id))await idbDelete35(STORE_SNAPS,old.id)
@@ -761,7 +867,7 @@ function installAutoSnapshotFallback35(){
   document.addEventListener('change',schedule,true);
   document.addEventListener('click',e=>{if(e.target.closest('button,[role="button"],[data-view],[data-action]'))schedule()},false);
 
-  /* Bible and some personalization modules maintain their own OmniOS localStorage
+  /* Bible and some personalization modules maintain their own Second Brain localStorage
      records. Observe those writes as well so programmatic saves are recoverable. */
   try{
     const proto=window.Storage?.prototype,raw=proto?.setItem;
@@ -807,8 +913,11 @@ window.OmniRecovery35={
   makeSnapshot:(label,opts)=>makeSnapshot35(label,opts),
   captureAux:()=>captureAux35(),
   restoreAux:(aux)=>restoreAux35(aux),
+  applyAuxDurably:(changes)=>applyAuxDurably35(changes),
+  persistStateDurably:()=>persistStateDurably35(),
   readAuxMeta:()=>ensureAuxMeta35(),
   writeAuxMeta:(m)=>writeAuxMeta35(m),
+  writeAuxMetaDurably:(m)=>writeAuxMetaDurably35(m),
   ensureSyncMeta:()=>ensureSyncMeta35(),
   touchSyncStateKeys:(keys,at)=>touchSyncStateKeys35(keys,at),
   stateKeys:(s)=>syncStateKeys35(s),
@@ -817,8 +926,8 @@ window.OmniRecovery35={
 };
 async function restoreSnapshot35(id){const all=await idbAll35(STORE_SNAPS),snap=all.find(x=>x.id===id);if(!snap)return;if(!confirm(`Restore snapshot from ${new Date(snap.at).toLocaleString()}? Current state can be recovered with Undo during this session.`))return;undo35.push(clone(state));state=clone(snap.state);restoreAux35(snap.aux);if(snap.auxMeta)writeAuxMeta35(snap.auxMeta);ensureV35State();lastCommitted35=clone(state);autoSnapshotBase35=clone(state);autoSnapshotBase35.__auxSnapshot35=captureAux35();autoSnapshotLastFP35=fingerprint35(state,autoSnapshotBase35.__auxSnapshot35);saveGuard35=true;(window.saveState?.__v35?null:null);const baseCurrent=window.saveState;saveGuard35=false;window.saveState();renderAll?.();renderNewView35(activeView35());window.toast?.('Snapshot restored')}
 function download35(name,text,type='application/json'){const blob=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-function exportBackup35(){const payload={format:'OmniOS Portable Backup',version:35,exportedAt:new Date().toISOString(),state:clone(state)};download35(`OmniOS_Backup_${todayKey()}.json`,JSON.stringify(payload,null,2));window.toast?.('Portable backup exported')}
-function importBackup35(){const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.onchange=async()=>{const f=inp.files?.[0];if(!f)return;try{const p=JSON.parse(await f.text());const imported=p.state||p;if(!imported||!Array.isArray(imported.entries))throw new Error('Not an OmniOS backup');if(!confirm('Restore this backup? Your current state is added to Undo history first.'))return;undo35.push(clone(state));state=clone(imported);ensureV35State();lastCommitted35=clone(state);window.saveState();await makeSnapshot35('Imported backup');renderAll?.();renderNewView35(activeView35());window.toast?.('Backup restored')}catch(e){alert('Could not import backup: '+e.message)}};inp.click()}
+async function exportBackup35(){try{const payload=await backupPayload35('portable');download35(`SecondBrain_Backup_${todayKey()}.json`,JSON.stringify(payload,null,2));window.toast?.('Complete portable backup exported')}catch(e){console.error('Portable backup export failed',e);window.toast?.('Backup export failed · '+String(e?.message||e))}}
+function importBackup35(){const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.onchange=async()=>{const f=inp.files?.[0];if(!f)return;try{const p=JSON.parse(await f.text());const imported=p.state||p;if(!imported||!Array.isArray(imported.entries))throw new Error('Not a Second Brain backup');if(!confirm('Restore this backup? Your current state is added to Undo history first.'))return;undo35.push(clone(state));await makeSnapshot35('Before backup restore',{kind:'pre-restore'});const localOnlyPasswords=Array.isArray(state.passwords)?clone(state.passwords):[];state=clone(imported);if(!Object.prototype.hasOwnProperty.call(imported,'passwords'))state.passwords=localOnlyPasswords;if(p.aux&&typeof p.aux==='object'){const current=captureAux35(),changes=[];for(const k of new Set([...Object.keys(current),...Object.keys(p.aux)])){if(!Object.prototype.hasOwnProperty.call(p.aux,k))changes.push([k,null,true]);else changes.push([k,p.aux[k],false])}applyAuxDurably35(changes)}if(p.auxMeta)writeAuxMetaDurably35(p.auxMeta);if(Array.isArray(p.assets))await restoreUserAssets35(p.assets);ensureV35State();lastCommitted35=clone(state);window.saveState();await persistStateDurably35();await makeSnapshot35('Imported backup');renderAll?.();renderNewView35(activeView35());window.toast?.('Backup restored and verified')}catch(e){alert('Could not import backup: '+e.message)}};inp.click()}
 async function storageInfo35(){let usage=0,quota=0,persisted=false;try{const e=await navigator.storage?.estimate?.();usage=e?.usage||0;quota=e?.quota||0;persisted=await navigator.storage?.persisted?.()}catch(_){}return{usage,quota,persisted}}
 let idbRecovered35=false;
 function time35(v){const n=Date.parse(String(v||''));return Number.isFinite(n)?n:0}
@@ -867,12 +976,12 @@ function dataInventory35(){
 async function renderDataCenter35(){
   const el=root('data-center');if(!el)return;ensureV35State();
   const last=state.core?.localDB?.lastSavedAt||'';
-  el.innerHTML=`<div class="v35-page-head"><div><div class="v35-kicker">LOCAL DATA & RECOVERY</div><h3>Data Center</h3><div class="text-muted text-sm">Your OmniOS data stays local to this browser. Review storage health, create recovery snapshots, and export portable backups.</div></div><div class="v35-page-actions"><button class="btn" id="v35-db-refresh">↻ Refresh</button><button class="btn btn-primary" id="v35-db-snapshot">+ Snapshot</button></div></div>
+  el.innerHTML=`<div class="v35-page-head"><div><div class="v35-kicker">LOCAL DATA & RECOVERY</div><h3>Data Center</h3><div class="text-muted text-sm">Your Second Brain data stays local to this browser. Review storage health, create recovery snapshots, and export portable backups.</div></div><div class="v35-page-actions"><button class="btn" id="v35-db-refresh">↻ Refresh</button><button class="btn btn-primary" id="v35-db-snapshot">+ Snapshot</button></div></div>
   <div class="v35-db-hero"><div class="v35-card-head"><div><div class="v35-card-title">Local database</div><div class="v35-card-sub">Primary app state + IndexedDB recovery layer</div></div><span class="v35-chip" id="v35-db-health-chip">Checking…</span></div><div class="v35-db-state"><span class="v35-db-led" id="v35-db-led"></span><span id="v35-db-health-text">Checking browser storage…</span></div><div class="v35-stat-grid" style="margin-top:14px"><div class="v35-stat"><div class="v35-stat-label">Last saved</div><div class="v35-stat-value" style="font-size:.92rem" id="v35-db-last">${last?esc(new Date(last).toLocaleString()):'This session'}</div></div><div class="v35-stat"><div class="v35-stat-label">Storage used</div><div class="v35-stat-value" id="v35-db-used">—</div></div><div class="v35-stat"><div class="v35-stat-label">Available quota</div><div class="v35-stat-value" id="v35-db-quota">—</div></div><div class="v35-stat"><div class="v35-stat-label">Persistent storage</div><div class="v35-stat-value" style="font-size:.92rem" id="v35-db-persisted">—</div></div></div></div>
   <div class="v35-grid" style="margin-top:12px">
     <div class="v35-card v35-span-7"><div class="v35-card-head"><div><div class="v35-card-title">Recovery snapshots</div><div class="v35-card-sub">Automatic snapshots are created after meaningful changes, with a short debounce to group typing. Up to 80 automatic and 20 manual snapshots are retained.</div></div><button class="btn btn-sm" id="v35-db-clear-snaps">Clear snapshots</button></div><div id="v35-db-snapshots"><div class="v35-empty">Loading snapshots…</div></div></div>
-    <div class="v35-card v35-span-5"><div class="v35-card-head"><div><div class="v35-card-title">Portable backup</div><div class="v35-card-sub">Export one JSON file containing the complete OmniOS state, or restore from a previous backup.</div></div></div><div class="v35-list"><button class="btn btn-primary" id="v35-db-export" style="justify-content:flex-start">⇩ Export complete backup</button><button class="btn" id="v35-db-import" style="justify-content:flex-start">⇧ Restore from backup</button><button class="btn" id="v35-db-folder" style="justify-content:flex-start">▣ ${backupDir35?'Backup folder connected':'Connect backup folder'}</button></div><div class="text-muted" style="font-size:.62rem;line-height:1.5;margin-top:10px">Folder mirroring is available only when the browser permits direct folder access. Portable export works without it.</div></div>
-    <div class="v35-card v35-span-7"><div class="v35-card-head"><div><div class="v35-card-title">Data inventory</div><div class="v35-card-sub">Live counts from the current OmniOS state.</div></div></div><div class="v35-grid">${dataInventory35().map(([k,n])=>`<div class="v35-stat v35-span-3"><div class="v35-stat-label">${esc(k)}</div><div class="v35-stat-value">${Number(n)||0}</div></div>`).join('')}</div></div>
+    <div class="v35-card v35-span-5"><div class="v35-card-head"><div><div class="v35-card-title">Portable backup</div><div class="v35-card-sub">Export one JSON file containing the complete Second Brain state, or restore from a previous backup.</div></div></div><div class="v35-list"><button class="btn btn-primary" id="v35-db-export" style="justify-content:flex-start">⇩ Export complete backup</button><button class="btn" id="v35-db-import" style="justify-content:flex-start">⇧ Restore from backup</button><button class="btn" id="v35-db-folder" style="justify-content:flex-start">▣ ${backupDir35?'Backup folder connected':'Connect backup folder'}</button></div><div class="text-muted" style="font-size:.62rem;line-height:1.5;margin-top:10px">Folder mirroring is available only when the browser permits direct folder access. Portable export works without it.</div></div>
+    <div class="v35-card v35-span-7"><div class="v35-card-head"><div><div class="v35-card-title">Data inventory</div><div class="v35-card-sub">Live counts from the current Second Brain state.</div></div></div><div class="v35-grid">${dataInventory35().map(([k,n])=>`<div class="v35-stat v35-span-3"><div class="v35-stat-label">${esc(k)}</div><div class="v35-stat-value">${Number(n)||0}</div></div>`).join('')}</div></div>
     <div class="v35-card v35-span-5"><div class="v35-card-head"><div><div class="v35-card-title">Recent changes</div><div class="v35-card-sub">Latest local change-history records.</div></div><button class="btn btn-sm" id="v35-db-history">Full history</button></div><div class="v35-list">${[...(state.core?.changeLog||[])].reverse().slice(0,8).map(x=>`<div class="v35-history-item"><div class="v35-row-icon">↺</div><div><div class="v35-row-title">${esc(x.label||'Saved changes')}</div><div class="v35-history-time">${esc(new Date(x.at).toLocaleString())}</div></div></div>`).join('')||'<div class="v35-empty">No recorded changes yet.</div>'}</div></div>
   </div>`;
 
@@ -888,12 +997,12 @@ async function renderDataCenter35(){
   if(!document.body.contains(el))return;
   const used=el.querySelector('#v35-db-used'),quota=el.querySelector('#v35-db-quota'),persisted=el.querySelector('#v35-db-persisted'),health=el.querySelector('#v35-db-health-text'),chip=el.querySelector('#v35-db-health-chip'),led=el.querySelector('#v35-db-led');
   if(used)used.textContent=formatBytes35(info.usage||0);if(quota)quota.textContent=formatBytes35(info.quota||0);if(persisted)persisted.textContent=info.persisted?'Protected':'Best effort';
-  if(dbErr){if(health)health.textContent='IndexedDB snapshots are unavailable here. OmniOS is still using its basic local save layer.';if(chip){chip.textContent='Basic local';chip.style.color='var(--accent-yellow)'}if(led)led.style.background='var(--accent-yellow)'}
+  if(dbErr){if(health)health.textContent='IndexedDB snapshots are unavailable here. Second Brain is still using its basic local save layer.';if(chip){chip.textContent='Basic local';chip.style.color='var(--accent-yellow)'}if(led)led.style.background='var(--accent-yellow)'}
   else{if(health)health.textContent=`Local browser database active · ${snaps.length} recovery snapshot${snaps.length===1?'':'s'} available.`;if(chip){chip.textContent='Healthy';chip.style.color='var(--accent-green)'}}
   const host=el.querySelector('#v35-db-snapshots');if(host){host.innerHTML=dbErr?`<div class="v35-empty">${esc(dbErr)}</div>`:(snaps.length?snaps.map(s=>`<div class="v35-snapshot-row"><div class="v35-row-icon">◈</div><div class="v35-snapshot-main"><div class="v35-row-title">${esc(s.label||'Snapshot')}</div><div class="v35-row-meta">${esc(s.kind==='auto'?'Automatic':'Manual')} · ${esc(new Date(s.at).toLocaleString())}</div></div><button class="btn btn-sm" data-v35-restore-snap="${esc(s.id)}">Restore</button><button class="icon-btn" data-v35-delete-snap="${esc(s.id)}" title="Delete snapshot">✕</button></div>`).join(''):'<div class="v35-empty">No snapshots yet. Create one before a major change or import.</div>')}
   el.querySelectorAll('[data-v35-restore-snap]').forEach(b=>b.onclick=()=>restoreSnapshot35(b.dataset.v35RestoreSnap));
   el.querySelectorAll('[data-v35-delete-snap]').forEach(b=>b.onclick=async()=>{if(!confirm('Delete this recovery snapshot?'))return;await idbDelete35(STORE_SNAPS,b.dataset.v35DeleteSnap);await renderDataCenter35()});
-  el.querySelector('#v35-db-clear-snaps')?.addEventListener('click',async()=>{if(!snaps.length){window.toast?.('No snapshots to clear');return}if(!confirm(`Delete all ${snaps.length} recovery snapshots? Your current OmniOS data is not deleted.`))return;for(const s of snaps)await idbDelete35(STORE_SNAPS,s.id);await renderDataCenter35()});
+  el.querySelector('#v35-db-clear-snaps')?.addEventListener('click',async()=>{if(!snaps.length){window.toast?.('No snapshots to clear');return}if(!confirm(`Delete all ${snaps.length} recovery snapshots? Your current Second Brain data is not deleted.`))return;for(const s of snaps)await idbDelete35(STORE_SNAPS,s.id);await renderDataCenter35()});
   if(!info.persisted&&navigator.storage?.persist){persisted?.setAttribute('title','Your browser may clear best-effort storage under pressure.');persisted?.addEventListener('click',async()=>{try{const ok=await navigator.storage.persist();window.toast?.(ok?'Persistent storage enabled':'Browser did not grant persistent storage');await renderDataCenter35()}catch(_){}})}
 }
 
@@ -928,9 +1037,9 @@ function dueTasks35(){return (state.entries||[]).filter(t=>!isDone(t)&&(t.bucket
 function todayEvents35(){return (state.calendarEvents||[]).filter(e=>e.date===todayKey()).sort((a,b)=>(a.startTime||'99:99').localeCompare(b.startTime||'99:99'))}
 function todayBlocks35(){return (state.life.timeBlocks||[]).filter(b=>b.date===todayKey()).sort((a,b)=>(a.startTime||'').localeCompare(b.startTime||''))}
 function renderToday35(){
-  const el=root('today');if(!el)return;const today=todayKey(),tasks=dueTasks35(),events=todayEvents35(),blocks=todayBlocks35(),habits=state.habits||[],doneHabits=habits.filter(h=>h.log?.[today]).length,focus=Number(state.focusDaily?.[today]||0),moneyToday=(state.transactions||[]).filter(x=>x.date===today&&x.type==='expense'&&x.status!=='pending'&&!x.isTransfer).reduce((s,x)=>s+Number(x.amount||0),0),pins=(state.life.todayPins[today]||[]).map(taskById).filter(Boolean),priorities=(pins.length?pins:tasks.filter(t=>t.importance==='high'||t.urgency==='urgent')).slice(0,3);
+  const el=root('today');if(!el)return;const today=todayKey(),tasks=dueTasks35(),events=todayEvents35(),blocks=todayBlocks35(),habits=state.habits||[],doneHabits=habits.filter(h=>h.log?.[today]).length,focus=Number(state.focusDaily?.[today]||0),moneyToday=(state.transactions||[]).filter(x=>x.date===today&&x.type==='expense'&&x.status!=='pending'&&!x.isTransfer).reduce((s,x)=>s+Number(x.amount||0),0),pins=(state.life.todayPins[today]||[]).map(taskById).filter(Boolean),priorities=(pins.length?pins:tasks.filter(t=>t.importance==='high'||t.urgency==='urgent')).slice(0,3),water=Number(state.dietHydration?.[today]||0),waterTarget=Number(state.settings?.diet?.targets?.waterMl||0);
   el.innerHTML=`<div class="v35-page-head"><div><div class="v35-kicker">DAILY OPERATING SCREEN</div><h3>${new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</h3><div class="text-muted text-sm">Your commitments, schedule and signals for today—without opening five different modules.</div></div><div class="v35-page-actions"><button class="btn" id="v35-today-review">End-of-day note</button><button class="btn btn-primary" id="v35-today-add">+ Quick Add</button></div></div>
-  <div class="v35-stat-grid"><div class="v35-stat"><div class="v35-stat-label">Due / overdue</div><div class="v35-stat-value">${tasks.length}</div></div><div class="v35-stat"><div class="v35-stat-label">Habits</div><div class="v35-stat-value">${doneHabits}/${habits.length}</div></div><div class="v35-stat"><div class="v35-stat-label">Focus</div><div class="v35-stat-value">${focus}m</div></div><div class="v35-stat"><div class="v35-stat-label">Spent today</div><div class="v35-stat-value">${money(moneyToday)}</div></div></div>
+  <div class="v35-stat-grid"><div class="v35-stat"><div class="v35-stat-label">Due / overdue</div><div class="v35-stat-value">${tasks.length}</div></div><div class="v35-stat"><div class="v35-stat-label">Habits</div><div class="v35-stat-value">${doneHabits}/${habits.length}</div></div><div class="v35-stat"><div class="v35-stat-label">Focus</div><div class="v35-stat-value">${focus}m</div></div><div class="v35-stat"><div class="v35-stat-label">Spent today</div><div class="v35-stat-value">${money(moneyToday)}</div></div><div class="v35-stat"><div class="v35-stat-label">Hydration</div><div class="v35-stat-value">${water} ml</div><div class="v35-row-meta">${waterTarget?Math.round(Math.min(100,water/waterTarget*100))+'% of '+waterTarget+' ml target':'Shared with Nutrition'}</div><div class="v35-stat-actions"><button type="button" class="btn btn-sm" data-v35-water="-250">−250</button><button type="button" class="btn btn-sm" data-v35-water="250">+250</button><button type="button" class="btn btn-sm" data-v35-open="diet">Nutrition</button></div></div></div>
   <div class="v35-card" style="margin-bottom:12px"><div class="v35-card-head"><div><div class="v35-card-title">Quick capture</div><div class="v35-card-sub">Get it out of your head first. Triage it later from Inbox.</div></div><span class="v35-chip">Inbox</span></div><div class="v35-inline-capture"><input class="form-input" id="v35-today-capture" placeholder="Task, idea, reminder, purchase, person to call…"><button class="btn btn-primary" id="v35-today-capture-btn">Capture</button></div></div>
   <div class="v35-grid">
     <div class="v35-card v35-span-7"><div class="v35-card-head"><div><div class="v35-card-title">Today's agenda</div><div class="v35-card-sub">Calendar events + planned focus blocks</div></div><button class="btn btn-sm" data-v35-open="planner">Open planner</button></div><div class="v35-list">${[...events.map(e=>({time:e.startTime||'All day',title:e.title,icon:e.icon||'●',meta:e.description||'Calendar event',click:`event|${e.id}`})),...blocks.map(b=>({time:b.startTime,title:b.title||taskById(b.taskId)?.title||'Time block',icon:'▣',meta:`${b.duration||60} min`,click:`block|${b.id}`}))].sort((a,b)=>a.time.localeCompare(b.time)).map(x=>`<div class="v35-row clickable" data-v35-agenda="${esc(x.click)}"><div class="v35-row-icon">${esc(x.icon)}</div><div class="v35-row-main"><div class="v35-row-title">${esc(x.title)}</div><div class="v35-row-meta">${esc(x.time)} · ${esc(x.meta)}</div></div></div>`).join('')||'<div class="v35-empty">No scheduled items today. Use Planner to protect time for important work.</div>'}</div></div>
@@ -938,7 +1047,7 @@ function renderToday35(){
     <div class="v35-card v35-span-6"><div class="v35-card-head"><div><div class="v35-card-title">Habits</div><div class="v35-card-sub">Small daily commitments</div></div><button class="btn btn-sm" data-v35-open="habits">Habits</button></div><div class="v35-list">${habits.slice(0,8).map(h=>`<div class="v35-row"><div class="v35-row-icon">${esc(h.icon||'⚡')}</div><div class="v35-row-main"><div class="v35-row-title">${esc(h.name)}</div><div class="v35-row-meta">${esc(h.goal||'Daily')}</div></div><button class="btn btn-sm" data-v35-habit="${esc(h.id)}">${h.log?.[today]?'✓ Done':'Mark'}</button></div>`).join('')||'<div class="v35-empty">No habits yet.</div>'}</div></div>
     <div class="v35-card v35-span-6"><div class="v35-card-head"><div><div class="v35-card-title">Life signals</div><div class="v35-card-sub">Upcoming money, follow-ups and administration</div></div><button class="btn btn-sm" data-v35-open="life-hub">Life Hub</button></div>${todaySignals35()}</div>
   </div>`;
-  el.querySelector('#v35-today-add').onclick=()=>openModal('quick-add-modal');const cap=()=>captureInbox35(el.querySelector('#v35-today-capture').value);el.querySelector('#v35-today-capture-btn').onclick=cap;el.querySelector('#v35-today-capture').onkeydown=e=>{if(e.key==='Enter')cap()};el.querySelector('#v35-today-review').onclick=()=>openJournalQuick35();el.querySelectorAll('[data-v35-open]').forEach(b=>b.onclick=()=>window.switchView(b.dataset.v35Open));el.querySelectorAll('[data-v35-task]').forEach(x=>x.onclick=()=>window.showPowerSidebarFor?showPowerSidebarFor('task',x.dataset.v35Task):editTask(x.dataset.v35Task));el.querySelectorAll('[data-v35-habit]').forEach(b=>b.onclick=()=>{const h=state.habits.find(x=>String(x.id)===String(b.dataset.v35Habit));h.log=h.log||{};h.log[today]=!h.log[today];window.saveState();renderToday35()});
+  el.querySelector('#v35-today-add').onclick=()=>openModal('quick-add-modal');const cap=()=>captureInbox35(el.querySelector('#v35-today-capture').value);el.querySelector('#v35-today-capture-btn').onclick=cap;el.querySelector('#v35-today-capture').onkeydown=e=>{if(e.key==='Enter')cap()};el.querySelector('#v35-today-review').onclick=()=>openJournalQuick35();el.querySelectorAll('[data-v35-open]').forEach(b=>b.onclick=()=>window.switchView(b.dataset.v35Open));el.querySelectorAll('[data-v35-water]').forEach(b=>b.onclick=()=>{state.dietHydration=state.dietHydration&&typeof state.dietHydration==='object'?state.dietHydration:{};state.dietHydration[today]=Math.max(0,Number(state.dietHydration[today]||0)+Number(b.dataset.v35Water||0));window.saveState?.();renderToday35()});el.querySelectorAll('[data-v35-task]').forEach(x=>x.onclick=()=>window.showPowerSidebarFor?showPowerSidebarFor('task',x.dataset.v35Task):editTask(x.dataset.v35Task));el.querySelectorAll('[data-v35-habit]').forEach(b=>b.onclick=()=>{const h=state.habits.find(x=>String(x.id)===String(b.dataset.v35Habit));h.log=h.log||{};h.log[today]=!h.log[today];window.saveState();renderToday35()});
 }
 function todaySignals35(){const sig=[];(state.bills||[]).filter(x=>x.active!==false&&x.nextDueDate&&dayDiff(x.nextDueDate)<=7).slice(0,3).forEach(x=>sig.push(`🧾 ${x.name}: ${money(x.amount)} · ${dateLabel(x.nextDueDate)}`));state.life.people.filter(x=>x.nextFollowUp&&dayDiff(x.nextFollowUp)<=7).slice(0,3).forEach(x=>sig.push(`👥 Follow up with ${x.name} · ${dateLabel(x.nextFollowUp)}`));state.life.documents.filter(x=>x.expiry&&dayDiff(x.expiry)<=30).slice(0,2).forEach(x=>sig.push(`📄 ${x.title} expires ${dateLabel(x.expiry)}`));state.life.money.filter(x=>x.kind==='subscription'&&x.renewalDate&&dayDiff(x.renewalDate)<=7).slice(0,2).forEach(x=>sig.push(`↻ ${x.name} renews ${dateLabel(x.renewalDate)}`));return sig.length?`<div class="v35-list">${sig.map(s=>`<div class="v35-row"><div class="v35-row-main"><div class="v35-row-title">${esc(s)}</div></div></div>`).join('')}</div>`:'<div class="v35-empty">Nothing urgent across your life administration.</div>'}
 function captureInbox35(text){text=String(text||'').trim();if(!text)return;state.life.inbox.unshift({id:uid('inbox'),text,createdAt:new Date().toISOString(),notes:''});window.saveState();const i=document.getElementById('v35-today-capture');if(i)i.value='';renderToday35();window.toast?.('Captured to Inbox')}
@@ -1039,7 +1148,7 @@ function renderAdmin35(b){
   b.querySelectorAll('[data-admin-delete]').forEach(x=>x.onclick=e=>{e.stopPropagation();const[t,id]=x.dataset.adminDelete.split('|');deleteLifeRecord35(t,id)});
 }
 const LIFE_AUTO_TRIGGERS35={
-  pantry_low:'Pantry item is low',task_overdue:'Task becomes overdue',workout_complete:'Workout completed today',document_expiring:'Document expires within 30 days',bill_due:'Bill due within 7 days',daily:'Daily OmniOS check'
+  pantry_low:'Pantry item is low',task_overdue:'Task becomes overdue',workout_complete:'Workout completed today',document_expiring:'Document expires within 30 days',bill_due:'Bill due within 7 days',daily:'Daily Second Brain check'
 };
 const LIFE_AUTO_ACTIONS35={notify:'Send notification',create_task:'Create a task',grocery:'Add to Grocery',mark_habit:'Mark matching habit complete',tag:'Add tag to source'};
 function ensureLifeAutomationState35(){state.v55=state.v55&&typeof state.v55==='object'?state.v55:{};state.v55.automations=Array.isArray(state.v55.automations)?state.v55.automations:[];return state.v55.automations}
@@ -1056,7 +1165,7 @@ function deleteLifeAutomation35(id){
 }
 function renderAutomations35(b){
   const autos=ensureLifeAutomationState35(),a=state.life.automation||(state.life.automation={});
-  b.innerHTML=`<div class="v35-callout" style="margin-bottom:12px">Automations run locally when OmniOS saves. Built-in connections are protected system flows; custom rules below can be added, opened, edited, enabled/disabled, or deleted.</div><div class="v35-card" style="margin-bottom:12px"><div class="v35-card-head"><div><div class="v35-card-title">Built-in Life Hub connections</div><div class="v35-card-sub">These are settings, not deletable records.</div></div></div><div class="settings-row"><div><div class="settings-row-label">Low pantry → Grocery</div><div class="settings-row-desc">When quantity reaches the minimum, add the item to an Auto restock grocery list without duplicates.</div></div><button class="settings-toggle ${a.pantryRestock?'on':''}" data-auto="pantryRestock"></button></div><div class="settings-row"><div><div class="settings-row-label">Completed workout → Exercise habit</div><div class="settings-row-desc">If a workout is completed today, mark a habit containing “Workout”, “Exercise” or “Gym” complete.</div></div><button class="settings-toggle ${a.workoutHabit?'on':''}" data-auto="workoutHabit"></button></div></div><section class="v35-card"><div class="v35-card-head"><div><div class="v35-card-title">Custom automation rules</div><div class="v35-card-sub">${autos.length} ${autos.length===1?'rule':'rules'} · full CRUD from Life Hub.</div></div><div class="v35-page-actions"><button class="btn btn-sm" id="v35-auto-builder">Open Automations</button><button class="btn btn-primary btn-sm" id="v35-auto-add">+ Add rule</button></div></div><div class="v35-list">${autos.map(r=>`<div class="v35-row clickable v35-auto-row" data-v35-auto-record="${esc(r.id)}"><div class="v35-row-icon">⚙</div><div class="v35-row-main"><div class="v35-row-title">${esc(r.name||'Automation')}</div><div class="v35-row-meta">${esc(r.trigger||'trigger')} → ${esc(r.action||'action')}${r.lastRun?` · Last run ${new Date(r.lastRun).toLocaleString()}`:''}</div></div><span class="v35-auto-state ${r.enabled===false?'off':'on'}">${r.enabled===false?'Off':'On'}</span><div class="v35-record-actions"><button class="btn btn-sm" type="button" data-auto-open="${esc(r.id)}">Open</button><button class="icon-btn" type="button" data-auto-edit="${esc(r.id)}" aria-label="Edit automation">✎</button><button class="icon-btn v35-life-delete" type="button" data-auto-delete="${esc(r.id)}" aria-label="Delete automation">✕</button></div></div>`).join('')||'<div class="v35-empty">No custom automation rules yet. Add one here or open the full Automation page.</div>'}</div></section>`;
+  b.innerHTML=`<div class="v35-callout" style="margin-bottom:12px">Automations run locally when Second Brain saves. Built-in connections are protected system flows; custom rules below can be added, opened, edited, enabled/disabled, or deleted.</div><div class="v35-card" style="margin-bottom:12px"><div class="v35-card-head"><div><div class="v35-card-title">Built-in Life Hub connections</div><div class="v35-card-sub">These are settings, not deletable records.</div></div></div><div class="settings-row"><div><div class="settings-row-label">Low pantry → Grocery</div><div class="settings-row-desc">When quantity reaches the minimum, add the item to an Auto restock grocery list without duplicates.</div></div><button class="settings-toggle ${a.pantryRestock?'on':''}" data-auto="pantryRestock"></button></div><div class="settings-row"><div><div class="settings-row-label">Completed workout → Exercise habit</div><div class="settings-row-desc">If a workout is completed today, mark a habit containing “Workout”, “Exercise” or “Gym” complete.</div></div><button class="settings-toggle ${a.workoutHabit?'on':''}" data-auto="workoutHabit"></button></div></div><section class="v35-card"><div class="v35-card-head"><div><div class="v35-card-title">Custom automation rules</div><div class="v35-card-sub">${autos.length} ${autos.length===1?'rule':'rules'} · full CRUD from Life Hub.</div></div><div class="v35-page-actions"><button class="btn btn-sm" id="v35-auto-builder">Open Automations</button><button class="btn btn-primary btn-sm" id="v35-auto-add">+ Add rule</button></div></div><div class="v35-list">${autos.map(r=>`<div class="v35-row clickable v35-auto-row" data-v35-auto-record="${esc(r.id)}"><div class="v35-row-icon">⚙</div><div class="v35-row-main"><div class="v35-row-title">${esc(r.name||'Automation')}</div><div class="v35-row-meta">${esc(r.trigger||'trigger')} → ${esc(r.action||'action')}${r.lastRun?` · Last run ${new Date(r.lastRun).toLocaleString()}`:''}</div></div><span class="v35-auto-state ${r.enabled===false?'off':'on'}">${r.enabled===false?'Off':'On'}</span><div class="v35-record-actions"><button class="btn btn-sm" type="button" data-auto-open="${esc(r.id)}">Open</button><button class="icon-btn" type="button" data-auto-edit="${esc(r.id)}" aria-label="Edit automation">✎</button><button class="icon-btn v35-life-delete" type="button" data-auto-delete="${esc(r.id)}" aria-label="Delete automation">✕</button></div></div>`).join('')||'<div class="v35-empty">No custom automation rules yet. Add one here or open the full Automation page.</div>'}</div></section>`;
   b.querySelectorAll('[data-auto]').forEach(x=>x.onclick=()=>{const k=x.dataset.auto;state.life.automation[k]=!state.life.automation[k];window.saveState();renderAutomations35(b)});
   const openRule=id=>openLifeAutomationModal35(id||'');
   b.querySelector('#v35-auto-add').onclick=()=>openRule('');
@@ -1101,8 +1210,8 @@ function installHelp35(){
     {id:'v35-planner',icon:'▦',title:'Planner & Reviews',group:'Planning',summary:'Protect time for work and review the week.',sections:[['Time blocking','Drag an unscheduled task onto a day or use Smart schedule to find a free work-hour slot.'],['Reviews','Weekly Review combines metrics with reflection; Annual Direction keeps long-term priorities visible.']]},
     {id:'v35-projects',icon:'◫',title:'Projects & Life Areas',group:'Planning',summary:'Connect multi-step outcomes to tasks, notes, milestones, goals and life responsibilities.',sections:[['Projects','Use a project for any outcome that requires several actions.'],['Life Areas','Areas describe ongoing responsibilities such as Career, Health, Money, Home and Relationships.']]},
     {id:'v35-lifehub',icon:'◎',title:'Life Hub',group:'Life',summary:'Manage people, home, health, learning, travel, money, documents, journal and administration.',sections:[['Why one hub','Lower-frequency life administration stays organized without turning the main sidebar into dozens of destinations.'],['Automations','Optional local rules can connect pantry restocking and workout habits.']]},
-    {id:'v35-data',icon:'◈',title:'Local Data Center',group:'System',summary:'Understand, back up and recover the local OmniOS database.',sections:[['Primary local store','OmniOS saves immediately to its browser state and mirrors to IndexedDB when supported.'],['Snapshots','Automatic daily and manual snapshots provide longer-term local recovery. Portable JSON exports remain independent backups.'],['External folder','A connected folder is optional and acts as an additional human-readable backup, not a competing database.']]},
-    {id:'v35-history',icon:'↶',title:'Navigation & Undo History',group:'System',summary:'Move through pages like a browser and recover recent changes.',sections:[['Back / Forward','The upper-left arrows follow your OmniOS page navigation history. Alt+Left and Alt+Right work too.'],['Undo / Redo','Ctrl/⌘+Z undoes recent saved state changes; Ctrl/⌘+Shift+Z or Ctrl/⌘+Y redoes them. The history button shows the session log.']]}
+    {id:'v35-data',icon:'◈',title:'Local Data Center',group:'System',summary:'Understand, back up and recover the local Second Brain database.',sections:[['Primary local store','Second Brain saves immediately to its browser state and mirrors to IndexedDB when supported.'],['Snapshots','Automatic daily and manual snapshots provide longer-term local recovery. Portable JSON exports remain independent backups.'],['External folder','A connected folder is optional and acts as an additional human-readable backup, not a competing database.']]},
+    {id:'v35-history',icon:'↶',title:'Navigation & Undo History',group:'System',summary:'Move through pages like a browser and recover recent changes.',sections:[['Back / Forward','The upper-left arrows follow your Second Brain page navigation history. Alt+Left and Alt+Right work too.'],['Undo / Redo','Ctrl/⌘+Z undoes recent saved state changes; Ctrl/⌘+Shift+Z or Ctrl/⌘+Y redoes them. The history button shows the session log.']]}
   ];add.forEach(m=>{if(!api.manuals.some(x=>x.id===m.id))api.manuals.push(m)});
   const decorate=()=>{const nav=document.getElementById('help-nav');if(!nav||nav.querySelector('[data-manual="v35-today"]'))return;const g=document.createElement('div');g.className='help-group';g.textContent='Life OS';nav.appendChild(g);add.forEach(m=>{const b=document.createElement('button');b.dataset.manual=m.id;b.innerHTML=`${m.icon} &nbsp;${m.title}`;b.onclick=()=>api.open(m.id);nav.appendChild(b)})};decorate();setTimeout(decorate,400)
 }
@@ -1124,7 +1233,7 @@ window.OmniLifeCRUD35={
 
 /* ---------- initialization ---------- */
 async function init35(){
-  ensureV35State();await recoverLatestIDB35();ensureV35State();ensureSyncMeta35();ensureAuxMeta35();if(!storage.getItem('omnios_v35_migrated')){storage.setItem('omnios_v35_migrated','1');if(getSetting('appearance.startView','dashboard')==='dashboard')setSetting('appearance.startView','today')}installRouteHistory35();installUndo35();installAutoSnapshotFallback35();installTopbar35();installMobileTopbar35();buildMobileNav35();installTaskAdvanced35();patchMasterCalendar35();ensureDrawer35();patchViewButton35();enrichSettings35();installHelp35();processRecurringTasks35();loadBackupFolder35().then(()=>updateDBStatus35());if(idbRecovered35)renderAll?.();persistIDB35('init');renderNewView35(activeView35());document.documentElement.dataset.omniosVersion='35';if(idbRecovered35)setTimeout(()=>window.toast?.('Recovered newer OmniOS data from the local recovery database.'),0);
+  ensureV35State();await recoverLatestIDB35();ensureV35State();ensureSyncMeta35();ensureAuxMeta35();if(!storage.getItem('omnios_v35_migrated')){storage.setItem('omnios_v35_migrated','1');if(getSetting('appearance.startView','dashboard')==='dashboard')setSetting('appearance.startView','today')}installRouteHistory35();installUndo35();installAutoSnapshotFallback35();installTopbar35();installMobileTopbar35();buildMobileNav35();installTaskAdvanced35();patchMasterCalendar35();ensureDrawer35();patchViewButton35();enrichSettings35();installHelp35();processRecurringTasks35();loadBackupFolder35().then(()=>updateDBStatus35());if(idbRecovered35)renderAll?.();persistIDB35('init');renderNewView35(activeView35());document.documentElement.dataset.omniosVersion='35';if(idbRecovered35)setTimeout(()=>window.toast?.('Recovered newer Second Brain data from the local recovery database.'),0);
   // The old dashboard database card is superseded by Data Center.
   const legacy=document.getElementById('database-panel');if(legacy)legacy.style.display='none';
   // Make Today the first-run landing page while respecting an explicit saved start view.
@@ -1137,7 +1246,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 <style id="omnios-v36-calendar-css">
 /* ============================================================
-   OmniOS v36 — Calendar workspace
+   Second Brain v36 — Calendar workspace
    A planning-first calendar with Month / Week / Day / Agenda.
    ============================================================ */
 #view-master-calendar > .flex-between{display:none!important}
@@ -1210,7 +1319,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 }
 </style>
 <style id="omnios-v603-compact-persistent-calendar-css">
-/* ===== OmniOS v60.3 — tighter page gutters + persistent Calendar rail ===== */
+/* ===== Second Brain v60.3 — tighter page gutters + persistent Calendar rail ===== */
 :root{--v603-page-x:14px;--v603-page-y:12px;--v603-page-bottom:22px}
 .view-container{padding:var(--v603-page-y) var(--v603-page-x) var(--v603-page-bottom)!important}
 .view.active{padding-left:0!important;padding-right:0!important;padding-bottom:0!important}

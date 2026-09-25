@@ -39,7 +39,7 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
     saveState(); window.toast('✅ Grocery list created from the selected day.'); switchView('grocery');
   }
 
-  function renderDietProfileSettings(){const el=document.getElementById('settings-content');if(!el||currentSettingsTab!=='profile')return;const p=state.settings.profile||{};const r=adultReference();el.innerHTML=`<div class="card settings-section"><h3 class="card-title mb-4">User Profile</h3><div class="settings-row-desc" style="margin-bottom:12px">Used to personalize nutrition summaries and reference energy estimates. Weight tracking remains optional. OmniOS does not set a target weight.</div><div class="form-row"><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="profile-name" value="${esc(p.name||'')}"></div><div class="form-group"><label class="form-label">Age</label><input type="number" min="1" max="120" class="form-input" id="profile-age" value="${p.age??''}"></div></div><div class="form-row"><div class="form-group"><label class="form-label">Sex</label><select class="form-select" id="profile-sex"><option value="female" ${p.sex==='female'?'selected':''}>Female</option><option value="male" ${p.sex==='male'?'selected':''}>Male</option></select></div><div class="form-group"><label class="form-label">Height (cm)</label><input type="number" min="50" max="250" step="0.1" class="form-input" id="profile-height" value="${p.heightCm??''}"></div><div class="form-group"><label class="form-label">Current weight (kg)</label><input type="number" min="0" max="500" step="0.1" class="form-input" id="profile-weight" value="${p.weightKg??''}"></div></div><div class="form-group"><label class="form-label">Typical activity level</label><select class="form-select" id="profile-activity"><option value="sedentary" ${p.activity==='sedentary'?'selected':''}>Sedentary</option><option value="light" ${p.activity==='light'?'selected':''}>Lightly active</option><option value="moderate" ${p.activity==='moderate'?'selected':''}>Moderately active</option><option value="active" ${p.activity==='active'?'selected':''}>Active</option><option value="veryActive" ${p.activity==='veryActive'?'selected':''}>Very active</option></select></div><div id="profile-reference" class="diet-profile-note" style="margin-top:10px">${r?`Estimated adult reference energy: <strong>${Math.round(r.tdee)} kcal/day</strong>. This is a general equation-based estimate, not medical advice.`:p.age&&Number(p.age)<18?'For profiles under 18, OmniOS intentionally does not calculate a calorie target. Use the planner for logging and seek individualized guidance from a qualified adult/professional.':'Complete age, height and weight to see the available reference calculation.'}</div><div class="modal-footer"><button class="btn btn-primary" id="profile-save">Save profile</button></div></div>`;el.querySelector('#profile-save').onclick=()=>{state.settings.profile={name:el.querySelector('#profile-name').value.trim(),age:Number(el.querySelector('#profile-age').value)||null,sex:el.querySelector('#profile-sex').value,heightCm:Number(el.querySelector('#profile-height').value)||null,weightKg:Number(el.querySelector('#profile-weight').value)||null,activity:el.querySelector('#profile-activity').value};saveState()}}
+  function renderDietProfileSettings(){const el=document.getElementById('settings-content');if(!el||currentSettingsTab!=='profile')return;const p=state.settings.profile||{};const r=adultReference();el.innerHTML=`<div class="card settings-section"><h3 class="card-title mb-4">User Profile</h3><div class="settings-row-desc" style="margin-bottom:12px">Used to personalize nutrition summaries and reference energy estimates. Weight tracking remains optional. Second Brain does not set a target weight.</div><div class="form-row"><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="profile-name" value="${esc(p.name||'')}"></div><div class="form-group"><label class="form-label">Age</label><input type="number" min="1" max="120" class="form-input" id="profile-age" value="${p.age??''}"></div></div><div class="form-row"><div class="form-group"><label class="form-label">Sex</label><select class="form-select" id="profile-sex"><option value="female" ${p.sex==='female'?'selected':''}>Female</option><option value="male" ${p.sex==='male'?'selected':''}>Male</option></select></div><div class="form-group"><label class="form-label">Height (cm)</label><input type="number" min="50" max="250" step="0.1" class="form-input" id="profile-height" value="${p.heightCm??''}"></div><div class="form-group"><label class="form-label">Current weight (kg)</label><input type="number" min="0" max="500" step="0.1" class="form-input" id="profile-weight" value="${p.weightKg??''}"></div></div><div class="form-group"><label class="form-label">Typical activity level</label><select class="form-select" id="profile-activity"><option value="sedentary" ${p.activity==='sedentary'?'selected':''}>Sedentary</option><option value="light" ${p.activity==='light'?'selected':''}>Lightly active</option><option value="moderate" ${p.activity==='moderate'?'selected':''}>Moderately active</option><option value="active" ${p.activity==='active'?'selected':''}>Active</option><option value="veryActive" ${p.activity==='veryActive'?'selected':''}>Very active</option></select></div><div id="profile-reference" class="diet-profile-note" style="margin-top:10px">${r?`Estimated adult reference energy: <strong>${Math.round(r.tdee)} kcal/day</strong>. This is a general equation-based estimate, not medical advice.`:p.age&&Number(p.age)<18?'For profiles under 18, Second Brain intentionally does not calculate a calorie target. Use the planner for logging and seek individualized guidance from a qualified adult/professional.':'Complete age, height and weight to see the available reference calculation.'}</div><div class="modal-footer"><button class="btn btn-primary" id="profile-save">Save profile</button></div></div>`;el.querySelector('#profile-save').onclick=()=>{state.settings.profile={name:el.querySelector('#profile-name').value.trim(),age:Number(el.querySelector('#profile-age').value)||null,sex:el.querySelector('#profile-sex').value,heightCm:Number(el.querySelector('#profile-height').value)||null,weightKg:Number(el.querySelector('#profile-weight').value)||null,activity:el.querySelector('#profile-activity').value};saveState()}}
   const oldRenderSettings=renderSettings;renderSettings=function(){if(currentSettingsTab==='profile'){renderDietProfileSettings()}else{oldRenderSettings();if(currentSettingsTab==='data'){const sel=document.getElementById('settings-reset-module');if(sel&&!sel.querySelector('option[value=\"dietFoods\"]'))sel.insertAdjacentHTML('beforeend','<option value=\"dietFoods\">Diet foods</option><option value=\"dietMeals\">Diet meals</option><option value=\"dietPrep\">Meal prep</option><option value=\"weightLog\">Weight history</option><option value=\"dietPlan\">Meal plan</option>')}}};
   const oldDietReset=resetSettingsModule;resetSettingsModule=function(){const key=document.getElementById('settings-reset-module')?.value;if(key==='dietPlan'){if(!confirm('Reset the entire meal plan? This cannot be undone.'))return;state.dietPlan={};saveState();window.toast('✅ Meal plan reset.');return}if(['dietFoods','dietMeals','dietPrep','weightLog'].includes(key)){if(!confirm(`Reset all ${({dietFoods:'diet foods',dietMeals:'diet meals',dietPrep:'meal prep',weightLog:'weight history'})[key]}? This cannot be undone.`))return;state[key]=[];saveState();window.toast('✅ Diet module reset.');return}oldDietReset()};
   const quickDietGrid=document.querySelector('#quick-add-modal .quick-add-grid');
@@ -362,8 +362,8 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
 /* OmniOS Help — contextual manuals and quick reference */
 (function(){
   const manuals = [
-    {id:'start', icon:'⌂', title:'Getting Started', group:'Core', summary:'Understand OmniOS, the daily workflow, and the main navigation.', sections:[
-      ['What OmniOS is','OmniOS is a personal operating system. Use Capture to get information out of your head, Today to decide what matters now, and the dedicated modules to manage the details.'],
+    {id:'start', icon:'⌂', title:'Getting Started', group:'Core', summary:'Understand Second Brain, the daily workflow, and the main navigation.', sections:[
+      ['What Second Brain is','Second Brain is a personal operating system. Use Capture to get information out of your head, Today to decide what matters now, and the dedicated modules to manage the details.'],
       ['Recommended workflow','Capture first → organize later → review Today → work from the relevant module → review History. Do not spend time categorizing every thought immediately.'],
       ['Core concepts','Items are the common layer behind tasks, events, finances, notes, habits and workouts. Relationships connect items across modules.']
     ]},
@@ -377,10 +377,10 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
       ['Organize','When ready, convert an inbox item into a Task, Note or Event. This keeps capture fast and reduces friction.'],
       ['Good practice','Empty the Inbox during a daily review. Delete noise and organize anything that deserves a permanent place.']
     ]},
-    {id:'search',icon:'⌕',title:'Search',group:'Core',summary:'Find information across the OmniOS object model.',sections:[
+    {id:'search',icon:'⌕',title:'Search',group:'Core',summary:'Find information across the Second Brain object model.',sections:[
       ['Search','Search titles, types, status and dates across the common item layer.'],
       ['Useful searches','Try focused terms such as a task name, bill, person, project or note topic.'],
-      ['Future direction','The universal model is designed to support richer natural-language queries as OmniOS evolves.']
+      ['Future direction','The universal model is designed to support richer natural-language queries as Second Brain evolves.']
     ]},
     {id:'tasks',icon:'✓',title:'Tasks',group:'Planning',summary:'Manage actionable work and recurring responsibilities.',sections:[
       ['Create','Give every task a clear action-oriented title. Set date, priority, urgency and category when useful.'],
@@ -422,13 +422,13 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
       ['Connect notes','Use relationships to connect a note with a task, event, goal or other item when the information belongs to a wider context.']
     ]},
     {id:'history',icon:'↺',title:'History & Trash',group:'Core',summary:'Review core changes and recover captured information.',sections:[
-      ['History','History records important actions made through the OmniOS core layer. Use it as an audit trail during reviews.'],
+      ['History','History records important actions made through the Second Brain core layer. Use it as an audit trail during reviews.'],
       ['Trash','Deleted inbox items can be restored. Keep destructive actions deliberate.']
     ]},
     {id:'settings',icon:'⚙',title:'Settings & Data',group:'System',summary:'Configure defaults, reminders, appearance and data management.',sections:[
       ['Settings','Task defaults, habit targets, workout units, focus durations and notification behavior can be configured here.'],
       ['Backup','Use Export Data to create a JSON backup. Use Import Backup to restore a previous export.'],
-      ['Offline-first','OmniOS is designed to keep its core data locally in the browser. Back up important data regularly.']
+      ['Offline-first','Second Brain is designed to keep its core data locally in the browser. Back up important data regularly.']
     ]}
   ];
 
@@ -467,7 +467,7 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
   const escCSV=v=>`"${String(v??'').replace(/"/g,'""')}"`;
   const snapshot=()=>{
     const clean=JSON.parse(JSON.stringify(state||{}));
-    clean._omniosDatabase={format:'OmniOS Human-Readable Database',version:3,exportedAt:new Date().toISOString(),note:'Portable source of truth: current data, settings, UI customizations and activity history.'};
+    clean._omniosDatabase={format:'Second Brain Human-Readable Database',version:3,exportedAt:new Date().toISOString(),note:'Portable source of truth: current data, settings, UI customizations and activity history.'};
     return clean;
   };
   const databaseText=()=> 'OMNIOS DATABASE\n================\n\n'+JSON.stringify(snapshot(),null,2)+'\n';
@@ -486,7 +486,7 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
     try{
       const start=raw.indexOf('{'); if(start<0)throw new Error('Invalid database');
       const parsed=JSON.parse(raw.slice(start));
-      if(!parsed||!Array.isArray(parsed.entries))throw new Error('Invalid OmniOS database');
+      if(!parsed||!Array.isArray(parsed.entries))throw new Error('Invalid Second Brain database');
       state=parsed;
       try{normalizeState();}catch(e){}
       try{renderAll();}catch(e){}
@@ -494,7 +494,7 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
       try{renderAll();}catch(e){}
       setStatus('Database loaded from local folder');
       return true;
-    }catch(e){console.warn('Could not load OmniOS database',e);setStatus('Could not read database TXT — existing file was not overwritten');return false;}
+    }catch(e){console.warn('Could not load Second Brain database',e);setStatus('Could not read database TXT — existing file was not overwritten');return false;}
   }
   async function performSync(){
     if(!dirHandle)return false;
@@ -508,7 +508,7 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
         await writeFile(dirHandle,DB_CSV,historyCsv());
         setStatus('Auto-saved to local database');
         return true;
-      }catch(e){console.warn('OmniOS database sync failed',e);setStatus('Database folder unavailable — use Save Database');return false;}
+      }catch(e){console.warn('Second Brain database sync failed',e);setStatus('Database folder unavailable — use Save Database');return false;}
       finally{syncing=false;syncPromise=null;}
     })();
     return syncPromise;
@@ -556,7 +556,7 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
   function databasePanel(){
     if(document.getElementById('database-panel'))return;
     const sec=document.createElement('section');sec.id='database-panel';sec.className='card';sec.style='margin:0 0 14px;padding:14px';
-    sec.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between"><div><strong>Local Database</strong><div class="text-muted text-sm">Human-readable TXT contains all OmniOS data + history. CSV contains the activity history log.</div><div id="db-status" class="text-muted text-sm" style="margin-top:4px">Not connected to an auto-save folder</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-sm" id="db-connect">Connect / Load Folder</button><button class="btn btn-sm btn-primary" id="db-save">Save Database</button></div></div>';
+    sec.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between"><div><strong>Local Database</strong><div class="text-muted text-sm">Human-readable TXT contains all Second Brain data + history. CSV contains the activity history log.</div><div id="db-status" class="text-muted text-sm" style="margin-top:4px">Not connected to an auto-save folder</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-sm" id="db-connect">Connect / Load Folder</button><button class="btn btn-sm btn-primary" id="db-save">Save Database</button></div></div>';
     const target=document.getElementById('view-dashboard')||document.querySelector('.view-container');if(target)target.prepend(sec);
     sec.querySelector('#db-connect').onclick=connect;sec.querySelector('#db-save').onclick=saveDatabase;
   }
@@ -861,18 +861,18 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
 @media(prefers-reduced-motion:reduce){.omni-assistant-panel,.omni-assistant-backdrop{transition:none}}
 </style>
 <div id="omni-assistant-backdrop" class="omni-assistant-backdrop" aria-hidden="true"></div>
-<aside id="omni-assistant-panel" class="omni-assistant-panel" aria-label="OmniOS Assistant" aria-hidden="true">
+<aside id="omni-assistant-panel" class="omni-assistant-panel" aria-label="Second Brain Assistant" aria-hidden="true">
   <div class="omni-assistant-head">
     <div class="omni-assistant-brand">
       <div class="omni-assistant-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/></svg></div>
-      <div><h3>OmniOS Assistant</h3><p>Natural-language assistant for your whole workspace</p></div>
+      <div><h3>Second Brain Assistant</h3><p>Natural-language assistant for your whole workspace</p></div>
     </div>
     <button type="button" class="btn icon-btn omni-assistant-close" id="omni-assistant-close" aria-label="Close assistant">×</button>
   </div>
   <div id="omni-assistant-messages" class="omni-assistant-messages" aria-live="polite"></div>
   <div class="omni-assistant-composer">
     <div class="omni-assistant-input-wrap">
-      <textarea id="omni-assistant-input" rows="1" placeholder="Ask OmniOS to do something…" aria-label="Ask OmniOS"></textarea>
+      <textarea id="omni-assistant-input" rows="1" placeholder="Ask Second Brain to do something…" aria-label="Ask Second Brain"></textarea>
       <button type="button" class="btn btn-primary omni-assistant-send" id="omni-assistant-send" aria-label="Send">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7Z"/></svg>
       </button>
@@ -905,8 +905,8 @@ function lev(a,b){a=norm(a);b=norm(b);if(!a)return b.length;if(!b)return a.lengt
 function sim(a,b){a=norm(a);b=norm(b);if(!a||!b)return 0;if(a===b)return 1;if(a.includes(b)||b.includes(a))return .86+Math.min(a.length,b.length)/Math.max(a.length,b.length)*.12;const A=new Set(toks(a)),B=new Set(toks(b));let inter=0;A.forEach(x=>{if(B.has(x))inter++});const jac=inter/Math.max(1,new Set([...A,...B]).size);const edit=1-lev(a,b)/Math.max(a.length,b.length,1);return Math.max(jac*.92,edit*.62+jac*.38)}
 function fmtDate(k){try{return new Date(k+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}catch{return k}}
 function addMsg(role,html){const el=document.createElement('div');el.className='omni-msg '+role;el.innerHTML=html;messages.appendChild(el);messages.scrollTop=messages.scrollHeight;return el}
-function assistantText(text){return addMsg('assistant','<div class="omni-msg-meta">OmniOS</div>'+esc(text).replace(/\n/g,'<br>'))}
-function assistantHtml(html){return addMsg('assistant','<div class="omni-msg-meta">OmniOS</div>'+html)}
+function assistantText(text){return addMsg('assistant','<div class="omni-msg-meta">Second Brain</div>'+esc(text).replace(/\n/g,'<br>'))}
+function assistantHtml(html){return addMsg('assistant','<div class="omni-msg-meta">Second Brain</div>'+html)}
 function userText(text){return addMsg('user','<div class="omni-msg-meta">You</div>'+esc(text).replace(/\n/g,'<br>'))}
 function setStatus(t){if(statusEl)statusEl.textContent=t||''}
 function open(){panel.classList.add('open');backdrop.classList.add('open');panel.setAttribute('aria-hidden','false');backdrop.setAttribute('aria-hidden','false');setTimeout(()=>input.focus(),40)}
@@ -1079,8 +1079,8 @@ async function handle(text){const raw=text.trim();if(!raw)return;userText(raw);m
 function submit(){const v=input.value.trim();if(!v)return;input.value='';input.style.height='auto';handle(v)}
 send?.addEventListener('click',submit);input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit()}});input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,130)+'px'});document.getElementById('omni-assistant-close')?.addEventListener('click',close);backdrop.addEventListener('click',close);document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel.classList.contains('open'))close();if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='j'){e.preventDefault();open()}});
 document.querySelectorAll('.omni-assistant-suggestion').forEach(b=>b.addEventListener('click',()=>{input.value=b.textContent;submit()}));
-const qa=document.getElementById('global-add-btn');if(qa&&!document.getElementById('omni-assistant-launcher')){const b=document.createElement('button');b.type='button';b.className='btn';b.id='omni-assistant-launcher';b.title='Open OmniOS Assistant (Ctrl/Cmd + J)';b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/></svg><span>Assistant</span>';qa.parentNode.insertBefore(b,qa);b.addEventListener('click',open)}
-assistantText('Talk to me naturally. I can understand requests, questions, dates, amounts and follow-ups across OmniOS. Try “What do I have tomorrow?”, “Move my gym task to Friday evening”, or “How much did I spend on groceries last month?”.');
+const qa=document.getElementById('global-add-btn');if(qa&&!document.getElementById('omni-assistant-launcher')){const b=document.createElement('button');b.type='button';b.className='btn';b.id='omni-assistant-launcher';b.title='Open Second Brain Assistant (Ctrl/Cmd + J)';b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/></svg><span>Assistant</span>';qa.parentNode.insertBefore(b,qa);b.addEventListener('click',open)}
+assistantText('Talk to me naturally. I can understand requests, questions, dates, amounts and follow-ups across Second Brain. Try “What do I have tomorrow?”, “Move my gym task to Friday evening”, or “How much did I spend on groceries last month?”.');
 })();
 </script>
 

@@ -80,7 +80,7 @@ function renderProjectEnhancements58(){
 function decorateProjectDrawer58(){
   const d=$('#v35-drawer');if(!d?.classList.contains('open')||$('#v35-drawer-kicker')?.textContent!=='PROJECT')return;const title=$('#v35-drawer-title')?.textContent,p=A(state.life.projects).find(x=>x.name===title);if(!p)return;const body=$('#v35-drawer-body');if(!body||body.querySelector('#v58-project-health'))return;const tasks=A(p.taskIds).map(id=>A(state.entries).find(t=>String(t.id)===String(id))).filter(Boolean),pct=projectProgress58(p),open=tasks.filter(t=>t.status!=='completed').length,doneMs=A(p.milestones).filter(m=>m.done).length,ref=ref58('project',p.id),related=relationFor58(ref);const health=document.createElement('div');health.id='v58-project-health';health.innerHTML=`<div class="v58-project-health"><div class="v58-health-cell"><span>Progress</span><strong>${pct}%</strong></div><div class="v58-health-cell"><span>Open tasks</span><strong>${open}</strong></div><div class="v58-health-cell"><span>Milestones</span><strong>${doneMs}/${A(p.milestones).length}</strong></div><div class="v58-health-cell"><span>Deadline</span><strong>${p.targetDate?fmt58(p.targetDate):'—'}</strong></div></div>`;body.prepend(health);const relCard=document.createElement('div');relCard.className='v35-card';relCard.id='v58-project-relations';relCard.style.marginTop='12px';relCard.innerHTML=`<div class="v35-card-head"><div><div class="v35-card-title">Universal relationships</div><div class="v35-card-sub">People, finance, notes, events, inventory, goals and Scripture connected to this outcome.</div></div><button class="btn btn-sm" id="v58-project-link">+ Link</button></div><div id="v58-project-rel-list">${relationRows58(ref)}</div>`;body.appendChild(relCard);relCard.querySelector('#v58-project-link').onclick=()=>openRelationModal58(ref);wireRelationRows58(relCard,ref);const foot=$('#v35-drawer-foot');if(foot&&!foot.querySelector('#v58-project-relations-btn')){const b=document.createElement('button');b.id='v58-project-relations-btn';b.className='btn';b.textContent=`Relations (${related.length})`;b.onclick=()=>relCard.scrollIntoView({behavior:'smooth',block:'start'});foot.prepend(b)}}
 function decoratePowerSidebar58(type,id){
-  const side=$('#power-sidebar');if(!side?.classList.contains('open'))return;const body=$('#power-sidebar-body');if(!body||body.querySelector('#v58-universal-rel'))return;const ref=ref58(type,id),card=document.createElement('div');card.id='v58-universal-rel';card.className='power-card';card.style.padding='11px';card.innerHTML=`<div class="inspector-section-title">Universal relationships</div><div id="v58-power-rel-list">${relationRows58(ref)}</div><button class="btn btn-sm" id="v58-power-link" style="margin-top:7px">＋ Link across OmniOS</button>`;body.appendChild(card);card.querySelector('#v58-power-link').onclick=()=>openRelationModal58(ref);wireRelationRows58(card,ref)
+  const side=$('#power-sidebar');if(!side?.classList.contains('open'))return;const body=$('#power-sidebar-body');if(!body||body.querySelector('#v58-universal-rel'))return;const ref=ref58(type,id),card=document.createElement('div');card.id='v58-universal-rel';card.className='power-card';card.style.padding='11px';card.innerHTML=`<div class="inspector-section-title">Universal relationships</div><div id="v58-power-rel-list">${relationRows58(ref)}</div><button class="btn btn-sm" id="v58-power-link" style="margin-top:7px">＋ Link across Second Brain</button>`;body.appendChild(card);card.querySelector('#v58-power-link').onclick=()=>openRelationModal58(ref);wireRelationRows58(card,ref)
 }
 function decorateOpenDetails58(){decorateProjectDrawer58();const side=$('#power-sidebar');if(side?.classList.contains('open')){const badge=side.querySelector('.power-badge'),type=[...new Set(entities58().map(x=>x.type))].find(t=>typeMeta58(t)[0].toLowerCase()===badge?.textContent?.trim().toLowerCase());if(type){const title=side.querySelector('#power-sidebar-body > .power-card')?.textContent||'';const e=entities58().find(x=>x.type===type&&title.includes(x.title));if(e)decoratePowerSidebar58(type,e.id)}}}
 function renderRelations58(){
@@ -112,7 +112,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
 <style id="omnios-v581-navigation-css">
-/* ===== OmniOS v58.1 — navigation refinement ===== */
+/* ===== Second Brain v58.1 — navigation refinement ===== */
 .v58-nav-icon{
   width:18px;height:18px;min-width:18px;display:grid;place-items:center;
   color:currentColor;opacity:.9;line-height:1;flex:0 0 18px;
@@ -127,7 +127,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
 <style id="omnios-v582-core-spacing-audit-css">
-/* ===== OmniOS v58.2 — app-wide core spacing audit =====
+/* ===== Second Brain v58.2 — app-wide core spacing audit =====
    Normalize foundational surfaces to a 4px rhythm. Feature-specific dense layouts keep their own spacing. */
 :root{--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-8:32px}
 .sidebar{padding:var(--space-4) 0}
@@ -194,7 +194,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   const stamp=()=>{
     document.documentElement.dataset.omniosVersion='58.4';
     window.OmniBuild={version:'58.4',name:'Life Hub CRUD + Bible Persistence Fixed'};
-    document.title='OmniOS v58.4 — Life Hub CRUD + Bible Fixed';
+    document.title='Second Brain v58.4 — Life Hub CRUD + Bible Fixed';
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',stamp,{once:true});else stamp();
   setTimeout(stamp,120);setTimeout(stamp,500);
@@ -377,7 +377,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     ['#pf-name','#pf-cat','#pf-qty','#pf-unit','#pf-min','#pf-cost','#pf-loc','#pf-exp','#pf-purchase','#pf-opened','#pf-notes'].forEach(sel=>ov.querySelector(sel)?.addEventListener('input',rememberDraft));
     return ov;
   };
-  const stamp=()=>{document.documentElement.dataset.omniosVersion=V;window.OmniBuild={version:V,name:'Pantry Image Repositioning'};document.title='OmniOS v58.4.4 — Pantry Image Repositioning';observePantry();scheduleThumbPositions()};
+  const stamp=()=>{document.documentElement.dataset.omniosVersion=V;window.OmniBuild={version:V,name:'Pantry Image Repositioning'};document.title='Second Brain v58.4.4 — Pantry Image Repositioning';observePantry();scheduleThumbPositions()};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',stamp,{once:true});else stamp();setTimeout(stamp,100);setTimeout(stamp,500);
 })();
 </script>
@@ -615,7 +615,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }
 
   const mo=new MutationObserver(()=>{clearTimeout(window.__v585DecorTimer);window.__v585DecorTimer=setTimeout(decorateAll,20)});
-  function init(){ensure();const changed=syncAll();if(changed){try{baseSave?.()}catch(e){console.warn('Initial nutrition-link save failed',e)}}decorateAll();mo.observe(document.body,{childList:true,subtree:true});document.documentElement.dataset.omniosVersion=V;window.OmniBuild={version:V,name:'Automatic Pantry & Grocery Nutrition Links'};document.title='OmniOS v58.5 — Automatic Nutrition Links';window.OmniNutritionLinks={sync:syncAll,isFoodPantry,isFoodGrocery,openFood:openNutritionFood,decorate:decorateAll};}
+  function init(){ensure();const changed=syncAll();if(changed){try{baseSave?.()}catch(e){console.warn('Initial nutrition-link save failed',e)}}decorateAll();mo.observe(document.body,{childList:true,subtree:true});document.documentElement.dataset.omniosVersion=V;window.OmniBuild={version:V,name:'Automatic Pantry & Grocery Nutrition Links'};document.title='Second Brain v58.5 — Automatic Nutrition Links';window.OmniNutritionLinks={sync:syncAll,isFoodPantry,isFoodGrocery,openFood:openNutritionFood,decorate:decorateAll};}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,120),{once:true});else setTimeout(init,120);
 })();
 </script>
@@ -764,12 +764,12 @@ function renderRelevant(){const active=document.querySelector('.view.active')?.i
 normalizeAll();window.openGoalModal=openGoalModal;window.updateGoalProgressV586=updateProgress;window.renderGoalsV586=renderGoalsPage;window.renderBudgetGoalsV586=renderBudgetGoals;window.OmniGoals={normalize:normalizeAll,progress,open:openGoalModal,update:updateProgress,render:renderGoalsPage};
 const baseSave=window.saveState;if(typeof baseSave==='function'&&!baseSave.__v586Goals){const wrapped=function(){normalizeAll().forEach(syncLegacy);const r=baseSave.apply(this,arguments);setTimeout(renderRelevant,20);return r};wrapped.__v586Goals=true;wrapped.__base=baseSave;window.saveState=wrapped;try{saveState=wrapped}catch(_){}}
 const baseSwitch=window.switchView;if(typeof baseSwitch==='function'&&!baseSwitch.__v586Goals){const wrapped=function(v){const r=baseSwitch.apply(this,arguments);setTimeout(()=>{if(v==='goals')renderGoalsPage();if(v==='budget')renderBudgetGoals();patchQuick()},35);return r};wrapped.__v586Goals=true;wrapped.__base=baseSwitch;window.switchView=wrapped;try{switchView=wrapped}catch(_){}}
-function init(){normalizeAll().forEach(syncLegacy);patchQuick();renderRelevant();document.documentElement.dataset.omniosVersion=V;window.OmniBuild={version:V,name:'Universal Goals'};document.title='OmniOS v58.6 — Universal Goals';try{baseSave?.()}catch(e){console.warn('Goal migration save failed',e)}setTimeout(renderRelevant,80)}
+function init(){normalizeAll().forEach(syncLegacy);patchQuick();renderRelevant();document.documentElement.dataset.omniosVersion=V;window.OmniBuild={version:V,name:'Universal Goals'};document.title='Second Brain v58.6 — Universal Goals';try{baseSave?.()}catch(e){console.warn('Goal migration save failed',e)}setTimeout(renderRelevant,80)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,160),{once:true});else setTimeout(init,160);
 })();
 </script>
 <style id="omnios-v586-assistant-intelligence-css">
-/* ===== OmniOS intelligent workspace assistant ===== */
+/* ===== Second Brain intelligent workspace assistant ===== */
 .omni-ai-hint{margin:0 18px 10px;padding:9px 11px;border:1px solid var(--border-color,#27272a);border-radius:10px;background:var(--bg-base,#0f0f11);font-size:10px;line-height:1.45;color:var(--text-muted,#71717a)}
 .omni-ai-hint strong{color:var(--text-secondary,#a1a1aa)}
 @media(max-width:700px){.omni-ai-hint{margin-inline:14px}}
@@ -798,12 +798,12 @@ const fmt=k=>{try{return atNoon(k).toLocaleDateString(undefined,{weekday:'short'
 const clone=x=>JSON.parse(JSON.stringify(x));
 
 /* ---------- workspace assistant UI ---------- */
-const hint=document.createElement('div');hint.className='omni-ai-hint';hint.innerHTML='<strong>Workspace assistant:</strong> create, find, edit, reschedule, repeat, complete and delete items across OmniOS. Changes are previewed before they run.';panel.querySelector('.omni-assistant-composer')?.insertAdjacentElement('beforebegin',hint);
+const hint=document.createElement('div');hint.className='omni-ai-hint';hint.innerHTML='<strong>Workspace assistant:</strong> create, find, edit, reschedule, repeat, complete and delete items across Second Brain. Changes are previewed before they run.';panel.querySelector('.omni-assistant-composer')?.insertAdjacentElement('beforebegin',hint);
 const workspaceSuggestions=['Create a task to submit the report next Friday at 4pm','Make Bible reading a daily habit at 8am','Move my dentist event to next Tuesday at 3:30pm','Delete the old grocery reminder'];
 function setSuggestions(items){if(!suggestions)return;suggestions.innerHTML='';items.forEach(t=>{const b=document.createElement('button');b.type='button';b.className='omni-assistant-suggestion';b.textContent=t;b.onclick=()=>{input.value=t;input.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))};suggestions.appendChild(b)})}
-if(brandTitle)brandTitle.textContent='OmniOS Assistant';
+if(brandTitle)brandTitle.textContent='Second Brain Assistant';
 if(brandSub)brandSub.textContent='Intelligent action assistant for your whole workspace';
-if(input)input.placeholder='Ask OmniOS to create, edit, move, repeat or delete…';
+if(input)input.placeholder='Ask Second Brain to create, edit, move, repeat or delete…';
 panel.dataset.aiMode='workspace';
 setSuggestions(workspaceSuggestions);
 
@@ -921,7 +921,7 @@ window.OmniAssistantV586=A.v586;
 
 
 <style id="omnios-v588-chat-uiux-css">
-/* ===== OmniOS v58.8 — Assistant conversation UI/UX ===== */
+/* ===== Second Brain v58.8 — Assistant conversation UI/UX ===== */
 .omni-assistant-panel{
   --chat-accent:var(--accent-cyan,#06b6d4);
   --chat-accent-soft:color-mix(in srgb,var(--chat-accent) 10%,transparent);
@@ -1196,7 +1196,7 @@ input.addEventListener('input',syncConversationState);
 /* New-chat reset keeps workspace data untouched; only conversational context is cleared. */
 function welcome(){
   const w=document.createElement('div');w.className='omni-chat-welcome';
-  w.innerHTML='<div class="omni-chat-welcome-icon">✦</div><h4>What can I help you do?</h4><p>Ask naturally. I can create, find, edit, reschedule and organize things across OmniOS.</p>';
+  w.innerHTML='<div class="omni-chat-welcome-icon">✦</div><h4>What can I help you do?</h4><p>Ask naturally. I can create, find, edit, reschedule and organize things across Second Brain.</p>';
   messages.appendChild(w);
 }
 function resetConversation(){
@@ -1232,7 +1232,7 @@ syncConversationState();syncLatest();
 /* Version marker. */
 document.documentElement.dataset.omniosVersion='58.8';
 window.OmniBuild={version:'58.8',name:'Assistant Chat UI/UX'};
-document.title='OmniOS v58.8 — Assistant Chat UI/UX';
+document.title='Second Brain v58.8 — Assistant Chat UI/UX';
 })();
 </script>
 
@@ -1253,14 +1253,14 @@ try{
 const panel=document.getElementById('omni-assistant-panel');
 if(panel)panel.dataset.aiMode='workspace';
 document.documentElement.dataset.omniosVersion='59.2';
-window.OmniBuild={version:'59.2',name:'OmniOS Assistant Only'};
-document.title='OmniOS v59.2 — OmniOS Assistant Only';
+window.OmniBuild={version:'59.2',name:'Second Brain Assistant Only'};
+document.title='Second Brain v59.2 — Second Brain Assistant Only';
 })();
 </script>
 
 
 <style id="omnios-v62-routine-css">
-/* ===== OmniOS v62 — unified Routine system ===== */
+/* ===== Second Brain v62 — unified Routine system ===== */
 #view-routine{--rt-accent:var(--accent-cyan)}
 .rt-shell{display:flex;flex-direction:column;gap:12px}
 .rt-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:16px;border:1px solid color-mix(in srgb,var(--rt-accent) 22%,var(--border-color));border-radius:var(--radius-lg);background:linear-gradient(145deg,color-mix(in srgb,var(--rt-accent) 6%,var(--bg-surface)),var(--bg-surface))}
@@ -1276,7 +1276,7 @@ document.title='OmniOS v59.2 — OmniOS Assistant Only';
 @media(max-width:760px){.rt-hero{flex-direction:column;padding:13px}.rt-hero-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.rt-hero-actions .btn{justify-content:center}.rt-kpis{grid-template-columns:1fr 1fr}.rt-card-head{padding:11px}.rt-card-actions{width:100%;margin-top:7px}.rt-card-head{flex-wrap:wrap}.rt-card-main{min-width:calc(100% - 46px)}.rt-item{grid-template-columns:auto minmax(0,1fr);padding:10px}.rt-item-actions{grid-column:2;justify-content:flex-start}.rt-builder-row{grid-template-columns:1fr}.rt-builder-row .rt-builder-title,.rt-builder-row .rt-builder-delete{grid-column:auto}.rt-days{grid-template-columns:repeat(4,1fr)}}
 
 
-/* ===== OmniOS v61.2 — canonical Routine system ===== */
+/* ===== Second Brain v61.2 — canonical Routine system ===== */
 #view-routine{--rt-accent:var(--accent-cyan)}
 .rt611-shell{display:flex;flex-direction:column;gap:12px}
 .rt611-tabs{display:flex;gap:4px;padding:3px;width:max-content;max-width:100%;overflow-x:auto;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base);scrollbar-width:none}
@@ -1341,7 +1341,7 @@ document.title='OmniOS v59.2 — OmniOS Assistant Only';
 
 <style id="omnios-v61-professional-final-css">
 /* ============================================================
-   OmniOS v61 — final product UI/UX stabilization
+   Second Brain v61 — final product UI/UX stabilization
    Readability, contrast, reachability, responsive safety.
    ============================================================ */
 :root{
@@ -1555,7 +1555,7 @@ if(document.body)mo.observe(document.body,{childList:true,subtree:true});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>enhanceA11yV61(),{once:true});else enhanceA11yV61();
 document.documentElement.dataset.omniosVersion='61.0';
 window.OmniBuild={version:'61.0',name:'Professional Final'};
-document.title='OmniOS v61 — Professional Final';
+document.title='Second Brain v61 — Professional Final';
 })();
 </script>
 
@@ -1575,7 +1575,11 @@ function localKey(d=new Date()){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 function weekStart(d=new Date()){
-  const x=new Date(d);x.setHours(12,0,0,0);const off=(x.getDay()+6)%7;x.setDate(x.getDate()-off);return localKey(x);
+  const x=new Date(d);x.setHours(12,0,0,0);
+  let pref='monday';
+  try{pref=typeof getSetting==='function'?getSetting('calendar.weekStart','monday'):(state?.settings?.calendar?.weekStart||'monday')}catch(_){}
+  const first=pref==='sunday'?0:1,off=(x.getDay()-first+7)%7;
+  x.setDate(x.getDate()-off);return localKey(x);
 }
 function monthKey(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
 function stateRef(){return state;}
@@ -1597,17 +1601,20 @@ function cycleKey(r,d=new Date()){
 }
 function cycleMap(r,d=new Date()){r.log=r.log&&typeof r.log==='object'?r.log:{};const k=cycleKey(r,d);r.log[k]=r.log[k]&&typeof r.log[k]==='object'?r.log[k]:{};return r.log[k]}
 function cycleProgress(r,d=new Date()){const m=cycleMap(r,d),total=A(r.items).length,done=A(r.items).filter(i=>!!m[i.id]).length;return{done,total,pct:total?Math.round(done/total*100):0,map:m}}
-function resetText(r){return r.frequency==='weekly'?'Resets at the start of each week':r.frequency==='monthly'?'Resets at the start of each month':'Resets every day'}
+function resetText(r){if(r.frequency==='weekly'){let p='monday';try{p=typeof getSetting==='function'?getSetting('calendar.weekStart','monday'):(state?.settings?.calendar?.weekStart||'monday')}catch(_){}return 'Resets every '+(p==='sunday'?'Sunday':'Monday')}return r.frequency==='monthly'?'Resets at the start of each month':'Resets every day'}
 function freqLabel(r){
   if(r.frequency==='daily')return 'Daily';
   if(r.frequency==='weekly'){const ds=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];return r.days.length?'Weekly · '+r.days.map(x=>ds[x]).join(', '):'Weekly'}
-  return `Monthly · day ${r.dayOfMonth||1}`;
+  const day=Math.max(1,Math.min(31,Number(r.dayOfMonth||1)));return `Monthly · day ${day}${day>28?' · last valid day in shorter months':''}`;
 }
 function dueToday(r,d=new Date()){
   if(r.archived)return false;
   if(r.frequency==='daily')return true;
   if(r.frequency==='weekly')return r.days.length?r.days.includes(d.getDay()):d.getDay()===1;
-  return Number(r.dayOfMonth||1)===d.getDate();
+  const configured=Math.max(1,Math.min(31,Number(r.dayOfMonth||1)));
+  const lastDay=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+  const effective=Math.min(configured,lastDay);
+  return effective===d.getDate();
 }
 function getRoutine(id){return normalize().find(r=>String(r.id)===String(id))}
 function getStep(r,id){return A(r?.items).find(i=>String(i.id)===String(id))}
@@ -1668,7 +1675,7 @@ function openEditor611(id=''){
   const draft=existing?JSON.parse(JSON.stringify(existing)):{id:uid(),name:'',icon:'↻',frequency:'daily',time:'',days:[],dayOfMonth:1,items:[],log:{},archived:false,createdAt:new Date().toISOString()};
   if(!draft.items.length)draft.items.push({id:uid('ri'),title:'',notes:'',linkType:'none',linkId:''});
   const ov=document.createElement('div');ov.className='modal-overlay active';ov.id='routine-editor-v611';
-  ov.innerHTML=`<div class="modal" style="max-width:860px"><div class="modal-header"><div><h2 class="modal-title">${existing?'Edit routine':'New routine'}</h2><div class="text-muted text-sm">Each saved step is independent and can connect to another OmniOS module.</div></div><button type="button" class="modal-close-btn" data-close>✕</button></div><div class="form-grid"><div class="form-group"><label class="form-label">Routine name</label><input class="form-input" id="rt611-name" value="${E(draft.name)}" placeholder="Morning routine"></div><div class="form-group"><label class="form-label">Icon</label><input class="form-input" id="rt611-icon" value="${E(draft.icon)}" maxlength="3"></div><div class="form-group"><label class="form-label">Frequency</label><select class="form-select" id="rt611-frequency"><option value="daily">Daily — restarts every day</option><option value="weekly">Weekly — restarts every week</option><option value="monthly">Monthly — restarts every month</option></select></div><div class="form-group"><label class="form-label">Preferred time</label><input type="time" class="form-input" id="rt611-time" value="${E(draft.time)}"></div></div><div id="rt611-schedule"></div><div class="rt611-editor-help">Completion is stored per cycle. A daily routine starts with a fresh checklist each day, a weekly routine each new week, and a monthly routine each new month. Previous cycle history is preserved.</div><div class="flex-between" style="margin:14px 0 8px"><div><strong style="font-size:.84rem">Routine steps</strong><div class="text-muted" style="font-size:.65rem;margin-top:2px">Add as many steps as needed. Empty rows are ignored only when you save.</div></div><button type="button" class="btn btn-sm" id="rt611-add-step-top">+ Add step</button></div><div class="rt611-builder" id="rt611-builder"></div><button type="button" class="btn rt611-add-step" id="rt611-add-step-bottom">＋ Add another step</button><div class="modal-footer"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn btn-primary" id="rt611-save">Save routine</button></div></div>`;
+  ov.innerHTML=`<div class="modal" style="max-width:860px"><div class="modal-header"><div><h2 class="modal-title">${existing?'Edit routine':'New routine'}</h2><div class="text-muted text-sm">Each saved step is independent and can connect to another Second Brain module.</div></div><button type="button" class="modal-close-btn" data-close>✕</button></div><div class="form-grid"><div class="form-group"><label class="form-label">Routine name</label><input class="form-input" id="rt611-name" value="${E(draft.name)}" placeholder="Morning routine"></div><div class="form-group"><label class="form-label">Icon</label><input class="form-input" id="rt611-icon" value="${E(draft.icon)}" maxlength="3"></div><div class="form-group"><label class="form-label">Frequency</label><select class="form-select" id="rt611-frequency"><option value="daily">Daily — restarts every day</option><option value="weekly">Weekly — restarts every week</option><option value="monthly">Monthly — restarts every month</option></select></div><div class="form-group"><label class="form-label">Preferred time</label><input type="time" class="form-input" id="rt611-time" value="${E(draft.time)}"></div></div><div id="rt611-schedule"></div><div class="rt611-editor-help">Completion is stored per cycle. A daily routine starts with a fresh checklist each day, a weekly routine each new week, and a monthly routine each new month. Previous cycle history is preserved.</div><div class="flex-between" style="margin:14px 0 8px"><div><strong style="font-size:.84rem">Routine steps</strong><div class="text-muted" style="font-size:.65rem;margin-top:2px">Add as many steps as needed. Empty rows are ignored only when you save.</div></div><button type="button" class="btn btn-sm" id="rt611-add-step-top">+ Add step</button></div><div class="rt611-builder" id="rt611-builder"></div><button type="button" class="btn rt611-add-step" id="rt611-add-step-bottom">＋ Add another step</button><div class="modal-footer"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn btn-primary" id="rt611-save">Save routine</button></div></div>`;
   document.body.appendChild(ov);
   const freq=ov.querySelector('#rt611-frequency');freq.value=draft.frequency;
   function renderSchedule(){
@@ -1752,12 +1759,12 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 document.addEventListener('click',e=>{if(e.target.closest?.('#view-dashboard [data-v43-scope]'))requestAnimationFrame(()=>requestAnimationFrame(renderDashboardRoutine611))},false);
 document.addEventListener('change',e=>{if(e.target.matches?.('#view-dashboard #v43-dash-period'))requestAnimationFrame(()=>requestAnimationFrame(renderDashboardRoutine611))},false);
 window.OmniRoutine={render:renderRoutinePage,renderDashboard:renderDashboardRoutine611,openEditor:openEditor611,cycleKey,toggleStep:toggleStep611};
-document.documentElement.dataset.omniosVersion=VERSION;window.OmniBuild={version:VERSION,name:'Unified Core — Clean Startup + Routine Persistence'};document.title='OmniOS v62.2 — Clean Startup';
+document.documentElement.dataset.omniosVersion=VERSION;window.OmniBuild={version:VERSION,name:'Unified Core — Clean Startup + Routine Persistence'};document.title='Second Brain v62.2 — Clean Startup';
 })();
 </script>
 
 
-<!-- OmniOS v62.2: canonical state + one Routine runtime + controlled first paint. -->
+<!-- Second Brain v62.2: canonical state + one Routine runtime + controlled first paint. -->
 
 <script id="omnios-v62-canonical-nav-js">
 (function(){
@@ -1775,7 +1782,7 @@ function initDesktop(){
     const toggle=()=>apply(!h.classList.contains('is-collapsed'));h.addEventListener('click',toggle);h.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}});
   });
 }
-function stamp(){document.documentElement.dataset.omniosVersion=VERSION;window.OmniBuild={version:VERSION,name:'Unified Core — Clean Startup + Routine Persistence'};document.title='OmniOS v62.2 — Clean Startup'}
+function stamp(){document.documentElement.dataset.omniosVersion=VERSION;window.OmniBuild={version:VERSION,name:'Unified Core — Clean Startup + Routine Persistence'};document.title='Second Brain v62.2 — Clean Startup'}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{initDesktop();stamp();setTimeout(stamp,400)},{once:true});else{initDesktop();stamp();setTimeout(stamp,400)}
 window.addEventListener('pageshow',stamp);
 })();
@@ -1808,7 +1815,7 @@ function finalSync(){
     if(active==='dashboard')window.OmniRoutine?.renderDashboard?.();
     if(typeof window.omniosV25RefreshGrouping==='function')window.omniosV25RefreshGrouping();
     if(typeof window.applyCustomIcons==='function')window.applyCustomIcons();
-  }catch(err){console.warn('OmniOS final startup sync',err)}
+  }catch(err){console.warn('Second Brain final startup sync',err)}
 }
 
 function watchMutations(){
@@ -1994,7 +2001,7 @@ html[data-theme="light"] #view-bible .bib-med-passage-v633{background:var(--bg-s
 <script id="omnios-v623-pwa-personalization" src="./pwa-personalization.js?v=mobile-personalization-r4"></script>
 
 <script id="omnios-v623-pwa-register">
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(reg=>reg.update().catch(()=>{})).catch(err=>console.warn('OmniOS service worker',err)),{once:true})}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(reg=>reg.update().catch(()=>{})).catch(err=>console.warn('Second Brain service worker',err)),{once:true})}
 </script>
 
 <style id="omnios-v624-mobile-calendar-fit-css">
@@ -2148,7 +2155,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.se
 }
 </style>
 <style id="omnios-welcome-screen-css">
-/* OmniOS Welcome — calm, spacious, responsive launch briefing */
+/* Second Brain Welcome — calm, spacious, responsive launch briefing */
 #welcome63{
   position:fixed;inset:0;z-index:2147482500;
   display:grid;place-items:center;
@@ -2391,12 +2398,12 @@ function hideWelcomeUntilTomorrow(){
   try{localStorage.setItem(WELCOME_HIDE_DAY_KEY,welcomeDayKey())}catch(_){}
   close()
 }
-function show(){document.getElementById('welcome63')?.remove();const x=data(),o=document.createElement('div'),dv=window.OmniDailyVerse79?.today?.()||null,profileName=String(x.s?.settings?.profile?.name||'').trim(),logo=x.s?.brandingLogo||x.s?.customIcons?.logo||'',sum=[x.agenda.length?x.agenda.length+' scheduled':'',x.tasks.length?x.tasks.length+' tasks due':'',x.routines.length?x.routines.length+' routines':''].filter(Boolean).join(' · ')||'Your day is open';o.id='welcome63';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');o.setAttribute('aria-label','Today briefing');o.innerHTML=`<div class="w63-shell"><div class="w63-top"><div class="w63-brand"><div class="w63-mark">${logo?`<img src="${E(logo)}" alt="">`:'✦'}</div><span>OmniOS</span></div><button type="button" class="w63-x" data-w63close aria-label="Close welcome screen">✕</button></div><main class="w63-main"><section class="w63-hero"><div class="w63-intro"><div class="w63-date">${E(x.d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}))}</div><h1>${g(x.d.getHours())}${profileName?', '+E(profileName):''}.</h1><div class="w63-summary">${E(sum)}. Here is your day at a glance.</div><div class="w63-actions"><button class="w63-btn primary" data-w63go="today">Start with Today</button><button class="w63-btn" data-w63close>Enter workspace</button><button class="w63-btn w63-btn-later" data-w63tomorrow>Hide until tomorrow</button></div></div><aside class="w63-next"><div><div class="w63-label">Next on your schedule</div><div class="w63-time">${x.next?E(tm(x.next.time)):x.agenda.length?'Done for now':'Open day'}</div><div class="w63-next-title">${x.next?E(x.next.t):x.agenda.length?'No more timed items today.':'Nothing scheduled today.'}</div>${x.next?`<div class="w63-muted">${E(x.next.k)}${x.next.dur?' · '+E(x.next.dur+' min'):''}</div>`:''}</div><button class="w63-link" data-w63go="master-calendar">View calendar →</button></aside></section>${dv?`<section class="w80-welcome-verse" aria-label="Verse of the day"><div class="w80-welcome-verse-main"><div class="w80-welcome-verse-kicker">Verse of the day · ${E(dv.theme)}</div><blockquote>${E(dv.text)}</blockquote><div class="w80-welcome-verse-ref">${E(dv.ref)}</div></div><div class="w80-welcome-verse-actions"><button type="button" class="w63-btn" data-w80verse="read">Read in Bible</button><button type="button" class="w63-btn" data-w80verse="meditate">Meditate</button></div></section>`:''}<section class="w63-stats"><div class="w63-stat"><span>Schedule</span><strong>${x.agenda.length}</strong></div><div class="w63-stat"><span>Tasks due</span><strong>${x.tasks.length}</strong></div><div class="w63-stat"><span>Habits</span><strong>${x.hd}/${x.habits.length}</strong></div><div class="w63-stat"><span>Focus today</span><strong>${Math.round(x.focus)}m</strong></div></section><section class="w63-grid"><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Today’s agenda</div><div class="w63-sub">Events and time blocks</div></div><button class="w63-link" data-w63go="master-calendar">Calendar</button></div>${rowsAgenda(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Priority tasks</div><div class="w63-sub">Pinned, urgent and due first</div></div><button class="w63-link" data-w63go="tasks">Tasks</button></div>${rowsTasks(x)}</div></div><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Routines</div><div class="w63-sub">Today’s progress</div></div><button class="w63-link" data-w63go="routine">Routine</button></div>${rowsR(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Habits</div><div class="w63-sub">${x.hd} completed today</div></div><button class="w63-link" data-w63go="habits">Habits</button></div>${rowsH(x)}</div></div></section></main></div>`;document.body.appendChild(o);o.addEventListener('click',e=>{if(e.target===o)close()});o.querySelectorAll('[data-w63close]').forEach(b=>b.onclick=close);o.querySelectorAll('[data-w63tomorrow]').forEach(b=>b.onclick=hideWelcomeUntilTomorrow);o.querySelectorAll('[data-w63go]').forEach(b=>b.onclick=()=>go(b.dataset.w63go));o.querySelectorAll('[data-w80verse]').forEach(b=>b.onclick=()=>{const mode=b.dataset.w80verse;close();setTimeout(()=>{if(mode==='meditate')window.OmniDailyVerse79?.meditate?.(dv?.ref);else window.OmniDailyVerse79?.read?.(dv?.ref)},100)});requestAnimationFrame(()=>requestAnimationFrame(()=>o.classList.add('open')))}
+function show(){document.getElementById('welcome63')?.remove();const x=data(),o=document.createElement('div'),dv=window.OmniDailyVerse79?.today?.()||null,profileName=String(x.s?.settings?.profile?.name||'').trim(),logo=x.s?.brandingLogo||x.s?.customIcons?.logo||'',sum=[x.agenda.length?x.agenda.length+' scheduled':'',x.tasks.length?x.tasks.length+' tasks due':'',x.routines.length?x.routines.length+' routines':''].filter(Boolean).join(' · ')||'Your day is open';o.id='welcome63';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');o.setAttribute('aria-label','Today briefing');o.innerHTML=`<div class="w63-shell"><div class="w63-top"><div class="w63-brand"><div class="w63-mark">${logo?`<img src="${E(logo)}" alt="">`:'✦'}</div><span>Second Brain</span></div><button type="button" class="w63-x" data-w63close aria-label="Close welcome screen">✕</button></div><main class="w63-main"><section class="w63-hero"><div class="w63-intro"><div class="w63-date">${E(x.d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}))}</div><h1>${g(x.d.getHours())}${profileName?', '+E(profileName):''}.</h1><div class="w63-summary">${E(sum)}. Here is your day at a glance.</div><div class="w63-actions"><button class="w63-btn primary" data-w63go="today">Start with Today</button><button class="w63-btn" data-w63close>Enter workspace</button><button class="w63-btn w63-btn-later" data-w63tomorrow>Hide until tomorrow</button></div></div><aside class="w63-next"><div><div class="w63-label">Next on your schedule</div><div class="w63-time">${x.next?E(tm(x.next.time)):x.agenda.length?'Done for now':'Open day'}</div><div class="w63-next-title">${x.next?E(x.next.t):x.agenda.length?'No more timed items today.':'Nothing scheduled today.'}</div>${x.next?`<div class="w63-muted">${E(x.next.k)}${x.next.dur?' · '+E(x.next.dur+' min'):''}</div>`:''}</div><button class="w63-link" data-w63go="master-calendar">View calendar →</button></aside></section>${dv?`<section class="w80-welcome-verse" aria-label="Verse of the day"><div class="w80-welcome-verse-main"><div class="w80-welcome-verse-kicker">Verse of the day · ${E(dv.theme)}</div><blockquote>${E(dv.text)}</blockquote><div class="w80-welcome-verse-ref">${E(dv.ref)}</div></div><div class="w80-welcome-verse-actions"><button type="button" class="w63-btn" data-w80verse="read">Read in Bible</button><button type="button" class="w63-btn" data-w80verse="meditate">Meditate</button></div></section>`:''}<section class="w63-stats"><div class="w63-stat"><span>Schedule</span><strong>${x.agenda.length}</strong></div><div class="w63-stat"><span>Tasks due</span><strong>${x.tasks.length}</strong></div><div class="w63-stat"><span>Habits</span><strong>${x.hd}/${x.habits.length}</strong></div><div class="w63-stat"><span>Focus today</span><strong>${Math.round(x.focus)}m</strong></div></section><section class="w63-grid"><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Today’s agenda</div><div class="w63-sub">Events and time blocks</div></div><button class="w63-link" data-w63go="master-calendar">Calendar</button></div>${rowsAgenda(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Priority tasks</div><div class="w63-sub">Pinned, urgent and due first</div></div><button class="w63-link" data-w63go="tasks">Tasks</button></div>${rowsTasks(x)}</div></div><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Routines</div><div class="w63-sub">Today’s progress</div></div><button class="w63-link" data-w63go="routine">Routine</button></div>${rowsR(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Habits</div><div class="w63-sub">${x.hd} completed today</div></div><button class="w63-link" data-w63go="habits">Habits</button></div>${rowsH(x)}</div></div></section></main></div>`;document.body.appendChild(o);o.addEventListener('click',e=>{if(e.target===o)close()});o.querySelectorAll('[data-w63close]').forEach(b=>b.onclick=close);o.querySelectorAll('[data-w63tomorrow]').forEach(b=>b.onclick=hideWelcomeUntilTomorrow);o.querySelectorAll('[data-w63go]').forEach(b=>b.onclick=()=>go(b.dataset.w63go));o.querySelectorAll('[data-w80verse]').forEach(b=>b.onclick=()=>{const mode=b.dataset.w80verse;close();setTimeout(()=>{if(mode==='meditate')window.OmniDailyVerse79?.meditate?.(dv?.ref);else window.OmniDailyVerse79?.read?.(dv?.ref)},100)});requestAnimationFrame(()=>requestAnimationFrame(()=>o.classList.add('open')))}
 function close(){const o=document.getElementById('welcome63');if(o){o.classList.remove('open');setTimeout(()=>o.remove(),250)}}function go(v){close();setTimeout(()=>window.switchView?.(v),100)}function ready(){if(window.__welcome63Shown)return;if(welcomeHiddenToday()){window.__welcome63Shown=1;return}let n=0;const q=()=>{n++;if((document.documentElement.classList.contains('omnios-ready')&&!document.getElementById('omnios-boot-screen'))||n>70){window.__welcome63Shown=1;if(!welcomeHiddenToday())setTimeout(show,100)}else setTimeout(q,80)};q()}window.OmniWelcome={open:show,close,refresh:show};document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
 })();
 </script>
 <style id="omnios-v64-aurora-glass-ui">
-/* OmniOS v64 — dark aurora / glass UI inspired by the approved gradient direction.
+/* Second Brain v64 — dark aurora / glass UI inspired by the approved gradient direction.
    Visual layer only: no page logic, persistence, routing, or data model changes. */
 html:not([data-theme="light"]){
   --bg-base:#07090f;
@@ -3815,7 +3822,7 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 </script>
 
 <style id="omnios-v66-bible-ux">
-/* ===== OmniOS Bible UX authority v67 =====
+/* ===== Second Brain Bible UX authority v67 =====
    One final responsive layer for Today, Read, Study, Atlas, Meditate,
    Bible 365, Mood, Journal and Library. Keeps feature logic untouched. */
 #view-bible{
@@ -5041,7 +5048,7 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 
 
 <style id="omnios-device-sync-v72-css">
-/* OmniOS device sync v72 */
+/* Second Brain device sync v72 */
 #omni-sync-btn{position:relative;gap:6px;align-items:center;justify-content:center;white-space:nowrap}
 #omni-sync-btn .omni-sync-icon{font-size:.9rem;line-height:1}
 #omni-sync-btn.is-live{border-color:color-mix(in srgb,var(--accent-green,#10b981) 55%,var(--border-color));color:var(--accent-green,#10b981)}
@@ -5072,7 +5079,14 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 .omni-sync-joining strong{font-size:.86rem}.omni-sync-joining span{font-size:.63rem;color:var(--text-muted)}
 .omni-sync-spinner{width:34px;height:34px;border:3px solid var(--border-color);border-top-color:var(--accent-cyan);border-radius:50%;animation:omniSyncSpin .8s linear infinite}
 @keyframes omniSyncSpin{to{transform:rotate(360deg)}}
+.omni-sync-select{margin:0 0 12px;padding:12px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-base)}
+.omni-sync-select legend{padding:0 5px;font-size:.62rem;font-weight:850;color:var(--text-primary)}
+.omni-sync-select-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px 10px;margin-top:5px}
+.omni-sync-select label{display:flex;align-items:center;gap:6px;font-size:.58rem;color:var(--text-secondary);cursor:pointer}
+.omni-sync-select input{accent-color:var(--accent-cyan)}
+.omni-sync-select small{display:block;margin-top:8px;color:var(--text-muted);font-size:.52rem;line-height:1.45}
 @media(max-width:760px){
+  .omni-sync-select-grid{grid-template-columns:1fr 1fr}
   #omni-sync-btn{display:inline-flex!important;min-width:62px!important;height:38px!important;padding:0 9px!important;font-size:.58rem!important}
   .omni-sync-overlay{place-items:end center;padding:0;background:rgba(2,6,12,.55)}
   .omni-sync-modal{width:100%;max-height:92dvh;border-radius:22px 22px 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom)}
@@ -5095,6 +5109,39 @@ const QR_SRC='https://cdn.jsdelivr.net/npm/qrcanvas@3';
 const DEVICE_KEY='omnios_sync_device_v1';
 const PAIRS_KEY='omnios_sync_pairs_v1';
 const TURN_KEY='omnios_sync_turn_v1';
+const SYNC_SELECTION_KEY='omnios_sync_selection_v1';
+const SYNC_GROUPS=['planning','calendar','habits','finance','life','nutrition','settings','bible','other'];
+function syncSelection(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(SYNC_SELECTION_KEY)||'null');
+    const out={};SYNC_GROUPS.forEach(k=>out[k]=saved?.[k]!==false);return out
+  }catch(_){const out={};SYNC_GROUPS.forEach(k=>out[k]=true);return out}
+}
+function saveSyncSelection(next){
+  const clean={};SYNC_GROUPS.forEach(k=>clean[k]=next?.[k]!==false);
+  try{localStorage.setItem(SYNC_SELECTION_KEY,JSON.stringify(clean))}catch(_){}
+  return clean
+}
+function syncGroupForStateKey(k){
+  const key=String(k||'').toLowerCase();
+  if(['entries','goals','notes','reminders'].includes(key)||/task|project|inbox/.test(key))return'planning';
+  if(/calendar|event|timeblock/.test(key))return'calendar';
+  if(/habit|routine|workout|focus/.test(key))return'habits';
+  if(/transaction|finance|budget|expense|income|wishlist|pantry|grocery/.test(key))return'finance';
+  if(key==='life'||/people|document/.test(key))return'life';
+  if(/diet|nutrition|meal|hydration|food|recipe|prep/.test(key))return'nutrition';
+  if(key==='settings'||/appearance|profile|preference/.test(key))return'settings';
+  return'other'
+}
+function syncSelectionControlsHtml(){
+  const sel=syncSelection(),labels={planning:'Planning',calendar:'Calendar',habits:'Habits & routines',finance:'Finance & lists',life:'Life OS',nutrition:'Nutrition',settings:'Settings',bible:'Bible',other:'Other app data'};
+  return '<fieldset class="omni-sync-select"><legend>Choose what this device shares</legend><div class="omni-sync-select-grid">'+SYNC_GROUPS.map(k=>'<label><input type="checkbox" data-sync-group="'+k+'" '+(sel[k]?'checked':'')+'> <span>'+labels[k]+'</span></label>').join('')+'</div><small>Passwords, pairing identity and push/device credentials are never included.</small></fieldset>'
+}
+function bindSyncSelectionControls(root){
+  root?.querySelectorAll?.('[data-sync-group]').forEach(el=>el.addEventListener('change',()=>{
+    const next=syncSelection();next[el.dataset.syncGroup]=!!el.checked;saveSyncSelection(next)
+  }))
+}
 const PEER_OPEN_TIMEOUT=7000;
 const DATA_OPEN_TIMEOUT=6500;
 let peer=null,peerReady=null,pendingSession=null,syncModal=null,sendTimer=null,warmPromise=null,lastJoinPayload=null;
@@ -5180,8 +5227,28 @@ function ensureReadyForMerge(){
   r.ensureSyncMeta?.();return r
 }
 function buildBundle(){
-  const r=ensureReadyForMerge(),aux=r.captureAux?.()||{},meta=state.core?.syncMeta||{};
-  return {protocol:PROTOCOL,generatedAt:iso(),device:device(),state:clone(state),moduleTimes:{...(meta.modules||{})},recordTimes:clone(meta.records||{})||{},aux,auxMeta:r.readAuxMeta?.()||{},fingerprint:r.fingerprint?.(state,aux)||''}
+  const r=ensureReadyForMerge(),capturedAux=r.captureAux?.()||{},meta=state.core?.syncMeta||{},syncState=clone(state),selection=syncSelection();
+  if(syncState&&Object.prototype.hasOwnProperty.call(syncState,'passwords'))delete syncState.passwords;
+  for(const k of Object.keys(syncState||{})){
+    if(k==='core')continue;
+    const group=syncGroupForStateKey(k);
+    if(selection[group]===false)delete syncState[k]
+  }
+  const moduleTimes={...(meta.modules||{})},recordTimes=clone(meta.records||{})||{};
+  for(const k of Object.keys(moduleTimes)){
+    const root=String(k).split('.')[0];
+    if(root==='passwords'||selection[syncGroupForStateKey(root)]===false)delete moduleTimes[k]
+  }
+  for(const k of Object.keys(recordTimes)){
+    const root=String(k).split('.')[0];
+    if(root==='passwords'||selection[syncGroupForStateKey(root)]===false)delete recordTimes[k]
+  }
+  const aux={...capturedAux},auxMeta={...(r.readAuxMeta?.()||{})};
+  if(selection.bible===false){
+    for(const k of Object.keys(aux))if(/bible/i.test(k))delete aux[k];
+    for(const k of Object.keys(auxMeta))if(/bible/i.test(k))delete auxMeta[k]
+  }
+  return {protocol:PROTOCOL,generatedAt:iso(),device:device(),state:syncState,moduleTimes,recordTimes,aux,auxMeta,selection,fingerprint:r.fingerprint?.(syncState,aux)||''}
 }
 function chooseRemote(lt,rt,localId,remoteId){
   if(rt>lt)return true;if(rt<lt)return false;
@@ -5214,22 +5281,81 @@ function mergeRecordArray(key,localList,remoteList,localRec,remoteRec,localModul
   return {list,meta}
 }
 
+function mergeStructuredAux(localValue,remoteValue,preferRemote){
+  if(Array.isArray(localValue)&&Array.isArray(remoteValue)){
+    const idReady=[...localValue,...remoteValue].every(x=>x&&typeof x==='object'&&x.id!=null);
+    if(idReady){
+      const out=new Map(localValue.map(x=>[String(x.id),clone(x)]));
+      for(const item of remoteValue){
+        const id=String(item.id),prior=out.get(id);
+        out.set(id,prior===undefined?clone(item):mergeStructuredAux(prior,item,preferRemote))
+      }
+      return [...out.values()]
+    }
+    const out=[],seen=new Set();
+    for(const item of [...localValue,...remoteValue]){
+      let key;try{key=JSON.stringify(item)}catch(_){key=String(item)}
+      if(seen.has(key))continue;seen.add(key);out.push(clone(item))
+    }
+    return out
+  }
+  if(localValue&&remoteValue&&typeof localValue==='object'&&typeof remoteValue==='object'){
+    const out=clone(localValue)||{};
+    for(const k of Object.keys(remoteValue)){
+      if(!hasOwn(localValue,k))out[k]=clone(remoteValue[k]);
+      else out[k]=mergeStructuredAux(localValue[k],remoteValue[k],preferRemote)
+    }
+    return out
+  }
+  return preferRemote?clone(remoteValue):clone(localValue)
+}
+
 async function mergeBundle(remote){
-  if(!remote||remote.protocol!==PROTOCOL||!remote.state)return {changed:false,modules:[],aux:[]};
+  if(!remote||remote.protocol!==PROTOCOL||!remote.state)return {changed:false,metadataChanged:false,modules:[],aux:[]};
   const r=ensureReadyForMerge(),localId=device().id,remoteId=remote.device?.id||'';
   const localMeta=r.ensureSyncMeta?.()||{modules:{},records:{}},localTimes={...(localMeta.modules||{})},remoteTimes={...(remote.moduleTimes||remote.state?.core?.syncMeta?.modules||{})};
   const localRecords=localMeta.records||{},remoteRecords=remote.recordTimes||remote.state?.core?.syncMeta?.records||{},mergedRecords=clone(localRecords)||{};
   const keys=new Set([...(r.stateKeys?.(state)||[]),...(r.stateKeys?.(remote.state)||[])]),stateChanges=[],mergedTimes={...localTimes};
+
   for(const k of keys){
     const localHas=hasOwn(state,k),remoteHas=hasOwn(remote.state,k),lt=when(localTimes[k]),rt=when(remoteTimes[k]);
     if(remoteHas){
-      const lv=state[k],rv=remote.state[k],recordMerge=Array.isArray(lv)&&Array.isArray(rv)&&recordArrayEligible(lv,r)&&recordArrayEligible(rv,r)&&(localRecords[k]||remoteRecords[k]);
-      if(recordMerge){
-        const merged=mergeRecordArray(k,lv,rv,localRecords[k]||{},remoteRecords[k]||{},localTimes[k]||'',remoteTimes[k]||'',localId,remoteId,remote.generatedAt,r);
-        mergedRecords[k]=merged.meta;
-        if(!same(lv,merged.list))stateChanges.push([k,merged.list])
-      }else if((!localHas||chooseRemote(lt,rt,localId,remoteId))&&!same(lv,rv)){
-        stateChanges.push([k,clone(rv)])
+      const lv=state[k],rv=remote.state[k];
+
+      // Nested ID-based collections (for example life.people and life.projects) merge
+      // independently so unrelated edits on two devices cannot erase each other.
+      if(lv&&rv&&typeof lv==='object'&&typeof rv==='object'&&!Array.isArray(lv)&&!Array.isArray(rv)){
+        const mergedObj=clone(lv)||{},childKeys=new Set([...Object.keys(lv),...Object.keys(rv)]);
+        let usedNestedMerge=false;
+        for(const child of childKeys){
+          const la=lv[child],ra=rv[child],path=k+'.'+child;
+          if(Array.isArray(la)&&Array.isArray(ra)&&recordArrayEligible(la,r)&&recordArrayEligible(ra,r)&&(localRecords[path]||remoteRecords[path])){
+            const merged=mergeRecordArray(path,la,ra,localRecords[path]||{},remoteRecords[path]||{},localTimes[path]||localTimes[k]||'',remoteTimes[path]||remoteTimes[k]||'',localId,remoteId,remote.generatedAt,r);
+            mergedObj[child]=merged.list;
+            mergedRecords[path]=merged.meta;
+            const lct=when(localTimes[path]||localTimes[k]),rct=when(remoteTimes[path]||remoteTimes[k]);
+            mergedTimes[path]=rct>lct||(rct===lct&&String(remoteId)>String(localId))?(remoteTimes[path]||remoteTimes[k]||remote.generatedAt):(localTimes[path]||localTimes[k]||remote.generatedAt);
+            usedNestedMerge=true;
+          }else if(!hasOwn(lv,child)){
+            mergedObj[child]=clone(ra);
+          }else if(hasOwn(rv,child)&&chooseRemote(lt,rt,localId,remoteId)){
+            mergedObj[child]=clone(ra);
+          }
+        }
+        if(usedNestedMerge){
+          if(!same(lv,mergedObj))stateChanges.push([k,mergedObj]);
+        }else if((!localHas||chooseRemote(lt,rt,localId,remoteId))&&!same(lv,rv)){
+          stateChanges.push([k,clone(rv)]);
+        }
+      }else{
+        const recordMerge=Array.isArray(lv)&&Array.isArray(rv)&&recordArrayEligible(lv,r)&&recordArrayEligible(rv,r)&&(localRecords[k]||remoteRecords[k]);
+        if(recordMerge){
+          const merged=mergeRecordArray(k,lv,rv,localRecords[k]||{},remoteRecords[k]||{},localTimes[k]||'',remoteTimes[k]||'',localId,remoteId,remote.generatedAt,r);
+          mergedRecords[k]=merged.meta;
+          if(!same(lv,merged.list))stateChanges.push([k,merged.list])
+        }else if((!localHas||chooseRemote(lt,rt,localId,remoteId))&&!same(lv,rv)){
+          stateChanges.push([k,clone(rv)])
+        }
       }
     }
     if(remoteHas&&(rt>lt||(rt===lt&&String(remoteId)>String(localId))))mergedTimes[k]=remoteTimes[k]||localTimes[k]||remote.generatedAt;
@@ -5243,6 +5369,19 @@ async function mergeBundle(remote){
     if(!remoteKnows)continue;
     const lm=localAuxMeta[k]||{},rm=remoteAuxMeta[k]||{};
     const lt=when(lm.at),rt=when(rm.at||(remoteHas?remote.generatedAt:'')),take=chooseRemote(lt,rt,localId,remoteId);
+    if(k==='omnios_bible_v571'&&localHas&&remoteHas&&!lm.deleted&&!rm.deleted){
+      try{
+        const mergedBible=mergeStructuredAux(JSON.parse(localAux[k]),JSON.parse(remoteAux[k]),take);
+        const next=JSON.stringify(mergedBible),current=String(localAux[k]??'');
+        if(next!==current)auxChanges.push([k,next,false]);
+        mergedAuxMeta[k]={at:(rt>=lt?(rm.at||remote.generatedAt):(lm.at||remote.generatedAt)),deleted:false}
+      }catch(e){
+        console.warn('Bible structured merge fell back to whole-value choice',e);
+        if(take&&localAux[k]!==remoteAux[k])auxChanges.push([k,remoteAux[k],false]);
+        mergedAuxMeta[k]=take?{at:rm.at||remote.generatedAt,deleted:false}:lm
+      }
+      continue
+    }
     if(take){
       const deleted=!!rm.deleted;
       const next=deleted?null:remoteAux[k];
@@ -5252,8 +5391,11 @@ async function mergeBundle(remote){
     }
   }
 
-  if(!stateChanges.length&&!auxChanges.length)return {changed:false,modules:[],aux:[]};
-  await r.makeSnapshot?.('Before device sync',{kind:'manual'});
+  const metadataChanged=!same(localTimes,mergedTimes)||!same(localRecords,mergedRecords)||!same(localAuxMeta,mergedAuxMeta);
+  if(!stateChanges.length&&!auxChanges.length&&!metadataChanged)return {changed:false,metadataChanged:false,modules:[],aux:[]};
+
+  await r.makeSnapshot?.('Before device sync',{kind:'pre-sync'});
+  const beforeState=clone(state),beforeAux=localAux,beforeAuxMeta=clone(localAuxMeta)||{};
   window.__omniSyncApplying=true;
   try{
     for(const [k,v] of stateChanges)state[k]=v;
@@ -5262,15 +5404,36 @@ async function mergeBundle(remote){
     state.core.syncMeta.modules=mergedTimes;
     state.core.syncMeta.records=mergedRecords;
     state.core.syncMeta.updatedAt=[state.core.syncMeta.updatedAt,remote.generatedAt,iso()].filter(Boolean).sort().pop();
-    for(const [k,v,deleted] of auxChanges){
-      try{if(deleted)localStorage.removeItem(k);else localStorage.setItem(k,String(v??''))}catch(_){}
-    }
-    r.writeAuxMeta?.(mergedAuxMeta);
+
+    // Apply auxiliary values and core state with verification. A failed durable write now
+    // rejects the merge instead of being reported as "Synced".
+    r.applyAuxDurably?.(auxChanges);
+    r.writeAuxMetaDurably?.(mergedAuxMeta);
     if(typeof normalizeState==='function')normalizeState();
     if(typeof window.saveState==='function')window.saveState();
+    await r.persistStateDurably?.();
+    if(auxChanges.some(x=>x[0]==='omnios_bible_v571'))try{window.OmniBibleReloadFromStorage?.()}catch(_){}
     try{window.renderAll?.()}catch(_){}
-  }finally{window.__omniSyncApplying=false}
-  return {changed:true,modules:stateChanges.map(x=>x[0]),aux:auxChanges.map(x=>x[0])}
+  }catch(e){
+    console.error('Device sync commit failed',e);
+    try{
+      state=beforeState;
+      const reverseAux=[];
+      for(const [k] of auxChanges){
+        if(hasOwn(beforeAux,k))reverseAux.push([k,beforeAux[k],false]);
+        else reverseAux.push([k,null,true])
+      }
+      r.applyAuxDurably?.(reverseAux);
+      r.writeAuxMetaDurably?.(beforeAuxMeta);
+      if(typeof window.saveState==='function')window.saveState();
+      await r.persistStateDurably?.();
+      if(auxChanges.some(x=>x[0]==='omnios_bible_v571'))window.OmniBibleReloadFromStorage?.()
+    }catch(rollbackError){console.error('Device sync rollback also failed',rollbackError)}
+    throw e;
+  }finally{
+    window.__omniSyncApplying=false
+  }
+  return {changed:!!(stateChanges.length||auxChanges.length),metadataChanged,modules:stateChanges.map(x=>x[0]),aux:auxChanges.map(x=>x[0])}
 }
 
 function setStatus(text,tone='',detail=''){
@@ -5290,20 +5453,24 @@ function setLiveUI(){
   const b=document.getElementById('omni-sync-btn'),n=[...live.values()].filter(x=>x.auth&&x.conn?.open).length;
   if(b){b.classList.toggle('is-live',n>0);b.title=n?('Sync · '+n+' device'+(n===1?'':'s')+' connected'):'Sync devices'}
 }
-function closeSyncModal(){syncModal?.remove();syncModal=null}
+function closeSyncModal(){
+  pendingSession=null;
+  syncModal?.remove();syncModal=null
+}
 function modalShell(mode='host'){
-  closeSyncModal();const ov=document.createElement('div');ov.className='omni-sync-overlay';ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true" aria-labelledby="omni-sync-title"><header class="omni-sync-head"><div><div class="omni-sync-kicker">DEVICE SYNC</div><h3 id="omni-sync-title">'+(mode==='join'?'Connecting devices':'Sync OmniOS')+'</h3><p>'+(mode==='join'?'Keep this screen open while OmniOS connects and reconciles the newest data.':'Scan once with the second device. Both devices compare timestamps and keep the newest data.')+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-sync-status>'+(mode==='join'?'Finding the other device…':'Preparing secure session…')+'</strong><span data-sync-detail>Automatic recovery snapshot is created before incoming data is applied.</span></div></div><div class="omni-sync-stages" aria-label="Sync progress"><div class="omni-sync-stage is-active" data-sync-stage="finding">Finding</div><div class="omni-sync-stage" data-sync-stage="connecting">Connecting</div><div class="omni-sync-stage" data-sync-stage="syncing">Syncing</div><div class="omni-sync-stage" data-sync-stage="live">Live</div></div><div class="omni-sync-content"></div></div></section>';
+  closeSyncModal();const ov=document.createElement('div');ov.className='omni-sync-overlay';ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true" aria-labelledby="omni-sync-title"><header class="omni-sync-head"><div><div class="omni-sync-kicker">DEVICE SYNC</div><h3 id="omni-sync-title">'+(mode==='join'?'Connecting devices':'Sync Second Brain')+'</h3><p>'+(mode==='join'?'Keep this screen open while Second Brain connects and reconciles the newest data.':'Scan once with the second device. Both devices compare timestamps and keep the newest data.')+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-sync-status>'+(mode==='join'?'Finding the other device…':'Preparing secure session…')+'</strong><span data-sync-detail>Automatic recovery snapshot is created before incoming data is applied.</span></div></div><div class="omni-sync-stages" aria-label="Sync progress"><div class="omni-sync-stage is-active" data-sync-stage="finding">Finding</div><div class="omni-sync-stage" data-sync-stage="connecting">Connecting</div><div class="omni-sync-stage" data-sync-stage="syncing">Syncing</div><div class="omni-sync-stage" data-sync-stage="live">Live</div></div><div class="omni-sync-content"></div></div></section>';
   document.body.appendChild(ov);syncModal=ov;ov.querySelector('.omni-sync-close').onclick=closeSyncModal;ov.onclick=e=>{if(e.target===ov)closeSyncModal()};return ov
 }
 function qrView(url){
   const host=syncModal?.querySelector('.omni-sync-content');if(!host)return;
-  host.innerHTML='<div class="omni-sync-qr-wrap"><div class="omni-sync-qr" id="omni-sync-qr"></div><div class="omni-sync-instructions"><strong>Scan this QR code on the other device</strong><span>It opens OmniOS and starts a direct sync session. Keep both devices online and this page open.</span><div class="omni-sync-actions"><button type="button" class="btn btn-primary" data-sync-copy>Copy sync link</button><button type="button" class="btn" data-sync-new>New code</button></div></div></div><div class="omni-sync-security">One-time pairing secret · data travels over an encrypted WebRTC connection · the QR does not contain your OmniOS data.</div>';
+  host.innerHTML=syncSelectionControlsHtml()+'<div class="omni-sync-qr-wrap"><div class="omni-sync-qr" id="omni-sync-qr"></div><div class="omni-sync-instructions"><strong>Scan this QR code on the other device</strong><span>It opens Second Brain and starts a direct sync session. Keep both devices online and this page open.</span><div class="omni-sync-actions"><button type="button" class="btn btn-primary" data-sync-copy>Copy sync link</button><button type="button" class="btn" data-sync-new>New code</button></div></div></div><div class="omni-sync-security">One-time pairing secret · data travels over an encrypted WebRTC connection · the QR does not contain your Second Brain data.</div>';
+  bindSyncSelectionControls(host);
   const box=host.querySelector('#omni-sync-qr');box.innerHTML='';
   try{const canvas=window.qrcanvas.qrcanvas({data:url,size:260,correctLevel:'M'});box.appendChild(canvas)}catch(e){box.textContent='QR could not be generated';console.warn(e)}
   host.querySelector('[data-sync-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(url);setStatus('Sync link copied','ok')}catch(_){setStatus('Could not copy link','error')}};
   host.querySelector('[data-sync-new]').onclick=()=>startHost(true)
 }
-function joinView(){const host=syncModal?.querySelector('.omni-sync-content');if(host)host.innerHTML='<div class="omni-sync-joining"><div class="omni-sync-spinner"></div><strong>Finding the other device…</strong><span>The newest data on each device will be kept.</span></div>'}
+function joinView(){const host=syncModal?.querySelector('.omni-sync-content');if(host){host.innerHTML=syncSelectionControlsHtml()+'<div class="omni-sync-joining"><div class="omni-sync-spinner"></div><strong>Finding the other device…</strong><span>Only the categories selected above are shared by this device.</span></div>';bindSyncSelectionControls(host)}}
 
 function handlePeerIncoming(conn){
   if(conn?.metadata?.omniLocalAnswer){
@@ -5330,7 +5497,7 @@ async function ensurePeer(){
       current.on('open',()=>{if(done)return;done=true;clearTimeout(timeout);resolve(current)});
       current.on('connection',conn=>handlePeerIncoming(conn));
       current.on('error',err=>{
-        console.warn('OmniOS sync peer',err);
+        console.warn('Second Brain sync peer',err);
         if(err?.type==='unavailable-id'&&!done&&current===p){
           try{current.destroy()}catch(_){}
           p=new window.Peer(undefined,options);peer=p;wire(p);return
@@ -5361,8 +5528,8 @@ function sendBundle(conn,reason='live',force=false){
   if(!conn?.open||!conn.__omniAuth)return;
   const bundle=buildBundle();
   if(!force&&bundle.fingerprint&&bundle.fingerprint===conn.__omniLastSent)return;
-  conn.__omniLastSent=bundle.fingerprint||'';
-  conn.send({type:'bundle',protocol:PROTOCOL,reason,bundle})
+  conn.send({type:'bundle',protocol:PROTOCOL,reason,bundle});
+  conn.__omniLastSent=bundle.fingerprint||''
 }
 function scheduleLiveSend(){
   if(window.__omniSyncApplying)return;clearTimeout(sendTimer);sendTimer=setTimeout(()=>{for(const x of live.values())if(x.auth&&x.conn?.open)sendBundle(x.conn,'live')},550)
@@ -5381,13 +5548,13 @@ async function handleMessage(conn,msg,expectedSecret){
   }
   if(msg.type==='bundle'&&conn.__omniAuth){
     if(msg.bundle?.fingerprint&&msg.bundle.fingerprint===conn.__omniLastRecv)return;
-    conn.__omniLastRecv=msg.bundle?.fingerprint||'';
     try{
       const result=await mergeBundle(msg.bundle);
+      conn.__omniLastRecv=msg.bundle?.fingerprint||'';
       if(result.changed){sendBundle(conn,'merged',true);setStage('live','Synced · newest data kept',result.modules.length?(result.modules.length+' module'+(result.modules.length===1?'':'s')+' updated'):'Auxiliary data updated','ok')}
       else setStage('live','Synced · both devices already match','Live changes will continue to transfer.','ok');
       try{conn.send({type:'ack',protocol:PROTOCOL,at:iso()})}catch(_){}
-    }catch(e){console.error('OmniOS sync merge',e);setStatus('Could not apply synced data. Your pre-sync snapshot is still available.','error')}
+    }catch(e){console.error('Second Brain sync merge',e);setStatus('Could not apply synced data. Your pre-sync snapshot is still available.','error')}
     return
   }
   if(msg.type==='ack'&&conn.__omniAuth){const route=await connectionRoute(conn);setStage('live','Live sync active',route==='relay'?'Relay connection · newest changes will continue to transfer':'Direct connection · newest changes will continue to transfer','ok');return}
@@ -5430,7 +5597,7 @@ function bindConnection(conn,opts={}){
   });
   conn.on('data',msg=>handleMessage(conn,msg,expectedSecret));
   conn.on('close',()=>{clearTimeout(watchdog);live.delete(conn.peer);setLiveUI();if(![...live.values()].some(x=>x.auth&&x.conn?.open)&&!quiet)setStatus('Sync connection closed','')});
-  conn.on('error',err=>{clearTimeout(watchdog);console.warn('OmniOS sync data channel',err);if(!quiet){setStage('connecting','Device connection error','Try again with both devices online.','error');connectionFailedView('The device connection failed.')}})
+  conn.on('error',err=>{clearTimeout(watchdog);console.warn('Second Brain sync data channel',err);if(!quiet){setStage('connecting','Device connection error','Try again with both devices online.','error');connectionFailedView('The device connection failed.')}})
 }
 
 function sessionUrl(peerId,secret){
@@ -5526,7 +5693,7 @@ window.OmniDeviceSync={
 
 
 <style id="omnios-local-wifi-sync-v73-css">
-/* OmniOS v73 — broker-free Local Wi-Fi sync */
+/* Second Brain v73 — broker-free Local Wi-Fi sync */
 .omni-local-sync .omni-sync-modal{width:min(760px,100%)}
 .omni-local-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:10px 0 0}
 .omni-local-step{padding:5px 6px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);color:var(--text-muted);font-size:.49rem;font-weight:800;text-align:center}
@@ -5686,27 +5853,27 @@ async function relayOpen(secret,sealed){
   const raw=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,data);
   return JSON.parse(new TextDecoder().decode(raw))
 }
-function relayJsonp(channel,after){
-  return new Promise((resolve,reject)=>{
-    const cb='__omniRelay'+randomHex(6),s=document.createElement('script');
-    let done=false;
-    const clean=()=>{try{delete window[cb]}catch(_){window[cb]=undefined}try{s.remove()}catch(_){}};
-    const finish=(ok,value)=>{if(done)return;done=true;clearTimeout(timer);clean();ok?resolve(value):reject(value instanceof Error?value:new Error('Relay request failed'))};
-    window[cb]=data=>finish(true,data);
-    s.async=true;s.src=RELAY_URL+'?channel='+encodeURIComponent(channel)+'&after='+encodeURIComponent(String(after||0))+'&callback='+encodeURIComponent(cb)+'&_='+Date.now();
-    s.onerror=()=>finish(false,new Error('Relay unavailable'));
-    const timer=setTimeout(()=>finish(false,new Error('Relay timed out')),6000);
-    document.head.appendChild(s)
-  })
+async function relayFetch(channel,cursor=''){
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),6500);
+  try{
+    const u=new URL(RELAY_URL);
+    u.searchParams.set('channel',channel);
+    if(cursor)u.searchParams.set('cursor',cursor);
+    u.searchParams.set('_',String(Date.now()));
+    const response=await fetch(u.toString(),{method:'GET',mode:'cors',cache:'no-store',signal:ctrl.signal,headers:{Accept:'application/json'}});
+    const data=await response.json().catch(()=>null);
+    if(!response.ok||!data?.ok)throw new Error(data?.error||('Relay HTTP '+response.status));
+    return data
+  }finally{clearTimeout(timer)}
 }
 async function relaySendEnvelope(sid,secret,type,payload){
   const st=await beginRelay(sid,secret,hostSession?.sid===sid?'host':'join');
   const id=randomHex(10),envelope={v:PROTOCOL,type,payload,from:dev()?.id||'unknown',createdAt:Date.now(),id};
   const sealed=await relaySeal(secret,envelope);
-  try{
-    await fetch(RELAY_URL,{method:'POST',mode:'no-cors',cache:'no-store',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({channel:st.channel,id,from:envelope.from,sealed})});
-    return true
-  }catch(e){console.warn('OmniOS relay send',e);return false}
+  const response=await fetch(RELAY_URL,{method:'POST',mode:'cors',cache:'no-store',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({channel:st.channel,id,from:envelope.from,sealed})});
+  const data=await response.json().catch(()=>null);
+  if(!response.ok||!data?.ok)throw new Error(data?.error||('Relay HTTP '+response.status));
+  return data
 }
 function stopRelaySession(){
   if(!relayState)return;
@@ -5716,10 +5883,10 @@ async function relayConsumeInner(conn,inner){
   if(!inner||inner.protocol!==PROTOCOL)return;
   if(inner.type==='bundle'&&inner.bundle){
     if(inner.bundle.fingerprint&&inner.bundle.fingerprint===conn.__omniLastRecv)return;
-    conn.__omniLastRecv=inner.bundle.fingerprint||'';
     try{
       setProgress(93,'Comparing data');logProgress('Comparing newest records over encrypted relay');
       const result=await api()?.merge?.(inner.bundle);
+      conn.__omniLastRecv=inner.bundle.fingerprint||'';
       if(result?.changed)sendBundle(true);
       conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
       stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Encrypted fallback route is live.','ok');
@@ -5742,13 +5909,13 @@ async function activateRelayTransport(sid,secret,initiator=false){
     };
     st.conn=conn;st.active=true;liveConn=conn;setButtonLive(true);
     const b=document.getElementById('omni-sync-btn');if(b)b.title='Sync · Encrypted fallback connected';
-    stage(3,'Encrypted fallback connected','Your network blocked peer-to-peer traffic, so OmniOS switched automatically.','busy');
+    stage(3,'Encrypted fallback connected','Your network blocked peer-to-peer traffic, so Second Brain switched automatically.','busy');
     setProgress(86,'Fallback connected');logProgress('Switched to encrypted HTTPS relay');
     if(initiator)await relaySendEnvelope(sid,secret,'relay-start',{at:Date.now()});
     setTimeout(()=>sendBundle(true),80);
     return true
   }catch(e){
-    console.warn('OmniOS relay fallback',e);
+    console.warn('Second Brain relay fallback',e);
     return false
   }
 }
@@ -5769,22 +5936,38 @@ async function beginRelay(sid,secret,role){
   if(relayState?.running&&relayState.sid===sid&&relayState.secret===secret)return relayState;
   stopRelaySession();
   const channel=await relayChannel(sid,secret);
-  const st={sid,secret,role,channel,after:Date.now()-2500,running:true,timer:null,seen:new Set(),conn:null,active:false};
+  const st={sid,secret,role,channel,cursor:'',running:true,timer:null,seen:new Set(),conn:null,active:false,failures:0};
   relayState=st;
   const poll=async()=>{
     if(!st.running||relayState!==st)return;
     try{
-      const data=await relayJsonp(channel,st.after);
-      if(data?.ok&&Array.isArray(data.messages)){
+      const data=await relayFetch(channel,st.cursor);
+      if(Array.isArray(data.messages)){
         for(const row of data.messages){
-          st.after=Math.max(st.after,Number(row?.at)||0);
-          if(!row?.id||st.seen.has(row.id)||row.from===(dev()?.id||'unknown'))continue;
-          st.seen.add(row.id);if(st.seen.size>80)st.seen=new Set([...st.seen].slice(-50));
-          try{await handleRelayEnvelope(st,await relayOpen(secret,row.sealed))}catch(e){console.warn('Relay message ignored',e)}
+          if(!row?.id||st.seen.has(row.id)||row.from===(dev()?.id||'unknown')){
+            if(row?.cursor)st.cursor=row.cursor;
+            continue
+          }
+          try{
+            await handleRelayEnvelope(st,await relayOpen(secret,row.sealed));
+            st.seen.add(row.id);if(st.seen.size>80)st.seen=new Set([...st.seen].slice(-50));
+            if(row.cursor)st.cursor=row.cursor
+          }catch(e){
+            console.warn('Relay message processing failed; it will be retried',e);
+            break
+          }
         }
       }
-    }catch(e){if(st.running)console.warn('OmniOS relay poll',e)}
-    finally{if(st.running&&relayState===st)st.timer=setTimeout(poll,900)}
+      st.failures=0
+    }catch(e){
+      st.failures=Math.min(6,(st.failures||0)+1);
+      if(st.running)console.warn('Second Brain relay poll',e)
+    }finally{
+      if(st.running&&relayState===st){
+        const delay=Math.min(8000,900*Math.pow(1.7,st.failures||0));
+        st.timer=setTimeout(poll,delay)
+      }
+    }
   };
   poll();return st
 }
@@ -5815,7 +5998,16 @@ function setButtonLive(on){
   const b=document.getElementById('omni-sync-btn');if(b){b.classList.toggle('is-live',!!on);b.title=on?'Sync · Local Wi-Fi connected':'Sync devices'}
 }
 function stopScanner(){try{scannerStop?.()}catch(_){}scannerStop=null}
-function closeModal(){stopScanner();overlay?.remove();overlay=null}
+function closeModal(){
+  stopScanner();overlay?.remove();overlay=null;
+  if(!liveConn?.open){
+    try{clearTimeout(hostSession?.connectTimeout)}catch(_){}
+    try{hostSession?.answerCleanup?.()}catch(_){}
+    try{hostSession?.pc?.close?.()}catch(_){}
+    try{joinSessionState?.pc?.close?.()}catch(_){}
+    hostSession=null;joinSessionState=null;stopRelaySession();setButtonLive(false)
+  }
+}
 function modal(title,subtitle){
   closeModal();
   const ov=document.createElement('div');ov.className='omni-sync-overlay omni-local-sync';
@@ -5840,26 +6032,43 @@ function internetFallback(){
 }
 
 function makeAdapter(pc,dc,sid){
-  const id='wifi:'+sid;
+  const id='wifi:'+sid,chunkMap=new Map(),CHUNK_SIZE=48*1024;
   const conn={
     peer:id,peerConnection:pc,__omniAuth:true,__omniLastSent:'',__omniLastRecv:'',
     get open(){return dc.readyState==='open'},
-    send(obj){if(dc.readyState==='open')dc.send(JSON.stringify(obj))},
+    send(obj){
+      if(dc.readyState!=='open')throw new Error('Local data channel is not open');
+      const raw=JSON.stringify(obj);
+      if(raw.length<=CHUNK_SIZE){dc.send(raw);return}
+      const chunkId=randomHex(8),total=Math.ceil(raw.length/CHUNK_SIZE);
+      for(let index=0;index<total;index++){
+        dc.send(JSON.stringify({type:'__omni_chunk',id:chunkId,index,total,data:raw.slice(index*CHUNK_SIZE,(index+1)*CHUNK_SIZE)}))
+      }
+    },
     close(){try{dc.close()}catch(_){}try{pc.close()}catch(_){}}
   };
   dc.onopen=()=>{
     if(relayState?.sid===sid)stopRelaySession();
-    liveConn=conn;setButtonLive(true);stage(3,'Connected on local Wi-Fi','Exchanging the newest OmniOS data…','busy');setProgress(84,'Connected');logProgress('Local Wi-Fi channel opened');sendBundle(true)
+    liveConn=conn;setButtonLive(true);stage(3,'Connected on local Wi-Fi','Exchanging the newest Second Brain data…','busy');setProgress(84,'Connected');logProgress('Local Wi-Fi channel opened');sendBundle(true)
   };
   dc.onmessage=async e=>{
     let msg;try{msg=typeof e.data==='string'?JSON.parse(e.data):e.data}catch(_){return}
+    if(msg?.type==='__omni_chunk'){
+      const row=chunkMap.get(msg.id)||{parts:new Array(Number(msg.total)||0),received:0,at:Date.now()};
+      if(!row.parts[msg.index]){row.parts[msg.index]=String(msg.data||'');row.received++}
+      chunkMap.set(msg.id,row);
+      for(const [key,val] of chunkMap)if(Date.now()-val.at>120000)chunkMap.delete(key);
+      if(row.received<row.parts.length)return;
+      chunkMap.delete(msg.id);
+      try{msg=JSON.parse(row.parts.join(''))}catch(_){return}
+    }
     if(!msg||msg.protocol!==PROTOCOL)return;
     if(msg.type==='bundle'&&msg.bundle){
       if(msg.bundle.fingerprint&&msg.bundle.fingerprint===conn.__omniLastRecv)return;
-      conn.__omniLastRecv=msg.bundle.fingerprint||'';
       try{
         setProgress(92,'Comparing data');logProgress('Comparing newest records');
         const result=await api()?.merge?.(msg.bundle);
+        conn.__omniLastRecv=msg.bundle.fingerprint||'';
         if(result?.changed)sendBundle(true);
         conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
         stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Direct encrypted connection on your Wi-Fi.','ok');setProgress(100,'Synced');logProgress(result?.changed?'Newest data applied':'Both devices already match')
@@ -5879,7 +6088,7 @@ function makeAdapter(pc,dc,sid){
   };
   pc.onconnectionstatechange=()=>{
     if(pc.connectionState==='failed'){stage(3,'Strict local route blocked','Switching routes automatically…','busy');fallbackFromBlockedLocal(sid)}
-    if(pc.connectionState==='connected'&&!liveConn?.open){stage(3,'Connected on local Wi-Fi','Opening the OmniOS data channel…','busy');setProgress(83,'Connected')}
+    if(pc.connectionState==='connected'&&!liveConn?.open){stage(3,'Connected on local Wi-Fi','Opening the Second Brain data channel…','busy');setProgress(83,'Connected')}
   };
   return conn
 }
@@ -5903,7 +6112,7 @@ function activateAssistedFallback(signalConn,sid,initiator=false){
     if(!msg||msg.protocol!==PROTOCOL||msg.sid!==sid)return;
     if(msg.type==='local-assisted-start'){
       if(!liveConn?.__assisted){liveConn=conn;setButtonLive(true)}
-      stage(3,'Assisted direct route active','Strict LAN traffic was blocked, so OmniOS is using the already-open encrypted peer channel.','busy');
+      stage(3,'Assisted direct route active','Strict LAN traffic was blocked, so Second Brain is using the already-open encrypted peer channel.','busy');
       setProgress(86,'Assisted direct');logProgress('Switched from blocked LAN route to assisted direct channel');
       if(!initiator)sendBundle(true);
       return
@@ -5912,10 +6121,10 @@ function activateAssistedFallback(signalConn,sid,initiator=false){
     const inner=msg.payload;
     if(inner.type==='bundle'&&inner.bundle){
       if(inner.bundle.fingerprint&&inner.bundle.fingerprint===conn.__omniLastRecv)return;
-      conn.__omniLastRecv=inner.bundle.fingerprint||'';
       try{
         setProgress(93,'Comparing data');logProgress('Comparing newest records over assisted channel');
         const result=await api()?.merge?.(inner.bundle);
+        conn.__omniLastRecv=inner.bundle.fingerprint||'';
         if(result?.changed)sendBundle(true);
         conn.send({type:'ack',protocol:PROTOCOL,at:new Date().toISOString()});
         stage(4,result?.changed?'Synced · newest data kept':'Synced · both devices match','Encrypted peer connection is live.','ok');
@@ -5960,8 +6169,13 @@ function sendBundle(force=false){
   const conn=liveConn;if(!conn?.open)return;
   const bundle=api()?.bundle?.();if(!bundle)return;
   if(!force&&bundle.fingerprint&&bundle.fingerprint===conn.__omniLastSent)return;
-  conn.__omniLastSent=bundle.fingerprint||'';
-  conn.send({type:'bundle',protocol:PROTOCOL,reason:'local-wifi',bundle})
+  try{
+    conn.send({type:'bundle',protocol:PROTOCOL,reason:'local-wifi',bundle});
+    conn.__omniLastSent=bundle.fingerprint||''
+  }catch(e){
+    console.warn('Second Brain local send failed',e);
+    stage(3,'Transfer paused','The current change could not be sent. Keep both devices open and retry.','error')
+  }
 }
 function scheduleSend(){clearTimeout(sendTimer);sendTimer=setTimeout(()=>sendBundle(false),350)}
 
@@ -5972,7 +6186,7 @@ function showFallbackOnly(){
 }
 function hostView(url,oneScan=false){
   const host=overlay?.querySelector('.omni-sync-content');if(!host)return;
-  host.innerHTML='<div class="omni-local-card"><div class="omni-local-grid"><div class="omni-local-qr" data-local-qr></div><div class="omni-local-copy"><div class="omni-local-badge">⚡ Local-first · automatic fallback</div><h4>'+(oneScan?'Scan once with your phone':'Scan this on the second device')+'</h4><p>'+(oneScan?'The phone returns the response automatically. OmniOS tries direct Wi-Fi first and switches to an encrypted HTTPS relay only if peer-to-peer traffic is blocked.':'If automatic delivery is unavailable, the second device can still provide a response link to paste here.')+'</p><div class="omni-local-actions"><button type="button" class="btn" data-local-paste>Paste response</button><button type="button" class="btn" data-local-copy>Copy offer</button><button type="button" class="btn" data-local-internet>Internet fallback</button></div></div></div><div class="omni-local-note"><strong>One scan:</strong> the QR contains a one-time pairing secret. Fallback traffic is encrypted in the browser before it reaches the relay.</div></div>';
+  host.innerHTML='<div class="omni-local-card"><div class="omni-local-grid"><div class="omni-local-qr" data-local-qr></div><div class="omni-local-copy"><div class="omni-local-badge">⚡ Local-first · automatic fallback</div><h4>'+(oneScan?'Scan once with your phone':'Scan this on the second device')+'</h4><p>'+(oneScan?'The phone returns the response automatically. Second Brain tries direct Wi-Fi first and switches to an encrypted HTTPS relay only if peer-to-peer traffic is blocked.':'If automatic delivery is unavailable, the second device can still provide a response link to paste here.')+'</p><div class="omni-local-actions"><button type="button" class="btn" data-local-paste>Paste response</button><button type="button" class="btn" data-local-copy>Copy offer</button><button type="button" class="btn" data-local-internet>Internet fallback</button></div></div></div><div class="omni-local-note"><strong>One scan:</strong> the QR contains a one-time pairing secret. Fallback traffic is encrypted in the browser before it reaches the relay.</div></div>';
   if(!drawQr(host.querySelector('[data-local-qr]'),url))stage(1,'Local code is too large','Use Internet fallback on this browser.','error');
   host.querySelector('[data-local-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(url);stage(1,'Offer copied','Open it on the second device.','ok')}catch(_){stage(1,'Could not copy offer','Use the QR code instead.','error')}};
   host.querySelector('[data-local-internet]').onclick=internetFallback;
@@ -5990,10 +6204,10 @@ function answerView(url){
   host.querySelector('[data-local-internet]').onclick=internetFallback
 }
 function deliveredView(){
-  modal('Response delivered','Return to the original OmniOS screen that displayed the first QR code.');
+  modal('Response delivered','Return to the original Second Brain screen that displayed the first QR code.');
   stage(2,'Response sent to the original tab','The direct Wi-Fi connection should open there now.','ok');
   const host=overlay.querySelector('.omni-sync-content');
-  host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response delivered</strong><span>Return to the original OmniOS tab or app window. Keep this page open only if the original window does not connect.</span></div>'
+  host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response delivered</strong><span>Return to the original Second Brain tab or app window. Keep this page open only if the original window does not connect.</span></div>'
 }
 
 function answerStorageKey(sid){return ANSWER_PREFIX+sid}
@@ -6043,7 +6257,7 @@ async function startResponseScanner(){
 
 async function startLocalHost(){
   try{hostSession?.pc?.close?.()}catch(_){}hostSession=null;liveConn=null;stopRelaySession();setButtonLive(false);
-  modal('Start Local Hub','This PC becomes the OmniOS hub. OmniOS tries direct Wi-Fi first and switches automatically if the network blocks it.');
+  modal('Start Local Hub','This PC becomes the Second Brain hub. Second Brain tries direct Wi-Fi first and switches automatically if the network blocks it.');
   stage(1,'Creating local offer','Preparing the direct Wi-Fi connection…','busy');setProgress(8,'Preparing');logProgress('Preparing Local Wi-Fi session');
   try{
     const signalPromise=api()?.ensureSignalPeer?.().catch(()=>null);
@@ -6058,12 +6272,12 @@ async function startLocalHost(){
     const payload={v:PROTOCOL,type:'offer',sid,secret,signalPeer:signalPeer?.id||'',offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},from:dev(),createdAt:Date.now()};
     const url=await payloadUrl('offer',payload);
     hostView(url,true);listenForAnswer(sid);
-    stage(1,'Scan once inside OmniOS on your phone','The phone response returns automatically. Direct Wi-Fi is preferred; assisted encrypted transport is ready if needed.','ok');setProgress(25,'Waiting for scan');logProgress('QR ready on first device')
+    stage(1,'Scan once inside Second Brain on your phone','The phone response returns automatically. Direct Wi-Fi is preferred; assisted encrypted transport is ready if needed.','ok');setProgress(25,'Waiting for scan');logProgress('QR ready on first device')
   }catch(e){console.error('Local host',e);stage(1,'Could not create Local Wi-Fi code','Use Internet fallback on this browser.','error');showFallbackOnly()}
 }
 async function joinLocalOffer(payload){
-  modal('Join Local Hub','This device is connecting to the PC. OmniOS prefers direct Wi-Fi and keeps a secure assisted path ready if needed.');
-  stage(2,'Offer received','Creating the response for the PC…','busy');setProgress(42,'QR read');logProgress('PC QR read inside OmniOS');
+  modal('Join Local Hub','This device is connecting to the PC. Second Brain prefers direct Wi-Fi and keeps a secure assisted path ready if needed.');
+  stage(2,'Offer received','Creating the response for the PC…','busy');setProgress(42,'QR read');logProgress('PC QR read inside Second Brain');
   try{
     await ensureQr();
     const pc=new RTCPeerConnection(localConfig());joinSessionState={pc,sid:payload.sid,secret:payload.secret,signalConn:null};
@@ -6096,7 +6310,7 @@ async function joinLocalOffer(payload){
       stage(2,'Automatic response unavailable','Copy the response link and paste it into the PC.','error');return
     }
     const host=overlay?.querySelector('.omni-sync-content');
-    if(host)host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response sent automatically</strong><span>Sync starts immediately on the secure connection that delivered the response. OmniOS will upgrade to the local Wi-Fi data channel automatically if it becomes available.</span></div>';
+    if(host)host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response sent automatically</strong><span>Sync starts immediately on the secure connection that delivered the response. Second Brain will upgrade to the local Wi-Fi data channel automatically if it becomes available.</span></div>';
     stage(3,'Response sent to the PC','Opening the fastest available encrypted route…','ok');
     setTimeout(()=>{if(!liveConn?.open)fallbackFromBlockedLocal(payload.sid)},4200)
   }catch(e){console.error('Local join',e);stage(2,'Could not create response','Use Internet fallback.','error');showFallbackOnly()}
@@ -6105,23 +6319,23 @@ async function handleAnswerHandoff(payload){
   notifyAnswer(payload);deliveredView()
 }
 async function openMobileSyncHome(){
-  modal('Join Local Hub','Keep the sync inside the installed OmniOS app so it uses this app’s real data.');
-  stage(1,'Ready to join','On the PC, open OmniOS → Sync to start the Local Hub and leave its QR visible.','');
+  modal('Join Local Hub','Keep the sync inside the installed Second Brain app so it uses this app’s real data.');
+  stage(1,'Ready to join','On the PC, open Second Brain → Sync to start the Local Hub and leave its QR visible.','');
   setProgress(0,'Ready');
   const host=overlay.querySelector('.omni-sync-content');
-  host.innerHTML='<div class="omni-pwa-scan-home"><div class="omni-pwa-scan-choice primary"><strong>Scan Local Hub QR</strong><p>Recommended. Uses the camera inside this installed OmniOS PWA, so Safari never opens.</p><button type="button" class="btn btn-primary" data-pwa-scan-now>Open scanner</button></div><div class="omni-pwa-scan-choice"><strong>Use this phone as a Local Hub</strong><p>Show a Hub QR on the phone for another device to join.</p><button type="button" class="btn" data-pwa-show-qr>Show my QR</button></div><div class="omni-pwa-scan-choice"><strong>Paste pairing link</strong><p>Fallback when camera permission is unavailable.</p><button type="button" class="btn" data-pwa-paste>Paste link</button></div></div>';
+  host.innerHTML='<div class="omni-pwa-scan-home"><div class="omni-pwa-scan-choice primary"><strong>Scan Local Hub QR</strong><p>Recommended. Uses the camera inside this installed Second Brain PWA, so Safari never opens.</p><button type="button" class="btn btn-primary" data-pwa-scan-now>Open scanner</button></div><div class="omni-pwa-scan-choice"><strong>Use this phone as a Local Hub</strong><p>Show a Hub QR on the phone for another device to join.</p><button type="button" class="btn" data-pwa-show-qr>Show my QR</button></div><div class="omni-pwa-scan-choice"><strong>Paste pairing link</strong><p>Fallback when camera permission is unavailable.</p><button type="button" class="btn" data-pwa-paste>Paste link</button></div></div>';
   host.querySelector('[data-pwa-scan-now]').onclick=startPwaQrScanner;
   host.querySelector('[data-pwa-show-qr]').onclick=startLocalHost;
   host.querySelector('[data-pwa-paste]').onclick=async()=>{
     const value=prompt('Paste the pairing link shown by the PC:');if(!value)return;
     try{const p=await parseValue(value);if(p?.__kind!=='offer')throw new Error();logProgress('Pairing link received');await joinLocalOffer(p)}
-    catch(_){stage(1,'Invalid pairing link','Paste the complete OmniOS pairing link from the PC.','error')}
+    catch(_){stage(1,'Invalid pairing link','Paste the complete Second Brain pairing link from the PC.','error')}
   }
 }
 async function startPwaQrScanner(){
   stopScanner();
-  modal('Scan Local Hub QR','Point the phone at the Hub QR shown in OmniOS on your PC.');
-  stage(1,'Opening camera','The scan stays inside the installed OmniOS app.','busy');setProgress(5,'Camera');
+  modal('Scan Local Hub QR','Point the phone at the Hub QR shown in Second Brain on your PC.');
+  stage(1,'Opening camera','The scan stays inside the installed Second Brain app.','busy');setProgress(5,'Camera');
   const host=overlay.querySelector('.omni-sync-content');
   host.innerHTML='<div class="omni-pwa-scanner"><video playsinline muted autoplay></video><div class="omni-pwa-scan-frame"></div><div class="omni-pwa-scan-caption">Place the PC Local Hub QR inside the frame</div></div><div class="omni-local-actions" style="margin-top:9px"><button type="button" class="btn" data-pwa-stop>Cancel</button><button type="button" class="btn" data-pwa-paste>Paste link</button></div>';
   const video=host.querySelector('video');
@@ -6132,7 +6346,7 @@ async function startPwaQrScanner(){
     }
     if(!detector)decoder=await loadJsQR();
     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:1280}},audio:false});
-    video.srcObject=stream;await video.play();stage(1,'Scanning PC QR','Keep the QR steady inside the frame.','busy');setProgress(12,'Scanning');logProgress('Camera ready inside OmniOS');
+    video.srcObject=stream;await video.play();stage(1,'Scanning PC QR','Keep the QR steady inside the frame.','busy');setProgress(12,'Scanning');logProgress('Camera ready inside Second Brain');
   }catch(e){
     console.warn('PWA QR scanner',e);stage(1,'Camera scanner unavailable','Allow camera access or use Paste link.','error');setProgress(0,'Camera blocked');return
   }
@@ -6143,7 +6357,7 @@ async function startPwaQrScanner(){
   host.querySelector('[data-pwa-paste]').onclick=async()=>{
     const value=prompt('Paste the pairing link shown by the PC:');if(!value)return;
     try{const p=await parseValue(value);if(p?.__kind!=='offer')throw new Error();stop();logProgress('Pairing link received');await joinLocalOffer(p)}
-    catch(_){stage(1,'Invalid pairing link','Paste the complete OmniOS pairing link from the PC.','error')}
+    catch(_){stage(1,'Invalid pairing link','Paste the complete Second Brain pairing link from the PC.','error')}
   };
   const found=async raw=>{
     const p=await parseValue(raw||'');if(!p||p.__kind!=='offer'||p.type!=='offer')return false;
@@ -6173,11 +6387,11 @@ async function startPwaQrScanner(){
   requestAnimationFrame(loop)
 }
 function showSafariPwaGuard(pairingUrl){
-  modal('Open Sync inside OmniOS','This QR was opened in Safari, not in the installed OmniOS app.');
+  modal('Open Sync inside Second Brain','This QR was opened in Safari, not in the installed Second Brain app.');
   stage(1,'Safari is separate from the installed app','Do not sync here if you want the PWA data to be updated.','error');setProgress(0,'Wrong app context');
   const host=overlay.querySelector('.omni-sync-content');
-  host.innerHTML='<div class="omni-safari-guard"><strong>Use the OmniOS Home Screen app</strong><p>Close this Safari tab. Open OmniOS from your Home Screen, tap <b>Sync</b>, then <b>Scan PC QR</b>. The camera scanner is now built directly into OmniOS.</p><div class="omni-local-actions"><button type="button" class="btn" data-safari-copy>Copy pairing link</button></div></div>';
-  host.querySelector('[data-safari-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(pairingUrl);stage(1,'Pairing link copied','Paste it inside OmniOS → Sync → Paste link.','ok')}catch(_){}}
+  host.innerHTML='<div class="omni-safari-guard"><strong>Use the Second Brain Home Screen app</strong><p>Close this Safari tab. Open Second Brain from your Home Screen, tap <b>Sync</b>, then <b>Scan PC QR</b>. The camera scanner is now built directly into Second Brain.</p><div class="omni-local-actions"><button type="button" class="btn" data-safari-copy>Copy pairing link</button></div></div>';
+  host.querySelector('[data-safari-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(pairingUrl);stage(1,'Pairing link copied','Paste it inside Second Brain → Sync → Paste link.','ok')}catch(_){}}
 }
 
 async function handleIncomingHash(){
@@ -6197,7 +6411,7 @@ async function handleIncomingHash(){
 
 function patchSyncButton(){
   const b=document.getElementById('omni-sync-btn');if(!b)return false;
-  b.dataset.localWifi73='1';b.title='OmniOS Local Hub';
+  b.dataset.localWifi73='1';b.title='Second Brain Local Hub';
   b.onclick=e=>{e.preventDefault();if(window.matchMedia('(max-width:760px)').matches)openMobileSyncHome();else startLocalHost()};
   return true
 }
@@ -6222,7 +6436,7 @@ window.OmniLocalWifiSync73={open:startLocalHost,hub:startLocalHost,scan:startPwa
 
 
 <style id="omnios-v74-uiux-authority">
-/* OmniOS v74 — final UI/UX authority.
+/* Second Brain v74 — final UI/UX authority.
    This layer intentionally comes last so legacy version patches cannot shrink,
    wrap, or restyle critical controls after the current mobile/desktop system. */
 :root{
@@ -6782,7 +6996,7 @@ new MutationObserver(themeChrome).observe(document.documentElement,{attributes:t
 
 
 <style id="omnios-v75-chrome-clearance">
-/* OmniOS v75 — measured top/bottom chrome clearance.
+/* Second Brain v75 — measured top/bottom chrome clearance.
    Fixed chrome and popups use the real rendered heights instead of hard-coded guesses. */
 :root{
   --ux-topbar-h:58px;
@@ -7051,7 +7265,7 @@ setTimeout(bindChrome,500);
 
 
 <style id="omnios-v76-bible-read-toolbar-fix">
-/* OmniOS v76 — Bible Read selector bar.
+/* Second Brain v76 — Bible Read selector bar.
    Keep navigation controls in normal document flow and prevent the selector
    surface from covering the reader/header below it. */
 @media(max-width:760px){
@@ -7194,7 +7408,7 @@ setTimeout(bindChrome,500);
 
 
 <style id="omnios-v77-bible-read-desktop-toolbar-fix">
-/* OmniOS v77 — Bible Read selector bar, desktop + tablet.
+/* Second Brain v77 — Bible Read selector bar, desktop + tablet.
    The selector belongs to the page flow; it must never cover the reader grid. */
 @media(min-width:761px){
   #view-bible .bib-read-v5814{
@@ -7427,7 +7641,7 @@ setTimeout(bindChrome,500);
 </style>
 
 <style id="omnios-v76-mobile-safe-cards">
-/* OmniOS v76 — one mobile contract for every opening card/panel.
+/* Second Brain v76 — one mobile contract for every opening card/panel.
    The real top and bottom chrome stay visible; opened content owns only the safe region between them. */
 @media(max-width:760px){
   :root{--omni-open-gap:8px}
@@ -8750,6 +8964,150 @@ setTimeout(bindChrome,500);
   addEventListener('resize',polish,{passive:true});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',polish,{once:true});
   else polish();
+})();
+</script>
+
+<style id="second-brain-v88-authority">
+/* Second Brain v88 — intermediate calendar fit + shared dialog accessibility. */
+@media(min-width:761px) and (max-width:1440px){
+  #view-master-calendar .v603-calendar-layout{
+    grid-template-columns:clamp(176px,17vw,218px) minmax(0,1fr)!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;
+  }
+  #view-master-calendar .v603-calendar-rail{min-width:0!important;padding:11px 9px!important}
+  #view-master-calendar .v603-calendar-stage{min-width:0!important;overflow:hidden!important}
+  #view-master-calendar .v603-calendar-stage-inner{
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    overflow-x:auto!important;overflow-y:visible!important;
+    scrollbar-gutter:stable both-edges;overscroll-behavior-inline:contain;
+  }
+  #view-master-calendar .v36-time-wrap{
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    overflow-x:auto!important;overflow-y:auto!important;scrollbar-gutter:stable;
+  }
+  #view-master-calendar .v36-time-head,
+  #view-master-calendar .v36-all-day{
+    width:100%!important;
+    grid-template-columns:44px repeat(var(--v36-visible-days,1),minmax(78px,1fr))!important;
+  }
+  #view-master-calendar .v36-time-body{width:100%!important;grid-template-columns:44px minmax(0,1fr)!important}
+  #view-master-calendar .v36-time-days{
+    width:100%!important;min-width:0!important;
+    grid-template-columns:repeat(var(--v36-visible-days,1),minmax(78px,1fr))!important;
+  }
+  #view-master-calendar .v36-month-grid{
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    grid-template-columns:repeat(7,minmax(0,1fr))!important;
+  }
+  #view-master-calendar .v36-month-day{min-width:0!important}
+}
+@media(min-width:761px) and (max-width:1040px){
+  #view-master-calendar .v603-calendar-layout{grid-template-columns:168px minmax(0,1fr)!important}
+  #view-master-calendar .v603-calendar-rail{padding:9px 7px!important}
+  #view-master-calendar .v603-quick-grid,
+  #view-master-calendar .v603-tool-grid{grid-template-columns:1fr!important}
+  #view-master-calendar .v36-time-head,
+  #view-master-calendar .v36-all-day{
+    grid-template-columns:42px repeat(var(--v36-visible-days,1),minmax(72px,1fr))!important;
+  }
+  #view-master-calendar .v36-time-body{grid-template-columns:42px minmax(0,1fr)!important}
+}
+[data-sb-dialog-isolated="1"]{pointer-events:none!important;user-select:none!important}
+</style>
+
+<script id="second-brain-v88-accessibility">
+(function(){
+'use strict';
+if(window.__secondBrainV88)return;window.__secondBrainV88=true;
+let activeDialog=null,lastFocused=null,isolated=[];
+
+const visible=el=>!!(el&&el.isConnected&&el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden'&&getComputedStyle(el).display!=='none');
+const focusables=root=>[...root.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(el=>!el.disabled&&visible(el));
+function inferButtonLabel(b){
+  const current=(b.getAttribute('aria-label')||'').trim();
+  if(current&&current!=='Action')return current;
+  const title=(b.getAttribute('title')||'').trim();if(title)return title;
+  const txt=(b.textContent||'').trim();
+  const map={'×':'Close','✕':'Close','←':'Previous','→':'Next','◀':'Previous','▶':'Next','+':'Add','−':'Decrease','⋮':'More options','⋯':'More options','⚙':'Settings','?':'Help'};
+  if(map[txt])return map[txt];
+  const ctx=b.closest('.card,.v35-card,.modal,.settings-row,.toolbar,.v603-rail-section');
+  const heading=ctx?.querySelector('h1,h2,h3,h4,.card-title,.v35-card-title,.settings-row-label,.v603-rail-title')?.textContent?.trim();
+  if(txt&&txt.length<40)return heading?txt+' — '+heading:txt;
+  return heading?'Action — '+heading:'Button';
+}
+function repairLabels(root=document){
+  root.querySelectorAll('button').forEach(b=>{
+    const label=inferButtonLabel(b);
+    if(!b.getAttribute('aria-label')||b.getAttribute('aria-label')==='Action')b.setAttribute('aria-label',label);
+  });
+  root.querySelectorAll('input,select,textarea').forEach(el=>{
+    if(el.id&&root.querySelector('label[for="'+CSS.escape(el.id)+'"]'))return;
+    if(el.getAttribute('aria-label')||el.getAttribute('aria-labelledby'))return;
+    const group=el.closest('.form-group,.settings-row,.nut-form-field,.field');
+    const label=group?.querySelector('.form-label,.settings-row-label,label')?.textContent?.trim();
+    if(label)el.setAttribute('aria-label',label);
+  });
+}
+function clearIsolation(){
+  isolated.forEach(el=>{try{el.inert=false;el.removeAttribute('aria-hidden');el.removeAttribute('data-sb-dialog-isolated')}catch(_){}});
+  isolated=[];
+}
+function isolateDialog(dialog){
+  clearIsolation();
+  let node=dialog;
+  while(node&&node!==document.body){
+    const parent=node.parentElement;if(!parent)break;
+    [...parent.children].forEach(sib=>{
+      if(sib===node||sib.tagName==='SCRIPT'||sib.tagName==='STYLE'||sib.tagName==='LINK')return;
+      if(isolated.includes(sib))return;
+      try{sib.inert=true;sib.setAttribute('aria-hidden','true');sib.setAttribute('data-sb-dialog-isolated','1');isolated.push(sib)}catch(_){}
+    });
+    node=parent
+  }
+}
+function findTopDialog(){
+  const candidates=[...document.querySelectorAll(
+    '.modal-overlay.active .modal,.modal-overlay[style*="display: flex"] .modal,.omni-sync-overlay .omni-sync-modal,#v35-page-launcher.open .v35-launcher-sheet,[role="dialog"][aria-modal="true"]'
+  )].filter(visible);
+  return candidates.at(-1)||null
+}
+function syncDialog(){
+  repairLabels();
+  const next=findTopDialog();
+  if(next===activeDialog)return;
+  if(next){
+    if(!activeDialog)lastFocused=document.activeElement instanceof HTMLElement?document.activeElement:null;
+    activeDialog=next;
+    activeDialog.setAttribute('role','dialog');activeDialog.setAttribute('aria-modal','true');
+    isolateDialog(activeDialog);
+    requestAnimationFrame(()=>{
+      if(!activeDialog||!activeDialog.isConnected)return;
+      if(!activeDialog.contains(document.activeElement)){
+        (focusables(activeDialog)[0]||activeDialog).focus?.()
+      }
+    })
+  }else{
+    activeDialog=null;clearIsolation();
+    const target=lastFocused;lastFocused=null;
+    if(target?.isConnected)requestAnimationFrame(()=>target.focus?.())
+  }
+}
+document.addEventListener('keydown',e=>{
+  if(!activeDialog||!visible(activeDialog))return;
+  if(e.key==='Escape'){
+    const close=activeDialog.querySelector('[data-close],.modal-close-btn,.omni-sync-close,.v35-launcher-close,[aria-label^="Close"]');
+    if(close){e.preventDefault();close.click()}return
+  }
+  if(e.key!=='Tab')return;
+  const list=focusables(activeDialog);if(!list.length){e.preventDefault();activeDialog.focus?.();return}
+  const first=list[0],last=list[list.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+},true);
+const mo=new MutationObserver(()=>requestAnimationFrame(syncDialog));
+if(document.body)mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style','aria-hidden']});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',syncDialog,{once:true});else syncDialog();
+window.SecondBrainA11y={repair:repairLabels,syncDialog};
 })();
 </script>
 

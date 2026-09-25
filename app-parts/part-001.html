@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#18181b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="OmniOS">
+<meta name="apple-mobile-web-app-title" content="Second Brain">
 <link id="omnios-apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="./icons/icon-192.png">
 <script id="omnios-pwa-icon-final-head">
 (function(){
@@ -25,7 +25,7 @@
 })();
 </script>
 <link rel="manifest" href="./manifest.webmanifest">
-<title>OmniOS v62.3 — Personal PWA</title>
+<title>Second Brain</title>
 <script id="omnios-accent-early">
 (function(){
   try{
@@ -2053,7 +2053,7 @@ img,svg{max-width:100%}
 <div class="shortcuts-overlay" id="shortcuts-overlay" aria-hidden="true">
     <div class="shortcuts-box">
         <h3>Keyboard shortcuts</h3>
-        <p class="text-muted text-sm">These work anywhere in OmniOS, even while a form is focused (except where noted).</p>
+        <p class="text-muted text-sm">These work anywhere in Second Brain, even while a form is focused (except where noted).</p>
         <div class="shortcuts-row"><span>Search everything</span><span class="shortcuts-keys"><kbd>Ctrl/⌘</kbd><kbd>K</kbd></span></div>
         <div class="shortcuts-row"><span>Open the Assistant</span><span class="shortcuts-keys"><kbd>Ctrl/⌘</kbd><kbd>J</kbd></span></div>
         <div class="shortcuts-row"><span>Undo the last saved change</span><span class="shortcuts-keys"><kbd>Ctrl/⌘</kbd><kbd>Z</kbd></span></div>
@@ -2303,7 +2303,7 @@ img,svg{max-width:100%}
                         <div>
                             <div class="eyebrow">DISTRACTION CONTROL</div>
                             <h3 class="card-title" style="margin-top:4px;">Focus Guard</h3>
-                            <p class="text-muted text-sm" style="margin-top:4px;">Block distracting apps and websites during a protected focus window.</p>
+                            <p class="text-muted text-sm" style="margin-top:4px;">In-app distraction guard for websites and links opened through Second Brain. System-wide iPhone blocking is available only when the native Screen Time host is connected.</p>
                         </div>
                         <div class="focus-guard-status" id="focus-guard-status">Inactive</div>
                     </div>
@@ -2330,11 +2330,11 @@ img,svg{max-width:100%}
                         </div>
                     </div>
 
-                    <div class="focus-guard-summary" id="focus-guard-summary">Choose the apps or sites you want to protect yourself from, then start a focus block.</div>
+                    <div class="focus-guard-summary" id="focus-guard-summary">Choose websites for the in-app guard. If the native iPhone host is connected, you can also select apps for Screen Time enforcement.</div>
 
                     <div class="focus-native-panel">
                         <div class="focus-native-main">
-                            <div class="focus-native-title">System app blocking</div>
+                            <div class="focus-native-title">Native iPhone system blocking</div>
                             <div class="focus-native-meta" id="focus-native-status">Checking native blocker…</div>
                         </div>
                         <div class="focus-native-actions">
@@ -2380,7 +2380,7 @@ img,svg{max-width:100%}
         <!-- PASSWORDS -->
         <section id="view-passwords" class="view">
             <div class="flex-between mb-4">
-                <div><h3 style="margin-bottom:4px;">Password Manager</h3><div class="text-muted text-sm">Stored locally on this device only — not encrypted, same as the rest of OmniOS's data. Don't sync this file anywhere you don't fully trust.</div></div>
+                <div><h3 style="margin-bottom:4px;">Password Manager</h3><div class="text-muted text-sm">Stored locally on this device only — not encrypted, same as the rest of Second Brain's data. Don't sync this file anywhere you don't fully trust.</div></div>
                 <button type="button" class="btn btn-primary" onclick="openPasswordModal()">+ Add Password</button>
             </div>
             <input id="password-search" class="search-input" type="search" placeholder="Search by site or username…" aria-label="Search passwords" style="margin-bottom:14px;max-width:360px">

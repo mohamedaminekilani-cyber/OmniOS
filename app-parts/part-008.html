@@ -41,17 +41,17 @@ function init55(){
  ensure55();ensureStudioView();ensureStudioNav();setupManifest55();applyTheme55();installVersionHistory55();installSaveAutomations55();installRender55();installSwitch55();installShortcuts55();postRender55();
  document.documentElement.dataset.omniosVersion='55';
  if(state.v55.settings.homeView)state.settings.appearance.startView=state.v55.settings.homeView;
- setInterval(()=>{try{renderNotificationBadge55();if(document.visibilityState==='visible'&&state.v55.settings.smartNotifications){const severe=derivedNotifications55().filter(n=>n.severity==='danger');const key='v55_notice_'+today();if(severe.length&&storage.getItem(key)!=='1'&&window.Notification?.permission==='granted'){new Notification('OmniOS needs attention',{body:`${severe.length} urgent item${severe.length===1?'':'s'} need review.`});storage.setItem(key,'1')}}}catch(_){}},60000);
+ setInterval(()=>{try{renderNotificationBadge55();if(document.visibilityState==='visible'&&state.v55.settings.smartNotifications){const severe=derivedNotifications55().filter(n=>n.severity==='danger');const key='v55_notice_'+today();if(severe.length&&storage.getItem(key)!=='1'&&window.Notification?.permission==='granted'){new Notification('Second Brain needs attention',{body:`${severe.length} urgent item${severe.length===1?'':'s'} need review.`});storage.setItem(key,'1')}}}catch(_){}},60000);
  setTimeout(()=>{if(state.v55.privacy.enabled)lockApp55()},160);
  const obs=new MutationObserver(()=>{clearTimeout(obs._t);obs._t=setTimeout(()=>{try{ensureStudioNav();ensureNotificationButton55();enhanceMobileMore55()}catch(_){}},30)});const nav=document.querySelector('.nav-menu');if(nav)obs.observe(nav,{childList:true,subtree:true});
 }
 V55.openStudio=()=>window.switchView('studio');V55.assistant=openLocalAssistant55;V55.recipeScaler=openRecipeScaler55;V55.barcode=openBarcode55;V55.documentViewer=openDocumentViewer55;V55.habitModes=openHabitModesList55;V55.lock=lockApp55;
-try{init55()}catch(e){console.error('OmniOS v55 initialization failed',e)}
+try{init55()}catch(e){console.error('Second Brain v55 initialization failed',e)}
 })();
 </script>
 
 <style id="omnios-v56-audit-css">
-/* ===== OmniOS v56 — product-quality audit layer ===== */
+/* ===== Second Brain v56 — product-quality audit layer ===== */
 :root{--v56-safe-bottom:max(14px,env(safe-area-inset-bottom))}
 button{touch-action:manipulation}
 button:disabled,.btn.is-busy,.icon-btn.is-busy{opacity:.55!important;cursor:wait!important;pointer-events:none!important}
@@ -92,6 +92,14 @@ function ensure56(){
  state.v56.settings={waterGoal:8,...(state.v56.settings||{})};
  const d=state.v56.daily[today()]||(state.v56.daily[today()]={water:0,note:'',updatedAt:new Date().toISOString()});
  d.water=nonneg(d.water); d.note=String(d.note||'');
+ state.dietHydration=state.dietHydration&&typeof state.dietHydration==='object'?state.dietHydration:{};
+ if(!state.v56.hydrationMigrated){
+   Object.entries(state.v56.daily).forEach(([day,row])=>{
+     const glasses=nonneg(row?.water);
+     if(glasses>0&&state.dietHydration[day]==null)state.dietHydration[day]=Math.round(glasses*250)
+   });
+   state.v56.hydrationMigrated=true
+ }
 }
 function normalize56(){
  ensure56();
@@ -137,19 +145,15 @@ function openQuick(type){
  if(type==='capture')return window.OmniV55?.capture?.();
 }
 function renderDaily56(){
- ensure56();const view=document.getElementById('view-today');if(!view||!view.classList.contains('active'))return;
- let host=document.getElementById('v56-daily');if(!host){host=document.createElement('section');host.id='v56-daily';host.className='v56-daily';const root=view.querySelector('[id^="v35-today-root"]')||view.firstElementChild||view;root.prepend(host)}
- const s=dailyStats56(),d=state.v56.daily[today()],goal=Math.max(1,num(state.v56.settings.waterGoal,8));
- host.innerHTML=`<div class="v56-daily-head"><div><div class="v56-daily-title">Daily essentials</div><div class="v56-daily-sub">One compact place for the things you are most likely to touch every day.</div></div><div class="v56-daily-actions"><button class="btn btn-sm" data-v56-quick="task">+ Task</button><button class="btn btn-sm" data-v56-quick="event">+ Event</button><button class="btn btn-sm" data-v56-quick="expense">+ Expense</button><button class="btn btn-sm" data-v56-quick="grocery">+ Grocery</button><button class="btn btn-sm" data-v56-quick="note">+ Note</button><button class="btn btn-sm btn-primary" data-v56-quick="capture">Quick Capture</button></div></div><div class="v56-daily-grid"><div class="v56-daily-card clickable" data-v56-go="tasks"><div class="v56-daily-l">Tasks</div><div class="v56-daily-v">${s.openToday.length}${s.over.length?` + ${s.over.length}`:''}</div><div class="v56-daily-m">${s.openToday.length} today${s.over.length?` · ${s.over.length} overdue`:''}</div></div><div class="v56-daily-card clickable" data-v56-go="master-calendar"><div class="v56-daily-l">Schedule</div><div class="v56-daily-v">${s.events.length}</div><div class="v56-daily-m">event${s.events.length===1?'':'s'} today</div></div><div class="v56-daily-card clickable" data-v56-go="habits"><div class="v56-daily-l">Habits</div><div class="v56-daily-v">${s.habitDone}/${s.habits.length}</div><div class="v56-daily-m">completed today</div></div><div class="v56-daily-card clickable" data-v56-go="budget"><div class="v56-daily-l">Spent today</div><div class="v56-daily-v">${esc(money(s.spend))}</div><div class="v56-daily-m">cleared expenses only</div></div><div class="v56-daily-card clickable" data-v56-go="pantry"><div class="v56-daily-l">Low stock</div><div class="v56-daily-v">${s.low.length}</div><div class="v56-daily-m">Pantry item${s.low.length===1?'':'s'} to review</div></div></div><div class="v56-daily-bottom"><div><label class="form-label" for="v56-daily-note">Daily note</label><textarea id="v56-daily-note" class="form-textarea v56-note" placeholder="Anything worth remembering today…">${esc(d.note)}</textarea></div><div><label class="form-label">Water</label><div class="v56-water"><button class="btn btn-sm" id="v56-water-minus">−</button><strong>${d.water}/${goal}</strong><button class="btn btn-sm" id="v56-water-plus">+</button><button class="btn btn-sm" id="v56-water-reset">Reset</button></div><div class="v56-daily-m" style="margin-top:7px">A lightweight manual counter; change the daily goal in System Health.</div></div></div>`;
- host.querySelectorAll('[data-v56-quick]').forEach(b=>b.onclick=()=>openQuick(b.dataset.v56Quick));
- host.querySelectorAll('[data-v56-go]').forEach(b=>b.onclick=()=>window.switchView?.(b.dataset.v56Go));
- let timer;host.querySelector('#v56-daily-note').oninput=e=>{d.note=e.target.value;d.updatedAt=new Date().toISOString();clearTimeout(timer);timer=setTimeout(()=>window.saveState?.(),450)};
- host.querySelector('#v56-water-plus').onclick=()=>{d.water++;window.saveState?.();renderDaily56()};host.querySelector('#v56-water-minus').onclick=()=>{d.water=Math.max(0,d.water-1);window.saveState?.();renderDaily56()};host.querySelector('#v56-water-reset').onclick=()=>{d.water=0;window.saveState?.();renderDaily56()};
+ ensure56();
+ const old=document.getElementById('v56-daily');
+ if(old)old.remove();
 }
+
 function renderHealth56(){
  const settings=document.getElementById('view-settings');if(!settings||!settings.classList.contains('active'))return;let host=document.getElementById('v56-health');if(!host){host=document.createElement('section');host.id='v56-health';host.className='v56-health';(document.getElementById('settings-content')||settings).appendChild(host)}const h=health56();
- host.innerHTML=`<div class="v56-health-head"><div><div class="v56-health-title">System Health & daily defaults</div><div class="v56-health-sub">Checks data links and calculation inputs. Repair normalizes invalid numeric/status fields without deleting valid records.</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-sm" id="v56-health-check">Recheck</button><button class="btn btn-sm btn-primary" id="v56-health-repair">Repair data</button></div></div><div class="v56-health-grid"><div class="v56-health-stat"><span>Tracked records</span><strong>${h.records}</strong></div><div class="v56-health-stat"><span>Issues</span><strong>${h.issues.length}</strong></div><div class="v56-health-stat"><span>Pending finance</span><strong>${h.pending}</strong></div><div class="v56-health-stat"><span>Transfer rows</span><strong>${h.transfers}</strong></div></div><div class="settings-row" style="margin-top:10px"><div><div class="settings-row-label">Daily water goal</div><div class="settings-row-desc">Used only by the lightweight Today counter.</div></div><input type="number" min="1" max="30" class="form-input" id="v56-water-goal" style="width:90px" value="${num(state.v56.settings.waterGoal,8)}"></div><div class="v56-health-list">${h.issues.length?h.issues.map(x=>`<div class="${x.tone}">• ${esc(x.text)}</div>`).join(''):'<div>✓ No structural data-link problems detected by the local audit.</div>'}</div>`;
- host.querySelector('#v56-health-check').onclick=renderHealth56;host.querySelector('#v56-health-repair').onclick=()=>{normalize56();window.saveState?.();renderHealth56();window.toast?.('Data normalized and rechecked.')};host.querySelector('#v56-water-goal').onchange=e=>{state.v56.settings.waterGoal=Math.max(1,num(e.target.value,8));window.saveState?.()};
+ host.innerHTML=`<div class="v56-health-head"><div><div class="v56-health-title">System Health & daily defaults</div><div class="v56-health-sub">Checks data links and calculation inputs. Repair normalizes invalid numeric/status fields without deleting valid records.</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-sm" id="v56-health-check">Recheck</button><button class="btn btn-sm btn-primary" id="v56-health-repair">Repair data</button></div></div><div class="v56-health-grid"><div class="v56-health-stat"><span>Tracked records</span><strong>${h.records}</strong></div><div class="v56-health-stat"><span>Issues</span><strong>${h.issues.length}</strong></div><div class="v56-health-stat"><span>Pending finance</span><strong>${h.pending}</strong></div><div class="v56-health-stat"><span>Transfer rows</span><strong>${h.transfers}</strong></div></div><div class="settings-row" style="margin-top:10px"><div><div class="settings-row-label">Hydration</div><div class="settings-row-desc">Today and Nutrition now use one shared millilitre record. Set the optional target in Nutrition → Targets.</div></div><button type="button" class="btn btn-sm" id="v56-open-hydration">Open Nutrition</button></div><div class="v56-health-list">${h.issues.length?h.issues.map(x=>`<div class="${x.tone}">• ${esc(x.text)}</div>`).join(''):'<div>✓ No structural data-link problems detected by the local audit.</div>'}</div>`;
+ host.querySelector('#v56-health-check').onclick=renderHealth56;host.querySelector('#v56-health-repair').onclick=()=>{normalize56();window.saveState?.();renderHealth56();window.toast?.('Data normalized and rechecked.')};host.querySelector('#v56-open-hydration').onclick=()=>window.switchView?.('diet');
 }
 // Cross-app interaction hygiene.
 const clicks56=new WeakMap();document.addEventListener('click',e=>{const b=e.target.closest?.('button');if(!b)return;if(!b.hasAttribute('type'))b.type='button';const key=/save|complete|confirm|record|create|delete|paid|purchase/i.test((b.id||'')+' '+(b.textContent||''));if(!key)return;const now=performance.now(),last=clicks56.get(b)||0;if(now-last<550){e.preventDefault();e.stopImmediatePropagation();return}clicks56.set(b,now)},true);
@@ -169,7 +173,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
 
-<!-- OmniOS v56.1 — Calendar filter state + multi-select reliability fix -->
+<!-- Second Brain v56.1 — Calendar filter state + multi-select reliability fix -->
 <style id="omnios-v561-calendar-filter-fix-css">
 #view-master-calendar .v36-cal-filter-panel{align-items:center}
 #view-master-calendar .v36-cal-filter-chip{position:relative;transition:border-color .14s ease,background .14s ease,color .14s ease,box-shadow .14s ease}
@@ -301,7 +305,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 
 <style id="omnios-v56-task-kanban-dnd-css">
-/* ===== OmniOS v56 — Tasks spacing + status drag/drop ===== */
+/* ===== Second Brain v56 — Tasks spacing + status drag/drop ===== */
 #view-tasks > .toolbar{
   margin:0 0 14px!important;
   padding:10px 12px!important;
@@ -537,7 +541,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
 <style id="omnios-v56-premium-task-board-css">
-/* ===== OmniOS v56 — Premium status board ===== */
+/* ===== Second Brain v56 — Premium status board ===== */
 #view-tasks .kanban-board{
   grid-template-columns:repeat(3,minmax(260px,1fr))!important;
   gap:14px!important;
@@ -730,9 +734,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 
 
-<!-- ===== OmniOS v57.2 — Native Bible Text Reader ===== -->
+<!-- ===== Second Brain v57.2 — Native Bible Text Reader ===== -->
 <style id="omnios-v571-bible-css">
-/* OmniOS v57.1 — stable, isolated Bible & Meditation UI */
+/* Second Brain v57.1 — stable, isolated Bible & Meditation UI */
 #view-bible{min-width:0;--bib-accent:#d3a55e;--bib-accent-soft:rgba(211,165,94,.12);--bib-blue:#7aa7ff;--bib-green:#72d5a5;--bib-rose:#ed9aae;--bib-violet:#ab98ef}
 #view-bible *{box-sizing:border-box}
 .bib-shell{display:flex;flex-direction:column;gap:12px;min-width:0;max-width:100%}
@@ -814,7 +818,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </style>
 
 <style id="omnios-v574-bible-scroll-highlight-css">
-/* ===== OmniOS v57.4 — Bible scroll fade + stronger highlights ===== */
+/* ===== Second Brain v57.4 — Bible scroll fade + stronger highlights ===== */
 /* Sticky reader controls should visually cover content, not let verses ghost through. */
 #view-bible .bib-reader-toolbar.v573{
   position:sticky!important;

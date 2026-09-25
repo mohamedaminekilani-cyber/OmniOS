@@ -1,5 +1,5 @@
 {
-  "name": "omnios-pwa",
+  "name": "second-brain-pwa",
   "private": true,
   "type": "module",
   "dependencies": {
@@ -9,5 +9,9 @@
   "devDependencies": {
     "@netlify/functions": "6.0.0",
     "@types/web-push": "3.6.4"
+  },
+  "scripts": {
+    "test": "node scripts/release-check.mjs",
+    "test:release": "node scripts/release-check.mjs"
   }
 }

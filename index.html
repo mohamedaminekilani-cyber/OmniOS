@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#18181b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="OmniOS">
+<meta name="apple-mobile-web-app-title" content="Second Brain">
 <link id="omnios-apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
 <script id="omnios-pwa-icon-early">
 (function(){
@@ -36,7 +36,7 @@
 })();
 </script>
 <link rel="manifest" href="./manifest.webmanifest">
-<title>OmniOS</title>
+<title>Second Brain</title>
 <script id="omnios-accent-early">
 (function(){
   try{
@@ -81,14 +81,14 @@ html.omnios-has-boot-icon .omnios-boot-mark img{display:block;animation:omniosBo
 </style>
 </head>
 <body>
-<main class="boot" id="omnios-boot-screen" role="status" aria-live="polite" aria-label="Loading OmniOS">
+<main class="boot" id="omnios-boot-screen" role="status" aria-live="polite" aria-label="Loading Second Brain">
 <div class="omnios-boot-card">
   <div class="omnios-boot-mark" aria-hidden="true"><img id="omnios-index-boot-icon" alt=""></div>
-  <div class="omnios-boot-brand">Omni<span>OS</span></div>
+  <div class="omnios-boot-brand">Second <span>Brain</span></div>
   <div class="omnios-boot-copy">Preparing your workspace…</div>
-  <div class="omnios-boot-track" role="progressbar" aria-label="Loading OmniOS" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="omnios-boot-progress"></i></div>
+  <div class="omnios-boot-track" role="progressbar" aria-label="Loading Second Brain" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="omnios-boot-progress"></i></div>
   <div id="fill"></div><div id="status" aria-live="polite">Preparing · 0%</div>
-  <div class="error" id="error" role="alert"><strong>OmniOS couldn't finish loading.</strong><p id="omnios-load-error-copy">Check your connection, then retry. A validated offline snapshot will be used automatically when available.</p><div class="error-actions"><button id="omnios-retry-btn" type="button">Retry</button><button id="omnios-reset-cache-btn" type="button" class="secondary">Reset app cache</button></div></div>
+  <div class="error" id="error" role="alert"><strong>Second Brain couldn't finish loading.</strong><p id="omnios-load-error-copy">Check your connection, then retry. A validated offline snapshot will be used automatically when available.</p><div class="error-actions"><button id="omnios-retry-btn" type="button">Retry</button><button id="omnios-reset-cache-btn" type="button" class="secondary">Reset app cache</button></div></div>
 </div>
 </main>
 <script>
@@ -196,7 +196,7 @@ async function readSlot(slot){
     }
     return texts;
   }catch(e){
-    console.warn('OmniOS snapshot read failed',e);
+    console.warn('Second Brain snapshot read failed',e);
     return null;
   }
 }
@@ -234,7 +234,7 @@ async function writeSnapshot(texts){
     try{localStorage.setItem(SNAPSHOT_SLOT_KEY,target)}catch(_){}
     return true;
   }catch(e){
-    console.warn('OmniOS snapshot write failed',e);
+    console.warn('Second Brain snapshot write failed',e);
     try{await caches.delete(name)}catch(_){}
     return false;
   }
@@ -287,7 +287,7 @@ function carryLoaderIntoApp(html){
       await writeSnapshot(texts);
     }catch(e){
       freshError=e;
-      console.warn('Fresh OmniOS load failed; trying complete snapshot',e);
+      console.warn('Fresh Second Brain load failed; trying complete snapshot',e);
       if(status)status.textContent=navigator.onLine?'Fresh build unavailable · opening saved copy…':'Offline · opening saved copy…';
       if(progress)progress.style.width='100%';
       texts=await readSnapshot();
@@ -303,8 +303,8 @@ function carryLoaderIntoApp(html){
     const copy=document.getElementById('omnios-load-error-copy');
     const offline=!navigator.onLine;
     if(copy)copy.textContent=offline
-      ? 'This device is offline and no complete saved app copy was available. Reconnect once, then Retry. Your OmniOS data is not deleted.'
-      : 'A complete app build could not be validated. Retry first; if it repeats, reset only the app cache. Your OmniOS data is not deleted.';
+      ? 'This device is offline and no complete saved app copy was available. Reconnect once, then Retry. Your Second Brain data is not deleted.'
+      : 'A complete app build could not be validated. Retry first; if it repeats, reset only the app cache. Your Second Brain data is not deleted.';
     const error=document.getElementById('error');if(error)error.style.display='block';
     if(status)status.textContent=offline?'Offline · saved copy unavailable':'Load failed · app files could not be validated';
     retryBtn?.focus?.();

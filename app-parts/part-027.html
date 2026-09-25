@@ -23,7 +23,7 @@
   render=function(){const v=ensureView();v.style.setProperty('--bib-font-size',((Number(B.ui.readerFont)||16)/16)+'rem');v.innerHTML=`<div class="bib-shell">${topHtml()}</div>`;v.querySelectorAll('[data-bib-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.bibTab));v.querySelector('[data-bib-today]').onclick=()=>setTab('today');v.querySelector('[data-bib-task]').onclick=addDailyTask;v.querySelector('[data-bib-open-atlas]').onclick=()=>setTab('atlas');const h=v.querySelector('#bib-content');if(B.tab==='read')renderRead(h);else if(B.tab==='study')renderStudy573(h);else if(B.tab==='atlas')renderAtlas(h);else if(B.tab==='meditate')renderMeditate(h);else if(B.tab==='plan')renderPlan(h);else if(B.tab==='mood')renderMood(h);else if(B.tab==='journal')renderJournal(h);else if(B.tab==='library')renderLibrary(h);else renderTodayBible(h)};
 
 
-  /* ===== OmniOS v57.28 — real map + harmonized Atlas UI ===== */
+  /* ===== Second Brain v57.28 — real map + harmonized Atlas UI ===== */
   let atlasLeafletMap5728=null,atlasTileLayers5728={},atlasOverlayLayer5728=null,atlasFocusRequest5728=null,atlasLeafletPromise5728=null;
   function atlasUi5728(){const s=atlasState();s.basemap=['map','satellite'].includes(s.basemap)?s.basemap:'satellite';s.query=String(s.query||'');s.mapCenter=Array.isArray(s.mapCenter)&&s.mapCenter.length===2?s.mapCenter:[34.2,26.0];s.mapZoom=Math.max(2,Math.min(12,Number(s.mapZoom)||4));return s}
   function ensureLeaflet5728(){
@@ -77,14 +77,14 @@
     }catch(err){console.warn('Bible Atlas real map unavailable:',err);mapEl.innerHTML='<div class="atlas28-map-fallback"><div><strong>Real map unavailable</strong><span>The Atlas data is still intact, but the geographic basemap requires an internet connection to load Leaflet and map tiles. Reconnect and reopen the Atlas tab.</span></div></div>'}
   }
   function bindAtlas5728(h){const s=atlasUi5728();renderSearch5728(h);h.querySelectorAll('[data-atlas28-mode]').forEach(b=>b.onclick=()=>{s.mode=b.dataset.atlas28Mode;save();renderAtlas(h)});h.querySelector('#atlas28-period').onchange=e=>{s.period=e.target.value;s.selectedEvent='';s.selectedRoute='';s.selectedPlace='';s.route='all';save();renderAtlas(h)};h.querySelector('#atlas28-person').onchange=e=>{s.person=e.target.value;s.selectedRoute='';s.selectedEvent='';s.selectedPlace='';s.route='all';save();renderAtlas(h)};h.querySelector('#atlas28-route').onchange=e=>{s.route=e.target.value;if(s.route!=='all'){s.selectedRoute=s.route;s.selectedPlace='';s.selectedEvent='';atlasFocusRequest5728={kind:'route',id:s.route}}else s.selectedRoute='';save();renderAtlas(h)};h.querySelector('#atlas28-tradition').onchange=e=>{s.includeTradition=e.target.checked;if(!s.includeTradition&&s.selectedRoute&&routeSourceKind(ROUTE_MAP.get(s.selectedRoute)||{})==='tradition'){s.selectedRoute='';s.route='all'}save();renderAtlas(h)};h.querySelector('[data-atlas28-reset]').onclick=atlasResetFilters5728;h.querySelectorAll('[data-atlas28-basemap]').forEach(b=>b.onclick=()=>setBasemap5728(b.dataset.atlas28Basemap));h.querySelectorAll('[data-atlas28-quick]').forEach(b=>b.onclick=()=>{const q=b.dataset.atlas28Quick;if(q==='world'){atlasFocusRequest5728={kind:'world'};renderAtlas(h);return}if(q==='paul'){s.mode='journeys';s.person='Paul';s.route='all';s.selectedRoute='paul1';s.selectedPlace='';s.selectedEvent='';atlasFocusRequest5728={kind:'route',id:'paul1'};save();renderAtlas(h);return}if(q==='gospels'){s.mode='timeline';s.period='gospels';s.selectedEvent='jesus-ministry';s.selectedRoute='';s.selectedPlace='';atlasFocusRequest5728={kind:'event',id:'jesus-ministry'};save();renderAtlas(h);return}if(q==='jerusalem'){s.mode='all';s.period='all';s.selectedPlace='jerusalem';s.selectedRoute='';s.selectedEvent='';atlasFocusRequest5728={kind:'place',id:'jerusalem'};save();renderAtlas(h)}});h.querySelector('[data-atlas28-fit]').onclick=()=>{atlasFocusRequest5728=s.selectedRoute?{kind:'route',id:s.selectedRoute}:s.selectedEvent?{kind:'event',id:s.selectedEvent}:s.selectedPlace?{kind:'place',id:s.selectedPlace}:{kind:'world'};renderAtlas(h)};h.querySelectorAll('[data-atlas28-read]').forEach(b=>b.onclick=()=>setRef(b.dataset.atlas28Read,'read'));h.querySelectorAll('[data-atlas28-place]').forEach(b=>b.onclick=()=>atlasSelect5728('place',b.dataset.atlas28Place,true));h.querySelectorAll('[data-atlas28-route]').forEach(b=>b.onclick=()=>atlasSelect5728('route',b.dataset.atlas28Route,true));h.querySelectorAll('[data-atlas28-event]').forEach(b=>b.onclick=()=>atlasSelect5728('event',b.dataset.atlas28Event,true));initAtlasMap5728(h)}
-  renderAtlas=function(h){const s=atlasUi5728(),routes=visibleRoutes(),events=visibleEvents(),places=visiblePlaces(),routeOptions=ROUTES.filter(r=>s.includeTradition||routeSourceKind(r)!=='tradition').filter(r=>s.person==='all'||r.person===s.person);destroyAtlasMap5728();h.innerHTML=`<div class="atlas28"><header class="atlas28-hero"><div class="atlas28-hero-main"><div class="atlas28-kicker">Bible Atlas</div><h3>Explore Scripture in its real geography</h3><p>Navigate places, journeys, and historical sequences on a live geographic basemap. Scripture-based routes and later church traditions remain visually and textually distinct.</p></div><div class="atlas28-hero-actions"><div class="atlas28-basemap" aria-label="Map style"><button type="button" data-atlas28-basemap="map" class="${s.basemap==='map'?'active':''}">Map</button><button type="button" data-atlas28-basemap="satellite" class="${s.basemap==='satellite'?'active':''}">Satellite</button></div><button class="btn btn-sm" type="button" data-atlas28-reset>Reset</button></div></header><div class="atlas28-grid"><aside class="atlas28-panel"><div class="atlas28-panel-head"><div class="atlas28-panel-title">Explore</div><div class="atlas28-panel-sub">Search first, then narrow the map only when you need to.</div></div><div class="atlas28-panel-body"><div class="atlas28-field atlas28-search-wrap"><label class="atlas28-label">Search atlas</label><span class="atlas28-search-icon">⌕</span><input class="form-input atlas28-search" id="atlas28-search" placeholder="Jerusalem, Paul, Pentecost…" autocomplete="off"><div class="atlas28-search-results" id="atlas28-search-results"></div></div><div class="atlas28-field"><label class="atlas28-label">View</label><div class="atlas28-seg">${[['all','Places'],['journeys','Journeys'],['timeline','Timeline']].map(([k,l])=>`<button type="button" data-atlas28-mode="${k}" class="${s.mode===k?'active':''}">${l}</button>`).join('')}</div></div><div class="atlas28-field"><label class="atlas28-label">Biblical period</label><select class="form-select" id="atlas28-period">${Object.entries(PERIOD_META).map(([k,v])=>`<option value="${k}" ${s.period===k?'selected':''}>${esc(v.label)}</option>`).join('')}</select></div><div class="atlas28-field"><label class="atlas28-label">Person / mission</label><select class="form-select" id="atlas28-person">${Object.entries(PERSON_META).map(([k,v])=>`<option value="${k}" ${s.person===k?'selected':''}>${esc(v)}</option>`).join('')}</select></div><div class="atlas28-field"><label class="atlas28-label">Route</label><select class="form-select" id="atlas28-route"><option value="all">All visible routes</option>${routeOptions.map(r=>`<option value="${esc(r.id)}" ${s.route===r.id?'selected':''}>${esc(r.name)}</option>`).join('')}</select></div><label class="atlas28-toggle"><input type="checkbox" id="atlas28-tradition" ${s.includeTradition?'checked':''}><span><strong>Show traditional missions</strong><br>Displays later traditions with purple dashed routes instead of treating them as direct New Testament itineraries.</span></label><div class="atlas28-field" style="margin-top:11px"><label class="atlas28-label">Quick views</label><div class="atlas28-quick"><button class="btn btn-sm" data-atlas28-quick="world">⌖ Biblical world</button><button class="btn btn-sm" data-atlas28-quick="paul">↠ Paul</button><button class="btn btn-sm" data-atlas28-quick="gospels">✦ Gospels</button><button class="btn btn-sm" data-atlas28-quick="jerusalem">◎ Jerusalem</button></div></div><details class="atlas28-method" open><summary>Accuracy & source method · audited 23 Sep 2026</summary><p><b>Scripture is the primary source for what the biblical text narrates.</b> A Scripture citation verifies the textual claim; it is not, by itself, independent archaeological confirmation. Route lines connect named itinerary points in narrative order and do not claim an exact ancient road or ship track. Absolute dates for Paul’s journeys are <b>scholarly reconstructions</b>, cross-checked against standard Pauline chronology and the Gallio/Delphi anchor. <b>Association-only traditions</b> such as Thomas in India and the apostle John at Ephesus are kept separate from direct New Testament geography and are not drawn as continuous journeys. Regional, debated, representative, and leading-but-not-certain identifications are labeled explicitly. Coordinates and ancient-to-modern identifications are checked against OpenBible.info’s sourced geocoding dataset and, where relevant, Pleiades, archaeological resources, or early church texts. High-confidence identification and exact plotted-point precision are treated as separate claims when the text names an island, region, or sailing waypoint. <b>Coverage is curated rather than exhaustive:</b> absence from the Atlas does not mean a place or tradition is absent from the biblical or historical record.</p><p class="atlas33-method-links"><a href="https://www.openbible.info/geo/" target="_blank" rel="noopener noreferrer">OpenBible geocoding ↗</a><a href="https://pleiades.stoa.org/places" target="_blank" rel="noopener noreferrer">Pleiades gazetteer ↗</a><a href="https://yalebiblestudy.org/courses/acts-of-the-apostles/lessons/co-operative-ministry-study-guide/" target="_blank" rel="noopener noreferrer">Gallio chronology anchor ↗</a></p></details></div></aside><section class="atlas28-map-card"><div class="atlas28-mapbar"><div class="atlas28-mapbar-main"><div class="atlas28-mapbar-title">Geographic map</div><div class="atlas28-mapbar-sub">Drag to pan · wheel or pinch to zoom · click pins and routes for details</div></div><div class="atlas28-mapbar-actions"><button class="btn btn-sm" data-atlas28-fit>Fit selection</button></div></div><div class="atlas28-map ${s.basemap==='satellite'?'is-satellite':''}" id="atlas28-map"></div><div class="atlas28-map-note"><span>ⓘ</span><span><b>Map layer:</b> live Esri basemap. Biblical pins/routes are OmniOS study overlays and are sourced separately in the details panel.</span></div></section><aside class="atlas28-panel atlas28-details"><div class="atlas28-panel-head"><div class="atlas28-panel-title">Details</div><div class="atlas28-panel-sub">Context, related history, itinerary, and source anchors.</div></div><div class="atlas28-panel-body">${atlasDetails5728()}</div></aside></div><section class="atlas28-timeline"><div class="atlas28-timeline-head"><div class="atlas28-timeline-head-main"><div class="atlas28-timeline-title">Timeline</div><div class="atlas28-timeline-sub">A navigational chronology, not a claim that every event can be dated to an exact year.</div></div><div class="atlas28-mini-stats"><span class="atlas28-mini-stat">${places.length} places</span><span class="atlas28-mini-stat">${routes.length} routes</span><span class="atlas28-mini-stat">${events.length} events</span></div></div><div class="atlas28-timeline-track">${atlasTimeline5728()}</div></section></div>`;bindAtlas5728(h)}
+  renderAtlas=function(h){const s=atlasUi5728(),routes=visibleRoutes(),events=visibleEvents(),places=visiblePlaces(),routeOptions=ROUTES.filter(r=>s.includeTradition||routeSourceKind(r)!=='tradition').filter(r=>s.person==='all'||r.person===s.person);destroyAtlasMap5728();h.innerHTML=`<div class="atlas28"><header class="atlas28-hero"><div class="atlas28-hero-main"><div class="atlas28-kicker">Bible Atlas</div><h3>Explore Scripture in its real geography</h3><p>Navigate places, journeys, and historical sequences on a live geographic basemap. Scripture-based routes and later church traditions remain visually and textually distinct.</p></div><div class="atlas28-hero-actions"><div class="atlas28-basemap" aria-label="Map style"><button type="button" data-atlas28-basemap="map" class="${s.basemap==='map'?'active':''}">Map</button><button type="button" data-atlas28-basemap="satellite" class="${s.basemap==='satellite'?'active':''}">Satellite</button></div><button class="btn btn-sm" type="button" data-atlas28-reset>Reset</button></div></header><div class="atlas28-grid"><aside class="atlas28-panel"><div class="atlas28-panel-head"><div class="atlas28-panel-title">Explore</div><div class="atlas28-panel-sub">Search first, then narrow the map only when you need to.</div></div><div class="atlas28-panel-body"><div class="atlas28-field atlas28-search-wrap"><label class="atlas28-label">Search atlas</label><span class="atlas28-search-icon">⌕</span><input class="form-input atlas28-search" id="atlas28-search" placeholder="Jerusalem, Paul, Pentecost…" autocomplete="off"><div class="atlas28-search-results" id="atlas28-search-results"></div></div><div class="atlas28-field"><label class="atlas28-label">View</label><div class="atlas28-seg">${[['all','Places'],['journeys','Journeys'],['timeline','Timeline']].map(([k,l])=>`<button type="button" data-atlas28-mode="${k}" class="${s.mode===k?'active':''}">${l}</button>`).join('')}</div></div><div class="atlas28-field"><label class="atlas28-label">Biblical period</label><select class="form-select" id="atlas28-period">${Object.entries(PERIOD_META).map(([k,v])=>`<option value="${k}" ${s.period===k?'selected':''}>${esc(v.label)}</option>`).join('')}</select></div><div class="atlas28-field"><label class="atlas28-label">Person / mission</label><select class="form-select" id="atlas28-person">${Object.entries(PERSON_META).map(([k,v])=>`<option value="${k}" ${s.person===k?'selected':''}>${esc(v)}</option>`).join('')}</select></div><div class="atlas28-field"><label class="atlas28-label">Route</label><select class="form-select" id="atlas28-route"><option value="all">All visible routes</option>${routeOptions.map(r=>`<option value="${esc(r.id)}" ${s.route===r.id?'selected':''}>${esc(r.name)}</option>`).join('')}</select></div><label class="atlas28-toggle"><input type="checkbox" id="atlas28-tradition" ${s.includeTradition?'checked':''}><span><strong>Show traditional missions</strong><br>Displays later traditions with purple dashed routes instead of treating them as direct New Testament itineraries.</span></label><div class="atlas28-field" style="margin-top:11px"><label class="atlas28-label">Quick views</label><div class="atlas28-quick"><button class="btn btn-sm" data-atlas28-quick="world">⌖ Biblical world</button><button class="btn btn-sm" data-atlas28-quick="paul">↠ Paul</button><button class="btn btn-sm" data-atlas28-quick="gospels">✦ Gospels</button><button class="btn btn-sm" data-atlas28-quick="jerusalem">◎ Jerusalem</button></div></div><details class="atlas28-method" open><summary>Accuracy & source method · audited 23 Sep 2026</summary><p><b>Scripture is the primary source for what the biblical text narrates.</b> A Scripture citation verifies the textual claim; it is not, by itself, independent archaeological confirmation. Route lines connect named itinerary points in narrative order and do not claim an exact ancient road or ship track. Absolute dates for Paul’s journeys are <b>scholarly reconstructions</b>, cross-checked against standard Pauline chronology and the Gallio/Delphi anchor. <b>Association-only traditions</b> such as Thomas in India and the apostle John at Ephesus are kept separate from direct New Testament geography and are not drawn as continuous journeys. Regional, debated, representative, and leading-but-not-certain identifications are labeled explicitly. Coordinates and ancient-to-modern identifications are checked against OpenBible.info’s sourced geocoding dataset and, where relevant, Pleiades, archaeological resources, or early church texts. High-confidence identification and exact plotted-point precision are treated as separate claims when the text names an island, region, or sailing waypoint. <b>Coverage is curated rather than exhaustive:</b> absence from the Atlas does not mean a place or tradition is absent from the biblical or historical record.</p><p class="atlas33-method-links"><a href="https://www.openbible.info/geo/" target="_blank" rel="noopener noreferrer">OpenBible geocoding ↗</a><a href="https://pleiades.stoa.org/places" target="_blank" rel="noopener noreferrer">Pleiades gazetteer ↗</a><a href="https://yalebiblestudy.org/courses/acts-of-the-apostles/lessons/co-operative-ministry-study-guide/" target="_blank" rel="noopener noreferrer">Gallio chronology anchor ↗</a></p></details></div></aside><section class="atlas28-map-card"><div class="atlas28-mapbar"><div class="atlas28-mapbar-main"><div class="atlas28-mapbar-title">Geographic map</div><div class="atlas28-mapbar-sub">Drag to pan · wheel or pinch to zoom · click pins and routes for details</div></div><div class="atlas28-mapbar-actions"><button class="btn btn-sm" data-atlas28-fit>Fit selection</button></div></div><div class="atlas28-map ${s.basemap==='satellite'?'is-satellite':''}" id="atlas28-map"></div><div class="atlas28-map-note"><span>ⓘ</span><span><b>Map layer:</b> live Esri basemap. Biblical pins/routes are Second Brain study overlays and are sourced separately in the details panel.</span></div></section><aside class="atlas28-panel atlas28-details"><div class="atlas28-panel-head"><div class="atlas28-panel-title">Details</div><div class="atlas28-panel-sub">Context, related history, itinerary, and source anchors.</div></div><div class="atlas28-panel-body">${atlasDetails5728()}</div></aside></div><section class="atlas28-timeline"><div class="atlas28-timeline-head"><div class="atlas28-timeline-head-main"><div class="atlas28-timeline-title">Timeline</div><div class="atlas28-timeline-sub">A navigational chronology, not a claim that every event can be dated to an exact year.</div></div><div class="atlas28-mini-stats"><span class="atlas28-mini-stat">${places.length} places</span><span class="atlas28-mini-stat">${routes.length} routes</span><span class="atlas28-mini-stat">${events.length} events</span></div></div><div class="atlas28-timeline-track">${atlasTimeline5728()}</div></section></div>`;bindAtlas5728(h)}
 
 
   topHtml=function(){const p=todayPlan(),st=nivData().stats||{};return `<div class="bib-top"><div class="bib-title-wrap"><div class="bib-eyebrow">Scripture · study · atlas · meditation</div><h2 class="bib-title">Bible Study</h2><div class="bib-subtitle">Read the NIV text, study passages, build maps, explore biblical geography, and turn Scripture into reflection and daily action.</div><div class="bib-source-chip"><i class="bib-dot ready"></i><strong>NIV</strong><span>${st.books||66} books · ${st.chapters||1189} chapters · native text reader</span></div></div><div class="bib-top-actions"><button class="btn" data-bib-task>Add daily task</button><button class="btn btn-primary" data-bib-today>Today · ${esc(p.ref)}</button></div></div><div class="bib-tabs">${[['today','Today'],['read','Read'],['study','Study'],['atlas','Atlas'],['meditate','Meditate'],['plan','365 Plan'],['mood','Mood'],['journal','Journal'],['library','Library']].map(([k,l])=>`<button class="bib-tab ${B.tab===k?'active':''}" data-bib-tab="${k}">${l}</button>`).join('')}</div><div id="bib-content"></div>`};
   render=function(){if(B.tab!=='atlas')destroyAtlasMap5728();const v=ensureView();v.style.setProperty('--bib-font-size',((Number(B.ui.readerFont)||16)/16)+'rem');v.innerHTML=`<div class="bib-shell">${topHtml()}</div>`;v.querySelectorAll('[data-bib-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.bibTab));v.querySelector('[data-bib-today]').onclick=()=>setTab('today');v.querySelector('[data-bib-task]').onclick=addDailyTask;const h=v.querySelector('#bib-content');if(B.tab==='read')renderRead(h);else if(B.tab==='study')renderStudy573(h);else if(B.tab==='atlas')renderAtlas(h);else if(B.tab==='meditate')renderMeditate(h);else if(B.tab==='plan')renderPlan(h);else if(B.tab==='mood')renderMood(h);else if(B.tab==='journal')renderJournal(h);else if(B.tab==='library')renderLibrary(h);else renderTodayBible(h)};
 
 
-  /* ===== OmniOS v57.29 — filter-aware Atlas visuals ===== */
+  /* ===== Second Brain v57.29 — filter-aware Atlas visuals ===== */
   const _visiblePlaces5729=visiblePlaces;
   visiblePlaces=function(){
     const s=atlasUi5728();
@@ -233,7 +233,7 @@
   };
 
 
-  /* ===== OmniOS v57.30 — Atlas behavior, route geometry, and contextual details ===== */
+  /* ===== Second Brain v57.30 — Atlas behavior, route geometry, and contextual details ===== */
   function atlasEvidencePlaceAllowed5730(place,s){
     if(s.includeTradition)return true;
     const src=place?.sources||[];
@@ -431,9 +431,9 @@
   };
 
   if(document.getElementById('view-bible')?.classList.contains('active')) render();
-  window.OmniBuild={version:'57.30',name:'Bible Atlas — Behavior Fixed'}; document.documentElement.dataset.omniosVersion='57.30'; document.title='OmniOS v57.30 — Bible Atlas';
+  window.OmniBuild={version:'57.30',name:'Bible Atlas — Behavior Fixed'}; document.documentElement.dataset.omniosVersion='57.30'; document.title='Second Brain v57.30 — Bible Atlas';
 
-  /* ===== OmniOS v57.33 — canonical Atlas filter engine (fact-checked build) ===== */
+  /* ===== Second Brain v57.33 — canonical Atlas filter engine (fact-checked build) ===== */
   function candidateRoutes5731(respectRoute=true){
     const s=atlasUi5728();
     return ROUTES.filter(r=>{
@@ -670,7 +670,7 @@
 
 
   if(document.getElementById('view-bible')?.classList.contains('active'))render();
-  window.OmniBuild={version:'57.33',name:'Bible Atlas — Fact Checked'};document.documentElement.dataset.omniosVersion='57.33';document.title='OmniOS v57.33 — Bible Atlas Fact Checked';
+  window.OmniBuild={version:'57.33',name:'Bible Atlas — Fact Checked'};document.documentElement.dataset.omniosVersion='57.33';document.title='Second Brain v57.33 — Bible Atlas Fact Checked';
 })();
 
 
@@ -683,7 +683,7 @@ function init(){ensureView();installNav();ensureMiniTimer();document.addEventLis
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else queueMicrotask(init);
 
 
-/* ===== OmniOS v58.2 — canonical Bible 365 + fixed Mood controls ===== */
+/* ===== Second Brain v58.2 — canonical Bible 365 + fixed Mood controls ===== */
 const BIBLE365_TOTAL_DAYS=365;
 function buildBible365Plan582(){
   const chapters=[];
@@ -826,7 +826,7 @@ window.OmniBible572=window.OmniBible571={open:()=>window.switchView?.('bible'),r
 })();
 </script>
 <style id="omnios-v5714-bible-read-redesign-css">
-/* ===== OmniOS v57.14 — full Bible Read page redesign ===== */
+/* ===== Second Brain v57.14 — full Bible Read page redesign ===== */
 #view-bible .bib-read-v5814{--b14-border:color-mix(in srgb,var(--border-color) 86%,transparent);--b14-surface:var(--bg-surface);--b14-alt:color-mix(in srgb,var(--bg-base) 80%,var(--bg-surface) 20%);display:flex!important;flex-direction:column!important;gap:12px!important;min-width:0!important;padding-bottom:22px!important}
 #view-bible .bib-toolbar-v5814{position:sticky!important;top:calc(var(--omni-header-h,58px) + 6px)!important;z-index:50!important;display:grid!important;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto!important;gap:10px!important;padding:12px!important;border:1px solid var(--b14-border)!important;border-radius:16px!important;background:var(--b14-surface)!important;box-shadow:0 8px 22px rgba(0,0,0,.05)!important}
 #view-bible .bib-toolbar-group-v5814{display:flex!important;flex-direction:column!important;gap:7px!important;min-width:0!important}
@@ -883,7 +883,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
 
 
 <style id="omnios-v5716-audit-clean-css">
-/* ===== OmniOS v57.16 — audited cleanup layer ===== */
+/* ===== Second Brain v57.16 — audited cleanup layer ===== */
 #view-bible .bib-icon-btn{
   height:34px!important;
   min-width:34px!important;
@@ -916,7 +916,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
   const BUILD={version:'57.16',name:'Bible Restored · Audited'};
   function stamp(){
     document.documentElement.dataset.omniosVersion=BUILD.version;
-    document.title='OmniOS v57.16 — Bible Restored · Audited';
+    document.title='Second Brain v57.16 — Bible Restored · Audited';
     window.OmniBuild=BUILD;
     if(window.OmniBible571){
       window.OmniBible=window.OmniBible571;
@@ -929,7 +929,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
     };
   }
 
-  /* ===== OmniOS v58.4.2 — Bible Journal new-entry interaction fix ===== */
+  /* ===== Second Brain v58.4.2 — Bible Journal new-entry interaction fix ===== */
   renderJournal=function(h){
     const edit=B.journal.find(x=>String(x.id)===String(B.ui.journalEdit))||blankJournal();
     const isEditing=!!edit.id;
@@ -994,7 +994,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
 
 
 <style id="omnios-v5717-bible-tabs-restored-css">
-/* ===== OmniOS v57.19 — Today / Study / Meditate restoration ===== */
+/* ===== Second Brain v57.19 — Today / Study / Meditate restoration ===== */
 #view-bible .bib-today-v5717{display:flex;flex-direction:column;gap:12px}
 #view-bible .bib-today-feature-v5717{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);gap:12px;padding:20px;border:1px solid color-mix(in srgb,var(--border-color) 84%,transparent);border-radius:18px;background:var(--bg-surface);box-shadow:0 10px 26px rgba(0,0,0,.04)}
 #view-bible .bib-today-copy-v5717 h3{margin:5px 0 2px;font-family:Georgia,'Times New Roman',serif;font-size:1.7rem;color:var(--text-primary)}
@@ -1015,7 +1015,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
 
 
 <style id="omnios-v5718-bible-unsticky-toolbar-css">
-/* ===== OmniOS v57.19 — Bible toolbar scrolls normally ===== */
+/* ===== Second Brain v57.19 — Bible toolbar scrolls normally ===== */
 #view-bible .bib-toolbar-v5814{
   position:relative!important;
   top:auto!important;
@@ -1036,7 +1036,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
 
 
 <style id="omnios-v5720-bible-study-maps-css">
-/* ===== OmniOS v57.20 — Bible Study Mind Maps & Knowledge Maps ===== */
+/* ===== Second Brain v57.20 — Bible Study Mind Maps & Knowledge Maps ===== */
 #view-bible .bib-map-studio-v5720{margin-top:14px;padding:16px;border:1px solid color-mix(in srgb,var(--border-color) 86%,transparent);border-radius:18px;background:var(--bg-surface);box-shadow:0 10px 28px rgba(0,0,0,.04)}
 #view-bible .bib-map-studio-head-v5720{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
 #view-bible .bib-map-studio-title-v5720{font-size:1.1rem;font-weight:800;color:var(--text-primary);margin:2px 0}
@@ -1082,7 +1082,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
 <script id="omnios-v5720-build-stamp-js">(function(){const stamp=()=>{document.documentElement.dataset.omniosVersion="57.20";window.OmniBuild={version:"57.20",name:"Bible Study Maps"};};if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",stamp,{once:true});else stamp();})();</script>
 
 <style id="omnios-v5721-bible-map-navigation-css">
-/* ===== OmniOS v57.21 — advanced Bible map navigation ===== */
+/* ===== Second Brain v57.21 — advanced Bible map navigation ===== */
 #view-bible .bib-map-editor-v5721{--map-side-w:292px}
 #view-bible .bib-map-toolbar-v5721{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:8px 9px!important}
 #view-bible .bib-map-toolbar-section-v5721{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
@@ -1120,7 +1120,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
 </style>
 
 <style id="omnios-v5722-bible-map-context-css">
-/* ===== OmniOS v57.22 — pointer gestures + map contextual menu ===== */
+/* ===== Second Brain v57.22 — pointer gestures + map contextual menu ===== */
 #view-bible .bib-map-board-wrap-v5721{touch-action:none}
 #view-bible .bib-map-node-v5720,#view-bible .bib-map-edge-g-v5720{cursor:context-menu}
 .bib-map-context-v5722{position:fixed;z-index:2600;display:none;min-width:230px;max-width:min(310px,calc(100vw - 16px));padding:6px;border:1px solid color-mix(in srgb,var(--border-color) 92%,transparent);border-radius:12px;background:var(--bg-surface);box-shadow:0 20px 56px rgba(0,0,0,.28);color:var(--text-primary)}
@@ -1137,9 +1137,9 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
 @media(max-width:760px){.bib-map-context-v5722{min-width:min(250px,calc(100vw - 20px))}}
 </style>
 
-<script id="omnios-v5722-build-stamp-js">(function(){const stamp=()=>{document.documentElement.dataset.omniosVersion='57.22';window.OmniBuild={version:'57.22',name:'Bible Map Gestures & Context'};document.title='OmniOS v57.22 — Bible Map Gestures & Context';};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',stamp,{once:true});else stamp();})();</script>
+<script id="omnios-v5722-build-stamp-js">(function(){const stamp=()=>{document.documentElement.dataset.omniosVersion='57.22';window.OmniBuild={version:'57.22',name:'Bible Map Gestures & Context'};document.title='Second Brain v57.22 — Bible Map Gestures & Context';};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',stamp,{once:true});else stamp();})();</script>
 
-<!-- OmniOS v57.23: Bible map mini-navigation and canvas instruction strip removed. -->
+<!-- Second Brain v57.23: Bible map mini-navigation and canvas instruction strip removed. -->
 
 <style id="omnios-v5724-map-hidden-scrollbars-css">
 /* Bible Study map: preserve scrolling/panning but never show scrollbar chrome. */
@@ -1166,7 +1166,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
 </style>
 
 
-<!-- OmniOS v57.26: Bible Atlas with sourced places, routes, timelines, and full navigation. -->
+<!-- Second Brain v57.26: Bible Atlas with sourced places, routes, timelines, and full navigation. -->
 <style id="omnios-v5726-bible-atlas-css">
 #view-bible .bib-atlas-shell{display:grid;grid-template-columns:320px minmax(0,1fr);gap:14px;align-items:start}
 #view-bible .bib-atlas-side{display:flex;flex-direction:column;gap:12px;position:sticky;top:8px}
@@ -1271,7 +1271,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
   const stamp=()=>{
     document.documentElement.dataset.omniosVersion='57.27';
     window.OmniBuild={version:'57.27',name:'Bible Atlas — Tab Fixed'};
-    document.title='OmniOS v57.27 — Bible Atlas';
+    document.title='Second Brain v57.27 — Bible Atlas';
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',stamp,{once:true});
   else stamp();
@@ -1391,7 +1391,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
 @media(max-width:640px){#view-bible .atlas28-map{height:430px}#view-bible .atlas28-quick{grid-template-columns:1fr}.atlas28-event{flex-basis:200px}.atlas28-mapbar{align-items:flex-start;flex-direction:column}.atlas28-mapbar-actions{width:100%;justify-content:flex-end}.atlas28-basemap{width:100%}.atlas28-basemap button{flex:1}}
 </style>
 
-<script id="omnios-v5728-build-stamp-js">(function(){const f=()=>{document.documentElement.dataset.omniosVersion='57.28';window.OmniBuild={version:'57.28',name:'Bible Atlas — Real Map'};document.title='OmniOS v57.28 — Bible Atlas'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',f,{once:true});else f()})();</script>
+<script id="omnios-v5728-build-stamp-js">(function(){const f=()=>{document.documentElement.dataset.omniosVersion='57.28';window.OmniBuild={version:'57.28',name:'Bible Atlas — Real Map'};document.title='Second Brain v57.28 — Bible Atlas'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',f,{once:true});else f()})();</script>
 
 <style id="omnios-v5729-atlas-filter-visuals-css">
 #view-bible .atlas29-filter-strip{display:flex;align-items:center;gap:5px;min-height:37px;padding:7px 11px;border-bottom:1px solid var(--border-color);background:color-mix(in srgb,var(--bg-base) 82%,var(--bg-surface) 18%);overflow-x:auto;scrollbar-width:none}
@@ -1424,7 +1424,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
 #view-bible .atlas28-map .leaflet-overlay-pane svg path{transition:opacity .15s ease,stroke-width .15s ease}
 @media(max-width:760px){#view-bible .atlas29-visual-hint{display:none}#view-bible .atlas29-filter-strip{padding:6px 9px}}
 </style>
-<script id="omnios-v5729-build-stamp-js">(function(){const f=()=>{document.documentElement.dataset.omniosVersion='57.29';window.OmniBuild={version:'57.29',name:'Bible Atlas — Filter-Aware Visuals'};document.title='OmniOS v57.29 — Bible Atlas'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',f,{once:true});else f()})();</script>
+<script id="omnios-v5729-build-stamp-js">(function(){const f=()=>{document.documentElement.dataset.omniosVersion='57.29';window.OmniBuild={version:'57.29',name:'Bible Atlas — Filter-Aware Visuals'};document.title='Second Brain v57.29 — Bible Atlas'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',f,{once:true});else f()})();</script>
 
 
 <style id="omnios-v5730-atlas-behavior-css">
@@ -1496,7 +1496,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
 #view-bible .atlas30-mode-journeys .atlas28-map-note,#view-bible .atlas29-mode-journeys .atlas28-map-note{border-top-color:rgba(37,99,235,.16)}
 @media(max-width:1180px){#view-bible .atlas30-location-grid{grid-template-columns:1fr}#view-bible .atlas30-detail-hero{grid-template-columns:42px minmax(0,1fr)}#view-bible .atlas30-detail-hero>.btn{grid-column:1/-1;justify-self:start}}
 </style>
-<script id="omnios-v5730-build-stamp-js">(function(){const f=()=>{document.documentElement.dataset.omniosVersion='57.30';window.OmniBuild={version:'57.30',name:'Bible Atlas — Behavior Fixed'};document.title='OmniOS v57.30 — Bible Atlas'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',f,{once:true});else f()})();</script>
+<script id="omnios-v5730-build-stamp-js">(function(){const f=()=>{document.documentElement.dataset.omniosVersion='57.30';window.OmniBuild={version:'57.30',name:'Bible Atlas — Behavior Fixed'};document.title='Second Brain v57.30 — Bible Atlas'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',f,{once:true});else f()})();</script>
 
 
 <style id="omnios-v5731-atlas-filter-engine-css">
@@ -1507,7 +1507,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
 @media(max-width:780px){#view-bible .atlas31-live-count{white-space:normal;width:100%;margin-top:3px}}
 </style>
 <script id="omnios-v5731-build-stamp-js">
-(function(){const f=()=>{document.documentElement.dataset.omniosVersion='57.33';window.OmniBuild={version:'57.33',name:'Bible Atlas — Fact Checked'};document.title='OmniOS v57.33 — Bible Atlas Fact Checked'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',f,{once:true});else f()})();
+(function(){const f=()=>{document.documentElement.dataset.omniosVersion='57.33';window.OmniBuild={version:'57.33',name:'Bible Atlas — Fact Checked'};document.title='Second Brain v57.33 — Bible Atlas Fact Checked'};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',f,{once:true});else f()})();
 </script>
 
 
@@ -1524,7 +1524,7 @@ html[data-reduced-motion="true"] #view-bible .bib-reader-scroll-v5814{scroll-beh
 </style>
 
 
-<script id="omnios-v5733-build-stamp-js">(function(){const stamp=()=>{document.documentElement.dataset.omniosVersion='57.33';window.OmniBuild={version:'57.33',name:'Bible Atlas — Fact Checked'};document.title='OmniOS v57.33 — Bible Atlas Fact Checked';};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',stamp,{once:true});else stamp();})();</script>
+<script id="omnios-v5733-build-stamp-js">(function(){const stamp=()=>{document.documentElement.dataset.omniosVersion='57.33';window.OmniBuild={version:'57.33',name:'Bible Atlas — Fact Checked'};document.title='Second Brain v57.33 — Bible Atlas Fact Checked';};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',stamp,{once:true});else stamp();})();</script>
 
 <script id="omnios-v5734-uiux-connections-js">
 (function(){
@@ -1594,7 +1594,7 @@ function renderConnections34(){
       <div class="conn34-managed"><div><strong>Wishlist purchase → Finance + Goal</strong><span>Validated wishlist purchases record a linked Finance expense and complete a linked saving goal when present; reverting the purchase reverses those linked effects.</span></div><span class="conn34-badge">System-managed</span></div>
     </section>
     <section class="conn34-card"><div class="conn34-card-head"><div><div class="conn34-card-title">Connection health</div><div class="conn34-card-sub">Live relationship counts from the local database.</div></div></div><div class="conn34-kpis"><div class="conn34-kpi"><span>Pantry items</span><strong>${m.pantry.length}</strong></div><div class="conn34-kpi"><span>Low stock</span><strong>${m.low.length}</strong></div><div class="conn34-kpi"><span>Nutrition links ready</span><strong>${m.readyFoods.length}/${m.linkedFoods.length}</strong></div><div class="conn34-kpi"><span>Restock items</span><strong>${m.restockItems}</strong></div><div class="conn34-kpi"><span>Grocery transactions</span><strong>${m.groceryTxn}</strong></div><div class="conn34-kpi"><span>Connection events</span><strong>${m.logs.length}</strong></div></div></section></div>
-    <section class="conn34-card"><div class="conn34-card-head"><div><div class="conn34-card-title">Recent connection activity</div><div class="conn34-card-sub">The latest automatic cross-module changes. This log is local to OmniOS.</div></div></div><div class="conn34-log">${m.logs.slice(0,12).map(x=>`<div class="conn34-log-row"><strong>${esc(x.title||x.type||'Connection update')}</strong><span>${esc(x.detail||'')}${x.at?` · ${esc(dateLabel34(x.at))}`:''}</span></div>`).join('')||'<div class="conn34-empty">No automatic connection activity yet.</div>'}</div></section>
+    <section class="conn34-card"><div class="conn34-card-head"><div><div class="conn34-card-title">Recent connection activity</div><div class="conn34-card-sub">The latest automatic cross-module changes. This log is local to Second Brain.</div></div></div><div class="conn34-log">${m.logs.slice(0,12).map(x=>`<div class="conn34-log-row"><strong>${esc(x.title||x.type||'Connection update')}</strong><span>${esc(x.detail||'')}${x.at?` · ${esc(dateLabel34(x.at))}`:''}</span></div>`).join('')||'<div class="conn34-empty">No automatic connection activity yet.</div>'}</div></section>
   </div>`;
   qa('[data-conn34]',host).forEach(b=>b.onclick=()=>{const k=b.dataset.conn34;if(k==='workoutHabit')state.life.automation.workoutHabit=!state.life.automation.workoutHabit;else state.settings.connections[k]=state.settings.connections[k]===false;state.life.automation.pantryRestock=false;window.saveState?.();renderConnections34();repairLegacyRestock34()});
   qa('[data-conn-go]',host).forEach(b=>b.onclick=()=>go34(b.dataset.connGo));
@@ -1646,7 +1646,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script>
 
 <style id="omnios-v58-integrated-lifeos-css">
-/* ===== OmniOS v58 — Integration-first Life OS ===== */
+/* ===== Second Brain v58 — Integration-first Life OS ===== */
 :root{--v58-gap:12px;--v58-soft:color-mix(in srgb,var(--accent-cyan) 8%,var(--bg-surface));}
 .v58-attention{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 12px;border:1px solid color-mix(in srgb,var(--accent-yellow) 28%,var(--border-color));border-radius:12px;background:color-mix(in srgb,var(--accent-yellow) 5%,var(--bg-surface));margin-bottom:12px}
 .v58-attention strong{font-size:.75rem}.v58-attention-copy{font-size:.68rem;color:var(--text-secondary);flex:1;min-width:180px}.v58-attention .btn{min-height:34px}

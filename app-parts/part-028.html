@@ -6131,10 +6131,16 @@ function listenForAnswer(sid){
 }
 async function applyAnswer(payload){
   if(!hostSession||payload.sid!==hostSession.sid||payload.secret!==hostSession.secret||hostSession.answerApplied)return;
+  if(hostSession.answerApplying)return;
+  hostSession.answerApplying=true;
+  try{await hostSession.pc.setRemoteDescription(payload.answer)}catch(e){
+    console.error(e);hostSession.answerApplying=false;
+    if(!liveConn?.open)stage(2,'Could not apply response','Try pasting the phone’s response link or generate a new QR.','error');
+    return
+  }
   hostSession.answerApplied=true;hostSession.answerCleanup?.();
   if(!liveConn?.open){stage(3,'Phone responded automatically','Opening the direct local Wi-Fi channel…','busy');setProgress(72,'Opening channel')}
   logProgress('Phone response received');
-  try{await hostSession.pc.setRemoteDescription(payload.answer)}catch(e){console.error(e);if(!liveConn?.open)stage(3,'Could not apply response','Generate a new Local Wi-Fi code and try again.','error');return}
   const timeout=setTimeout(()=>{if(!liveConn?.open){const ice=hostSession?.pc?.iceConnectionState||'unknown';logProgress('Direct Wi-Fi data channel did not open · ICE '+ice);fallbackFromBlockedLocal(hostSession.sid)}},4200);
   hostSession.connectTimeout=timeout
 }

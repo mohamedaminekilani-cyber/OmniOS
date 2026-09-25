@@ -5220,6 +5220,35 @@ function mergeRecordArray(key,localList,remoteList,localRec,remoteRec,localModul
   return {list,meta}
 }
 
+function mergeStructuredAux(localValue,remoteValue,preferRemote){
+  if(Array.isArray(localValue)&&Array.isArray(remoteValue)){
+    const idReady=[...localValue,...remoteValue].every(x=>x&&typeof x==='object'&&x.id!=null);
+    if(idReady){
+      const out=new Map(localValue.map(x=>[String(x.id),clone(x)]));
+      for(const item of remoteValue){
+        const id=String(item.id),prior=out.get(id);
+        out.set(id,prior===undefined?clone(item):mergeStructuredAux(prior,item,preferRemote))
+      }
+      return [...out.values()]
+    }
+    const out=[],seen=new Set();
+    for(const item of [...localValue,...remoteValue]){
+      let key;try{key=JSON.stringify(item)}catch(_){key=String(item)}
+      if(seen.has(key))continue;seen.add(key);out.push(clone(item))
+    }
+    return out
+  }
+  if(localValue&&remoteValue&&typeof localValue==='object'&&typeof remoteValue==='object'){
+    const out=clone(localValue)||{};
+    for(const k of Object.keys(remoteValue)){
+      if(!hasOwn(localValue,k))out[k]=clone(remoteValue[k]);
+      else out[k]=mergeStructuredAux(localValue[k],remoteValue[k],preferRemote)
+    }
+    return out
+  }
+  return preferRemote?clone(remoteValue):clone(localValue)
+}
+
 async function mergeBundle(remote){
   if(!remote||remote.protocol!==PROTOCOL||!remote.state)return {changed:false,metadataChanged:false,modules:[],aux:[]};
   const r=ensureReadyForMerge(),localId=device().id,remoteId=remote.device?.id||'';
@@ -5279,6 +5308,19 @@ async function mergeBundle(remote){
     if(!remoteKnows)continue;
     const lm=localAuxMeta[k]||{},rm=remoteAuxMeta[k]||{};
     const lt=when(lm.at),rt=when(rm.at||(remoteHas?remote.generatedAt:'')),take=chooseRemote(lt,rt,localId,remoteId);
+    if(k==='omnios_bible_v571'&&localHas&&remoteHas&&!lm.deleted&&!rm.deleted){
+      try{
+        const mergedBible=mergeStructuredAux(JSON.parse(localAux[k]),JSON.parse(remoteAux[k]),take);
+        const next=JSON.stringify(mergedBible),current=String(localAux[k]??'');
+        if(next!==current)auxChanges.push([k,next,false]);
+        mergedAuxMeta[k]={at:(rt>=lt?(rm.at||remote.generatedAt):(lm.at||remote.generatedAt)),deleted:false}
+      }catch(e){
+        console.warn('Bible structured merge fell back to whole-value choice',e);
+        if(take&&localAux[k]!==remoteAux[k])auxChanges.push([k,remoteAux[k],false]);
+        mergedAuxMeta[k]=take?{at:rm.at||remote.generatedAt,deleted:false}:lm
+      }
+      continue
+    }
     if(take){
       const deleted=!!rm.deleted;
       const next=deleted?null:remoteAux[k];
@@ -5292,6 +5334,7 @@ async function mergeBundle(remote){
   if(!stateChanges.length&&!auxChanges.length&&!metadataChanged)return {changed:false,metadataChanged:false,modules:[],aux:[]};
 
   await r.makeSnapshot?.('Before device sync',{kind:'pre-sync'});
+  const beforeState=clone(state),beforeAux=localAux,beforeAuxMeta=clone(localAuxMeta)||{};
   window.__omniSyncApplying=true;
   try{
     for(const [k,v] of stateChanges)state[k]=v;
@@ -5308,9 +5351,23 @@ async function mergeBundle(remote){
     if(typeof normalizeState==='function')normalizeState();
     if(typeof window.saveState==='function')window.saveState();
     await r.persistStateDurably?.();
+    if(auxChanges.some(x=>x[0]==='omnios_bible_v571'))try{window.OmniBibleReloadFromStorage?.()}catch(_){}
     try{window.renderAll?.()}catch(_){}
   }catch(e){
     console.error('Device sync commit failed',e);
+    try{
+      state=beforeState;
+      const reverseAux=[];
+      for(const [k] of auxChanges){
+        if(hasOwn(beforeAux,k))reverseAux.push([k,beforeAux[k],false]);
+        else reverseAux.push([k,null,true])
+      }
+      r.applyAuxDurably?.(reverseAux);
+      r.writeAuxMetaDurably?.(beforeAuxMeta);
+      if(typeof window.saveState==='function')window.saveState();
+      await r.persistStateDurably?.();
+      if(auxChanges.some(x=>x[0]==='omnios_bible_v571'))window.OmniBibleReloadFromStorage?.()
+    }catch(rollbackError){console.error('Device sync rollback also failed',rollbackError)}
     throw e;
   }finally{
     window.__omniSyncApplying=false

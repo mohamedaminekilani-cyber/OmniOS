@@ -1173,6 +1173,38 @@ function lifeAdd35(tab){if(SCHEMA35[tab])return openRecordModal35(tab);if(tab===
 function renderLifeTab35(tab){const b=document.getElementById('v35-life-body');if(!b)return;if(SCHEMA35[tab])return renderRecords35(tab,b);if(tab==='admin')return renderAdmin35(b);if(tab==='automations')return renderAutomations35(b)}
 function recordTitle35(type,x){return x.name||x.title||(type==='health'?dateLabel(x.date):SCHEMA35[type].title)}
 function recordMeta35(type,x){if(type==='people')return [x.relation,x.email,x.nextFollowUp&&`Follow up ${dateLabel(x.nextFollowUp)}`].filter(Boolean).join(' · ');if(type==='home')return [x.type,x.maintenanceDue&&`Maintenance ${dateLabel(x.maintenanceDue)}`].filter(Boolean).join(' · ');if(type==='health')return [`${x.sleep||'—'}h sleep`,x.mood, x.energy&&`Energy ${x.energy}/10`].filter(Boolean).join(' · ');if(type==='learning')return [x.type,x.status,x.progress!==''&&x.progress!=null?`${x.progress}%`:null].filter(Boolean).join(' · ');if(type==='travel')return [x.startDate&&dateLabel(x.startDate),x.budget&&money(x.budget)].filter(Boolean).join(' · ');if(type==='money')return [x.kind,money(x.amount),x.renewalDate&&dateLabel(x.renewalDate)].filter(Boolean).join(' · ');if(type==='documents')return [x.category,x.expiry&&`Expires ${dateLabel(x.expiry)}`].filter(Boolean).join(' · ');if(type==='journal')return [dateLabel(x.date),x.mood].filter(Boolean).join(' · ');return ''}
+function avatarInitials35(name){
+  const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
+  return parts.slice(0,2).map(x=>x[0]?.toUpperCase()||'').join('')||'?';
+}
+function personAvatar35(x,extra=''){
+  const name=recordTitle35('people',x)||'Person',avatar=String(x?.avatar||'');
+  return `<span class="v35-person-avatar ${extra}" aria-hidden="true">${avatar?`<img src="${esc(avatar)}" alt="">`:`<span>${esc(avatarInitials35(name))}</span>`}</span>`;
+}
+function readAvatarImage35(file,maxSize=384){
+  return new Promise((resolve,reject)=>{
+    if(!file||!String(file.type||'').startsWith('image/')){reject(new Error('Choose an image file.'));return}
+    const reader=new FileReader();
+    reader.onerror=()=>reject(reader.error||new Error('Could not read image.'));
+    reader.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error('Could not decode image.'));
+      img.onload=()=>{
+        try{
+          const width=img.naturalWidth||img.width,height=img.naturalHeight||img.height;
+          const side=Math.max(1,Math.min(width,height)),size=Math.min(maxSize,side);
+          const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;
+          const ctx=canvas.getContext('2d',{alpha:false});
+          ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+          ctx.drawImage(img,(width-side)/2,(height-side)/2,side,side,0,0,size,size);
+          resolve(canvas.toDataURL('image/jpeg',.84));
+        }catch(err){reject(err)}
+      };
+      img.src=String(reader.result||'');
+    };
+    reader.readAsDataURL(file);
+  });
+}
 function lifeRecordValue35(type,key,value,fieldType){
   if(value==null||value==='')return '—';
   if(fieldType==='date')return dateLabel(String(value));
@@ -1188,21 +1220,43 @@ function deleteLifeRecord35(type,id){
 function openRecordDetail35(type,id){
   const s=SCHEMA35[type],arr=state.life[type],x=Array.isArray(arr)?arr.find(y=>String(y.id)===String(id)):null;if(!s||!x)return;
   const rows=s.fields.map(([k,l,t])=>{const raw=lifeRecordValue35(type,k,x[k],t),display=esc(raw).replace(/\n/g,'<br>');return `<div class="v35-life-detail-field ${t==='textarea'?'wide':''}"><span>${esc(l)}</span><div>${display}</div></div>`}).join('');
-  const m=modal35(recordTitle35(type,x),`<div class="v35-life-detail-head"><span class="v35-life-detail-icon">${s.icon}</span><div><div class="v35-card-title">${esc(recordTitle35(type,x))}</div><div class="v35-card-sub">${esc(s.title)} · Life Hub</div></div></div><div class="v35-life-detail-grid">${rows}</div>`,`<button class="btn" data-v35-close>Close</button><button class="btn btn-danger" id="v35-detail-delete">Delete</button><button class="btn btn-primary" id="v35-detail-edit">Edit</button>`);
+  const identity=type==='people'?personAvatar35(x,'v35-person-avatar-detail'):`<span class="v35-life-detail-icon">${s.icon}</span>`;
+  const m=modal35(recordTitle35(type,x),`<div class="v35-life-detail-head">${identity}<div><div class="v35-card-title">${esc(recordTitle35(type,x))}</div><div class="v35-card-sub">${esc(s.title)} · Life Hub</div></div></div><div class="v35-life-detail-grid">${rows}</div>`,`<button class="btn" data-v35-close>Close</button><button class="btn btn-danger" id="v35-detail-delete">Delete</button><button class="btn btn-primary" id="v35-detail-edit">Edit</button>`);
   m.querySelector('#v35-detail-edit').onclick=()=>{m.remove();openRecordModal35(type,id)};
   m.querySelector('#v35-detail-delete').onclick=()=>{m.remove();deleteLifeRecord35(type,id)};
 }
 function renderRecords35(type,b){
   let arr=state.life[type]||[];if(type==='journal'||type==='health')arr=[...arr].sort((a,c)=>(c.date||'').localeCompare(a.date||''));let lead='';
   if(type==='money'){const assets=arr.filter(x=>['Account','Asset'].includes(x.kind)).reduce((s,x)=>s+Number(x.amount||0),0),debts=arr.filter(x=>x.kind==='Debt').reduce((s,x)=>s+Number(x.amount||0),0);lead=`<div class="v35-card" style="margin-bottom:12px"><div class="v35-card-sub">Estimated net worth from records in this hub</div><div class="v35-networth ${assets-debts<0?'negative':''}">${money(assets-debts)}</div><div class="v35-row-meta">${money(assets)} assets / accounts · ${money(debts)} debt</div></div>`}
-  b.innerHTML=lead+`<div class="v35-life-sectionbar"><div><strong>${arr.length}</strong> ${arr.length===1?'record':'records'} in ${esc(type)}</div><button class="btn btn-sm" data-life-add-type="${type}">+ Add ${esc(SCHEMA35[type].title)}</button></div><div class="v35-record-grid">${arr.map(x=>`<article class="v35-record-card" data-v35-record="${type}|${esc(x.id)}"><div class="v35-record-card-main"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:1.1rem">${SCHEMA35[type].icon}</span><div class="v35-record-title">${esc(recordTitle35(type,x))}</div></div><div class="v35-record-meta">${esc(recordMeta35(type,x)||'')}</div>${x.notes||x.body?`<div class="v35-record-note">${esc(x.notes||x.body)}</div>`:''}</div><div class="v35-record-actions"><button type="button" class="btn btn-sm" data-life-open="${type}|${esc(x.id)}">Open</button><button type="button" class="icon-btn" data-life-edit="${type}|${esc(x.id)}" aria-label="Edit ${esc(recordTitle35(type,x))}">✎</button><button type="button" class="icon-btn v35-life-delete" data-life-delete="${type}|${esc(x.id)}" aria-label="Delete ${esc(recordTitle35(type,x))}">✕</button></div></article>`).join('')||`<div class="v35-empty" style="grid-column:1/-1">No ${esc(type)} records yet. Use Add to create one.</div>`}</div>`;
+  b.innerHTML=lead+`<div class="v35-life-sectionbar"><div><strong>${arr.length}</strong> ${arr.length===1?'record':'records'} in ${esc(type)}</div><button class="btn btn-sm" data-life-add-type="${type}">+ Add ${esc(SCHEMA35[type].title)}</button></div><div class="v35-record-grid">${arr.map(x=>`<article class="v35-record-card" data-v35-record="${type}|${esc(x.id)}"><div class="v35-record-card-main"><div class="v35-record-identity">${type==='people'?personAvatar35(x):`<span class="v35-record-type-icon">${SCHEMA35[type].icon}</span>`}<div class="v35-record-title">${esc(recordTitle35(type,x))}</div></div><div class="v35-record-meta">${esc(recordMeta35(type,x)||'')}</div>${x.notes||x.body?`<div class="v35-record-note">${esc(x.notes||x.body)}</div>`:''}</div><div class="v35-record-actions"><button type="button" class="btn btn-sm" data-life-open="${type}|${esc(x.id)}">Open</button><button type="button" class="icon-btn" data-life-edit="${type}|${esc(x.id)}" aria-label="Edit ${esc(recordTitle35(type,x))}">✎</button><button type="button" class="icon-btn v35-life-delete" data-life-delete="${type}|${esc(x.id)}" aria-label="Delete ${esc(recordTitle35(type,x))}">✕</button></div></article>`).join('')||`<div class="v35-empty" style="grid-column:1/-1">No ${esc(type)} records yet. Use Add to create one.</div>`}</div>`;
   b.querySelector('[data-life-add-type]')?.addEventListener('click',()=>openRecordModal35(type));
   b.querySelectorAll('[data-v35-record]').forEach(c=>c.onclick=e=>{if(e.target.closest('button'))return;const[t,id]=c.dataset.v35Record.split('|');openRecordDetail35(t,id)});
   b.querySelectorAll('[data-life-open]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();const[t,id]=btn.dataset.lifeOpen.split('|');openRecordDetail35(t,id)});
   b.querySelectorAll('[data-life-edit]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();const[t,id]=btn.dataset.lifeEdit.split('|');openRecordModal35(t,id)});
   b.querySelectorAll('[data-life-delete]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();const[t,id]=btn.dataset.lifeDelete.split('|');deleteLifeRecord35(t,id)});
 }
-function openRecordModal35(type,id){const s=SCHEMA35[type],arr=state.life[type],x=id?arr.find(y=>String(y.id)===String(id)):null;if(!s)return;const fields=s.fields.map(([k,l,t,opts])=>{const v=x?.[k]??((k==='date')?todayKey():'');if(t==='textarea')return `<div class="form-group"><label>${esc(l)}</label><textarea class="form-textarea" id="v35-rec-${k}" rows="4">${esc(v)}</textarea></div>`;if(t==='select')return `<div class="form-group"><label>${esc(l)}</label><select class="form-select" id="v35-rec-${k}">${opts.map(o=>`<option ${String(v)===String(o)?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;return `<div class="form-group"><label>${esc(l)}</label><input class="form-input" type="${t}" id="v35-rec-${k}" value="${esc(v)}" ${t==='number'?'step="0.1"':''}></div>`}).join('');const m=modal35(x?`Edit ${s.title}`:`New ${s.title}`,fields,`<button class="btn ${x?'btn-danger':''}" id="v35-rec-delete">${x?'Delete':'Cancel'}</button><button class="btn btn-primary" id="v35-rec-save">Save</button>`);m.querySelector('#v35-rec-delete').onclick=()=>{if(x){if(!confirm('Delete this record?'))return;state.life[type]=arr.filter(y=>String(y.id)!==String(id));window.saveState();refreshLifeHub35()}m.remove()};m.querySelector('#v35-rec-save').onclick=()=>{const data={};s.fields.forEach(([k,,t])=>{const e=m.querySelector('#v35-rec-'+k);data[k]=t==='number'?(e.value===''?'':Number(e.value)):e.value});if(x)Object.assign(x,data);else arr.unshift({id:uid(type),...data,createdAt:new Date().toISOString()});window.saveState();m.remove();refreshLifeHub35()}}
+function openRecordModal35(type,id){
+  const s=SCHEMA35[type],arr=state.life[type],x=id?arr.find(y=>String(y.id)===String(id)):null;if(!s)return;
+  let avatar=type==='people'?String(x?.avatar||''):'';
+  const fields=s.fields.map(([k,l,t,opts])=>{
+    const v=x?.[k]??((k==='date')?todayKey():'');
+    if(t==='textarea')return `<div class="form-group"><label>${esc(l)}</label><textarea class="form-textarea" id="v35-rec-${k}" rows="4">${esc(v)}</textarea></div>`;
+    if(t==='select')return `<div class="form-group"><label>${esc(l)}</label><select class="form-select" id="v35-rec-${k}">${opts.map(o=>`<option ${String(v)===String(o)?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
+    return `<div class="form-group"><label>${esc(l)}</label><input class="form-input" type="${t}" id="v35-rec-${k}" value="${esc(v)}" ${t==='number'?'step="0.1"':''}></div>`;
+  }).join('');
+  const avatarEditor=type==='people'?`<div class="v35-avatar-editor"><div class="v35-avatar-preview" id="v35-person-avatar-preview"></div><div class="v35-avatar-controls"><div><strong>Avatar</strong><small>Add a photo for this person.</small></div><div class="v35-avatar-buttons"><label class="btn btn-sm" for="v35-person-avatar-file">Choose photo</label><input id="v35-person-avatar-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="v35-person-avatar-remove">Remove</button></div></div></div>`:'';
+  const m=modal35(x?`Edit ${s.title}`:`New ${s.title}`,avatarEditor+fields,`<button class="btn ${x?'btn-danger':''}" id="v35-rec-delete">${x?'Delete':'Cancel'}</button><button class="btn btn-primary" id="v35-rec-save">Save</button>`);
+  if(type==='people'){
+    const preview=m.querySelector('#v35-person-avatar-preview'),remove=m.querySelector('#v35-person-avatar-remove'),file=m.querySelector('#v35-person-avatar-file'),nameInput=m.querySelector('#v35-rec-name');
+    const paint=()=>{const initials=avatarInitials35(nameInput?.value||x?.name||'Person');preview.innerHTML=avatar?`<img src="${esc(avatar)}" alt="">`:`<span>${esc(initials)}</span>`;remove.hidden=!avatar};
+    paint();
+    nameInput?.addEventListener('input',()=>{if(!avatar)paint()});
+    file.onchange=async()=>{const chosen=file.files?.[0];if(!chosen)return;try{avatar=await readAvatarImage35(chosen);paint()}catch(err){window.toast?.(err?.message||'Could not use that image.')}finally{file.value=''}};
+    remove.onclick=()=>{avatar='';paint()};
+  }
+  m.querySelector('#v35-rec-delete').onclick=()=>{if(x){if(!confirm('Delete this record?'))return;state.life[type]=arr.filter(y=>String(y.id)!==String(id));window.saveState();refreshLifeHub35()}m.remove()};
+  m.querySelector('#v35-rec-save').onclick=()=>{const data={};s.fields.forEach(([k,,t])=>{const e=m.querySelector('#v35-rec-'+k);data[k]=t==='number'?(e.value===''?'':Number(e.value)):e.value});if(type==='people')data.avatar=avatar;if(x)Object.assign(x,data);else arr.unshift({id:uid(type),...data,createdAt:new Date().toISOString()});window.saveState();m.remove();refreshLifeHub35()}
+}
 function openAdminChooser35(){const m=modal35('Add life administration record',`<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px"><button class="btn" data-admin-add="importantDates">⏳ Important date</button><button class="btn" data-admin-add="vehicles">🚗 Vehicle</button><button class="btn" data-admin-add="decisions">◆ Decision</button></div>`,'');m.querySelectorAll('[data-admin-add]').forEach(b=>b.onclick=()=>{m.remove();openRecordModal35(b.dataset.adminAdd)})}
 function renderAdmin35(b){
   const groups=[['importantDates','Important dates','⏳'],['vehicles','Vehicles','🚗'],['decisions','Decision log','◆']];

@@ -1575,7 +1575,9 @@ function localKey(d=new Date()){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 function weekStart(d=new Date()){
-  const x=new Date(d);x.setHours(12,0,0,0);const off=(x.getDay()+6)%7;x.setDate(x.getDate()-off);return localKey(x);
+  const x=new Date(d);x.setHours(12,0,0,0);
+  const start=state?.settings?.calendar?.weekStart==='sunday'?0:1;
+  const off=(x.getDay()-start+7)%7;x.setDate(x.getDate()-off);return localKey(x);
 }
 function monthKey(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
 function stateRef(){return state;}
@@ -1584,7 +1586,7 @@ function normalize(){
     ...r,
     id:r.id||uid(),name:String(r.name||'Routine'),icon:String(r.icon||'↻'),
     frequency:['daily','weekly','monthly'].includes(r.frequency)?r.frequency:'daily',
-    time:r.time||'',days:A(r.days).map(Number).filter(n=>n>=0&&n<=6),dayOfMonth:Math.min(31,Math.max(1,Number(r.dayOfMonth)||1)),
+    time:r.time||'',days:A(r.days).map(Number).filter(n=>n>=0&&n<=6),dayOfMonth:Math.min(31,Math.max(1,Number(r.dayOfMonth)||1)),monthlyPolicy:['last-valid','skip','last-day'].includes(r.monthlyPolicy)?r.monthlyPolicy:'last-valid',
     items:A(r.items).map(i=>({...i,id:i.id||uid('ri'),title:String(i.title||'Routine step'),notes:String(i.notes||''),linkType:i.linkType||'none',linkId:i.linkId??''})),
     log:r.log&&typeof r.log==='object'?r.log:{},archived:!!r.archived,createdAt:r.createdAt||new Date().toISOString()
   }));
@@ -1601,13 +1603,20 @@ function resetText(r){return r.frequency==='weekly'?'Resets at the start of each
 function freqLabel(r){
   if(r.frequency==='daily')return 'Daily';
   if(r.frequency==='weekly'){const ds=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];return r.days.length?'Weekly · '+r.days.map(x=>ds[x]).join(', '):'Weekly'}
-  return `Monthly · day ${r.dayOfMonth||1}`;
+  if(r.monthlyPolicy==='last-day')return 'Monthly · last day';
+  return `Monthly · day ${r.dayOfMonth||1}${r.monthlyPolicy==='skip'?' · skip short months':' · last valid day'}`;
 }
 function dueToday(r,d=new Date()){
   if(r.archived)return false;
   if(r.frequency==='daily')return true;
-  if(r.frequency==='weekly')return r.days.length?r.days.includes(d.getDay()):d.getDay()===1;
-  return Number(r.dayOfMonth||1)===d.getDate();
+  if(r.frequency==='weekly'){
+    if(r.days.length)return r.days.includes(d.getDay());
+    const start=state?.settings?.calendar?.weekStart==='sunday'?0:1;return d.getDay()===start;
+  }
+  const desired=Number(r.dayOfMonth||1),last=new Date(d.getFullYear(),d.getMonth()+1,0,12).getDate();
+  if(r.monthlyPolicy==='last-day')return d.getDate()===last;
+  if(desired>last)return r.monthlyPolicy!=='skip'&&d.getDate()===last;
+  return desired===d.getDate();
 }
 function getRoutine(id){return normalize().find(r=>String(r.id)===String(id))}
 function getStep(r,id){return A(r?.items).find(i=>String(i.id)===String(id))}
@@ -1665,7 +1674,7 @@ function renderRoutinePage(){
 /* ---------- reliable routine editor / step creation ---------- */
 function openEditor611(id=''){
   normalize();const existing=id?getRoutine(id):null;
-  const draft=existing?JSON.parse(JSON.stringify(existing)):{id:uid(),name:'',icon:'↻',frequency:'daily',time:'',days:[],dayOfMonth:1,items:[],log:{},archived:false,createdAt:new Date().toISOString()};
+  const draft=existing?JSON.parse(JSON.stringify(existing)):{id:uid(),name:'',icon:'↻',frequency:'daily',time:'',days:[],dayOfMonth:1,monthlyPolicy:'last-valid',items:[],log:{},archived:false,createdAt:new Date().toISOString()};
   if(!draft.items.length)draft.items.push({id:uid('ri'),title:'',notes:'',linkType:'none',linkId:''});
   const ov=document.createElement('div');ov.className='modal-overlay active';ov.id='routine-editor-v611';
   ov.innerHTML=`<div class="modal" style="max-width:860px"><div class="modal-header"><div><h2 class="modal-title">${existing?'Edit routine':'New routine'}</h2><div class="text-muted text-sm">Each saved step is independent and can connect to another OmniOS module.</div></div><button type="button" class="modal-close-btn" data-close>✕</button></div><div class="form-grid"><div class="form-group"><label class="form-label">Routine name</label><input class="form-input" id="rt611-name" value="${E(draft.name)}" placeholder="Morning routine"></div><div class="form-group"><label class="form-label">Icon</label><input class="form-input" id="rt611-icon" value="${E(draft.icon)}" maxlength="3"></div><div class="form-group"><label class="form-label">Frequency</label><select class="form-select" id="rt611-frequency"><option value="daily">Daily — restarts every day</option><option value="weekly">Weekly — restarts every week</option><option value="monthly">Monthly — restarts every month</option></select></div><div class="form-group"><label class="form-label">Preferred time</label><input type="time" class="form-input" id="rt611-time" value="${E(draft.time)}"></div></div><div id="rt611-schedule"></div><div class="rt611-editor-help">Completion is stored per cycle. A daily routine starts with a fresh checklist each day, a weekly routine each new week, and a monthly routine each new month. Previous cycle history is preserved.</div><div class="flex-between" style="margin:14px 0 8px"><div><strong style="font-size:.84rem">Routine steps</strong><div class="text-muted" style="font-size:.65rem;margin-top:2px">Add as many steps as needed. Empty rows are ignored only when you save.</div></div><button type="button" class="btn btn-sm" id="rt611-add-step-top">+ Add step</button></div><div class="rt611-builder" id="rt611-builder"></div><button type="button" class="btn rt611-add-step" id="rt611-add-step-bottom">＋ Add another step</button><div class="modal-footer"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn btn-primary" id="rt611-save">Save routine</button></div></div>`;
@@ -1674,7 +1683,7 @@ function openEditor611(id=''){
   function renderSchedule(){
     const host=ov.querySelector('#rt611-schedule');draft.frequency=freq.value;
     if(draft.frequency==='weekly')host.innerHTML=`<div class="form-group"><label class="form-label">Scheduled day(s)</label><div class="rt-days">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d,n)=>`<label><input type="checkbox" data-rt611-day="${n}" ${A(draft.days).includes(n)?'checked':''}><span>${d}</span></label>`).join('')}</div></div>`;
-    else if(draft.frequency==='monthly')host.innerHTML=`<div class="form-group" style="max-width:230px"><label class="form-label">Day of month</label><input class="form-input" type="number" min="1" max="31" id="rt611-dom" value="${Number(draft.dayOfMonth)||1}"></div>`;
+    else if(draft.frequency==='monthly')host.innerHTML=`<div class="form-grid"><div class="form-group"><label class="form-label">Day of month</label><input class="form-input" type="number" min="1" max="31" id="rt611-dom" value="${Number(draft.dayOfMonth)||1}"></div><div class="form-group"><label class="form-label">Short-month policy</label><select class="form-select" id="rt611-month-policy"><option value="last-valid" ${draft.monthlyPolicy!=='skip'&&draft.monthlyPolicy!=='last-day'?'selected':''}>Move to last valid day</option><option value="skip" ${draft.monthlyPolicy==='skip'?'selected':''}>Skip that month</option><option value="last-day" ${draft.monthlyPolicy==='last-day'?'selected':''}>Always use last day of month</option></select></div></div>`;
     else host.innerHTML='';
   }
   function renderSteps(focusId=''){
@@ -1702,6 +1711,7 @@ function openEditor611(id=''){
     if(draft.frequency==='weekly'){draft.days=[...ov.querySelectorAll('[data-rt611-day]:checked')].map(x=>Number(x.dataset.rt611Day));if(!draft.days.length){toast('Choose at least one day for a weekly routine.');return}}
     else draft.days=[];
     draft.dayOfMonth=Math.min(31,Math.max(1,Number(ov.querySelector('#rt611-dom')?.value||draft.dayOfMonth||1)));
+    draft.monthlyPolicy=draft.frequency==='monthly'?(ov.querySelector('#rt611-month-policy')?.value||draft.monthlyPolicy||'last-valid'):(draft.monthlyPolicy||'last-valid');
     draft.items=A(draft.items).map(i=>({...i,title:String(i.title||'').trim(),notes:String(i.notes||'').trim()})).filter(i=>i.title);
     if(!draft.items.length){toast('Add at least one named routine step.');return}
     const s=stateRef();if(existing)Object.assign(existing,draft);else{s.routines=A(s.routines);s.routines.unshift(draft)}

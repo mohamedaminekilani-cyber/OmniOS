@@ -128,7 +128,7 @@ function hashText(text){
 function validatePart(text,index){
   if(typeof text!=='string'||text.length<MIN_PART_LENGTH)return false;
   if(index===0&&!/^\s*<!doctype html>/i.test(text.slice(0,300)))return false;
-  if(index===PARTS.length-1&&!/<\/html>\s*$/i.test(text))return false;
+  if(index===PARTS.length-1&&(!/<\/html>\s*$/i.test(text)||((text.match(/<\/html>/gi)||[]).length!==1)))return false;
   const head=text.slice(0,4000).toLowerCase();
   if(head.includes('<title>sign in')||head.includes('captive portal')||head.includes('network login'))return false;
   return true;

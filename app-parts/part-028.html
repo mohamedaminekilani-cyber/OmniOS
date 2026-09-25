@@ -5796,27 +5796,31 @@ async function relayOpen(secret,sealed){
   const raw=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,data);
   return JSON.parse(new TextDecoder().decode(raw))
 }
-function relayJsonp(channel,after){
-  return new Promise((resolve,reject)=>{
-    const cb='__omniRelay'+randomHex(6),s=document.createElement('script');
-    let done=false;
-    const clean=()=>{try{delete window[cb]}catch(_){window[cb]=undefined}try{s.remove()}catch(_){}};
-    const finish=(ok,value)=>{if(done)return;done=true;clearTimeout(timer);clean();ok?resolve(value):reject(value instanceof Error?value:new Error('Relay request failed'))};
-    window[cb]=data=>finish(true,data);
-    s.async=true;s.src=RELAY_URL+'?channel='+encodeURIComponent(channel)+'&after='+encodeURIComponent(String(after||0))+'&callback='+encodeURIComponent(cb)+'&_='+Date.now();
-    s.onerror=()=>finish(false,new Error('Relay unavailable'));
-    const timer=setTimeout(()=>finish(false,new Error('Relay timed out')),6000);
-    document.head.appendChild(s)
-  })
+async function relayAuth(sid,secret){
+  const raw=new TextEncoder().encode('omnios-relay-auth-v2|'+String(sid||'')+'|'+String(secret||''));
+  const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',raw));
+  return bytesToB64url(digest.slice(0,24)).replace(/[^a-zA-Z0-9_-]/g,'')
+}
+async function relayFetch(channel,cursor,auth){
+  const u=new URL(RELAY_URL);u.searchParams.set('channel',channel);u.searchParams.set('auth',auth);if(cursor)u.searchParams.set('cursor',cursor);
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),6500);
+  try{
+    const res=await fetch(u.toString(),{method:'GET',mode:'cors',cache:'no-store',credentials:'omit',signal:ctrl.signal,headers:{'X-Omni-Relay-Auth':auth}});
+    const data=await res.json().catch(()=>({ok:false,error:'Invalid relay response'}));
+    if(!res.ok||data?.ok===false)throw new Error(data?.error||('Relay HTTP '+res.status));
+    return data
+  }finally{clearTimeout(timer)}
 }
 async function relaySendEnvelope(sid,secret,type,payload){
   const st=await beginRelay(sid,secret,hostSession?.sid===sid?'host':'join');
   const id=randomHex(10),envelope={v:PROTOCOL,type,payload,from:dev()?.id||'unknown',createdAt:Date.now(),id};
-  const sealed=await relaySeal(secret,envelope);
+  const sealed=await relaySeal(secret,envelope),auth=st.auth||await relayAuth(sid,secret);
   try{
-    await fetch(RELAY_URL,{method:'POST',mode:'no-cors',cache:'no-store',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({channel:st.channel,id,from:envelope.from,sealed})});
+    const res=await fetch(RELAY_URL,{method:'POST',mode:'cors',cache:'no-store',credentials:'omit',headers:{'Content-Type':'application/json','X-Omni-Relay-Auth':auth},body:JSON.stringify({channel:st.channel,id,from:envelope.from,sealed,auth})});
+    const data=await res.json().catch(()=>({ok:false,error:'Invalid relay response'}));
+    if(!res.ok||data?.ok===false)throw new Error(data?.error||('Relay HTTP '+res.status));
     return true
-  }catch(e){console.warn('OmniOS relay send',e);return false}
+  }catch(e){console.warn('Second Brain relay send',e);return false}
 }
 function stopRelaySession(){
   if(!relayState)return;
@@ -5878,23 +5882,31 @@ async function handleRelayEnvelope(st,envelope){
 async function beginRelay(sid,secret,role){
   if(relayState?.running&&relayState.sid===sid&&relayState.secret===secret)return relayState;
   stopRelaySession();
-  const channel=await relayChannel(sid,secret);
-  const st={sid,secret,role,channel,after:Date.now()-2500,running:true,timer:null,seen:new Set(),conn:null,active:false};
+  const channel=await relayChannel(sid,secret),auth=await relayAuth(sid,secret);
+  const st={sid,secret,role,channel,auth,cursor:'',running:true,timer:null,seen:new Set(),conn:null,active:false,failures:0};
   relayState=st;
   const poll=async()=>{
     if(!st.running||relayState!==st)return;
     try{
-      const data=await relayJsonp(channel,st.after);
+      const data=await relayFetch(channel,st.cursor,auth);
+      st.failures=0;
       if(data?.ok&&Array.isArray(data.messages)){
         for(const row of data.messages){
-          st.after=Math.max(st.after,Number(row?.at)||0);
           if(!row?.id||st.seen.has(row.id)||row.from===(dev()?.id||'unknown'))continue;
-          st.seen.add(row.id);if(st.seen.size>80)st.seen=new Set([...st.seen].slice(-50));
-          try{await handleRelayEnvelope(st,await relayOpen(secret,row.sealed))}catch(e){console.warn('Relay message ignored',e)}
+          try{
+            await handleRelayEnvelope(st,await relayOpen(secret,row.sealed));
+            st.seen.add(row.id);if(st.seen.size>120)st.seen=new Set([...st.seen].slice(-80))
+          }catch(e){console.warn('Relay message ignored',e)}
         }
+        if(data.cursor)st.cursor=String(data.cursor)
       }
-    }catch(e){if(st.running)console.warn('OmniOS relay poll',e)}
-    finally{if(st.running&&relayState===st)st.timer=setTimeout(poll,900)}
+    }catch(e){if(st.running){st.failures++;console.warn('Second Brain relay poll',e)}}
+    finally{
+      if(st.running&&relayState===st){
+        const delay=Math.min(5000,900*Math.pow(1.55,Math.min(5,st.failures)));
+        st.timer=setTimeout(poll,delay)
+      }
+    }
   };
   poll();return st
 }

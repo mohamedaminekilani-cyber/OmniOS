@@ -44,7 +44,8 @@ export default async () => {
   const store = pushStore();
   const { blobs } = await store.list({ prefix: "device/" });
   const now = Date.now();
-  const graceMs = 15 * 60 * 1000;
+  const graceMs = 24 * 60 * 60 * 1000;
+  const missedThresholdMs = 15 * 60 * 1000;
 
   for (const blob of blobs) {
     const record = await store.get(blob.key, { type: "json" }) as DeviceRecord | null;
@@ -60,16 +61,17 @@ export default async () => {
       if (!Number.isFinite(at) || at > now || at < now - graceMs || sent[item.id]) continue;
 
       try {
+        const missed=at < now-missedThresholdMs;
         await webpush.sendNotification(record.subscription, JSON.stringify({
-          title: item.title || "OmniOS reminder",
-          body: item.body || "You have something scheduled in OmniOS.",
+          title: missed ? ("Missed · "+(item.title || "Second Brain reminder")) : (item.title || "Second Brain reminder"),
+          body: missed ? ("Scheduled earlier · "+(item.body || "Open Second Brain to review it.")) : (item.body || "You have something scheduled in Second Brain."),
           view: item.view || "reminders",
           tag: item.tag || item.id
         }), { TTL: 86400 });
         sent[item.id] = new Date().toISOString();
         changed = true;
       } catch (error: any) {
-        console.error("OmniOS push dispatch", blob.key, error?.statusCode || error);
+        console.error("Second Brain push dispatch", blob.key, error?.statusCode || error);
         if (isGone(error)) { invalid = true; break; }
       }
     }

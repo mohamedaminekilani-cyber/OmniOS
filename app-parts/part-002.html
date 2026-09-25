@@ -1786,7 +1786,7 @@ function settingsTimeHtml(path, label, desc) {
 // ================= CUSTOM ICONS =================
 // Every icon slot in the sidebar carries a data-icon-file (e.g. "Dashboard.png"). If you drop a
 // matching image into an "icons" folder placed next to this HTML file, and turn the setting on
-// below, OmniOS will use your picture instead of the built-in icon. You can also upload an image
+// below, Second Brain will use your picture instead of the built-in icon. You can also upload an image
 // directly in Settings, which always takes priority over the folder file for that icon.
 const ICON_MANIFEST = [
     { key: 'logo', file: 'Logo.png', label: 'App logo' },
@@ -1906,7 +1906,7 @@ function clearCustomIcon(key){
 function renderIconSettingsSection(){
     return `<div class="card settings-section">
         <h3 class="card-title mb-4">Custom icons & pictures</h3>
-        ${settingsToggleHtml('appearance.customIconsEnabled','Use my own icon files','When on, OmniOS looks for image files in an "icons" folder placed next to this app file — for example icons/Dashboard.png. Any icon without a matching file just keeps its default look.')}
+        ${settingsToggleHtml('appearance.customIconsEnabled','Use my own icon files','When on, Second Brain looks for image files in an "icons" folder placed next to this app file — for example icons/Dashboard.png. Any icon without a matching file just keeps its default look.')}
         <div class="settings-row-desc" style="margin:10px 0">You can also upload an icon for a specific item right here — an upload always overrides the folder file for that one icon.</div>
         <div>
             ${ICON_MANIFEST.map(m => `
@@ -1949,7 +1949,7 @@ function renderSettings() {
             <div class="settings-widget-grid">${['progress','priorities','insights','habits','focus','finance'].map(k=>`<span class="settings-widget-chip ${a.widgets[k]!==false?'on':''}" onclick="toggleWidget('${k}')">${a.widgets[k]!==false?'✓ ':''}${k.charAt(0).toUpperCase()+k.slice(1)}</span>`).join('')}</div>
         </div>
         <div class="card settings-section"><h3 class="card-title mb-4">Workflow & navigation</h3>
-            ${settingsSelectHtml('appearance.startView','Start page',[['dashboard','Dashboard'],['routine','Routine'],['master-calendar','Calendar'],['tasks','Tasks'],['budget','Budget'],['habits','Habits'],['workout','Workout'],['focus','Focus'],['notes','Notes']],'Choose the first page shown when OmniOS opens.')}
+            ${settingsSelectHtml('appearance.startView','Start page',[['dashboard','Dashboard'],['routine','Routine'],['master-calendar','Calendar'],['tasks','Tasks'],['budget','Budget'],['habits','Habits'],['workout','Workout'],['focus','Focus'],['notes','Notes']],'Choose the first page shown when Second Brain opens.')}
             ${settingsToggleHtml('appearance.autoFocusSearch','Auto-focus search','When a list opens, place the cursor in its search field when available.')}
         </div>
         ${renderIconSettingsSection()}`;
@@ -1990,7 +1990,7 @@ function renderSettings() {
             ${settingsNumberHtml('focus.dailyGoal','Daily focus goal (min)','Drives the Focus goal bar on your dashboard.',{min:5,max:1440})}
         </div>`;
     } else if (currentSettingsTab === 'notifications') {
-        html += `<div class="card settings-section"><h3 class="card-title mb-4">Reminder sources</h3><div class="settings-row-desc" style="margin-bottom:6px">Choose which OmniOS sources can create in-app alerts and system push reminders when push is enabled.</div>
+        html += `<div class="card settings-section"><h3 class="card-title mb-4">Reminder sources</h3><div class="settings-row-desc" style="margin-bottom:6px">Choose which Second Brain sources can create in-app alerts and system push reminders when push is enabled.</div>
             ${settingsToggleHtml('notifications.taskReminders','Task reminders')}
             ${settingsToggleHtml('notifications.habitReminders','Habit reminders')}
             ${settingsToggleHtml('notifications.eventReminders','Event reminders')}
@@ -2010,7 +2010,7 @@ function renderSettings() {
                 <div class="settings-row"><div><div class="settings-row-label">Reset a module</div><div class="settings-row-desc">Clear just one area's data. This cannot be undone.</div></div>
                 <select class="filter-select" id="settings-reset-module"><option value="entries">Tasks</option><option value="calendarEvents">Calendar events</option><option value="transactions">Budget & transactions</option><option value="habits">Habits</option><option value="workouts">Workout history</option><option value="notes">Notes</option></select>
                 <button type="button" class="btn btn-sm btn-danger" onclick="resetSettingsModule()">Reset</button></div>
-                <div class="settings-row"><div><div class="settings-row-label">Full reset</div><div class="settings-row-desc">Erase all OmniOS data on this device and start fresh.</div></div><button type="button" class="btn btn-sm btn-danger" onclick="fullResetApp()">⚠ Reset everything</button></div>
+                <div class="settings-row"><div><div class="settings-row-label">Full reset</div><div class="settings-row-desc">Erase all Second Brain data on this device and start fresh.</div></div><button type="button" class="btn btn-sm btn-danger" onclick="fullResetApp()">⚠ Reset everything</button></div>
             </div>
         </div>`;
     }
@@ -2029,7 +2029,7 @@ async function fullResetApp() {
     // A single, unambiguous confirmation instead of two back-to-back native dialogs.
     // Clear both the primary browser state and the IndexedDB recovery mirror so an
     // intentional reset can never be undone automatically on the next launch.
-    if (!window.omniosConfirm('Erase ALL OmniOS data on this device?\n\nThis permanently deletes every task, note, habit, workout, budget entry and setting. It cannot be undone — export a backup first if you want to keep a copy.\n\nType-check: click OK only if you are certain.')) return;
+    if (!window.omniosConfirm('Erase ALL Second Brain data on this device?\n\nThis permanently deletes every task, note, habit, workout, budget entry and setting. It cannot be undone — export a backup first if you want to keep a copy.\n\nType-check: click OK only if you are certain.')) return;
     const resetAt=new Date().toISOString();
     try {
         storage.setItem('omnios_v35_full_reset_at',resetAt);
@@ -2052,7 +2052,7 @@ async function fullResetApp() {
 }
 
 function exportData() {
-    const payload={version:3,app:'OmniOS',exportedAt:new Date().toISOString(),state};
+    const payload={version:3,app:'Second Brain',exportedAt:new Date().toISOString(),state};
     const dataStr="data:application/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(payload,null,2));
     const a=document.createElement('a'); a.setAttribute('href',dataStr); a.setAttribute('download',`omnios_backup_${localDateString()}.json`);
     document.body.appendChild(a); a.click(); a.remove();
@@ -2081,7 +2081,7 @@ document.getElementById('import-file').addEventListener('change', (event) => {
 
 // Keep one-page navigation usable even when opened as a local HTML file in Safari.
 window.addEventListener('error', (event) => {
-    console.error('OmniOS error:', event.error || event.message);
+    console.error('Second Brain error:', event.error || event.message);
 });
 document.addEventListener('click', (event) => {
     const button = event.target.closest('button');
@@ -2232,7 +2232,7 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalon
         const hint = document.createElement('div');
         hint.id = 'iphone-install-hint';
         hint.style.cssText = 'position:fixed;left:10px;right:10px;bottom:calc(82px + env(safe-area-inset-bottom));z-index:1100;background:#18181b;border:1px solid #3f3f46;border-radius:14px;padding:12px 14px;box-shadow:0 10px 35px rgba(0,0,0,.45);font-size:12px;color:#f4f4f5;line-height:1.4';
-        hint.innerHTML = '<strong>Use OmniOS like an app</strong><br><span style="color:#a1a1aa">Safari → Share → Add to Home Screen</span> <button type="button" aria-label="Dismiss" style="float:right;background:none;border:0;color:#71717a;font-size:18px;padding:0 4px">×</button>';
+        hint.innerHTML = '<strong>Use Second Brain like an app</strong><br><span style="color:#a1a1aa">Safari → Share → Add to Home Screen</span> <button type="button" aria-label="Dismiss" style="float:right;background:none;border:0;color:#71717a;font-size:18px;padding:0 4px">×</button>';
         hint.querySelector('button').onclick = () => { storage.setItem('omnios_iphone_hint','1'); hint.remove(); };
         document.body.appendChild(hint);
     }, 1200);
@@ -2249,7 +2249,7 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalon
 @media(max-width:700px){.goal-grid,.custom-list-grid{grid-template-columns:1fr}.list-controls{align-items:stretch}.list-controls>*{width:100%!important}.finance-item{padding:12px}.custom-item-media{height:155px}}
 </style>
 <script id="omnios-budget-lists-extension">
-// ===== OmniOS Budget Planning + Wishlist + Grocery extension =====
+// ===== Second Brain Budget Planning + Wishlist + Grocery extension =====
 (function(){
   const DEFAULT_NEW_DATA={
     wishlistCategories:[
@@ -2512,7 +2512,7 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalon
   }
   document.querySelectorAll('[data-diet-tab]').forEach(b=>b.addEventListener('click',()=>{dietTab=b.dataset.dietTab;document.querySelectorAll('[data-diet-tab]').forEach(x=>x.classList.toggle('active',x===b));renderDiet();}));
   document.getElementById('diet-add-btn').onclick=()=>{if(dietTab==='calendar')openDietEntryModal(dietSelected);else if(dietTab==='database')openFoodModal();else if(dietTab==='prep')openPrepModal();else openWeightModal()};
-  function renderProfileSummary(){const el=document.getElementById('diet-profile-summary');if(!el)return;const p=state.settings.profile||{},r=adultReference();if(!p.age||!p.heightCm||!p.weightKg){el.innerHTML='<strong>Profile not complete</strong><br>Open Settings → User Profile to enter age, height, weight, sex and activity level. Nutrition needs are not estimated until an adult profile is complete.';return}el.innerHTML=r?`<strong>${esc(p.name||'Your profile')}</strong><br>${esc(p.age)} years · ${esc(p.heightCm)} cm · ${esc(p.weightKg)} kg · ${esc(p.activity)} activity<br><span class="text-muted">Estimated adult reference energy: ${Math.round(r.tdee)} kcal/day. This is a reference estimate, not a medical prescription.</span>`:`<strong>${esc(p.name||'Your profile')}</strong><br>${esc(p.age)} years · ${esc(p.heightCm)} cm · ${esc(p.weightKg)} kg<br><span class="text-muted">Because the profile is under 18, OmniOS does not generate a calorie target. Use the tracker for meal records and discuss individualized nutrition needs with a qualified adult/professional.</span>`}
+  function renderProfileSummary(){const el=document.getElementById('diet-profile-summary');if(!el)return;const p=state.settings.profile||{},r=adultReference();if(!p.age||!p.heightCm||!p.weightKg){el.innerHTML='<strong>Profile not complete</strong><br>Open Settings → User Profile to enter age, height, weight, sex and activity level. Nutrition needs are not estimated until an adult profile is complete.';return}el.innerHTML=r?`<strong>${esc(p.name||'Your profile')}</strong><br>${esc(p.age)} years · ${esc(p.heightCm)} cm · ${esc(p.weightKg)} kg · ${esc(p.activity)} activity<br><span class="text-muted">Estimated adult reference energy: ${Math.round(r.tdee)} kcal/day. This is a reference estimate, not a medical prescription.</span>`:`<strong>${esc(p.name||'Your profile')}</strong><br>${esc(p.age)} years · ${esc(p.heightCm)} cm · ${esc(p.weightKg)} kg<br><span class="text-muted">Because the profile is under 18, Second Brain does not generate a calorie target. Use the tracker for meal records and discuss individualized nutrition needs with a qualified adult/professional.</span>`}
   function renderDiet(){const el=document.getElementById('diet-content');if(!el)return;renderProfileSummary();if(dietTab==='calendar')renderPlanner(el);else if(dietTab==='database')renderDatabase(el);else if(dietTab==='prep')renderPrep(el);else renderProgress(el)}
 
   function renderPlanner(el){
@@ -2531,7 +2531,7 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalon
   window.deletePrep=function(id){if(!confirm('Delete this meal-prep batch?'))return;state.dietPrep=state.dietPrep.filter(x=>String(x.id)!==String(id));saveState()}
 
   function renderProgress(el){const logs=state.weightLog.slice().sort((a,b)=>a.date.localeCompare(b.date));const r=adultReference();let svg='';if(logs.length){const vals=logs.map(x=>x.weightKg),min=Math.min(...vals),max=Math.max(...vals),range=Math.max(.1,max-min);const pts=logs.map((x,i)=>{const px=20+(i/(Math.max(1,logs.length-1)))*360;const py=160-((x.weightKg-min)/range)*125;return `${px},${py}`}).join(' ');svg=`<svg viewBox="0 0 400 180" preserveAspectRatio="none"><line x1="20" y1="160" x2="380" y2="160" stroke="var(--border-light)"/><polyline points="${pts}" fill="none" stroke="var(--accent-cyan)" stroke-width="3"/>${logs.map((x,i)=>{const px=20+(i/(Math.max(1,logs.length-1)))*360;const py=160-((x.weightKg-min)/range)*125;return `<circle cx="${px}" cy="${py}" r="4" fill="var(--accent-cyan)"/>`}).join('')}</svg>`}else svg='<div class="empty-state">Add weight entries to see progress.</div>';
-    const first=logs[0],last=logs[logs.length-1];el.innerHTML=`<div class="diet-progress-grid"><div class="diet-card"><div class="diet-toolbar"><div><strong>Weight history</strong><div class="text-muted text-sm">Track measurements over time. OmniOS does not set a target weight.</div></div><button class="btn btn-primary" id="diet-add-weight">+ Add weight</button></div><div class="diet-weight-chart">${svg}</div><div class="diet-profile-note" style="margin-top:10px">${last?`Latest recorded: <strong>${last.weightKg.toFixed(1)} kg</strong> on ${esc(last.date)}.`:'No measurements recorded yet.'}${first&&last&&first.id!==last.id?` Change since first logged entry: ${((last.weightKg-first.weightKg)).toFixed(1)} kg.`:''}${r?` Estimated adult reference energy is ${Math.round(r.tdee)} kcal/day based on the current profile.`:''}</div></div><div class="diet-card"><div class="diet-toolbar"><div><strong>Recent entries</strong></div></div>${logs.slice().reverse().slice(0,10).map(x=>`<div class="diet-weight-row"><span>${esc(x.date)} · ${x.weightKg.toFixed(1)} kg</span><span><button class="icon-btn" onclick="openWeightModal('${x.id}')">✎</button> <button class="icon-btn" onclick="deleteWeight('${x.id}')">✕</button></span></div>`).join('')||'<div class="empty-state">No entries.</div>'}</div></div>`;el.querySelector('#diet-add-weight').onclick=()=>openWeightModal()}
+    const first=logs[0],last=logs[logs.length-1];el.innerHTML=`<div class="diet-progress-grid"><div class="diet-card"><div class="diet-toolbar"><div><strong>Weight history</strong><div class="text-muted text-sm">Track measurements over time. Second Brain does not set a target weight.</div></div><button class="btn btn-primary" id="diet-add-weight">+ Add weight</button></div><div class="diet-weight-chart">${svg}</div><div class="diet-profile-note" style="margin-top:10px">${last?`Latest recorded: <strong>${last.weightKg.toFixed(1)} kg</strong> on ${esc(last.date)}.`:'No measurements recorded yet.'}${first&&last&&first.id!==last.id?` Change since first logged entry: ${((last.weightKg-first.weightKg)).toFixed(1)} kg.`:''}${r?` Estimated adult reference energy is ${Math.round(r.tdee)} kcal/day based on the current profile.`:''}</div></div><div class="diet-card"><div class="diet-toolbar"><div><strong>Recent entries</strong></div></div>${logs.slice().reverse().slice(0,10).map(x=>`<div class="diet-weight-row"><span>${esc(x.date)} · ${x.weightKg.toFixed(1)} kg</span><span><button class="icon-btn" onclick="openWeightModal('${x.id}')">✎</button> <button class="icon-btn" onclick="deleteWeight('${x.id}')">✕</button></span></div>`).join('')||'<div class="empty-state">No entries.</div>'}</div></div>`;el.querySelector('#diet-add-weight').onclick=()=>openWeightModal()}
   window.deleteWeight=function(id){if(!confirm('Delete this weight entry?'))return;state.weightLog=state.weightLog.filter(x=>String(x.id)!==String(id));saveState()}
 
   function modalShell(id,title,body){document.getElementById(id)?.remove();const ov=document.createElement('div');ov.className='modal-overlay active';ov.id=id;ov.innerHTML=`<div class="modal" style="max-width:760px"><div class="modal-header"><h3 class="modal-title">${title}</h3><button class="icon-btn" type="button" data-close>✕</button></div>${body}</div>`;document.body.appendChild(ov);ov.querySelector('[data-close]').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove()};return ov}

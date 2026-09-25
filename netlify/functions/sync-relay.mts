@@ -8,6 +8,13 @@ type RelayRecord = {
   sealed: string;
 };
 
+type RelayMessage = RelayRecord & { cursor: string };
+
+const MAX_BODY_BYTES = 8_000_000;
+const MAX_SEALED_CHARS = 7_500_000;
+const MAX_BATCH = 30;
+const TTL_MS = 20 * 60 * 1000;
+
 function relayStore() {
   if (Netlify.context?.deploy?.context === "production") {
     return getStore("omnios-sync-relay", { consistency: "strong" });
@@ -21,53 +28,67 @@ function safeToken(value: unknown, max = 96) {
   return token;
 }
 
-function safeCallback(value: unknown) {
-  const callback = String(value || "");
-  if (!/^[A-Za-z_$][A-Za-z0-9_$]{0,63}$/.test(callback)) throw new Error("Invalid callback");
-  return callback;
+function safeCursor(value: unknown) {
+  const cursor = String(value || "");
+  if (!cursor) return "";
+  if (!/^message\/[A-Za-z0-9_-]+\/\d{13}-[A-Za-z0-9_-]+$/.test(cursor)) throw new Error("Invalid relay cursor");
+  return cursor;
 }
 
-function script(callback: string, value: unknown, status = 200) {
-  return new Response(`${callback}(${JSON.stringify(value)});`, {
+function corsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "*";
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers": "content-type",
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin",
+    "Cache-Control": "no-store, max-age=0"
+  };
+}
+
+function json(req: Request, value: unknown, status = 200) {
+  return new Response(JSON.stringify(value), {
     status,
-    headers: {
-      "Content-Type": "application/javascript; charset=utf-8",
-      "Cache-Control": "no-store, max-age=0"
-    }
+    headers: { ...corsHeaders(req), "Content-Type": "application/json; charset=utf-8" }
   });
 }
 
 export default async (req: Request, _context: Context) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   const store = relayStore();
 
   try {
     if (req.method === "POST") {
-      const length = Number(req.headers.get("content-length") || 0);
-      if (length > 8_000_000) return new Response("Payload Too Large", { status: 413 });
+      const declaredLength = Number(req.headers.get("content-length") || 0);
+      if (declaredLength > MAX_BODY_BYTES) return json(req, { ok: false, error: "Payload Too Large" }, 413);
 
-      const body = JSON.parse(await req.text());
+      const raw = await req.text();
+      if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) return json(req, { ok: false, error: "Payload Too Large" }, 413);
+      const body = JSON.parse(raw);
       const channel = safeToken(body?.channel, 80);
       const id = safeToken(body?.id, 64);
       const from = safeToken(body?.from || "device", 96);
       const sealed = String(body?.sealed || "");
-      if (!sealed || sealed.length > 7_500_000) throw new Error("Invalid relay payload");
+      if (!sealed || sealed.length > MAX_SEALED_CHARS) throw new Error("Invalid relay payload");
 
       const at = Date.now();
       const key = `message/${channel}/${String(at).padStart(13, "0")}-${id}`;
       const record: RelayRecord = { id, at, from, sealed };
       await store.setJSON(key, record);
-      return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+      return json(req, { ok: true, id, at, cursor: key }, 201);
     }
 
     if (req.method === "GET") {
       const url = new URL(req.url);
       const channel = safeToken(url.searchParams.get("channel"), 80);
-      const callback = safeCallback(url.searchParams.get("callback"));
-      const after = Math.max(0, Number(url.searchParams.get("after") || 0) || 0);
+      const cursor = safeCursor(url.searchParams.get("cursor"));
       const prefix = `message/${channel}/`;
+      if (cursor && !cursor.startsWith(prefix)) throw new Error("Cursor does not belong to channel");
+
       const listed = await store.list({ prefix });
       const now = Date.now();
-      const cutoff = now - 20 * 60 * 1000;
+      const cutoff = now - TTL_MS;
 
       const candidates = listed.blobs
         .map((x) => {
@@ -75,36 +96,29 @@ export default async (req: Request, _context: Context) => {
           const at = Number(tail.slice(0, 13)) || 0;
           return { key: x.key, at };
         })
-        .filter((x) => x.at > after)
-        .sort((a, b) => a.at - b.at)
-        .slice(0, 30);
+        .filter((x) => !cursor || x.key > cursor)
+        .sort((a, b) => a.key.localeCompare(b.key))
+        .slice(0, MAX_BATCH);
 
-      const messages: RelayRecord[] = [];
+      const messages: RelayMessage[] = [];
       for (const item of candidates) {
         const row = await store.get(item.key, { type: "json" }) as RelayRecord | null;
-        if (row) messages.push(row);
+        if (row) messages.push({ ...row, cursor: item.key });
       }
 
       const stale = listed.blobs
         .map((x) => ({ key: x.key, at: Number(x.key.slice(prefix.length, prefix.length + 13)) || 0 }))
         .filter((x) => x.at && x.at < cutoff)
-        .slice(0, 20);
-      if (stale.length) Promise.allSettled(stale.map((x) => store.delete(x.key)));
+        .slice(0, 40);
+      if (stale.length) await Promise.allSettled(stale.map((x) => store.delete(x.key)));
 
-      return script(callback, { ok: true, messages, serverAt: now });
+      return json(req, { ok: true, messages, serverAt: now, cursor: messages.at(-1)?.cursor || cursor });
     }
 
-    return new Response("Method Not Allowed", { status: 405 });
+    return json(req, { ok: false, error: "Method Not Allowed" }, 405);
   } catch (error: any) {
-    if (req.method === "GET") {
-      try {
-        const url = new URL(req.url);
-        const callback = safeCallback(url.searchParams.get("callback"));
-        return script(callback, { ok: false, error: error?.message || "Relay error", messages: [] }, 200);
-      } catch {}
-    }
-    console.error("OmniOS sync relay", error);
-    return new Response("Bad Request", { status: 400 });
+    console.error("Second Brain sync relay", error);
+    return json(req, { ok: false, error: error?.message || "Relay error", messages: [] }, 400);
   }
 };
 

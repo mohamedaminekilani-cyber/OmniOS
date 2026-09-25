@@ -36,7 +36,7 @@
 })();
 </script>
 <link rel="manifest" href="./manifest.webmanifest">
-<title>OmniOS</title>
+<title>Second Brain</title>
 <script id="omnios-accent-early">
 (function(){
   try{
@@ -81,14 +81,14 @@ html.omnios-has-boot-icon .omnios-boot-mark img{display:block;animation:omniosBo
 </style>
 </head>
 <body>
-<main class="boot" id="omnios-boot-screen" role="status" aria-live="polite" aria-label="Loading OmniOS">
+<main class="boot" id="omnios-boot-screen" role="status" aria-live="polite" aria-label="Loading Second Brain">
 <div class="omnios-boot-card">
   <div class="omnios-boot-mark" aria-hidden="true"><img id="omnios-index-boot-icon" alt=""></div>
-  <div class="omnios-boot-brand">Omni<span>OS</span></div>
+  <div class="omnios-boot-brand">Second <span>Brain</span></div>
   <div class="omnios-boot-copy">Preparing your workspace…</div>
-  <div class="omnios-boot-track" role="progressbar" aria-label="Loading OmniOS" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="omnios-boot-progress"></i></div>
+  <div class="omnios-boot-track" role="progressbar" aria-label="Loading Second Brain" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="omnios-boot-progress"></i></div>
   <div id="fill"></div><div id="status" aria-live="polite">Preparing · 0%</div>
-  <div class="error" id="error" role="alert"><strong>OmniOS couldn't finish loading.</strong><p id="omnios-load-error-copy">Check your connection, then retry. A validated offline snapshot will be used automatically when available.</p><div class="error-actions"><button id="omnios-retry-btn" type="button">Retry</button><button id="omnios-reset-cache-btn" type="button" class="secondary">Reset app cache</button></div></div>
+  <div class="error" id="error" role="alert"><strong>Second Brain couldn't finish loading.</strong><p id="omnios-load-error-copy">Check your connection, then retry. A validated offline snapshot will be used automatically when available.</p><div class="error-actions"><button id="omnios-retry-btn" type="button">Retry</button><button id="omnios-reset-cache-btn" type="button" class="secondary">Reset app cache</button></div></div>
 </div>
 </main>
 <script>
@@ -196,7 +196,7 @@ async function readSlot(slot){
     }
     return texts;
   }catch(e){
-    console.warn('OmniOS snapshot read failed',e);
+    console.warn('Second Brain snapshot read failed',e);
     return null;
   }
 }
@@ -234,7 +234,7 @@ async function writeSnapshot(texts){
     try{localStorage.setItem(SNAPSHOT_SLOT_KEY,target)}catch(_){}
     return true;
   }catch(e){
-    console.warn('OmniOS snapshot write failed',e);
+    console.warn('Second Brain snapshot write failed',e);
     try{await caches.delete(name)}catch(_){}
     return false;
   }

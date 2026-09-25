@@ -500,8 +500,10 @@ function updateNavControls35(){const b=document.getElementById('v35-back-btn'),f
 let undo35=[],redo35=[],lastCommitted35=clone(state),saveGuard35=false;
 function comparable35(s){const c=clone(s)||{};if(c.core){delete c.core.changeLog;delete c.core.localDB;delete c.core.syncMeta}return c}
 function changedModules35(a,b){
-  const keys=[['entries','Tasks'],['calendarEvents','Calendar'],['transactions','Finance'],['habits','Habits'],['workouts','Workout'],['notes','Notes'],['goals','Goals'],['groceryLists','Grocery'],['wishlist','Wishlist'],['pantry','Pantry'],['routines','Routines'],['life','Life OS'],['settings','Settings']];
-  return keys.filter(([k])=>JSON.stringify(a?.[k])!==JSON.stringify(b?.[k])).map(([,l])=>l)
+  const labels={entries:'Tasks',calendarEvents:'Calendar',timeBlocks:'Calendar',transactions:'Finance',budgets:'Finance',accounts:'Finance',bills:'Finance',subscriptions:'Finance',habits:'Habits',workouts:'Workout',notes:'Notes',documents:'Documents',goals:'Goals',groceryLists:'Grocery',wishlist:'Wishlist',pantry:'Pantry',routines:'Routines',life:'Life Hub',settings:'Settings',dietFoods:'Nutrition',dietMeals:'Nutrition',dietPrep:'Nutrition',dietPlan:'Nutrition',dietLog:'Nutrition',dietHydration:'Nutrition',dietDayNotes:'Nutrition',passwords:'Passwords'};
+  const keys=new Set([...Object.keys(a||{}),...Object.keys(b||{})]),out=[];
+  for(const k of keys)if(k!=='core'&&JSON.stringify(a?.[k])!==JSON.stringify(b?.[k]))out.push(labels[k]||String(k).replace(/([a-z])([A-Z])/g,'$1 $2').replace(/^./,x=>x.toUpperCase()));
+  return [...new Set(out)]
 }
 const SYNC_AUX_META_KEY35='omnios_sync_aux_meta_v1';
 function syncBaseline35(){
@@ -724,10 +726,12 @@ function persistIDB35(reason='save'){
 }
 async function trimSnapshots35(all){
   all.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
-  const autos=all.filter(s=>s.kind==='auto'||/^Automatic\b/i.test(s.label||''));
-  const manuals=all.filter(s=>!(s.kind==='auto'||/^Automatic\b/i.test(s.label||'')));
+  const isAuto=s=>s.kind==='auto'||/^Automatic\b/i.test(s.label||'');
+  const isSafety=s=>['pre-sync','pre-restore','pre-migration'].includes(s.kind)||/^Before (device sync|backup restore|migration)/i.test(s.label||'');
+  const autos=all.filter(isAuto),safety=all.filter(s=>!isAuto(s)&&isSafety(s)),manuals=all.filter(s=>!isAuto(s)&&!isSafety(s));
   const keep=new Set([
     ...autos.slice(0,MAX_AUTO_SNAPS35).map(s=>s.id),
+    ...safety.slice(0,30).map(s=>s.id),
     ...manuals.slice(0,MAX_MANUAL_SNAPS35).map(s=>s.id)
   ]);
   for(const old of all)if(!keep.has(old.id))await idbDelete35(STORE_SNAPS,old.id)

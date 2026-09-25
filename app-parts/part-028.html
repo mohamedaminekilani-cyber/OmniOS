@@ -9700,3 +9700,173 @@ window.SecondBrainA11y={repair:repairLabels,syncDialog};
   }
 }
 </style>
+
+
+<style id="omnios-v91-mobile-icon-actions">
+/* ===== Second Brain v91 — mobile icon action language ===== */
+@media(max-width:760px){
+  .v91-icon-action{
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+    display:inline-grid!important;
+    place-items:center!important;
+    border-radius:11px!important;
+    flex:0 0 44px!important;
+    font-size:0!important;
+    line-height:1!important;
+  }
+  .v91-icon-action svg{
+    width:19px!important;
+    height:19px!important;
+    display:block!important;
+    fill:none!important;
+    stroke:currentColor!important;
+    stroke-width:1.9!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    pointer-events:none!important;
+  }
+
+  /* Tasks: sort gets the flexible width, Select is one icon. */
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(3),
+  #view-tasks>.toolbar>.task-action-group-v33{
+    grid-template-columns:minmax(0,1fr) 44px!important;
+  }
+  #view-tasks [data-v25-select="task"]{
+    min-width:44px!important;
+    width:44px!important;
+    padding:0!important;
+  }
+
+  /* Notes: sort + two icon actions. */
+  #view-notes .notes-toolbar{
+    grid-template-columns:minmax(0,1fr) 44px 44px!important;
+  }
+  #view-notes [data-v25-select="note"],
+  #view-notes [data-v25-manage="note"]{
+    min-width:44px!important;
+    width:44px!important;
+    padding:0!important;
+  }
+
+  /* Dashboard refresh stays a single icon even on narrow phones. */
+  #view-dashboard #dash-refresh{
+    width:44px!important;
+    min-width:44px!important;
+    font-size:0!important;
+    padding:0!important;
+  }
+  #view-dashboard #dash-refresh::before{content:none!important}
+
+  /* Calendar secondary actions become icons; primary create remains distinct. */
+  #view-master-calendar #v36-filter-btn,
+  #view-master-calendar #v603-rail-toggle,
+  #view-master-calendar #v36-cal-add{
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    padding:0!important;
+    font-size:0!important;
+  }
+
+  /* Generic compact icon actions used by current modules. */
+  :is(
+    [data-v25-select="task"],
+    [data-v25-select="note"],
+    [data-v25-manage="note"],
+    #dash-refresh,
+    #v36-filter-btn,
+    #v603-rail-toggle,
+    #v36-cal-add
+  ){
+    touch-action:manipulation!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+}
+
+@media(max-width:390px){
+  #view-dashboard .dashboard-toolbar>.toolbar-group{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px!important;
+  }
+  #view-dashboard #dash-refresh{
+    grid-column:auto!important;
+    width:44px!important;
+    font-size:0!important;
+  }
+  #view-notes .notes-toolbar{
+    grid-template-columns:minmax(0,1fr) 44px 44px!important;
+  }
+  #view-notes #notes-sort{
+    grid-column:1!important;
+    grid-row:2!important;
+  }
+  #view-notes [data-v25-select="note"]{
+    grid-column:2!important;
+    grid-row:2!important;
+  }
+  #view-notes [data-v25-manage="note"]{
+    grid-column:3!important;
+    grid-row:2!important;
+  }
+}
+</style>
+
+<script id="omnios-v91-mobile-icon-actions-js">
+(function(){
+  'use strict';
+  if(window.__secondBrainMobileIcons91)return;
+  window.__secondBrainMobileIcons91=true;
+
+  const icons={
+    select:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="m8 12 2.5 2.5L16 9"></path></svg>',
+    groups:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h6l2 2h8v8.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"></path><path d="M4 9.5V6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v1.5"></path></svg>',
+    refresh:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0 2 5"></path><path d="M20 5v6h-6"></path></svg>',
+    filter:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg>',
+    tools:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path><circle cx="9" cy="6" r="2"></circle><circle cx="15" cy="12" r="2"></circle><circle cx="8" cy="18" r="2"></circle></svg>',
+    add:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>'
+  };
+
+  const targets=[
+    ['[data-v25-select="task"]','select','Select tasks'],
+    ['[data-v25-select="note"]','select','Select notes'],
+    ['[data-v25-manage="note"]','groups','Manage note groups'],
+    ['#dash-refresh','refresh','Refresh dashboard'],
+    ['#v36-filter-btn','filter','Calendar filters'],
+    ['#v603-rail-toggle','tools','Calendar tools'],
+    ['#v36-cal-add','add','Add calendar item']
+  ];
+
+  function decorate(root=document){
+    if(!matchMedia('(max-width:760px)').matches)return;
+    for(const [selector,icon,label] of targets){
+      root.querySelectorAll?.(selector).forEach(button=>{
+        if(button.dataset.v91Icon===icon)return;
+        button.dataset.v91Icon=icon;
+        button.classList.add('v91-icon-action');
+        button.setAttribute('aria-label',label);
+        button.setAttribute('title',label);
+        button.innerHTML=icons[icon];
+      });
+    }
+  }
+
+  function start(){
+    decorate();
+    const observer=new MutationObserver(records=>{
+      for(const record of records){
+        for(const node of record.addedNodes){
+          if(node.nodeType===1)decorate(node.matches?.('button')?node.parentElement||node:node);
+        }
+      }
+    });
+    observer.observe(document.body,{subtree:true,childList:true});
+    matchMedia('(max-width:760px)').addEventListener?.('change',e=>{if(e.matches)decorate()});
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>

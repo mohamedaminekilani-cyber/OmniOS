@@ -58,7 +58,8 @@ jobs:
         env:
           GITHUB_SHA: ${{ github.sha }}
       - name: Verify release belongs to this commit
-        run: node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('dist/release.json','utf8'));if(r.commit!==process.env.GITHUB_SHA)throw new Error('release commit mismatch: '+r.commit+' != '+process.env.GITHUB_SHA);console.log('Deploying commit',r.commit,'as',r.file)"
+        run: |
+          node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('dist/release.json','utf8'));if(r.commit!==process.env.GITHUB_SHA)throw new Error('release commit mismatch: '+r.commit+' != '+process.env.GITHUB_SHA);console.log('Deploying commit',r.commit,'as',r.file)"
         env:
           GITHUB_SHA: ${{ github.sha }}
       - name: Setup Pages

@@ -8880,5 +8880,149 @@ setTimeout(bindChrome,500);
 })();
 </script>
 
+<style id="second-brain-v88-authority">
+/* Second Brain v88 — intermediate calendar fit + shared dialog accessibility. */
+@media(min-width:761px) and (max-width:1440px){
+  #view-master-calendar .v603-calendar-layout{
+    grid-template-columns:clamp(176px,17vw,218px) minmax(0,1fr)!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;
+  }
+  #view-master-calendar .v603-calendar-rail{min-width:0!important;padding:11px 9px!important}
+  #view-master-calendar .v603-calendar-stage{min-width:0!important;overflow:hidden!important}
+  #view-master-calendar .v603-calendar-stage-inner{
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    overflow-x:auto!important;overflow-y:visible!important;
+    scrollbar-gutter:stable both-edges;overscroll-behavior-inline:contain;
+  }
+  #view-master-calendar .v36-time-wrap{
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    overflow-x:auto!important;overflow-y:auto!important;scrollbar-gutter:stable;
+  }
+  #view-master-calendar .v36-time-head,
+  #view-master-calendar .v36-all-day{
+    width:100%!important;
+    grid-template-columns:44px repeat(var(--v36-visible-days,1),minmax(78px,1fr))!important;
+  }
+  #view-master-calendar .v36-time-body{width:100%!important;grid-template-columns:44px minmax(0,1fr)!important}
+  #view-master-calendar .v36-time-days{
+    width:100%!important;min-width:0!important;
+    grid-template-columns:repeat(var(--v36-visible-days,1),minmax(78px,1fr))!important;
+  }
+  #view-master-calendar .v36-month-grid{
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    grid-template-columns:repeat(7,minmax(0,1fr))!important;
+  }
+  #view-master-calendar .v36-month-day{min-width:0!important}
+}
+@media(min-width:761px) and (max-width:1040px){
+  #view-master-calendar .v603-calendar-layout{grid-template-columns:168px minmax(0,1fr)!important}
+  #view-master-calendar .v603-calendar-rail{padding:9px 7px!important}
+  #view-master-calendar .v603-quick-grid,
+  #view-master-calendar .v603-tool-grid{grid-template-columns:1fr!important}
+  #view-master-calendar .v36-time-head,
+  #view-master-calendar .v36-all-day{
+    grid-template-columns:42px repeat(var(--v36-visible-days,1),minmax(72px,1fr))!important;
+  }
+  #view-master-calendar .v36-time-body{grid-template-columns:42px minmax(0,1fr)!important}
+}
+[data-sb-dialog-isolated="1"]{pointer-events:none!important;user-select:none!important}
+</style>
+
+<script id="second-brain-v88-accessibility">
+(function(){
+'use strict';
+if(window.__secondBrainV88)return;window.__secondBrainV88=true;
+let activeDialog=null,lastFocused=null,isolated=[];
+
+const visible=el=>!!(el&&el.isConnected&&el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden'&&getComputedStyle(el).display!=='none');
+const focusables=root=>[...root.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(el=>!el.disabled&&visible(el));
+function inferButtonLabel(b){
+  const current=(b.getAttribute('aria-label')||'').trim();
+  if(current&&current!=='Action')return current;
+  const title=(b.getAttribute('title')||'').trim();if(title)return title;
+  const txt=(b.textContent||'').trim();
+  const map={'×':'Close','✕':'Close','←':'Previous','→':'Next','◀':'Previous','▶':'Next','+':'Add','−':'Decrease','⋮':'More options','⋯':'More options','⚙':'Settings','?':'Help'};
+  if(map[txt])return map[txt];
+  const ctx=b.closest('.card,.v35-card,.modal,.settings-row,.toolbar,.v603-rail-section');
+  const heading=ctx?.querySelector('h1,h2,h3,h4,.card-title,.v35-card-title,.settings-row-label,.v603-rail-title')?.textContent?.trim();
+  if(txt&&txt.length<40)return heading?txt+' — '+heading:txt;
+  return heading?'Action — '+heading:'Button';
+}
+function repairLabels(root=document){
+  root.querySelectorAll('button').forEach(b=>{
+    const label=inferButtonLabel(b);
+    if(!b.getAttribute('aria-label')||b.getAttribute('aria-label')==='Action')b.setAttribute('aria-label',label);
+  });
+  root.querySelectorAll('input,select,textarea').forEach(el=>{
+    if(el.id&&root.querySelector('label[for="'+CSS.escape(el.id)+'"]'))return;
+    if(el.getAttribute('aria-label')||el.getAttribute('aria-labelledby'))return;
+    const group=el.closest('.form-group,.settings-row,.nut-form-field,.field');
+    const label=group?.querySelector('.form-label,.settings-row-label,label')?.textContent?.trim();
+    if(label)el.setAttribute('aria-label',label);
+  });
+}
+function clearIsolation(){
+  isolated.forEach(el=>{try{el.inert=false;el.removeAttribute('aria-hidden');el.removeAttribute('data-sb-dialog-isolated')}catch(_){}});
+  isolated=[];
+}
+function isolateDialog(dialog){
+  clearIsolation();
+  let node=dialog;
+  while(node&&node!==document.body){
+    const parent=node.parentElement;if(!parent)break;
+    [...parent.children].forEach(sib=>{
+      if(sib===node||sib.tagName==='SCRIPT'||sib.tagName==='STYLE'||sib.tagName==='LINK')return;
+      if(isolated.includes(sib))return;
+      try{sib.inert=true;sib.setAttribute('aria-hidden','true');sib.setAttribute('data-sb-dialog-isolated','1');isolated.push(sib)}catch(_){}
+    });
+    node=parent
+  }
+}
+function findTopDialog(){
+  const candidates=[...document.querySelectorAll(
+    '.modal-overlay.active .modal,.modal-overlay[style*="display: flex"] .modal,.omni-sync-overlay .omni-sync-modal,#v35-page-launcher.open .v35-launcher-sheet,[role="dialog"][aria-modal="true"]'
+  )].filter(visible);
+  return candidates.at(-1)||null
+}
+function syncDialog(){
+  repairLabels();
+  const next=findTopDialog();
+  if(next===activeDialog)return;
+  if(next){
+    if(!activeDialog)lastFocused=document.activeElement instanceof HTMLElement?document.activeElement:null;
+    activeDialog=next;
+    activeDialog.setAttribute('role','dialog');activeDialog.setAttribute('aria-modal','true');
+    isolateDialog(activeDialog);
+    requestAnimationFrame(()=>{
+      if(!activeDialog||!activeDialog.isConnected)return;
+      if(!activeDialog.contains(document.activeElement)){
+        (focusables(activeDialog)[0]||activeDialog).focus?.()
+      }
+    })
+  }else{
+    activeDialog=null;clearIsolation();
+    const target=lastFocused;lastFocused=null;
+    if(target?.isConnected)requestAnimationFrame(()=>target.focus?.())
+  }
+}
+document.addEventListener('keydown',e=>{
+  if(!activeDialog||!visible(activeDialog))return;
+  if(e.key==='Escape'){
+    const close=activeDialog.querySelector('[data-close],.modal-close-btn,.omni-sync-close,.v35-launcher-close,[aria-label^="Close"]');
+    if(close){e.preventDefault();close.click()}return
+  }
+  if(e.key!=='Tab')return;
+  const list=focusables(activeDialog);if(!list.length){e.preventDefault();activeDialog.focus?.();return}
+  const first=list[0],last=list[list.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+},true);
+const mo=new MutationObserver(()=>requestAnimationFrame(syncDialog));
+if(document.body)mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style','aria-hidden']});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',syncDialog,{once:true});else syncDialog();
+window.SecondBrainA11y={repair:repairLabels,syncDialog};
+})();
+</script>
+
 </body>
 </html>

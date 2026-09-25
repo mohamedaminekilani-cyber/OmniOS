@@ -20,9 +20,9 @@ function renderToday58(){
   const banner=document.createElement('div');banner.id='v58-attention';banner.className='v58-attention';banner.innerHTML=`<strong>${att.length?`${att.length} item${att.length===1?'':'s'} need attention`:'Everything looks calm'}</strong><div class="v58-attention-copy">${att.length?E(att.slice(0,2).map(x=>x.title).join(' · ')):'No overdue, low-stock, renewal or daily-reading alerts are currently surfaced.'}</div><button class="btn btn-sm" id="v58-attention-open">Notifications</button><button class="btn btn-sm" id="v58-automation-open">Automations</button>`;
   const insertion=view.querySelector('.v35-stat-grid')||view.firstElementChild;insertion?.after(banner);banner.querySelector('#v58-attention-open').onclick=()=>window.OmniV55?.notifications?.();banner.querySelector('#v58-automation-open').onclick=()=>window.switchView?.('automations');
   const wrap=document.createElement('div');wrap.id='v58-today-intelligence';wrap.className='v58-today-grid';wrap.innerHTML=`
-    ${dv?`<section class="v58-card v79-today-verse-card" style="grid-column:1/-1"><div class="v79-today-verse-main"><div class="v58-card-title">Verse of the day <span class="v79-verse-theme">${E(dv.theme)}</span></div><div class="v79-today-verse-text">${E(dv.text)}</div><div class="v79-today-verse-ref">${E(dv.ref)}</div></div><div class="v79-today-verse-actions"><button class="btn btn-sm" data-v79-daily="read">Read in Bible</button><button class="btn btn-sm" data-v79-daily="meditate">Meditate</button></div></section>`:''}
-    <section class="v58-card v58-span-5"><div class="v58-card-head"><div><div class="v58-card-title">✦ Scripture today</div><div class="v58-card-sub">365 Plan connected directly to your daily operating screen.</div></div>${bt?`<span class="v58-badge ${bt.done?'good':''}">${bt.done?'✓ Complete':'Day '+bt.plan.id}</span>`:''}</div>${bt?`<div class="v58-bible-ref">${E(bt.plan.ref)}</div><div class="v58-bible-theme">${E(bt.plan.theme)} · ${E(bt.plan.subtheme)}</div><div class="v58-bible-question">${E(bt.plan.question)}</div><div class="v58-actions"><button class="btn btn-sm" data-v58-bible="read">Read</button><button class="btn btn-sm" data-v58-bible="meditate">Meditate</button><button class="btn btn-sm ${bt.done?'':'btn-primary'}" data-v58-bible="done">${bt.done?'Mark incomplete':'Complete today'}</button></div>`:'<div class="empty-state">Bible module unavailable.</div>'}</section>
-    <section class="v58-card v58-span-7 v86-today-projects">
+    ${dv?`<section class="v58-card v79-today-verse-card v88-today-verse"><div class="v79-today-verse-main"><div class="v58-card-title">Verse of the day <span class="v79-verse-theme">${E(dv.theme)}</span></div><div class="v79-today-verse-text">${E(dv.text)}</div><div class="v79-today-verse-ref">${E(dv.ref)}</div></div><div class="v79-today-verse-actions"><button class="btn btn-sm" data-v79-daily="read">Read in Bible</button><button class="btn btn-sm" data-v79-daily="meditate">Meditate</button></div></section>`:''}
+    <section class="v58-card v58-span-5 v88-today-scripture"><div class="v58-card-head"><div><div class="v58-card-title">✦ Scripture today</div><div class="v58-card-sub">365 Plan connected directly to your daily operating screen.</div></div>${bt?`<span class="v58-badge ${bt.done?'good':''}">${bt.done?'✓ Complete':'Day '+bt.plan.id}</span>`:''}</div>${bt?`<div class="v58-bible-ref">${E(bt.plan.ref)}</div><div class="v58-bible-theme">${E(bt.plan.theme)} · ${E(bt.plan.subtheme)}</div><div class="v58-bible-question">${E(bt.plan.question)}</div><div class="v58-actions"><button class="btn btn-sm" data-v58-bible="read">Read</button><button class="btn btn-sm" data-v58-bible="meditate">Meditate</button><button class="btn btn-sm ${bt.done?'':'btn-primary'}" data-v58-bible="done">${bt.done?'Mark incomplete':'Complete today'}</button></div>`:'<div class="empty-state">Bible module unavailable.</div>'}</section>
+    <section class="v58-card v58-span-7 v86-today-projects v88-today-projects">
       <div class="v58-card-head v86-projects-head">
         <div>
           <div class="v58-card-title">Active projects</div>
@@ -65,9 +65,9 @@ function renderToday58(){
         }).join(''):'<div class="v86-project-empty"><strong>No active projects</strong><span>Create a project when an outcome needs more than one action.</span><button type="button" class="btn btn-sm" data-v58-go="projects">Open Projects</button></div>'}
       </div>
     </section>
-    <section class="v58-card v58-span-4"><div class="v58-card-head"><div><div class="v58-card-title">🥫 Home supply</div><div class="v58-card-sub">Pantry and grocery are treated as one supply loop.</div></div></div><div class="v58-kpis" style="grid-template-columns:1fr 1fr;margin:0 0 8px"><div class="v58-kpi"><span>Low stock</span><strong>${low.length}</strong></div><div class="v58-kpi"><span>Active lists</span><strong>${activeLists.length}</strong></div></div><div class="v58-actions"><button class="btn btn-sm" data-v58-go="pantry">Pantry</button><button class="btn btn-sm" data-v58-go="grocery">Grocery</button></div></section>
-    <section class="v58-card v58-span-4"><div class="v58-card-head"><div><div class="v58-card-title">🥗 Fuel & training</div><div class="v58-card-sub">Today's meal plan and workout status.</div></div></div><div class="v58-kpis" style="grid-template-columns:1fr 1fr;margin:0 0 8px"><div class="v58-kpi"><span>Planned meals</span><strong>${mealCount}</strong></div><div class="v58-kpi"><span>Workouts</span><strong>${work.length}</strong></div></div><div class="v58-actions"><button class="btn btn-sm" data-v58-go="diet">Nutrition</button><button class="btn btn-sm" data-v58-go="workout">Workout</button></div></section>
-    <section class="v58-card v58-span-4"><div class="v58-card-head"><div><div class="v58-card-title">⌁ Inbox & system</div><div class="v58-card-sub">Capture now; organize and act from one place.</div></div></div><div class="v58-kpis" style="grid-template-columns:1fr 1fr;margin:0 0 8px"><div class="v58-kpi"><span>Inbox</span><strong>${A(state.life.inbox).length}</strong></div><div class="v58-kpi"><span>Alerts</span><strong>${att.length}</strong></div></div><div class="v58-actions"><button class="btn btn-sm" data-v58-go="inbox">Open Inbox</button><button class="btn btn-sm" id="v58-capture-smart">Smart capture</button></div></section>`;
+    <section class="v58-card v58-span-4 v88-today-mini v88-today-supply"><div class="v58-card-head"><div><div class="v58-card-title">🥫 Home supply</div><div class="v58-card-sub">Pantry and grocery are treated as one supply loop.</div></div></div><div class="v58-kpis" style="grid-template-columns:1fr 1fr;margin:0 0 8px"><div class="v58-kpi"><span>Low stock</span><strong>${low.length}</strong></div><div class="v58-kpi"><span>Active lists</span><strong>${activeLists.length}</strong></div></div><div class="v58-actions"><button class="btn btn-sm" data-v58-go="pantry">Pantry</button><button class="btn btn-sm" data-v58-go="grocery">Grocery</button></div></section>
+    <section class="v58-card v58-span-4 v88-today-mini v88-today-fuel"><div class="v58-card-head"><div><div class="v58-card-title">🥗 Fuel & training</div><div class="v58-card-sub">Today's meal plan and workout status.</div></div></div><div class="v58-kpis" style="grid-template-columns:1fr 1fr;margin:0 0 8px"><div class="v58-kpi"><span>Planned meals</span><strong>${mealCount}</strong></div><div class="v58-kpi"><span>Workouts</span><strong>${work.length}</strong></div></div><div class="v58-actions"><button class="btn btn-sm" data-v58-go="diet">Nutrition</button><button class="btn btn-sm" data-v58-go="workout">Workout</button></div></section>
+    <section class="v58-card v58-span-4 v88-today-mini v88-today-inbox"><div class="v58-card-head"><div><div class="v58-card-title">⌁ Inbox & system</div><div class="v58-card-sub">Capture now; organize and act from one place.</div></div></div><div class="v58-kpis" style="grid-template-columns:1fr 1fr;margin:0 0 8px"><div class="v58-kpi"><span>Inbox</span><strong>${A(state.life.inbox).length}</strong></div><div class="v58-kpi"><span>Alerts</span><strong>${att.length}</strong></div></div><div class="v58-actions"><button class="btn btn-sm" data-v58-go="inbox">Open Inbox</button><button class="btn btn-sm" id="v58-capture-smart">Smart capture</button></div></section>`;
   if(oldGrid)oldGrid.after(wrap);else view.appendChild(wrap);
   wrap.querySelectorAll('[data-v58-go]').forEach(b=>b.onclick=()=>window.switchView?.(b.dataset.v58Go));wrap.querySelectorAll('[data-v58-project]').forEach(x=>x.onclick=()=>{window.switchView?.('projects');setTimeout(()=>document.querySelector(`[data-v35-project="${CSS.escape(String(x.dataset.v58Project))}"]`)?.click(),80)});wrap.querySelector('#v58-capture-smart').onclick=()=>window.OmniV55?.capture?.();wrap.querySelectorAll('[data-v79-daily]').forEach(b=>b.onclick=()=>{const api=window.OmniDailyVerse79;if(b.dataset.v79Daily==='meditate')api?.meditate?.(dv?.ref);else api?.read?.(dv?.ref)});
   if(bt){wrap.querySelector('[data-v58-bible="read"]').onclick=()=>bt.api.read?.(bt.plan.ref);wrap.querySelector('[data-v58-bible="meditate"]').onclick=()=>{bt.api.state.meditation.ref=bt.plan.ref;bt.api.state.tab='meditate';try{localStorage.setItem('omnios_bible_v571',JSON.stringify(bt.api.state))}catch(_){}window.switchView?.('bible');setTimeout(()=>bt.api.render?.(),50)};wrap.querySelector('[data-v58-bible="done"]').onclick=()=>{bt.api.state.planCompleted=bt.api.state.planCompleted||{};bt.api.state.planCompleted[bt.plan.id]=!bt.done;try{localStorage.setItem('omnios_bible_v571',JSON.stringify(bt.api.state))}catch(_){}bt.api.render?.();renderToday58();toast58(bt.done?'Marked incomplete':'365 reading completed')}}
@@ -8523,6 +8523,243 @@ setTimeout(bindChrome,500);
 }
 </style>
 
+
+<style id="omnios-v88-today-card-polish">
+/* ===== Second Brain v88 — Today card system ===== */
+#view-today{
+  --today-card-radius:16px;
+  --today-card-pad:16px;
+  --today-card-gap:12px;
+}
+#view-today #v58-today-intelligence{
+  gap:var(--today-card-gap)!important;
+  align-items:stretch;
+}
+#view-today #v58-today-intelligence>.v58-card,
+#view-today>.v35-card,
+#view-today .v35-grid>.v35-card{
+  min-width:0;
+  height:100%;
+  box-sizing:border-box;
+  border:1px solid color-mix(in srgb,var(--border-color) 92%,transparent)!important;
+  border-radius:var(--today-card-radius)!important;
+  background:var(--bg-surface)!important;
+  box-shadow:0 1px 0 color-mix(in srgb,var(--text-primary) 3%,transparent);
+  overflow:hidden;
+}
+#view-today #v58-today-intelligence>.v58-card{
+  display:flex;
+  flex-direction:column;
+  padding:var(--today-card-pad)!important;
+}
+#view-today #v58-today-intelligence>.v58-card:hover,
+#view-today .v35-grid>.v35-card:hover{
+  border-color:color-mix(in srgb,var(--accent-cyan) 22%,var(--border-color))!important;
+}
+#view-today .v58-card-head,
+#view-today .v35-card-head{
+  min-width:0;
+  align-items:flex-start!important;
+  gap:10px!important;
+  margin-bottom:12px!important;
+}
+#view-today .v58-card-head>div,
+#view-today .v35-card-head>div{min-width:0}
+#view-today .v58-card-title,
+#view-today .v35-card-title{
+  font-size:.86rem!important;
+  line-height:1.2;
+  font-weight:800!important;
+  letter-spacing:-.012em;
+}
+#view-today .v58-card-sub,
+#view-today .v35-card-sub{
+  margin-top:4px!important;
+  max-width:58ch;
+  font-size:.62rem!important;
+  line-height:1.45!important;
+  color:var(--text-muted)!important;
+}
+#view-today .v58-card-head>.btn,
+#view-today .v35-card-head>.btn{
+  flex:0 0 auto;
+  min-height:34px;
+}
+#view-today .v88-today-verse{
+  grid-column:1/-1!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:16px;
+  padding:14px 16px!important;
+  background:
+    radial-gradient(circle at 100% 0,color-mix(in srgb,var(--accent-cyan) 8%,transparent),transparent 42%),
+    var(--bg-surface)!important;
+}
+#view-today .v88-today-verse .v79-today-verse-text{
+  max-width:72ch;
+  font-size:.82rem!important;
+  line-height:1.55!important;
+}
+#view-today .v88-today-verse .v79-today-verse-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+#view-today .v88-today-scripture .v58-bible-ref{
+  margin-top:2px;
+  font-size:1.12rem;
+  line-height:1.25;
+}
+#view-today .v88-today-scripture .v58-bible-question{
+  margin-top:10px;
+  padding:10px 11px;
+  border-radius:11px;
+  line-height:1.5;
+}
+#view-today .v88-today-scripture .v58-actions{
+  margin-top:auto;
+  padding-top:12px;
+}
+#view-today .v88-today-projects .v86-project-list{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-content:start;
+  gap:9px;
+}
+#view-today .v88-today-projects .v86-project-card{
+  height:100%;
+  min-height:118px;
+  align-items:stretch;
+}
+#view-today .v88-today-projects .v86-project-main{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+}
+#view-today .v88-today-projects .v86-project-progress{margin-top:auto}
+#view-today .v88-today-projects .v86-project-outcome{-webkit-line-clamp:1}
+#view-today .v88-today-projects .v86-project-meta{
+  margin-top:6px;
+  gap:4px 8px;
+}
+#view-today .v88-today-mini{min-height:178px}
+#view-today .v88-today-mini .v58-kpis{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:7px!important;
+  margin:2px 0 12px!important;
+}
+#view-today .v88-today-mini .v58-kpi{
+  min-width:0;
+  padding:10px 11px!important;
+  border-radius:11px!important;
+}
+#view-today .v88-today-mini .v58-kpi strong{
+  margin-top:3px;
+  font-size:1.12rem;
+}
+#view-today .v88-today-mini .v58-actions{
+  margin-top:auto!important;
+  padding-top:2px;
+}
+#view-today .v88-today-mini .v58-actions .btn{
+  flex:1 1 110px;
+  justify-content:center;
+}
+#view-today .v35-grid{
+  gap:var(--today-card-gap)!important;
+  align-items:stretch;
+}
+#view-today .v35-grid>.v35-card{
+  padding:var(--today-card-pad)!important;
+}
+#view-today .v35-grid>.v35-card .v35-list{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+#view-today .v35-grid>.v35-card .v35-row{
+  min-height:46px;
+  padding:8px 9px!important;
+  border:1px solid transparent;
+  border-radius:10px;
+}
+#view-today .v35-grid>.v35-card .v35-row.clickable:hover{
+  border-color:var(--border-color);
+  background:var(--bg-elevated);
+}
+#view-today .v35-grid>.v35-card .v35-row+.v35-row{border-top-color:transparent}
+#view-today .v35-empty{
+  min-height:88px;
+  display:grid;
+  place-items:center;
+  padding:16px!important;
+  border:1px dashed var(--border-light);
+  border-radius:11px;
+  text-align:center;
+}
+#view-today .v35-stat-grid{
+  gap:8px!important;
+  margin-bottom:12px!important;
+}
+#view-today .v35-stat{
+  min-width:0;
+  padding:11px 12px!important;
+  border-radius:12px!important;
+}
+@media(max-width:1080px){
+  #view-today .v88-today-projects .v86-project-list{grid-template-columns:1fr}
+  #view-today .v88-today-projects .v86-project-card{min-height:0}
+}
+@media(max-width:700px){
+  #view-today{
+    --today-card-radius:15px;
+    --today-card-pad:13px;
+    --today-card-gap:10px;
+  }
+  #view-today #v58-today-intelligence{margin:10px 0!important}
+  #view-today .v88-today-verse{
+    grid-template-columns:1fr;
+    gap:10px;
+    padding:13px!important;
+  }
+  #view-today .v88-today-verse .v79-today-verse-actions{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  #view-today .v88-today-verse .v79-today-verse-actions .btn{min-height:42px}
+  #view-today .v58-card-head,
+  #view-today .v35-card-head{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:start!important;
+  }
+  #view-today .v58-card-head>.btn,
+  #view-today .v35-card-head>.btn{min-height:38px}
+  #view-today .v88-today-projects{padding:13px!important}
+  #view-today .v88-today-projects .v86-project-list{grid-template-columns:1fr}
+  #view-today .v88-today-mini{min-height:0}
+  #view-today .v88-today-mini .v58-actions{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:100%;
+  }
+  #view-today .v88-today-mini .v58-actions .btn{
+    min-height:42px;
+    width:100%;
+  }
+  #view-today .v35-grid>.v35-card{grid-column:1/-1!important}
+  #view-today .v35-grid>.v35-card .v35-row{min-height:48px}
+}
+@media(max-width:390px){
+  #view-today .v58-card-head,
+  #view-today .v35-card-head{grid-template-columns:1fr}
+  #view-today .v58-card-head>.btn,
+  #view-today .v35-card-head>.btn{width:100%;justify-content:center}
+  #view-today .v88-today-mini .v58-actions{grid-template-columns:1fr}
+}
+</style>
 
 <style id="omnios-v87-mobile-habits-month-view">
 @media(max-width:760px){

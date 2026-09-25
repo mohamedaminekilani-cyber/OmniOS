@@ -20,6 +20,21 @@ let B=clone(DEFAULT);try{const newer=bibleStoreGet(KEY),legacy=bibleStoreGet(LEG
 function sanitize(){B.tab=['today','read','study','meditate','plan','mood','journal','library'].includes(B.tab)?B.tab:'today';B.reader=B.reader||clone(DEFAULT.reader);B.reader.book=BOOK_MAP.has(B.reader.book)?B.reader.book:'Genesis';B.reader.chapter=Math.max(1,Math.min(BOOK_MAP.get(B.reader.book).chapters,Number(B.reader.chapter)||1));B.reader.page=Math.max(1,Number(B.reader.page)||3);B.reader.verse=String(B.reader.verse||B.reader.annotationVerse||'1');B.reader.color=['gold','blue','green','rose','violet'].includes(B.reader.color||B.reader.highlightColor)?(B.reader.color||B.reader.highlightColor):'gold';B.planCompleted=B.planCompleted||{};B.highlights=B.highlights||{};B.notes=B.notes||{};B.bookmarks=B.bookmarks||{};B.journal=Array.isArray(B.journal)?B.journal:[];B.sessions=Array.isArray(B.sessions)?B.sessions:[];B.moodHistory=Array.isArray(B.moodHistory)?B.moodHistory:[];B.meditation={...clone(DEFAULT.meditation),...(B.meditation||{})};B.source={...clone(DEFAULT.source),...(B.source||{})};B.source.pageMap={...DEFAULT.source.pageMap,...(B.source.pageMap||B.source.chapterPages||{})};B.ui={...clone(DEFAULT.ui),...(B.ui||{})}}
 sanitize();
 function save(){try{if(!bibleStoreSet(KEY,JSON.stringify(B)))console.warn('Bible save','No writable local storage backend is available')}catch(e){console.warn('Bible save',e)}}
+function reloadBibleFromStorage(){
+  try{
+    const raw=bibleStoreGet(KEY);
+    if(!raw)return false;
+    const parsed=JSON.parse(raw);
+    B=merge(clone(DEFAULT),parsed);
+    sanitize();
+    try{render()}catch(_){}
+    return true
+  }catch(e){
+    console.warn('Bible remote reload failed',e);
+    return false
+  }
+}
+window.OmniBibleReloadFromStorage=reloadBibleFromStorage;
 function esc(v){return String(v??'').replace(/[&<>'"]/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[s]))}
 function toast(msg){try{window.toast?.(msg)}catch(_){}}
 function todayKey(){if(typeof window.localDateString==='function')return window.localDateString();const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`}

@@ -5364,6 +5364,15 @@ function mergeBundle(remote){
   return result
 }
 
+function installSyncSelectionUI64(root){
+  if(!root||root.querySelector('[data-sync-selection64]'))return;
+  const labels={tasks:'Tasks',calendar:'Calendar',routines:'Routines',habits:'Habits',finance:'Finance',notes:'Notes & documents',nutrition:'Nutrition',fitness:'Fitness',life:'Life hub & projects',settings:'Settings',bible:'Bible',personalization:'Personalization',passwords:'Encrypted password vault'};
+  const sel=syncSelection64(),wrap=document.createElement('details');wrap.dataset.syncSelection64='';wrap.className='omni-sync-selection64';
+  wrap.innerHTML='<summary>Choose what to sync</summary><div class="omni-sync-selection-grid64">'+Object.keys(labels).map(k=>'<label><input type="checkbox" data-sync-select64="'+k+'" '+(sel[k]?'checked':'')+'><span>'+labels[k]+'</span></label>').join('')+'</div><div class="omni-sync-selection-note64">Device identity, pairing secrets, push identity and transport settings never sync. The password vault is encrypted and stays off by default.</div>';
+  const host=root.querySelector('.omni-sync-body')||root;host.insertBefore(wrap,host.querySelector('.omni-sync-content')||null);
+  wrap.addEventListener('change',e=>{const input=e.target.closest('[data-sync-select64]');if(!input)return;const next={};next[input.dataset.syncSelect64]=!!input.checked;saveSyncSelection64(next)})
+}
+window.__secondBrainInstallSyncSelection64=installSyncSelectionUI64;
 function setStatus(text,tone='',detail=''){
   document.querySelectorAll('[data-sync-status]').forEach(el=>{el.textContent=text;el.dataset.tone=tone});
   if(detail)document.querySelectorAll('[data-sync-detail]').forEach(el=>el.textContent=detail)
@@ -5384,7 +5393,7 @@ function setLiveUI(){
 function closeSyncModal(){syncModal?.remove();syncModal=null}
 function modalShell(mode='host'){
   closeSyncModal();const ov=document.createElement('div');ov.className='omni-sync-overlay';ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true" aria-labelledby="omni-sync-title"><header class="omni-sync-head"><div><div class="omni-sync-kicker">DEVICE SYNC</div><h3 id="omni-sync-title">'+(mode==='join'?'Connecting devices':'Sync OmniOS')+'</h3><p>'+(mode==='join'?'Keep this screen open while OmniOS connects and reconciles the newest data.':'Scan once with the second device. Both devices compare timestamps and keep the newest data.')+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-sync-status>'+(mode==='join'?'Finding the other device…':'Preparing secure session…')+'</strong><span data-sync-detail>Automatic recovery snapshot is created before incoming data is applied.</span></div></div><div class="omni-sync-stages" aria-label="Sync progress"><div class="omni-sync-stage is-active" data-sync-stage="finding">Finding</div><div class="omni-sync-stage" data-sync-stage="connecting">Connecting</div><div class="omni-sync-stage" data-sync-stage="syncing">Syncing</div><div class="omni-sync-stage" data-sync-stage="live">Live</div></div><div class="omni-sync-content"></div></div></section>';
-  document.body.appendChild(ov);syncModal=ov;ov.querySelector('.omni-sync-close').onclick=closeSyncModal;ov.onclick=e=>{if(e.target===ov)closeSyncModal()};return ov
+  document.body.appendChild(ov);syncModal=ov;installSyncSelectionUI64(ov);ov.querySelector('.omni-sync-close').onclick=closeSyncModal;ov.onclick=e=>{if(e.target===ov)closeSyncModal()};return ov
 }
 function qrView(url){
   const host=syncModal?.querySelector('.omni-sync-content');if(!host)return;
@@ -5594,6 +5603,9 @@ window.OmniDeviceSync={
   connections:()=>[...live.keys()],
   bundle:buildBundle,
   merge:remote=>mergeBundle(remote),
+  selection:()=>syncSelection64(),
+  setSelection:value=>{saveSyncSelection64(value);return syncSelection64()},
+  installSelectionUI:root=>installSyncSelectionUI64(root),
   loadQR:()=>loadQR(),
   ensureSignalPeer:()=>ensurePeer(),
   sendLocalAnswer:async(peerId,payload)=>{
@@ -5664,6 +5676,13 @@ window.OmniDeviceSync={
   .omni-local-copy{text-align:center}.omni-local-badge{margin-inline:auto}.omni-local-actions{justify-content:center}.omni-local-actions .btn{flex:1 1 130px}
   .omni-local-steps{gap:3px}.omni-local-step{padding:5px 3px;font-size:.45rem}
 }
+.omni-sync-selection64{margin:10px 0;padding:9px 10px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-base)}
+.omni-sync-selection64 summary{cursor:pointer;font-size:.62rem;font-weight:820;color:var(--text-secondary)}
+.omni-sync-selection-grid64{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px 10px;margin-top:9px}
+.omni-sync-selection-grid64 label{display:flex;align-items:center;gap:6px;font-size:.57rem;color:var(--text-secondary)}
+.omni-sync-selection-grid64 input{accent-color:var(--accent-cyan)}
+.omni-sync-selection-note64{margin-top:8px;font-size:.5rem;line-height:1.45;color:var(--text-muted)}
+@media(max-width:760px){.omni-sync-selection-grid64{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 
 <script id="omnios-local-wifi-sync-v73">
@@ -5912,6 +5931,7 @@ function modal(title,subtitle){
   const ov=document.createElement('div');ov.className='omni-sync-overlay omni-local-sync';
   progressLog=[];ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true"><header class="omni-sync-head"><div><div class="omni-sync-kicker">LOCAL WI-FI SYNC</div><h3>'+title+'</h3><p>'+subtitle+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-local-status>Preparing…</strong><span data-local-detail>Both devices must be connected to the same Wi-Fi network.</span></div></div><div class="omni-local-progress"><div class="omni-local-progress-track"><span data-local-progress-bar></span></div><div data-local-progress-text>Preparing · 0%</div></div><div class="omni-local-steps"><div class="omni-local-step active" data-local-step="1">1 · Offer</div><div class="omni-local-step" data-local-step="2">2 · Response</div><div class="omni-local-step" data-local-step="3">3 · Connect</div><div class="omni-local-step" data-local-step="4">4 · Live</div></div><div class="omni-local-log" data-local-log></div><div class="omni-sync-content"></div></div></section>';
   document.body.appendChild(ov);overlay=ov;
+  try{window.__secondBrainInstallSyncSelection64?.(ov)}catch(_){}
   ov.querySelector('.omni-sync-close').onclick=closeModal;ov.onclick=e=>{if(e.target===ov)closeModal()};
   return ov
 }

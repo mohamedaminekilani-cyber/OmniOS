@@ -2096,10 +2096,19 @@ document.addEventListener('click', (event) => {
 let passwordSearch = '';
 let visiblePasswordIds = new Set();
 
-function genPassword(length = 16) {
+function genPassword(length = 20) {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
+    const max = 256 - (256 % chars.length);
     let out = '';
-    for (let i = 0; i < length; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    while (out.length < Math.max(12, Number(length) || 20)) {
+        const bytes = new Uint8Array(32);
+        crypto.getRandomValues(bytes);
+        for (const b of bytes) {
+            if (b >= max) continue;
+            out += chars[b % chars.length];
+            if (out.length >= Math.max(12, Number(length) || 20)) break;
+        }
+    }
     return out;
 }
 
@@ -2153,12 +2162,12 @@ function openPasswordModal(id = null) {
         <div class="form-group">
             <label class="form-label">Password</label>
             <div style="display:flex;gap:6px">
-                <input class="form-input" id="pw-password" type="text" value="${escapeHtml(p?.password || '')}" style="font-family:monospace">
+                <input class="form-input" id="pw-password" type="password" autocomplete="new-password" value="${escapeHtml(p?.password || '')}" style="font-family:monospace">
                 <button type="button" class="btn btn-sm" id="pw-generate">🎲 Generate</button>
             </div>
         </div>
         <div class="form-group"><label class="form-label">Notes (optional)</label><textarea class="form-textarea" id="pw-notes">${escapeHtml(p?.notes || '')}</textarea></div>
-        <div class="text-muted text-sm">Saved locally on this device only, without encryption.</div>
+        <div class="text-muted text-sm">This legacy editor is replaced at startup by the encrypted Second Brain vault.</div>
         <div class="modal-footer">
             <button type="button" class="btn btn-danger" id="pw-delete" style="display:${p ? 'inline-flex' : 'none'}">Delete</button>
             <span style="flex:1"></span>

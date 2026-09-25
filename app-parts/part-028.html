@@ -5079,7 +5079,14 @@ html:not([data-theme="light"]) #welcome63 .w63-btn.primary{
 .omni-sync-joining strong{font-size:.86rem}.omni-sync-joining span{font-size:.63rem;color:var(--text-muted)}
 .omni-sync-spinner{width:34px;height:34px;border:3px solid var(--border-color);border-top-color:var(--accent-cyan);border-radius:50%;animation:omniSyncSpin .8s linear infinite}
 @keyframes omniSyncSpin{to{transform:rotate(360deg)}}
+.omni-sync-select{margin:0 0 12px;padding:12px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-base)}
+.omni-sync-select legend{padding:0 5px;font-size:.62rem;font-weight:850;color:var(--text-primary)}
+.omni-sync-select-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px 10px;margin-top:5px}
+.omni-sync-select label{display:flex;align-items:center;gap:6px;font-size:.58rem;color:var(--text-secondary);cursor:pointer}
+.omni-sync-select input{accent-color:var(--accent-cyan)}
+.omni-sync-select small{display:block;margin-top:8px;color:var(--text-muted);font-size:.52rem;line-height:1.45}
 @media(max-width:760px){
+  .omni-sync-select-grid{grid-template-columns:1fr 1fr}
   #omni-sync-btn{display:inline-flex!important;min-width:62px!important;height:38px!important;padding:0 9px!important;font-size:.58rem!important}
   .omni-sync-overlay{place-items:end center;padding:0;background:rgba(2,6,12,.55)}
   .omni-sync-modal{width:100%;max-height:92dvh;border-radius:22px 22px 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom)}
@@ -5102,6 +5109,39 @@ const QR_SRC='https://cdn.jsdelivr.net/npm/qrcanvas@3';
 const DEVICE_KEY='omnios_sync_device_v1';
 const PAIRS_KEY='omnios_sync_pairs_v1';
 const TURN_KEY='omnios_sync_turn_v1';
+const SYNC_SELECTION_KEY='omnios_sync_selection_v1';
+const SYNC_GROUPS=['planning','calendar','habits','finance','life','nutrition','settings','bible','other'];
+function syncSelection(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(SYNC_SELECTION_KEY)||'null');
+    const out={};SYNC_GROUPS.forEach(k=>out[k]=saved?.[k]!==false);return out
+  }catch(_){const out={};SYNC_GROUPS.forEach(k=>out[k]=true);return out}
+}
+function saveSyncSelection(next){
+  const clean={};SYNC_GROUPS.forEach(k=>clean[k]=next?.[k]!==false);
+  try{localStorage.setItem(SYNC_SELECTION_KEY,JSON.stringify(clean))}catch(_){}
+  return clean
+}
+function syncGroupForStateKey(k){
+  const key=String(k||'').toLowerCase();
+  if(['entries','goals','notes','reminders'].includes(key)||/task|project|inbox/.test(key))return'planning';
+  if(/calendar|event|timeblock/.test(key))return'calendar';
+  if(/habit|routine|workout|focus/.test(key))return'habits';
+  if(/transaction|finance|budget|expense|income|wishlist|pantry|grocery/.test(key))return'finance';
+  if(key==='life'||/people|document/.test(key))return'life';
+  if(/diet|nutrition|meal|hydration|food|recipe|prep/.test(key))return'nutrition';
+  if(key==='settings'||/appearance|profile|preference/.test(key))return'settings';
+  return'other'
+}
+function syncSelectionControlsHtml(){
+  const sel=syncSelection(),labels={planning:'Planning',calendar:'Calendar',habits:'Habits & routines',finance:'Finance & lists',life:'Life OS',nutrition:'Nutrition',settings:'Settings',bible:'Bible',other:'Other app data'};
+  return '<fieldset class="omni-sync-select"><legend>Choose what this device shares</legend><div class="omni-sync-select-grid">'+SYNC_GROUPS.map(k=>'<label><input type="checkbox" data-sync-group="'+k+'" '+(sel[k]?'checked':'')+'> <span>'+labels[k]+'</span></label>').join('')+'</div><small>Passwords, pairing identity and push/device credentials are never included.</small></fieldset>'
+}
+function bindSyncSelectionControls(root){
+  root?.querySelectorAll?.('[data-sync-group]').forEach(el=>el.addEventListener('change',()=>{
+    const next=syncSelection();next[el.dataset.syncGroup]=!!el.checked;saveSyncSelection(next)
+  }))
+}
 const PEER_OPEN_TIMEOUT=7000;
 const DATA_OPEN_TIMEOUT=6500;
 let peer=null,peerReady=null,pendingSession=null,syncModal=null,sendTimer=null,warmPromise=null,lastJoinPayload=null;
@@ -5187,11 +5227,28 @@ function ensureReadyForMerge(){
   r.ensureSyncMeta?.();return r
 }
 function buildBundle(){
-  const r=ensureReadyForMerge(),aux=r.captureAux?.()||{},meta=state.core?.syncMeta||{},syncState=clone(state);
+  const r=ensureReadyForMerge(),capturedAux=r.captureAux?.()||{},meta=state.core?.syncMeta||{},syncState=clone(state),selection=syncSelection();
   if(syncState&&Object.prototype.hasOwnProperty.call(syncState,'passwords'))delete syncState.passwords;
-  const moduleTimes={...(meta.modules||{})};delete moduleTimes.passwords;
-  const recordTimes=clone(meta.records||{})||{};delete recordTimes.passwords;
-  return {protocol:PROTOCOL,generatedAt:iso(),device:device(),state:syncState,moduleTimes,recordTimes,aux,auxMeta:r.readAuxMeta?.()||{},fingerprint:r.fingerprint?.(syncState,aux)||''}
+  for(const k of Object.keys(syncState||{})){
+    if(k==='core')continue;
+    const group=syncGroupForStateKey(k);
+    if(selection[group]===false)delete syncState[k]
+  }
+  const moduleTimes={...(meta.modules||{})},recordTimes=clone(meta.records||{})||{};
+  for(const k of Object.keys(moduleTimes)){
+    const root=String(k).split('.')[0];
+    if(root==='passwords'||selection[syncGroupForStateKey(root)]===false)delete moduleTimes[k]
+  }
+  for(const k of Object.keys(recordTimes)){
+    const root=String(k).split('.')[0];
+    if(root==='passwords'||selection[syncGroupForStateKey(root)]===false)delete recordTimes[k]
+  }
+  const aux={...capturedAux},auxMeta={...(r.readAuxMeta?.()||{})};
+  if(selection.bible===false){
+    for(const k of Object.keys(aux))if(/bible/i.test(k))delete aux[k];
+    for(const k of Object.keys(auxMeta))if(/bible/i.test(k))delete auxMeta[k]
+  }
+  return {protocol:PROTOCOL,generatedAt:iso(),device:device(),state:syncState,moduleTimes,recordTimes,aux,auxMeta,selection,fingerprint:r.fingerprint?.(syncState,aux)||''}
 }
 function chooseRemote(lt,rt,localId,remoteId){
   if(rt>lt)return true;if(rt<lt)return false;
@@ -5396,20 +5453,24 @@ function setLiveUI(){
   const b=document.getElementById('omni-sync-btn'),n=[...live.values()].filter(x=>x.auth&&x.conn?.open).length;
   if(b){b.classList.toggle('is-live',n>0);b.title=n?('Sync · '+n+' device'+(n===1?'':'s')+' connected'):'Sync devices'}
 }
-function closeSyncModal(){syncModal?.remove();syncModal=null}
+function closeSyncModal(){
+  pendingSession=null;
+  syncModal?.remove();syncModal=null
+}
 function modalShell(mode='host'){
   closeSyncModal();const ov=document.createElement('div');ov.className='omni-sync-overlay';ov.innerHTML='<section class="omni-sync-modal" role="dialog" aria-modal="true" aria-labelledby="omni-sync-title"><header class="omni-sync-head"><div><div class="omni-sync-kicker">DEVICE SYNC</div><h3 id="omni-sync-title">'+(mode==='join'?'Connecting devices':'Sync Second Brain')+'</h3><p>'+(mode==='join'?'Keep this screen open while Second Brain connects and reconciles the newest data.':'Scan once with the second device. Both devices compare timestamps and keep the newest data.')+'</p></div><button type="button" class="icon-btn omni-sync-close" aria-label="Close">×</button></header><div class="omni-sync-body"><div class="omni-sync-status"><span class="omni-sync-dot"></span><div><strong data-sync-status>'+(mode==='join'?'Finding the other device…':'Preparing secure session…')+'</strong><span data-sync-detail>Automatic recovery snapshot is created before incoming data is applied.</span></div></div><div class="omni-sync-stages" aria-label="Sync progress"><div class="omni-sync-stage is-active" data-sync-stage="finding">Finding</div><div class="omni-sync-stage" data-sync-stage="connecting">Connecting</div><div class="omni-sync-stage" data-sync-stage="syncing">Syncing</div><div class="omni-sync-stage" data-sync-stage="live">Live</div></div><div class="omni-sync-content"></div></div></section>';
   document.body.appendChild(ov);syncModal=ov;ov.querySelector('.omni-sync-close').onclick=closeSyncModal;ov.onclick=e=>{if(e.target===ov)closeSyncModal()};return ov
 }
 function qrView(url){
   const host=syncModal?.querySelector('.omni-sync-content');if(!host)return;
-  host.innerHTML='<div class="omni-sync-qr-wrap"><div class="omni-sync-qr" id="omni-sync-qr"></div><div class="omni-sync-instructions"><strong>Scan this QR code on the other device</strong><span>It opens Second Brain and starts a direct sync session. Keep both devices online and this page open.</span><div class="omni-sync-actions"><button type="button" class="btn btn-primary" data-sync-copy>Copy sync link</button><button type="button" class="btn" data-sync-new>New code</button></div></div></div><div class="omni-sync-security">One-time pairing secret · data travels over an encrypted WebRTC connection · the QR does not contain your Second Brain data.</div>';
+  host.innerHTML=syncSelectionControlsHtml()+'<div class="omni-sync-qr-wrap"><div class="omni-sync-qr" id="omni-sync-qr"></div><div class="omni-sync-instructions"><strong>Scan this QR code on the other device</strong><span>It opens Second Brain and starts a direct sync session. Keep both devices online and this page open.</span><div class="omni-sync-actions"><button type="button" class="btn btn-primary" data-sync-copy>Copy sync link</button><button type="button" class="btn" data-sync-new>New code</button></div></div></div><div class="omni-sync-security">One-time pairing secret · data travels over an encrypted WebRTC connection · the QR does not contain your Second Brain data.</div>';
+  bindSyncSelectionControls(host);
   const box=host.querySelector('#omni-sync-qr');box.innerHTML='';
   try{const canvas=window.qrcanvas.qrcanvas({data:url,size:260,correctLevel:'M'});box.appendChild(canvas)}catch(e){box.textContent='QR could not be generated';console.warn(e)}
   host.querySelector('[data-sync-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(url);setStatus('Sync link copied','ok')}catch(_){setStatus('Could not copy link','error')}};
   host.querySelector('[data-sync-new]').onclick=()=>startHost(true)
 }
-function joinView(){const host=syncModal?.querySelector('.omni-sync-content');if(host)host.innerHTML='<div class="omni-sync-joining"><div class="omni-sync-spinner"></div><strong>Finding the other device…</strong><span>The newest data on each device will be kept.</span></div>'}
+function joinView(){const host=syncModal?.querySelector('.omni-sync-content');if(host){host.innerHTML=syncSelectionControlsHtml()+'<div class="omni-sync-joining"><div class="omni-sync-spinner"></div><strong>Finding the other device…</strong><span>Only the categories selected above are shared by this device.</span></div>';bindSyncSelectionControls(host)}}
 
 function handlePeerIncoming(conn){
   if(conn?.metadata?.omniLocalAnswer){

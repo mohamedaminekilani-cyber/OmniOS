@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "buildId": "second-brain-v64-2026-09-25",
+  "createdAt": "2026-09-25T00:00:00Z",
+  "parts": [
+    {
+      "path": "./app-parts/part-001.html",
+      "gitBlobSha": "5acf0680e7240de9db3359b12c3a1eef2482c08e"
+    },
+    {
+      "path": "./app-parts/part-002.html",
+      "gitBlobSha": "2b52897ac8fcbe3df986cd9ea03f17e293e14af1"
+    },
+    {
+      "path": "./app-parts/part-003.html",
+      "gitBlobSha": "4b419b139e888ba3eaca838ce0d36b6f3210b5a8"
+    },
+    {
+      "path": "./app-parts/part-004.html",
+      "gitBlobSha": "e21e807b3091d5a70f695ef879aacdcd13612029"
+    },
+    {
+      "path": "./app-parts/part-005.html",
+      "gitBlobSha": "63b35b7ca4b534569069cbcdb0583e942adc950d"
+    },
+    {
+      "path": "./app-parts/part-006.html",
+      "gitBlobSha": "fe74d9f4914b0dc2fd244a5b0429163d94e72036"
+    },
+    {
+      "path": "./app-parts/part-007.html",
+      "gitBlobSha": "5e0620f10d6d0fe3fcb8025dca08fbcaa19c6912"
+    },
+    {
+      "path": "./app-parts/part-008.html",
+      "gitBlobSha": "bff94828bc475e5d479dd07bb70448edd1107cd3"
+    },
+    {
+      "path": "./app-parts/part-009.html",
+      "gitBlobSha": "fca262b7d0b7b8e1db09e96c59889ced594949f4"
+    },
+    {
+      "path": "./app-parts/part-010.html",
+      "gitBlobSha": "e1752ac511899d0b7d7331574c4bdc6e6fe8cf19"
+    },
+    {
+      "path": "./app-parts/part-011.html",
+      "gitBlobSha": "3c820a82716a751b5d4929add0848f4df4f7d2b1"
+    },
+    {
+      "path": "./app-parts/part-012.html",
+      "gitBlobSha": "e11f103c14625611e43451f34143f2fedfc15e8b"
+    },
+    {
+      "path": "./app-parts/part-013.html",
+      "gitBlobSha": "4e719644dd809eb38cab2cc0b94399fb08f72dd2"
+    },
+    {
+      "path": "./app-parts/part-014.html",
+      "gitBlobSha": "82a8ab636d4dd4fbb0f5ccfcaee631a5da45c346"
+    },
+    {
+      "path": "./app-parts/part-015.html",
+      "gitBlobSha": "ac06963604d26f0067f813798837cffc8d9df1a7"
+    },
+    {
+      "path": "./app-parts/part-016.html",
+      "gitBlobSha": "a323b05147fe60867f646d3622dc07946649ab72"
+    },
+    {
+      "path": "./app-parts/part-017.html",
+      "gitBlobSha": "585aea4a56cf6f1501dd5033c8dd8539f2239abd"
+    },
+    {
+      "path": "./app-parts/part-018.html",
+      "gitBlobSha": "a2f6a949541f06beabc08b457ef04007e4e48869"
+    },
+    {
+      "path": "./app-parts/part-019.html",
+      "gitBlobSha": "1dda3d3cf83f97754e145efe976154c81633cc42"
+    },
+    {
+      "path": "./app-parts/part-020.html",
+      "gitBlobSha": "4505ab40afbfd6344e78c87512f59a7f910cfaf2"
+    },
+    {
+      "path": "./app-parts/part-021.html",
+      "gitBlobSha": "808c2140ca891c99cca9705261196a95b31a8056"
+    },
+    {
+      "path": "./app-parts/part-022.html",
+      "gitBlobSha": "22505d3f20601f4dd22663e84a336c3307961b02"
+    },
+    {
+      "path": "./app-parts/part-023.html",
+      "gitBlobSha": "fe92363f3ac71fa154d4e3c8455a45555bd89493"
+    },
+    {
+      "path": "./app-parts/part-024.html",
+      "gitBlobSha": "9875bb4bd414a9dcbae556674c770dbda4a70211"
+    },
+    {
+      "path": "./app-parts/part-025.html",
+      "gitBlobSha": "60b470ea271778c4a52c4f1bdb5e1947550cb3d8"
+    },
+    {
+      "path": "./app-parts/part-026.html",
+      "gitBlobSha": "ffbfaf6b79d0f1eaecad3dce58c01266ae6a8824"
+    },
+    {
+      "path": "./app-parts/part-027.html",
+      "gitBlobSha": "c8667107dfe26dba06a8ae11143dec8f227c36c5"
+    },
+    {
+      "path": "./app-parts/part-028.html",
+      "gitBlobSha": "ac9551d3583f51aceb6dcc4e3992bc12b5528062"
+    }
+  ]
+}

@@ -13,6 +13,7 @@ var APP_ICON_INSTALL_URL='omnios_app_icon_install_url_v1';
 var ICON_SERVICE='https://omnios-pwa.netlify.app/api/icon';
 var BOOT_ICON_KEY='omnios_loading_icon_v1';
 var DEVICE_KEY='omnios_push_device_v1';
+var PUSH_OWNER_KEY='omnios_push_owner_v1';
 var PUSH_PUBLIC_KEY='BFspp6Cwz1U5Ewgen29Pyq05WaD15s0VEN6HBA4wo9XiVHZIy6gR_dygjshuOX-lfpE8f3_EwsxtXYoJvPbIqwU';
 var PUSH_ENDPOINT='https://omnios-pwa.netlify.app/api/push/register';
 var syncTimer=0;
@@ -62,6 +63,17 @@ function deviceId(){
     try{localStorage.setItem(DEVICE_KEY,id)}catch(_){}
   }
   return id.replace(/[^a-zA-Z0-9_-]/g,'').slice(0,120);
+}
+function pushOwnerToken(){
+  var token='';
+  try{token=localStorage.getItem(PUSH_OWNER_KEY)||''}catch(_){}
+  if(!/^[A-Za-z0-9_-]{32,128}$/.test(token)){
+    var bytes=new Uint8Array(32);crypto.getRandomValues(bytes);
+    token=Array.from(bytes,function(b){return String.fromCharCode(b)}).map(function(ch){return ch.charCodeAt(0)}).reduce(function(acc,n){return acc+String.fromCharCode(n)},'');
+    token=btoa(token).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    try{localStorage.setItem(PUSH_OWNER_KEY,token)}catch(_){}
+  }
+  return token;
 }
 function timezone(){
   try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'}catch(_){return'UTC'}
@@ -242,20 +254,17 @@ function pushBackendReady(){
 }
 async function postPush(payload){
   var same=location.hostname==='omnios-pwa.netlify.app';
-  var opts={method:'POST',body:JSON.stringify(payload),credentials:'omit'};
-  if(same){
-    opts.headers={'Content-Type':'application/json'};
-  }else{
-    opts.mode='no-cors';
-    opts.headers={'Content-Type':'text/plain;charset=UTF-8'};
-  }
-  var response=await fetch(same?'/api/push/register':PUSH_ENDPOINT,opts);
-  if(same){
-    var data={};try{data=await response.json()}catch(_){}
-    if(!response.ok||data.ok===false)throw new Error(data.error||'Push service request failed');
-    return data;
-  }
-  return {ok:true,opaque:true};
+  var body={...payload,ownerToken:pushOwnerToken()};
+  var response=await fetch(same?'/api/push/register':PUSH_ENDPOINT,{
+    method:'POST',
+    mode:'cors',
+    credentials:'omit',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify(body)
+  });
+  var data={};try{data=await response.json()}catch(_){}
+  if(!response.ok||data.ok===false)throw new Error(data.error||('Push service request failed · HTTP '+response.status));
+  return data;
 }
 function addSchedule(out,id,date,time,title,body,view,advanceMinutes){
   if(!date)return;

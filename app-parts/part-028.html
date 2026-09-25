@@ -5095,9 +5095,7 @@ const QR_SRC='https://cdn.jsdelivr.net/npm/qrcanvas@3';
 const DEVICE_KEY='omnios_sync_device_v1';
 const PAIRS_KEY='omnios_sync_pairs_v1';
 const TURN_KEY='omnios_sync_turn_v1';
-const SYNC_SCOPE_KEY='omnios_sync_scope_v2';
-const SYNC_LIFE_META_KEY='omnios_sync_life_meta_v2';
-const SYNC_PAGE_SPECS=[{"id":"tasks","label":"Tasks","icon":"✓","keys":["entries"]},{"id":"planner","label":"Planner","icon":"▦","keys":[],"lifeKeys":["inbox","timeBlocks","reviews","annualPlans","todayPins"]},{"id":"projects","label":"Projects","icon":"◫","keys":["projects","lifeAreas"],"lifeKeys":["projects","areas"]},{"id":"calendar","label":"Calendar","icon":"□","keys":["calendarEvents"]},{"id":"habits","label":"Habits","icon":"⚡","keys":["habits"]},{"id":"routine","label":"Routine","icon":"↻","keys":["routines","planCompleted"]},{"id":"focus","label":"Focus","icon":"◉","keys":["focusTime","focusSessions","focusDaily","focusGuard"]},{"id":"notes","label":"Notes","icon":"✎","keys":["notes"]},{"id":"nutrition","label":"Nutrition","icon":"🥗","keys":["dietCategories","dietDayNotes","dietFoods","dietHydration","dietLog","dietMeals","dietPlan","dietPrep"]},{"id":"grocery","label":"Grocery & Pantry","icon":"🛒","keys":["groceryCategories","groceryLists","pantry"]},{"id":"finance","label":"Finance","icon":"💰","keys":["transactions","budgetCategories","wallets","bills","paymentPlans"]},{"id":"workout","label":"Workout","icon":"🏋","keys":["workouts","workoutTemplates","workoutExercises","gymMembership","weightLog"]},{"id":"goals","label":"Goals & Wishlist","icon":"🎯","keys":["goals","wishlist","wishlistCategories"]},{"id":"life","label":"Life Hub","icon":"◎","keys":["activityLog"],"lifeKeys":["people","home","health","learning","travel","money","documents","journal","importantDates","vehicles","decisions","someday","automation"]},{"id":"relations","label":"Relations","icon":"⌁","keys":["relations"]},{"id":"bible","label":"Bible","icon":"▥","keys":["meditation"]},{"id":"templates","label":"Templates","icon":"▦","keys":["templates","customFields"]},{"id":"passwords","label":"Passwords","icon":"▣","keys":["passwords"]},{"id":"settings","label":"Settings & personalization","icon":"⚙","keys":["settings","customIcons","brandingLogo","organizeV40","ui","v55","v56","trash"]}];
+const PEER_OPEN_TIMEOUT=7000;
 const DATA_OPEN_TIMEOUT=6500;
 let peer=null,peerReady=null,pendingSession=null,syncModal=null,sendTimer=null,warmPromise=null,lastJoinPayload=null;
 const live=new Map();
@@ -5181,99 +5179,9 @@ function ensureReadyForMerge(){
   const r=recovery();if(!r)throw new Error('Recovery layer is not ready yet');
   r.ensureSyncMeta?.();return r
 }
-
-function defaultSyncScope(){const out={};SYNC_PAGE_SPECS.forEach(p=>out[p.id]=true);return out}
-function normalizeSyncScope(value){
-  const out=defaultSyncScope();
-  if(value&&typeof value==='object')SYNC_PAGE_SPECS.forEach(p=>{if(Object.prototype.hasOwnProperty.call(value,p.id))out[p.id]=value[p.id]!==false});
-  return out
-}
-function syncScope(){
-  try{return normalizeSyncScope(JSON.parse(localStorage.getItem(SYNC_SCOPE_KEY)||'null'))}catch(_){return defaultSyncScope()}
-}
-function saveSyncScope(value){
-  const next=normalizeSyncScope(value);
-  try{localStorage.setItem(SYNC_SCOPE_KEY,JSON.stringify(next))}catch(_){}
-  return next
-}
-function syncPageForStateKey(key){
-  for(const p of SYNC_PAGE_SPECS)if((p.keys||[]).includes(key))return p.id;
-  return 'settings'
-}
-function syncPageForLifeKey(key){
-  for(const p of SYNC_PAGE_SPECS)if((p.lifeKeys||[]).includes(key))return p.id;
-  return 'life'
-}
-function syncPageForAuxKey(key){
-  const k=String(key||'').toLowerCase();
-  if(/bible|scripture|verse|meditat|atlas/.test(k))return 'bible';
-  if(/diet|nutrition|food|meal|pantry/.test(k))return 'nutrition';
-  if(/workout|exercise|gym|weight/.test(k))return 'workout';
-  if(/calendar|planner/.test(k))return 'calendar';
-  if(/routine/.test(k))return 'routine';
-  if(/habit/.test(k))return 'habits';
-  if(/note/.test(k))return 'notes';
-  if(/budget|finance|wallet|bill|payment/.test(k))return 'finance';
-  if(/password/.test(k))return 'passwords';
-  if(/icon|cover|brand|pwa|personal|theme|appearance|welcome/.test(k))return 'settings';
-  return 'settings'
-}
-function scopeAllowsPage(page,localScope,remoteScope){
-  return (localScope?.[page]!==false)&&(remoteScope?.[page]!==false)
-}
-function syncStateSubset(source,scope){
-  const out={};
-  if(source?.core)out.core={syncMeta:clone(source.core.syncMeta||{})};
-  Object.keys(source||{}).forEach(k=>{
-    if(k==='core'||String(k).startsWith('__')||typeof source[k]==='function')return;
-    if(k==='life'){
-      const lifeOut={};
-      Object.keys(source.life||{}).forEach(sk=>{if(scope[syncPageForLifeKey(sk)]!==false)lifeOut[sk]=clone(source.life[sk])});
-      if(Object.keys(lifeOut).length)out.life=lifeOut;
-      return
-    }
-    if(scope[syncPageForStateKey(k)]!==false)out[k]=clone(source[k])
-  });
-  return out
-}
-function filterSyncMap(map,scope){
-  const out={};
-  Object.entries(map||{}).forEach(([k,v])=>{if(k==='life'||scope[syncPageForStateKey(k)]!==false)out[k]=clone(v)});
-  return out
-}
-function filterSyncAux(aux,scope){
-  const out={};Object.entries(aux||{}).forEach(([k,v])=>{if(scope[syncPageForAuxKey(k)]!==false)out[k]=v});return out
-}
-function lifeValueFingerprint(v){try{return JSON.stringify(v)}catch(_){return String(v)}}
-function readLifeSyncMeta(){
-  try{const x=JSON.parse(localStorage.getItem(SYNC_LIFE_META_KEY)||'{}');return x&&typeof x==='object'?x:{}}catch(_){return{}}
-}
-function writeLifeSyncMeta(meta){try{localStorage.setItem(SYNC_LIFE_META_KEY,JSON.stringify(meta||{}))}catch(_){}}
-function refreshLifeSyncMeta(life=state.life||{}){
-  const meta=readLifeSyncMeta(),now=iso();
-  Object.keys(life||{}).forEach(k=>{
-    const fp=lifeValueFingerprint(life[k]),old=meta[k];
-    if(!old||old.fp!==fp)meta[k]={at:old?.fp===undefined?(state.core?.syncMeta?.modules?.life||now):now,fp}
-  });
-  Object.keys(meta).forEach(k=>{if(!Object.prototype.hasOwnProperty.call(life,k))delete meta[k]});
-  writeLifeSyncMeta(meta);return meta
-}
-function filteredLifeTimes(scope){
-  const meta=refreshLifeSyncMeta(),out={};
-  Object.entries(meta).forEach(([k,v])=>{if(scope[syncPageForLifeKey(k)]!==false)out[k]=v.at||''});
-  return out
-}
 function buildBundle(){
-  const r=ensureReadyForMerge(),scope=syncScope(),auxAll=r.captureAux?.()||{},meta=state.core?.syncMeta||{};
-  const stateOut=syncStateSubset(state,scope),aux=filterSyncAux(auxAll,scope);
-  const moduleTimes=filterSyncMap(meta.modules||{},scope),recordTimes=filterSyncMap(meta.records||{},scope);
-  const auxMetaAll=r.readAuxMeta?.()||{},auxMeta={};
-  Object.entries(auxMetaAll).forEach(([k,v])=>{if(scope[syncPageForAuxKey(k)]!==false)auxMeta[k]=clone(v)});
-  return {
-    protocol:PROTOCOL,generatedAt:iso(),device:device(),syncPages:scope,state:stateOut,
-    moduleTimes,recordTimes,lifeTimes:filteredLifeTimes(scope),aux,auxMeta,
-    fingerprint:r.fingerprint?.(stateOut,aux)||''
-  }
+  const r=ensureReadyForMerge(),aux=r.captureAux?.()||{},meta=state.core?.syncMeta||{};
+  return {protocol:PROTOCOL,generatedAt:iso(),device:device(),state:clone(state),moduleTimes:{...(meta.modules||{})},recordTimes:clone(meta.records||{})||{},aux,auxMeta:r.readAuxMeta?.()||{},fingerprint:r.fingerprint?.(state,aux)||''}
 }
 function chooseRemote(lt,rt,localId,remoteId){
   if(rt>lt)return true;if(rt<lt)return false;
@@ -5307,69 +5215,45 @@ function mergeRecordArray(key,localList,remoteList,localRec,remoteRec,localModul
 }
 
 async function mergeBundle(remote){
-  if(!remote||remote.protocol!==PROTOCOL||!remote.state)return {changed:false,modules:[],aux:[],pages:[]};
-  const r=ensureReadyForMerge(),localId=device().id,remoteId=remote.device?.id||'',localScope=syncScope(),remoteScope=normalizeSyncScope(remote.syncPages);
+  if(!remote||remote.protocol!==PROTOCOL||!remote.state)return {changed:false,modules:[],aux:[]};
+  const r=ensureReadyForMerge(),localId=device().id,remoteId=remote.device?.id||'';
   const localMeta=r.ensureSyncMeta?.()||{modules:{},records:{}},localTimes={...(localMeta.modules||{})},remoteTimes={...(remote.moduleTimes||remote.state?.core?.syncMeta?.modules||{})};
   const localRecords=localMeta.records||{},remoteRecords=remote.recordTimes||remote.state?.core?.syncMeta?.records||{},mergedRecords=clone(localRecords)||{};
-  const keys=new Set([...(r.stateKeys?.(state)||[]),...(r.stateKeys?.(remote.state)||[])]),stateChanges=[],mergedTimes={...localTimes},changedPages=new Set();
-
+  const keys=new Set([...(r.stateKeys?.(state)||[]),...(r.stateKeys?.(remote.state)||[])]),stateChanges=[],mergedTimes={...localTimes};
   for(const k of keys){
-    if(k==='life'){
-      if(!hasOwn(remote.state,'life'))continue;
-      const lv=state.life&&typeof state.life==='object'?state.life:{},rv=remote.state.life&&typeof remote.state.life==='object'?remote.state.life:{};
-      const localLifeMeta=refreshLifeSyncMeta(lv),remoteLifeTimes=remote.lifeTimes||{},next=clone(lv)||{};let changed=false;
-      for(const sk of Object.keys(rv)){
-        const page=syncPageForLifeKey(sk);
-        if(!scopeAllowsPage(page,localScope,remoteScope))continue;
-        const lt=when(localLifeMeta[sk]?.at||localTimes.life),rt=when(remoteLifeTimes[sk]||remoteTimes.life||remote.generatedAt);
-        if((!hasOwn(lv,sk)||chooseRemote(lt,rt,localId,remoteId))&&!same(lv[sk],rv[sk])){
-          next[sk]=clone(rv[sk]);changed=true;changedPages.add(page);
-          localLifeMeta[sk]={at:remoteLifeTimes[sk]||remoteTimes.life||remote.generatedAt,fp:lifeValueFingerprint(rv[sk])}
-        }
-      }
-      if(changed){stateChanges.push(['life',next]);writeLifeSyncMeta(localLifeMeta)}
-      if(scopeAllowsPage('planner',localScope,remoteScope)||scopeAllowsPage('projects',localScope,remoteScope)||scopeAllowsPage('life',localScope,remoteScope)){
-        const lt=when(localTimes.life),rt=when(remoteTimes.life);
-        mergedTimes.life=(rt>lt||(rt===lt&&String(remoteId)>String(localId)))?(remoteTimes.life||localTimes.life||remote.generatedAt):(localTimes.life||remoteTimes.life||remote.generatedAt)
-      }
-      continue
-    }
-
-    const page=syncPageForStateKey(k);
-    if(!scopeAllowsPage(page,localScope,remoteScope))continue;
     const localHas=hasOwn(state,k),remoteHas=hasOwn(remote.state,k),lt=when(localTimes[k]),rt=when(remoteTimes[k]);
     if(remoteHas){
       const lv=state[k],rv=remote.state[k],recordMerge=Array.isArray(lv)&&Array.isArray(rv)&&recordArrayEligible(lv,r)&&recordArrayEligible(rv,r)&&(localRecords[k]||remoteRecords[k]);
       if(recordMerge){
         const merged=mergeRecordArray(k,lv,rv,localRecords[k]||{},remoteRecords[k]||{},localTimes[k]||'',remoteTimes[k]||'',localId,remoteId,remote.generatedAt,r);
         mergedRecords[k]=merged.meta;
-        if(!same(lv,merged.list)){stateChanges.push([k,merged.list]);changedPages.add(page)}
+        if(!same(lv,merged.list))stateChanges.push([k,merged.list])
       }else if((!localHas||chooseRemote(lt,rt,localId,remoteId))&&!same(lv,rv)){
-        stateChanges.push([k,clone(rv)]);changedPages.add(page)
+        stateChanges.push([k,clone(rv)])
       }
     }
-    if(remoteHas&&(rt>lt||(rt===lt&&String(remoteId)>String(localId))) )mergedTimes[k]=remoteTimes[k]||localTimes[k]||remote.generatedAt;
+    if(remoteHas&&(rt>lt||(rt===lt&&String(remoteId)>String(localId))))mergedTimes[k]=remoteTimes[k]||localTimes[k]||remote.generatedAt;
     else mergedTimes[k]=localTimes[k]||remoteTimes[k]||remote.generatedAt;
   }
 
   const localAux=r.captureAux?.()||{},localAuxMeta=r.readAuxMeta?.()||{},remoteAux=remote.aux||{},remoteAuxMeta=remote.auxMeta||{};
   const auxKeys=new Set([...Object.keys(localAux),...Object.keys(remoteAux),...Object.keys(localAuxMeta),...Object.keys(remoteAuxMeta)]),auxChanges=[],mergedAuxMeta={...localAuxMeta};
   for(const k of auxKeys){
-    const page=syncPageForAuxKey(k);
-    if(!scopeAllowsPage(page,localScope,remoteScope))continue;
     const localHas=hasOwn(localAux,k),remoteHas=hasOwn(remoteAux,k),remoteKnows=remoteHas||hasOwn(remoteAuxMeta,k);
     if(!remoteKnows)continue;
     const lm=localAuxMeta[k]||{},rm=remoteAuxMeta[k]||{};
     const lt=when(lm.at),rt=when(rm.at||(remoteHas?remote.generatedAt:'')),take=chooseRemote(lt,rt,localId,remoteId);
     if(take){
-      const deleted=!!rm.deleted,next=deleted?null:remoteAux[k],current=localHas?localAux[k]:null;
-      if(deleted?localHas:current!==next){auxChanges.push([k,next,deleted]);changedPages.add(page)}
-      mergedAuxMeta[k]={at:rm.at||remote.generatedAt,deleted}
+      const deleted=!!rm.deleted;
+      const next=deleted?null:remoteAux[k];
+      const current=localHas?localAux[k]:null;
+      if(deleted?localHas:current!==next)auxChanges.push([k,next,deleted]);
+      mergedAuxMeta[k]={at:rm.at||remote.generatedAt,deleted};
     }
   }
 
-  if(!stateChanges.length&&!auxChanges.length)return {changed:false,modules:[],aux:[],pages:[]};
-  await r.makeSnapshot?.('Before selective device sync',{kind:'manual'});
+  if(!stateChanges.length&&!auxChanges.length)return {changed:false,modules:[],aux:[]};
+  await r.makeSnapshot?.('Before device sync',{kind:'manual'});
   window.__omniSyncApplying=true;
   try{
     for(const [k,v] of stateChanges)state[k]=v;
@@ -5386,7 +5270,7 @@ async function mergeBundle(remote){
     if(typeof window.saveState==='function')window.saveState();
     try{window.renderAll?.()}catch(_){}
   }finally{window.__omniSyncApplying=false}
-  return {changed:true,modules:stateChanges.map(x=>x[0]),aux:auxChanges.map(x=>x[0]),pages:[...changedPages]}
+  return {changed:true,modules:stateChanges.map(x=>x[0]),aux:auxChanges.map(x=>x[0])}
 }
 
 function setStatus(text,tone='',detail=''){
@@ -5619,9 +5503,6 @@ window.OmniDeviceSync={
   connections:()=>[...live.keys()],
   bundle:buildBundle,
   merge:remote=>mergeBundle(remote),
-  pageSpecs:()=>clone(SYNC_PAGE_SPECS),
-  selection:()=>syncScope(),
-  setSelection:value=>saveSyncScope(value),
   loadQR:()=>loadQR(),
   ensureSignalPeer:()=>ensurePeer(),
   sendLocalAnswer:async(peerId,payload)=>{
@@ -6131,16 +6012,10 @@ function listenForAnswer(sid){
 }
 async function applyAnswer(payload){
   if(!hostSession||payload.sid!==hostSession.sid||payload.secret!==hostSession.secret||hostSession.answerApplied)return;
-  if(hostSession.answerApplying)return;
-  hostSession.answerApplying=true;
-  try{await hostSession.pc.setRemoteDescription(payload.answer)}catch(e){
-    console.error(e);hostSession.answerApplying=false;
-    if(!liveConn?.open)stage(2,'Could not apply response','Try pasting the phone’s response link or generate a new QR.','error');
-    return
-  }
   hostSession.answerApplied=true;hostSession.answerCleanup?.();
   if(!liveConn?.open){stage(3,'Phone responded automatically','Opening the direct local Wi-Fi channel…','busy');setProgress(72,'Opening channel')}
   logProgress('Phone response received');
+  try{await hostSession.pc.setRemoteDescription(payload.answer)}catch(e){console.error(e);if(!liveConn?.open)stage(3,'Could not apply response','Generate a new Local Wi-Fi code and try again.','error');return}
   const timeout=setTimeout(()=>{if(!liveConn?.open){const ice=hostSession?.pc?.iceConnectionState||'unknown';logProgress('Direct Wi-Fi data channel did not open · ICE '+ice);fallbackFromBlockedLocal(hostSession.sid)}},4200);
   hostSession.connectTimeout=timeout
 }
@@ -6210,22 +6085,18 @@ async function joinLocalOffer(payload){
         }
       }catch(e){console.warn('Primary answer delivery failed',e)}
     }
-    // Back up the response even if peer signaling acknowledged it.
-    // Its acknowledgement does not prove that the PC applied the WebRTC answer.
-    try{
-      const relaySent=await relaySendEnvelope(payload.sid,payload.secret,'answer',response);
-      if(relaySent){delivered=true;logProgress('Encrypted response backup sent to PC')}
-    }catch(e){console.warn('Relay answer backup failed',e)}
+    if(!delivered){
+      try{
+        delivered=await relaySendEnvelope(payload.sid,payload.secret,'answer',response);
+        if(delivered){setProgress(66,'Response sent');logProgress('Response delivered through encrypted relay')}
+      }catch(e){console.warn('Relay answer delivery failed',e)}
+    }
     if(!delivered){
       const url=await payloadUrl('answer',response);answerView(url);
       stage(2,'Automatic response unavailable','Copy the response link and paste it into the PC.','error');return
     }
     const host=overlay?.querySelector('.omni-sync-content');
-    if(host){
-      const answerLink=await payloadUrl('answer',response);
-      host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response sent automatically</strong><span>Keep both apps open. If the PC still says it is waiting for the phone response, copy this link and paste it into the PC’s Sync window.</span><button type="button" class="btn" data-copy-response>Copy response link</button></div>';
-      host.querySelector('[data-copy-response]').onclick=async()=>{try{await navigator.clipboard.writeText(answerLink);stage(2,'Response copied','Paste the link into the PC’s Sync window.','ok')}catch(_){prompt('Copy this response link and paste it into the PC:',answerLink)}};
-    }
+    if(host)host.innerHTML='<div class="omni-local-success"><div class="mark">✓</div><strong>Response sent automatically</strong><span>Sync starts immediately on the secure connection that delivered the response. OmniOS will upgrade to the local Wi-Fi data channel automatically if it becomes available.</span></div>';
     stage(3,'Response sent to the PC','Opening the fastest available encrypted route…','ok');
     setTimeout(()=>{if(!liveConn?.open)fallbackFromBlockedLocal(payload.sid)},4200)
   }catch(e){console.error('Local join',e);stage(2,'Could not create response','Use Internet fallback.','error');showFallbackOnly()}

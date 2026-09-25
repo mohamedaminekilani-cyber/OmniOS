@@ -1,0 +1,5 @@
+import {test}from'node:test';import assert from'node:assert/strict';import'../js/transport.js';const T=globalThis.SecondBrainTransport;
+test('large unicode document reassembles with integrity',async()=>{const input={text:'é😀'.repeat(350000)},frames=await T.packets(input),channel={};let out;for(const frame of frames)out=await T.receive(channel,frame);assert.deepEqual(out,input);assert.ok(frames.length>100)});
+test('corrupted final payload is rejected',async()=>{const [frame]=await T.packets({text:'good'});frame.data=btoa('{"text":"evil"}');frame.size=15;await assert.rejects(T.receive({},frame))});
+test('out of order chunks and duplicates are safe',async()=>{const input={text:'abcd'.repeat(10000)},frames=await T.packets(input),c={};assert.equal(await T.receive(c,frames[0]),null);let out;for(const frame of frames.reverse()){const result=await T.receive(c,frame);if(result)out=result;}assert.deepEqual(out,input)});
+test('invalid counts and memory amplification rejected',async()=>{await assert.rejects(T.receive({},{sbFrame:2,size:1,count:999999,index:0,id:'x',hash:'a'.repeat(64),data:'YQ=='}))});

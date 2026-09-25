@@ -8,10 +8,14 @@
   },
   "devDependencies": {
     "@netlify/functions": "6.0.0",
-    "@types/web-push": "3.6.4"
+    "@types/web-push": "3.6.4",
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^30.1.1"
   },
   "scripts": {
-    "test": "node scripts/release-check.mjs",
-    "test:release": "node scripts/release-check.mjs"
+    "test": "node scripts/release-check.mjs && node --test tests/*.test.js",
+    "test:release": "node scripts/release-check.mjs",
+    "build": "node scripts/build.mjs",
+    "test:runtime": "npm run build && node scripts/runtime-check.mjs"
   }
 }

@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import type { Config, Context } from "@netlify/functions";
 import { getDeployStore, getStore } from "@netlify/blobs";
 
@@ -10,8 +11,8 @@ type RelayRecord = {
 
 type RelayMessage = RelayRecord & { cursor: string };
 
-const MAX_BODY_BYTES = 8_000_000;
-const MAX_SEALED_CHARS = 7_500_000;
+const MAX_BODY_BYTES = 131_072;
+const MAX_SEALED_CHARS = 120_000;
 const MAX_BATCH = 30;
 const TTL_MS = 20 * 60 * 1000;
 
@@ -36,11 +37,11 @@ function safeCursor(value: unknown) {
 }
 
 function corsHeaders(req: Request) {
-  const origin = req.headers.get("origin") || "*";
+  const origin = req.headers.get("origin") || "https://omnios-pwa.netlify.app";
   return {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Access-Control-Allow-Headers": "content-type",
+    "Access-Control-Allow-Headers": "content-type,authorization",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin",
     "Cache-Control": "no-store, max-age=0"
@@ -55,7 +56,13 @@ function json(req: Request, value: unknown, status = 200) {
 }
 
 export default async (req: Request, _context: Context) => {
+  const origin = req.headers.get("origin");
+  if (origin && !["https://omnios-pwa.netlify.app", "https://mohamedaminekilani-cyber.github.io"].includes(origin) && origin !== new URL(req.url).origin) return new Response("Forbidden origin", {status:403});
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
+  const token = (req.headers.get("authorization") || "").replace(/^Bearer /, "");
+  if (!/^[a-f0-9]{64}$/.test(token)) return json(req, {ok:false,error:"Pair again with the latest app"}, 401);
+  const authorizedChannel = createHash("sha256").update(token).digest("hex").slice(0,48);
+  const authorize = (channel: string) => {if(channel.length!==authorizedChannel.length || !timingSafeEqual(Buffer.from(channel),Buffer.from(authorizedChannel))) throw Error("Invalid relay capability");};
   const store = relayStore();
 
   try {
@@ -66,7 +73,7 @@ export default async (req: Request, _context: Context) => {
       const raw = await req.text();
       if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) return json(req, { ok: false, error: "Payload Too Large" }, 413);
       const body = JSON.parse(raw);
-      const channel = safeToken(body?.channel, 80);
+      const channel = safeToken(body?.channel, 80);authorize(channel);
       const id = safeToken(body?.id, 64);
       const from = safeToken(body?.from || "device", 96);
       const sealed = String(body?.sealed || "");
@@ -81,7 +88,7 @@ export default async (req: Request, _context: Context) => {
 
     if (req.method === "GET") {
       const url = new URL(req.url);
-      const channel = safeToken(url.searchParams.get("channel"), 80);
+      const channel = safeToken(url.searchParams.get("channel"), 80);authorize(channel);
       const cursor = safeCursor(url.searchParams.get("cursor"));
       const prefix = `message/${channel}/`;
       if (cursor && !cursor.startsWith(prefix)) throw new Error("Cursor does not belong to channel");
@@ -96,7 +103,7 @@ export default async (req: Request, _context: Context) => {
           const at = Number(tail.slice(0, 13)) || 0;
           return { key: x.key, at };
         })
-        .filter((x) => !cursor || x.key > cursor)
+        .filter((x) => x.at >= cutoff && (!cursor || x.key > cursor))
         .sort((a, b) => a.key.localeCompare(b.key))
         .slice(0, MAX_BATCH);
 

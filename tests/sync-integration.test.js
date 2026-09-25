@@ -1,0 +1,11 @@
+import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import fs from 'node:fs';import {webcrypto} from 'node:crypto';
+function device(initial){
+ const memory=new Map();const ctx=vm.createContext({console,crypto:webcrypto,setTimeout,clearTimeout,JSON,structuredClone,state:structuredClone(initial),navigator:{},localStorage:{getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)},document:{readyState:'complete',addEventListener(){}},addEventListener(){}});ctx.window=ctx;
+ let fail=false,snapshot=async()=>{};ctx.OmniRecovery35={captureAux:()=>({}),fingerprint:x=>JSON.stringify(x),makeSnapshot:()=>snapshot(),applyAuxDurably(){},persistStateDurably:async()=>{if(fail)throw Error('disk full')}};
+ vm.runInContext(fs.readFileSync('js/data-core.js','utf8'),ctx);vm.runInContext(fs.readFileSync('js/sync-v2.js','utf8'),ctx);
+ return{ctx,api:ctx.SecondBrainSync,fail:()=>fail=true,snapshot:fn=>snapshot=fn,memory};
+}
+const initial=()=>({entries:[{id:'t',title:'before',done:false}],passwords:[{password:'local secret'}],settings:{notifications:{device:'local'}},core:{}});
+test('failed durable sync restores local document and can retry',async()=>{const a=device(initial()),b=device(initial());b.ctx.state.entries[0].title='remote';const bundle=b.api.bundle();a.fail();await assert.rejects(a.api.merge(bundle),/disk full/);assert.equal(a.ctx.state.entries[0].title,'before');assert.equal(a.ctx.state.passwords[0].password,'local secret')});
+test('edits during snapshot are preserved when incoming sync is applied',async()=>{const a=device(initial()),b=device(initial());b.ctx.state.entries[0].title='remote';a.snapshot(async()=>{a.ctx.state.entries[0].done=true});await a.api.merge(b.api.bundle());assert.equal(a.ctx.state.entries[0].title,'remote');assert.equal(a.ctx.state.entries[0].done,true);assert.equal(a.ctx.state.settings.notifications.device,'local');assert.equal(a.ctx.state.passwords[0].password,'local secret')});
+test('receive selection blocks deselected remote fields',async()=>{const a=device(initial()),b=device(initial());a.memory.set('omnios_sync_selection_v1',JSON.stringify({planning:false}));b.ctx.state.entries[0].title='remote';await a.api.merge(b.api.bundle());assert.equal(a.ctx.state.entries[0].title,'before')});

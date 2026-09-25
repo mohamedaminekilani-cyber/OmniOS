@@ -100,7 +100,16 @@ export default async (req: Request, _context: Context) => {
   if (!allowedOrigin(req)) return new Response("Forbidden", { status: 403 });
 
   try {
-    const body = await req.json();
+    const raw = await req.text();
+    if(new TextEncoder().encode(raw).byteLength>1_000_000)return json(req,{ok:false,error:"Request too large"},413);
+    const body = JSON.parse(raw);
+    if(body.subscription){
+      const endpoint=new URL(String(body.subscription.endpoint||""));
+      const host=endpoint.hostname.toLowerCase();
+      const trusted=host==='fcm.googleapis.com'||host==='updates.push.services.mozilla.com'||host==='web.push.apple.com'||host.endsWith('.push.apple.com')||host.endsWith('.notify.windows.com');
+      if(endpoint.protocol!=='https:'||endpoint.username||endpoint.password||(endpoint.port&&endpoint.port!=='443')||!trusted)throw Error('Unsupported push service endpoint');
+      if(!body.subscription.keys?.p256dh||!body.subscription.keys?.auth)throw Error('Invalid push subscription keys');
+    }
     const action = String(body?.action || "sync");
     const deviceId = safeId(body?.deviceId);
     const ownerToken = safeOwner(body?.ownerToken);

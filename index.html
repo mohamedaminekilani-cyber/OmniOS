@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#18181b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="OmniOS">
+<meta name="apple-mobile-web-app-title" content="Second Brain">
 <link id="omnios-apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
 <script id="omnios-pwa-icon-early">
 (function(){
@@ -287,7 +287,7 @@ function carryLoaderIntoApp(html){
       await writeSnapshot(texts);
     }catch(e){
       freshError=e;
-      console.warn('Fresh OmniOS load failed; trying complete snapshot',e);
+      console.warn('Fresh Second Brain load failed; trying complete snapshot',e);
       if(status)status.textContent=navigator.onLine?'Fresh build unavailable · opening saved copy…':'Offline · opening saved copy…';
       if(progress)progress.style.width='100%';
       texts=await readSnapshot();
@@ -303,8 +303,8 @@ function carryLoaderIntoApp(html){
     const copy=document.getElementById('omnios-load-error-copy');
     const offline=!navigator.onLine;
     if(copy)copy.textContent=offline
-      ? 'This device is offline and no complete saved app copy was available. Reconnect once, then Retry. Your OmniOS data is not deleted.'
-      : 'A complete app build could not be validated. Retry first; if it repeats, reset only the app cache. Your OmniOS data is not deleted.';
+      ? 'This device is offline and no complete saved app copy was available. Reconnect once, then Retry. Your Second Brain data is not deleted.'
+      : 'A complete app build could not be validated. Retry first; if it repeats, reset only the app cache. Your Second Brain data is not deleted.';
     const error=document.getElementById('error');if(error)error.style.display='block';
     if(status)status.textContent=offline?'Offline · saved copy unavailable':'Load failed · app files could not be validated';
     retryBtn?.focus?.();

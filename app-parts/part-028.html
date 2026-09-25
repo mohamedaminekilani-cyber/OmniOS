@@ -5459,10 +5459,10 @@ function validIncomingSecret(conn,secret){
 }
 function sendBundle(conn,reason='live',force=false){
   if(!conn?.open||!conn.__omniAuth)return;
-  const bundle=buildBundle();
-  if(!force&&bundle.fingerprint&&bundle.fingerprint===conn.__omniLastSent)return;
-  conn.__omniLastSent=bundle.fingerprint||'';
-  conn.send({type:'bundle',protocol:PROTOCOL,reason,bundle})
+  const bundle=buildBundle(),fp=bundle.fingerprint||'';
+  if(!force&&fp&&(fp===conn.__omniLastSent||fp===conn.__omniPendingSent))return;
+  try{conn.__omniPendingSent=fp;conn.send({type:'bundle',protocol:PROTOCOL,reason,bundle})}
+  catch(e){conn.__omniPendingSent='';throw e}
 }
 function scheduleLiveSend(){
   if(window.__omniSyncApplying)return;clearTimeout(sendTimer);sendTimer=setTimeout(()=>{for(const x of live.values())if(x.auth&&x.conn?.open)sendBundle(x.conn,'live')},550)
@@ -5480,17 +5480,21 @@ async function handleMessage(conn,msg,expectedSecret){
     if(!expectedSecret)return;conn.__omniAuth=true;conn.__omniRemoteDevice=msg.device||{};savePair(conn.peer,expectedSecret,msg.device);live.set(conn.peer,{conn,auth:true});setLiveUI();sendBundle(conn,'initial',true);setStage('syncing','Device connected','Comparing timestamps and applying the newest records…','busy');return
   }
   if(msg.type==='bundle'&&conn.__omniAuth){
-    if(msg.bundle?.fingerprint&&msg.bundle.fingerprint===conn.__omniLastRecv)return;
-    conn.__omniLastRecv=msg.bundle?.fingerprint||'';
+    const fp=msg.bundle?.fingerprint||'';
+    if(fp&&fp===conn.__omniLastRecv)return;
     try{
       const result=await mergeBundle(msg.bundle);
-      if(result.changed){sendBundle(conn,'merged',true);setStage('live','Synced · newest data kept',result.modules.length?(result.modules.length+' module'+(result.modules.length===1?'':'s')+' updated'):'Auxiliary data updated','ok')}
+      conn.__omniLastRecv=fp;
+      if(result.changed){sendBundle(conn,'merged',true);setStage('live','Synced · changes committed',result.modules.length?(result.modules.length+' module'+(result.modules.length===1?'':'s')+' updated'):'Auxiliary or sync metadata updated','ok')}
       else setStage('live','Synced · both devices already match','Live changes will continue to transfer.','ok');
-      try{conn.send({type:'ack',protocol:PROTOCOL,at:iso()})}catch(_){}
-    }catch(e){console.error('OmniOS sync merge',e);setStatus('Could not apply synced data. Your pre-sync snapshot is still available.','error')}
+      try{conn.send({type:'ack',protocol:PROTOCOL,at:iso(),fingerprint:fp})}catch(_){}
+    }catch(e){conn.__omniLastRecv='';console.error('Second Brain sync merge',e);setStatus('Sync was not committed. No success acknowledgement was sent; retry is safe.','error')}
     return
   }
-  if(msg.type==='ack'&&conn.__omniAuth){const route=await connectionRoute(conn);setStage('live','Live sync active',route==='relay'?'Relay connection · newest changes will continue to transfer':'Direct connection · newest changes will continue to transfer','ok');return}
+  if(msg.type==='ack'&&conn.__omniAuth){
+    if(msg.fingerprint&&conn.__omniPendingSent===msg.fingerprint){conn.__omniLastSent=msg.fingerprint;conn.__omniPendingSent=''}
+    const route=await connectionRoute(conn);setStage('live','Live sync active',route==='relay'?'Relay connection · acknowledged changes are durable':'Direct connection · acknowledged changes are durable','ok');return
+  }
   if(msg.type==='error'){setStatus(msg.message||'Sync error','error')}
 }
 async function connectionRoute(conn){

@@ -800,32 +800,118 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 @media(max-width:1100px){.v43-kpis{grid-template-columns:repeat(3,1fr)}.v43-span-8,.v43-span-7,.v43-span-6,.v43-span-5,.v43-span-4{grid-column:span 6}.v43-domain-grid,.v43-record-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.v43-life-shell{grid-template-columns:200px minmax(0,1fr)}}
 @media(max-width:760px){.v43-person-row{padding:9px 10px;gap:8px}.v43-person-row-actions .btn{display:none!important}.v43-person-row-actions{gap:4px}.v43-person-avatar{width:48px;height:48px;min-width:48px;flex-basis:48px}.v43-record[data-v35-record^="people|"]{min-height:112px}.v43-hero{flex-direction:column;padding:16px}.v43-hero-actions{width:100%;justify-content:flex-start}.v43-hero-actions .btn{flex:1}.v43-kpis{grid-template-columns:repeat(2,1fr)}.v43-grid{grid-template-columns:1fr}.v43-span-8,.v43-span-7,.v43-span-6,.v43-span-5,.v43-span-4{grid-column:auto}.v43-life-shell{display:block}.v43-life-rail{position:static;display:none}.v43-life-select{display:block;width:100%;margin-bottom:10px}.v43-domain-grid,.v43-record-grid{grid-template-columns:1fr}.v43-life-toolbar .search-input{min-width:0;width:100%}.v43-mini-grid{grid-template-columns:1fr 1fr}}
 
-/* v43.1 — Dashboard repair: resilient layout, no missing grid spans */
-.v431-dashboard{min-width:0}
-.v431-dashboard .v43-hero{min-width:0}
-.v431-dashboard .v43-kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-.v431-dashboard .v43-kpi{min-height:88px;display:flex;flex-direction:column;justify-content:center}
-.v431-dashboard .v43-kpi-value{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+/* Dashboard UI authority — calmer hierarchy, compact actions, responsive density */
+.v431-dashboard{min-width:0;--dash-gap:12px;--dash-soft:color-mix(in srgb,var(--bg-elevated) 68%,transparent)}
+.v431-dashboard .v43-hero{min-width:0;margin-bottom:10px;padding:18px;background:linear-gradient(145deg,color-mix(in srgb,var(--bg-surface) 94%,var(--accent-cyan) 6%),var(--bg-surface));border-radius:16px;align-items:center}
+.v431-hero-main{min-width:0;flex:1}
+.v431-title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.v431-title-row h3{margin:3px 0 2px;font-size:1.38rem;letter-spacing:-.025em}
+.v431-period-chip{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border:1px solid var(--border-color);border-radius:999px;background:var(--bg-base);color:var(--text-muted);font-size:.58rem;font-weight:700}
+.v431-dashboard .v43-hero-copy{max-width:640px;font-size:.71rem;line-height:1.48}
+.v431-hero-actions{display:flex;align-items:flex-end;gap:7px;flex:none}
+.v431-period-control{display:flex;flex-direction:column;gap:4px;color:var(--text-muted);font-size:.54rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.v431-period-control .filter-select{min-width:136px;min-height:38px!important;padding:7px 30px 7px 10px!important;font-size:.72rem!important}
+.v431-icon-action,.v431-card-open{border:1px solid var(--border-color);background:var(--bg-base);color:var(--text-secondary);display:grid;place-items:center;cursor:pointer;transition:background .15s,border-color .15s,color .15s,transform .15s}
+.v431-icon-action{width:40px;height:40px;border-radius:10px}
+.v431-icon-action:hover,.v431-card-open:hover{color:var(--text-primary);border-color:color-mix(in srgb,var(--accent-cyan) 34%,var(--border-color));background:var(--bg-elevated)}
+.v431-icon-action:active,.v431-card-open:active{transform:scale(.97)}
+.v431-icon-action svg,.v431-card-open svg,.v431-today-btn svg,.v431-kpi-icon svg{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.v431-today-btn{min-height:40px!important;padding:0 12px!important;gap:7px!important}
+.v431-today-btn svg{width:17px;height:17px}
+.v431-dashboard .v43-tabs{margin:0 0 12px;padding:3px;background:var(--dash-soft);border:1px solid var(--border-color);border-radius:12px;width:max-content;max-width:100%}
+.v431-dashboard .v43-tab{min-height:34px;padding:6px 11px;border-radius:9px;font-size:.68rem}
+.v431-dashboard .v43-tab.active{background:var(--bg-surface);border-color:var(--border-light);color:var(--text-primary);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.v431-glance{margin-bottom:12px}
+.v431-section-label{margin:0 0 6px 2px;color:var(--text-muted);font-size:.56rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+.v431-dashboard .v43-kpis{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:0}
+.v431-dashboard .v43-kpi{min-height:92px;padding:12px 13px;border-radius:12px;background:var(--bg-surface);display:flex;flex-direction:column;justify-content:center}
+.v431-kpi-top{display:flex;align-items:center;gap:6px;min-width:0}
+.v431-kpi-icon{width:24px;height:24px;border-radius:7px;background:var(--dash-soft);color:var(--text-secondary);display:grid;place-items:center;flex:none}
+.v431-kpi-icon svg{width:14px;height:14px}
+.v431-dashboard .v43-kpi-label{font-size:.57rem;letter-spacing:.055em}
+.v431-dashboard .v43-kpi-value{margin-top:6px;font-size:1.26rem;line-height:1.05;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+.v431-dashboard .v43-kpi-meta{margin-top:5px;font-size:.57rem;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25}
 .v431-kpi-good .v43-kpi-value,.v431-good{color:var(--accent-green)!important}
 .v431-kpi-bad .v43-kpi-value,.v431-bad{color:var(--accent-red)!important}
-.v431-attention{margin-bottom:14px;width:100%}
-.v431-board{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,.85fr);gap:14px;align-items:start;min-width:0}
-.v431-main,.v431-side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.v431-attention{margin-bottom:12px;width:100%;border-color:color-mix(in srgb,var(--accent-yellow) 28%,var(--border-color))!important;background:linear-gradient(145deg,color-mix(in srgb,var(--accent-yellow) 4%,var(--bg-surface)),var(--bg-surface))!important}
+.v431-count{display:inline-grid;place-items:center;min-width:21px;height:21px;margin-left:4px;padding:0 6px;border-radius:999px;background:color-mix(in srgb,var(--accent-yellow) 13%,transparent);color:var(--accent-yellow);font-size:.58rem;vertical-align:middle}
+.v431-board{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,.8fr);gap:12px;align-items:start;min-width:0}
+.v431-main,.v431-side{display:flex;flex-direction:column;gap:12px;min-width:0}
 .v431-main>.v43-card,.v431-side>.v43-card{width:100%;min-width:0}
-.v431-progress-label{display:flex;justify-content:space-between;gap:8px;margin-top:11px;font-size:.64rem;color:var(--text-muted)}
-.v431-card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-.v431-inbox-note{margin-top:9px;padding:8px 10px;border-radius:8px;background:var(--bg-base);border:1px solid var(--border-color);font-size:.64rem;color:var(--text-muted)}
-.v431-area-row{padding:8px 2px;cursor:pointer;border-radius:8px}
-.v431-area-row:hover{background:var(--bg-elevated)}
-.v431-area-head{display:flex;justify-content:space-between;gap:10px;font-size:.69rem;font-weight:650}
-.v431-area-meta{font-size:.58rem;color:var(--text-muted);margin-top:4px}
-.v431-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-.v431-detail{min-height:92px;padding:13px;border:1px solid var(--border-color);border-radius:11px;background:var(--bg-base);display:flex;flex-direction:column;justify-content:center}
-.v431-detail strong{font-size:1.35rem;line-height:1.15;overflow-wrap:anywhere}.v431-detail span{font-size:.63rem;color:var(--text-muted);margin-top:5px}.v431-detail.good strong{color:var(--accent-green)}.v431-detail.bad strong{color:var(--accent-red)}
-.v43-span-12{grid-column:1/-1} /* repair the missing legacy span too */
-@media(max-width:1050px){.v431-board{grid-template-columns:1fr}.v431-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.v431-side>.v43-card:last-child:nth-child(odd){grid-column:1/-1}}
-@media(max-width:760px){.v431-dashboard .v43-hero{gap:12px}.v431-hero-actions{display:grid!important;grid-template-columns:1fr 1fr;width:100%}.v431-hero-actions .filter-select{grid-column:1/-1;width:100%}.v431-hero-actions .btn{width:100%;min-width:0}.v431-tabs{margin-inline:-2px;padding-bottom:2px}.v431-dashboard .v43-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.v431-side{display:flex}.v431-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.v431-dashboard .v43-card-head{align-items:flex-start}.v431-dashboard .v43-card-head>.btn{flex:none}.v431-dashboard .v43-row{padding:9px}.v431-dashboard .v43-row-title,.v431-dashboard .v43-row-meta{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}.v431-dashboard .v43-row-title{-webkit-line-clamp:2}.v431-dashboard .v43-row-meta{-webkit-line-clamp:2}}
-@media(max-width:420px){.v431-dashboard .v43-kpis{grid-template-columns:1fr 1fr}.v431-dashboard .v43-kpi{padding:11px;min-height:82px}.v431-dashboard .v43-kpi-value{font-size:1.15rem}.v431-detail-grid{grid-template-columns:1fr 1fr}.v431-hero-actions{grid-template-columns:1fr}.v431-hero-actions .filter-select{grid-column:auto}.v431-dashboard .v43-card{padding:13px}}
+.v431-dashboard .v43-card{padding:14px;border-radius:13px}
+.v431-dashboard .v43-card-head{align-items:center;margin-bottom:8px}
+.v431-dashboard .v43-card-title{font-size:.83rem}
+.v431-dashboard .v43-card-sub{font-size:.59rem;line-height:1.35}
+.v431-card-open{width:32px;height:32px;min-width:32px;border-radius:9px;flex:none}
+.v431-card-open svg{width:15px;height:15px}
+.v431-dashboard .v43-list{gap:0}
+.v431-dashboard .v43-row{border:0;border-bottom:1px solid var(--border-color);border-radius:0;background:transparent;padding:9px 2px}
+.v431-dashboard .v43-row:last-child{border-bottom:0}
+.v431-dashboard .v43-row.clickable:hover{background:var(--dash-soft);border-color:var(--border-color);padding-left:7px;padding-right:7px;border-radius:8px}
+.v431-dashboard .v43-row-icon{width:28px;height:28px;border-radius:8px}
+.v431-dashboard .v43-row-title{font-size:.7rem}
+.v431-dashboard .v43-row-meta{font-size:.57rem}
+.v431-dashboard .v43-badge{font-size:.53rem;padding:3px 6px}
+.v431-progress-label{display:flex;justify-content:space-between;gap:8px;margin-top:10px;font-size:.58rem;color:var(--text-muted)}
+.v431-dashboard .v43-progress{height:5px;margin-top:5px}
+.v431-dashboard .v43-mini-grid{gap:1px;border:1px solid var(--border-color);border-radius:10px;overflow:hidden;background:var(--border-color)}
+.v431-dashboard .v43-metric{padding:10px;border:0;border-radius:0;background:var(--bg-base)}
+.v431-dashboard .v43-metric strong{font-size:.88rem}
+.v431-dashboard .v43-metric span{font-size:.55rem}
+.v431-inbox-note{margin-top:9px;padding:8px 10px;border-radius:8px;background:var(--dash-soft);border:0;font-size:.58rem;color:var(--text-muted)}
+.v431-area-row{padding:9px 2px;cursor:pointer;border-radius:8px}
+.v431-area-row+.v431-area-row{border-top:1px solid var(--border-color)}
+.v431-area-row:hover{background:var(--dash-soft);padding-left:7px;padding-right:7px}
+.v431-area-head{display:flex;justify-content:space-between;gap:10px;font-size:.66rem;font-weight:650}
+.v431-area-meta{font-size:.55rem;color:var(--text-muted);margin-top:4px}
+.v431-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--border-color);border:1px solid var(--border-color);border-radius:11px;overflow:hidden}
+.v431-detail{min-height:88px;padding:13px;border:0;border-radius:0;background:var(--bg-base);display:flex;flex-direction:column;justify-content:center}
+.v431-detail strong{font-size:1.24rem;line-height:1.15;overflow-wrap:anywhere}
+.v431-detail span{font-size:.58rem;color:var(--text-muted);margin-top:5px}
+.v431-detail.good strong{color:var(--accent-green)}.v431-detail.bad strong{color:var(--accent-red)}
+.v43-span-12{grid-column:1/-1}
+@media(max-width:1050px){
+  .v431-board{grid-template-columns:1fr}
+  .v431-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+  .v431-side>.v43-card:last-child:nth-child(odd){grid-column:1/-1}
+}
+@media(max-width:760px){
+  .v431-dashboard{--dash-gap:9px}
+  .v431-dashboard .v43-hero{gap:12px;padding:13px;align-items:stretch}
+  .v431-title-row{gap:7px}
+  .v431-title-row h3{font-size:1.18rem}
+  .v431-period-chip{min-height:22px;font-size:.54rem}
+  .v431-dashboard .v43-hero-copy{font-size:.64rem;line-height:1.4}
+  .v431-hero-actions{display:grid!important;grid-template-columns:minmax(0,1fr) 40px 92px;width:100%;align-items:end}
+  .v431-period-control{min-width:0}
+  .v431-period-control .filter-select{width:100%;min-width:0}
+  .v431-today-btn{width:92px!important;min-width:0!important}
+  .v431-dashboard .v43-tabs{width:100%;max-width:none;overflow-x:auto;flex-wrap:nowrap;scroll-snap-type:x proximity}
+  .v431-dashboard .v43-tab{flex:0 0 auto;scroll-snap-align:center}
+  .v431-dashboard .v43-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .v431-dashboard .v43-kpi{min-height:84px;padding:10px}
+  .v431-dashboard .v43-kpi-value{font-size:1.08rem}
+  .v431-dashboard .v43-kpi-meta{font-size:.54rem}
+  .v431-side{display:flex}
+  .v431-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .v431-dashboard .v43-card{padding:12px}
+  .v431-dashboard .v43-card-head{align-items:center}
+  .v431-dashboard .v43-row{padding:9px 1px}
+  .v431-dashboard .v43-row-title,.v431-dashboard .v43-row-meta{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+  .v431-dashboard .v43-row-title{-webkit-line-clamp:2}
+  .v431-dashboard .v43-row-meta{-webkit-line-clamp:2}
+  .v431-dashboard .v43-row.clickable:hover{padding-left:5px;padding-right:5px}
+}
+@media(max-width:420px){
+  .v431-hero-actions{grid-template-columns:minmax(0,1fr) 40px 40px}
+  .v431-today-btn{width:40px!important;padding:0!important}
+  .v431-today-btn span{display:none}
+  .v431-dashboard .v43-kpis{grid-template-columns:1fr 1fr}
+  .v431-dashboard .v43-kpi{min-height:80px;padding:9px}
+  .v431-dashboard .v43-kpi-value{font-size:1rem}
+  .v431-detail-grid{grid-template-columns:1fr 1fr}
+  .v431-dashboard .v43-card{padding:11px}
+}
 </style>
 <script id="omnios-dashboard-lifehub-js">
 (()=>{
@@ -878,66 +964,92 @@ function renderDashboard43(){
     const net=d.income-d.expense;
     const att=attention43();
     const sched=nextSchedule43(d.r);
-    const recentNotes=d.notes.slice().sort((a,b)=>new Date(b.updatedAt||b.date||0)-new Date(a.updatedAt||a.date||0)).slice(0,5);
-    const goals=d.goals.slice().sort((a,b)=>String(a.targetDate||'9999').localeCompare(String(b.targetDate||'9999'))).slice(0,5);
-    const projects=d.projects.slice().sort((a,b)=>String(a.targetDate||'9999').localeCompare(String(b.targetDate||'9999'))).slice(0,5);
+    const recentNotes=d.notes.slice().sort((a,b)=>new Date(b.updatedAt||b.date||0)-new Date(a.updatedAt||a.date||0)).slice(0,4);
+    const goals=d.goals.slice().sort((a,b)=>String(a.targetDate||'9999').localeCompare(String(b.targetDate||'9999'))).slice(0,4);
+    const projects=d.projects.slice().sort((a,b)=>String(a.targetDate||'9999').localeCompare(String(b.targetDate||'9999'))).slice(0,4);
     const allAreas=arr(state.life?.areas);
     const areaStats=allAreas.map(a=>({
         id:a.id,name:a.name||'Area',icon:a.icon||'◎',
         tasks:arr(state.entries).filter(t=>!done43(t)&&String(t.areaId)===String(a.id)).length,
         projects:d.projects.filter(p=>String(p.areaId)===String(a.id)).length
-    })).sort((a,b)=>(b.tasks+b.projects)-(a.tasks+a.projects)).slice(0,6);
+    })).sort((a,b)=>(b.tasks+b.projects)-(a.tasks+a.projects)).slice(0,5);
     const show=k=>scope==='all'||scope===k;
     sec.classList.add('v431-dashboard');
 
+    const icons={
+      tasks:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 2 2 3-4"></path><path d="M11 7h9M11 14h9M11 21h9"></path><path d="m4 14 2 2 3-4"></path></svg>',
+      focus:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle></svg>',
+      inbox:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v13H4z"></path><path d="M4 13h5l2 3h2l2-3h5"></path></svg>',
+      habits:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-8 12h7l-1 8 8-12h-7z"></path></svg>',
+      workout:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"></path></svg>',
+      finance:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18"></path><path d="M17 7c-1.1-1-2.6-1.5-4.3-1.5-2.4 0-4.2 1.1-4.2 2.9 0 4.4 8.5 2 8.5 6.3 0 2-1.8 3.4-4.7 3.4-2.1 0-3.9-.7-5.1-2"></path></svg>',
+      goal:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="4"></circle><circle cx="12" cy="12" r="1"></circle></svg>',
+      project:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z"></path></svg>',
+      area:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v10M7 12h10"></path></svg>',
+      calendar:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M3 10h18"></path></svg>',
+      notes:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5z"></path><path d="M8 8h8M8 12h8M8 16h5"></path></svg>',
+      arrow:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path><path d="m14 7 5 5-5 5"></path></svg>',
+      tune:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>',
+      today:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M3 10h18"></path><path d="M8 14h3v3H8z"></path></svg>'
+    };
+    const openButton=(view,label)=>`<button type="button" class="v431-card-open" data-v43-open="${view}" aria-label="Open ${E(label)}" title="Open ${E(label)}">${icons.arrow}</button>`;
+
     const kpis=[];
-    const push=(label,value,meta,tone='')=>kpis.push(`<div class="v43-kpi ${tone?'v431-kpi-'+tone:''}"><div class="v43-kpi-label">${E(label)}</div><div class="v43-kpi-value">${E(value)}</div><div class="v43-kpi-meta">${E(meta||'')}</div></div>`);
+    const push=(label,value,meta,icon,tone='')=>kpis.push(`<div class="v43-kpi ${tone?'v431-kpi-'+tone:''}"><div class="v431-kpi-top"><span class="v431-kpi-icon">${icons[icon]||icons.area}</span><span class="v43-kpi-label">${E(label)}</span></div><div class="v43-kpi-value">${E(value)}</div><div class="v43-kpi-meta">${E(meta||'')}</div></div>`);
     if(scope==='all'||scope==='productivity'){
-        push('Task completion',taskRate+'%',`${d.completed.length}/${d.tasks.length} in period`);
-        push('Focus',d.focus+'m','protected attention');
-        push('Inbox',String(arr(state.life?.inbox).length),'captures to process');
+        push('Tasks',taskRate+'%',`${d.completed.length} completed · ${d.open.length} open`,'tasks');
+        push('Focus',d.focus+'m','protected attention','focus');
+        push('Inbox',String(arr(state.life?.inbox).length),'captures to process','inbox');
     }
     if(scope==='all'||scope==='wellness'){
-        push('Habit consistency',habitRate+'%',d.habitPossible?`${d.habitChecks}/${d.habitPossible} checks`:'no tracked days');
-        push('Workouts',String(d.workouts.length),'completed sessions');
+        push('Habits',habitRate+'%',d.habitPossible?`${d.habitChecks}/${d.habitPossible} checks`:'no tracked days','habits');
+        if(scope==='wellness')push('Workouts',String(d.workouts.length),'completed sessions','workout');
     }
-    if(scope==='all'||scope==='finance') push('Cash flow',money43(net),`${money43(d.income)} in · ${money43(d.expense)} out`,net<0?'bad':net>0?'good':'');
+    if(scope==='all'||scope==='finance') push('Cash flow',money43(net),`${money43(d.income)} in · ${money43(d.expense)} out`,'finance',net<0?'bad':net>0?'good':'');
     if(scope==='life'){
-        push('Active goals',String(d.goals.length),'outcomes in progress');
-        push('Active projects',String(d.projects.length),'projects in motion');
-        push('Life areas',String(allAreas.length),'responsibility areas');
-        push('Inbox',String(arr(state.life?.inbox).length),'captures to process');
+        push('Goals',String(d.goals.length),'active outcomes','goal');
+        push('Projects',String(d.projects.length),'in motion','project');
+        push('Life areas',String(allAreas.length),'responsibility areas','area');
+        push('Inbox',String(arr(state.life?.inbox).length),'captures to process','inbox');
     }
 
-    const scheduleHtml=sched.length?sched.map((x,i)=>row43({...x,key:'sched-'+i,meta:`${x.date} · ${x.time}${x.meta?' · '+x.meta:''}`})).join(''):'<div class="v43-empty">Nothing scheduled in this period.</div>';
+    const scheduleHtml=sched.length?sched.slice(0,5).map((x,i)=>row43({...x,key:'sched-'+i,meta:`${x.date} · ${x.time}${x.meta?' · '+x.meta:''}`})).join(''):'<div class="v43-empty">Nothing scheduled in this period.</div>';
     const gpItems=[
-        ...goals.map(g=>({kind:'goal',id:g.id,icon:'🎯',title:g.name||'Goal',meta:g.nextAction?'Next: '+g.nextAction:(g.targetDate?'Due '+g.targetDate:'No next action'),badge:g.targetDate&&dayDiff43(g.targetDate)<=14?'Due soon':'Goal',tone:g.targetDate&&dayDiff43(g.targetDate)<=14?'warn':''})),
+        ...goals.map(g=>({kind:'goal',id:g.id,icon:'◎',title:g.name||'Goal',meta:g.nextAction?'Next: '+g.nextAction:(g.targetDate?'Due '+g.targetDate:'No next action'),badge:g.targetDate&&dayDiff43(g.targetDate)<=14?'Due soon':'Goal',tone:g.targetDate&&dayDiff43(g.targetDate)<=14?'warn':''})),
         ...projects.map(p=>({kind:'project',id:p.id,icon:'◇',title:p.name||p.title||'Project',meta:`${p.status||'active'}${p.targetDate?' · '+p.targetDate:''}`,badge:'Project'}))
-    ].slice(0,6);
+    ].slice(0,5);
     const gpHtml=gpItems.length?gpItems.map((x,i)=>row43({...x,key:'gp-'+i})).join(''):'<div class="v43-empty">No active goals or projects.</div>';
     const lifeAreasHtml=areaStats.length?areaStats.map(a=>{const total=a.tasks+a.projects,m=Math.max(1,...areaStats.map(x=>x.tasks+x.projects));return `<div class="v431-area-row" data-v431-area="${E(a.id)}"><div class="v431-area-head"><span>${E(a.icon)} ${E(a.name)}</span><span>${total}</span></div><div class="v43-progress"><i style="width:${Math.round(total/m*100)}%"></i></div><div class="v431-area-meta">${a.tasks} task${a.tasks===1?'':'s'} · ${a.projects} project${a.projects===1?'':'s'}</div></div>`}).join(''):'<div class="v43-empty">Create Life Areas to see balance across responsibilities.</div>';
     const notesHtml=recentNotes.length?recentNotes.map(n=>row43({icon:n.pinned?'★':'✎',title:n.title||'Untitled',meta:`Updated ${new Date(n.updatedAt||n.date||Date.now()).toLocaleDateString()}`,key:'note-'+n.id})).join(''):'<div class="v43-empty">No notes yet.</div>';
 
     sec.innerHTML=`
     <div class="v43-hero v431-hero">
-      <div class="v431-hero-main"><div class="v43-kicker">SYSTEM OVERVIEW · ${E(d.r.label)}</div><h3>Dashboard</h3><div class="v43-hero-copy">See pressure, progress and balance across Second Brain. Use <strong>Today</strong> for execution; use Dashboard for the bigger picture.</div></div>
-      <div class="v43-hero-actions v431-hero-actions"><select class="filter-select" id="v43-dash-period" aria-label="Dashboard period"><option value="today">Today</option><option value="week">This week</option><option value="month">This month</option><option value="all">All time</option></select><button type="button" class="btn" id="v43-dash-custom">☷ Customize</button><button type="button" class="btn btn-primary" id="v43-dash-today">Open Today</button></div>
+      <div class="v431-hero-main">
+        <div class="v43-kicker">SYSTEM OVERVIEW</div>
+        <div class="v431-title-row"><h3>Dashboard</h3><span class="v431-period-chip">${E(d.r.label)}</span></div>
+        <div class="v43-hero-copy">A quiet overview of what needs attention, what is moving, and where your time and money are going.</div>
+      </div>
+      <div class="v43-hero-actions v431-hero-actions">
+        <label class="v431-period-control"><span>Period</span><select class="filter-select" id="v43-dash-period" aria-label="Dashboard period"><option value="today">Today</option><option value="week">This week</option><option value="month">This month</option><option value="all">All time</option></select></label>
+        <button type="button" class="v431-icon-action" id="v43-dash-custom" aria-label="Customize dashboard" title="Customize dashboard">${icons.tune}</button>
+        <button type="button" class="btn btn-primary v431-today-btn" id="v43-dash-today">${icons.today}<span>Today</span></button>
+      </div>
     </div>
-    <div class="v43-tabs v431-tabs" id="v43-dash-scopes" aria-label="Dashboard scope">${[['all','Overview'],['productivity','Productivity'],['wellness','Wellness'],['finance','Finance'],['life','Life']].map(([k,l])=>`<button type="button" class="v43-tab ${scope===k?'active':''}" data-v43-scope="${k}">${l}</button>`).join('')}</div>
-    <div class="v43-kpis v431-kpis">${kpis.join('')}</div>
-    ${att.length&&(scope==='all'||scope==='life'||scope==='productivity')?`<section class="v43-card v43-attention v431-attention"><div class="v43-card-head"><div><div class="v43-card-title">Attention needed</div><div class="v43-card-sub">Overdue and time-sensitive items that deserve a decision</div></div><button type="button" class="btn btn-sm" data-v43-open="reminders">Attention Center</button></div><div class="v43-list">${att.slice(0,6).map((x,i)=>row43({...x,key:'att-'+i,badge:x.tone==='bad'?'Overdue':'Soon'})).join('')}</div></section>`:''}
+    <nav class="v43-tabs v431-tabs" id="v43-dash-scopes" aria-label="Dashboard scope">${[['all','Overview'],['productivity','Productivity'],['wellness','Wellness'],['finance','Finance'],['life','Life']].map(([k,l])=>`<button type="button" class="v43-tab ${scope===k?'active':''}" data-v43-scope="${k}">${l}</button>`).join('')}</nav>
+    <section class="v431-glance" aria-label="At a glance"><div class="v431-section-label">At a glance</div><div class="v43-kpis v431-kpis">${kpis.join('')}</div></section>
+    ${att.length&&(scope==='all'||scope==='life'||scope==='productivity')?`<section class="v43-card v43-attention v431-attention"><div class="v43-card-head"><div><div class="v43-card-title">Needs attention <span class="v431-count">${att.length}</span></div><div class="v43-card-sub">Only overdue and time-sensitive items</div></div>${openButton('reminders','Attention Center')}</div><div class="v43-list">${att.slice(0,4).map((x,i)=>row43({...x,key:'att-'+i,badge:x.tone==='bad'?'Overdue':'Soon'})).join('')}</div></section>`:''}
     <div class="v431-board">
       <div class="v431-main">
-        ${show('productivity')?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Upcoming schedule</div><div class="v43-card-sub">Next commitments and protected time</div></div><button type="button" class="btn btn-sm" data-v43-open="master-calendar">Calendar</button></div><div class="v43-list">${scheduleHtml}</div></section>`:''}
-        ${show('life')&&u.showLife!==false?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Goals & projects</div><div class="v43-card-sub">Outcomes that need sustained attention</div></div><button type="button" class="btn btn-sm" data-v43-open="projects">Projects</button></div><div class="v43-list">${gpHtml}</div></section><section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Life areas</div><div class="v43-card-sub">Where active commitments are concentrated</div></div><button type="button" class="btn btn-sm" data-v43-open="life-hub">Life Hub</button></div>${lifeAreasHtml}</section>`:''}
-        ${show('wellness')&&u.showWellness!==false&&scope==='wellness'?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Wellness details</div><div class="v43-card-sub">A focused view of habits, movement, nutrition and deep work</div></div></div><div class="v431-detail-grid"><div class="v431-detail"><strong>${habitRate}%</strong><span>Habit consistency</span></div><div class="v431-detail"><strong>${d.workouts.length}</strong><span>Completed workouts</span></div><div class="v431-detail"><strong>${d.focus}m</strong><span>Focus time</span></div><div class="v431-detail"><strong>${Object.keys(state.dietLog||{}).filter(k=>u.period==='all'||inRange(k,d.r)).length}</strong><span>Nutrition log days</span></div></div></section>`:''}
-        ${show('finance')&&scope==='finance'?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Finance details</div><div class="v43-card-sub">Cash-flow performance for ${E(d.r.label.toLowerCase())}</div></div><button type="button" class="btn btn-sm" data-v43-open="budget">Open Finance Hub</button></div><div class="v431-detail-grid"><div class="v431-detail good"><strong>${E(money43(d.income))}</strong><span>Income</span></div><div class="v431-detail bad"><strong>${E(money43(d.expense))}</strong><span>Expenses</span></div><div class="v431-detail"><strong>${E(money43(net))}</strong><span>Net cash flow</span></div><div class="v431-detail"><strong>${d.income?Math.round(net/d.income*100):0}%</strong><span>Savings rate</span></div></div></section>`:''}
+        ${show('productivity')?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Upcoming</div><div class="v43-card-sub">Your next commitments and protected time</div></div>${openButton('master-calendar','Calendar')}</div><div class="v43-list">${scheduleHtml}</div></section>`:''}
+        ${show('life')&&u.showLife!==false?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Goals & projects</div><div class="v43-card-sub">Outcomes that need sustained attention</div></div>${openButton('projects','Projects')}</div><div class="v43-list">${gpHtml}</div></section><section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Life areas</div><div class="v43-card-sub">Where active commitments are concentrated</div></div>${openButton('life-hub','Life Hub')}</div>${lifeAreasHtml}</section>`:''}
+        ${show('wellness')&&u.showWellness!==false&&scope==='wellness'?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Wellness detail</div><div class="v43-card-sub">Habits, movement, nutrition and deep work</div></div></div><div class="v431-detail-grid"><div class="v431-detail"><strong>${habitRate}%</strong><span>Habit consistency</span></div><div class="v431-detail"><strong>${d.workouts.length}</strong><span>Completed workouts</span></div><div class="v431-detail"><strong>${d.focus}m</strong><span>Focus time</span></div><div class="v431-detail"><strong>${Object.keys(state.dietLog||{}).filter(k=>u.period==='all'||inRange(k,d.r)).length}</strong><span>Nutrition log days</span></div></div></section>`:''}
+        ${show('finance')&&scope==='finance'?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Cash flow</div><div class="v43-card-sub">${E(d.r.label)}</div></div>${openButton('budget','Finance Hub')}</div><div class="v431-detail-grid"><div class="v431-detail good"><strong>${E(money43(d.income))}</strong><span>Income</span></div><div class="v431-detail bad"><strong>${E(money43(d.expense))}</strong><span>Expenses</span></div><div class="v431-detail"><strong>${E(money43(net))}</strong><span>Net cash flow</span></div><div class="v431-detail"><strong>${d.income?Math.round(net/d.income*100):0}%</strong><span>Savings rate</span></div></div></section>`:''}
       </div>
       <aside class="v431-side">
-        ${show('productivity')?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Execution pulse</div><div class="v43-card-sub">How work is moving</div></div><button type="button" class="btn btn-sm" data-v43-open="tasks">Tasks</button></div><div class="v43-mini-grid"><div class="v43-metric"><strong>${d.open.length}</strong><span>open tasks</span></div><div class="v43-metric"><strong>${d.completed.length}</strong><span>completed</span></div><div class="v43-metric"><strong>${d.open.filter(t=>t.urgency==='urgent').length}</strong><span>urgent</span></div><div class="v43-metric"><strong>${d.projects.length}</strong><span>active projects</span></div></div><div class="v431-progress-label"><span>Completion</span><span>${taskRate}%</span></div><div class="v43-progress"><i style="width:${Math.min(100,taskRate)}%"></i></div></section>`:''}
-        ${show('wellness')&&u.showWellness!==false&&scope!=='wellness'?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Wellness pulse</div><div class="v43-card-sub">Habits, workouts, nutrition and focus</div></div><button type="button" class="btn btn-sm" data-v43-open="habits">Habits</button></div><div class="v43-mini-grid"><div class="v43-metric"><strong>${habitRate}%</strong><span>habit consistency</span></div><div class="v43-metric"><strong>${d.workouts.length}</strong><span>workouts</span></div><div class="v43-metric"><strong>${d.focus}m</strong><span>focus time</span></div><div class="v43-metric"><strong>${Object.keys(state.dietLog||{}).filter(k=>u.period==='all'||inRange(k,d.r)).length}</strong><span>nutrition days</span></div></div><div class="v431-card-actions"><button type="button" class="btn btn-sm" data-v43-open="workout">Workout</button><button type="button" class="btn btn-sm" data-v43-open="diet">Nutrition</button><button type="button" class="btn btn-sm" data-v43-open="focus">Focus</button></div></section>`:''}
-        ${show('finance')&&scope!=='finance'?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Finance pulse</div><div class="v43-card-sub">Cash flow for ${E(d.r.label.toLowerCase())}</div></div><button type="button" class="btn btn-sm" data-v43-open="budget">Finance Hub</button></div><div class="v43-mini-grid"><div class="v43-metric"><strong class="v431-good">${E(money43(d.income))}</strong><span>income</span></div><div class="v43-metric"><strong class="v431-bad">${E(money43(d.expense))}</strong><span>expenses</span></div><div class="v43-metric"><strong>${E(money43(net))}</strong><span>net cash flow</span></div><div class="v43-metric"><strong>${d.income?Math.round(net/d.income*100):0}%</strong><span>savings rate</span></div></div></section>`:''}
-        ${show('life')&&u.showNotes!==false?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Knowledge & capture</div><div class="v43-card-sub">Recent notes and unprocessed ideas</div></div><button type="button" class="btn btn-sm" data-v43-open="notes">Notes</button></div><div class="v43-list">${notesHtml}</div>${arr(state.life?.inbox).length?`<div class="v431-inbox-note">${arr(state.life.inbox).length} Inbox capture${arr(state.life.inbox).length===1?'':'s'} waiting to be processed.</div>`:''}</section>`:''}
+        ${show('productivity')?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Execution</div><div class="v43-card-sub">Current workload</div></div>${openButton('tasks','Tasks')}</div><div class="v43-mini-grid"><div class="v43-metric"><strong>${d.open.length}</strong><span>Open</span></div><div class="v43-metric"><strong>${d.completed.length}</strong><span>Done</span></div><div class="v43-metric"><strong>${d.open.filter(t=>t.urgency==='urgent').length}</strong><span>Urgent</span></div><div class="v43-metric"><strong>${d.projects.length}</strong><span>Projects</span></div></div><div class="v431-progress-label"><span>Completion</span><span>${taskRate}%</span></div><div class="v43-progress"><i style="width:${Math.min(100,taskRate)}%"></i></div></section>`:''}
+        ${show('wellness')&&u.showWellness!==false&&scope!=='wellness'?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Wellness</div><div class="v43-card-sub">Consistency at a glance</div></div>${openButton('habits','Habits')}</div><div class="v43-mini-grid"><div class="v43-metric"><strong>${habitRate}%</strong><span>Habits</span></div><div class="v43-metric"><strong>${d.workouts.length}</strong><span>Workouts</span></div><div class="v43-metric"><strong>${d.focus}m</strong><span>Focus</span></div><div class="v43-metric"><strong>${Object.keys(state.dietLog||{}).filter(k=>u.period==='all'||inRange(k,d.r)).length}</strong><span>Nutrition days</span></div></div></section>`:''}
+        ${show('finance')&&scope!=='finance'?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Finance</div><div class="v43-card-sub">${E(d.r.label)}</div></div>${openButton('budget','Finance Hub')}</div><div class="v43-mini-grid"><div class="v43-metric"><strong class="v431-good">${E(money43(d.income))}</strong><span>Income</span></div><div class="v43-metric"><strong class="v431-bad">${E(money43(d.expense))}</strong><span>Expenses</span></div><div class="v43-metric"><strong>${E(money43(net))}</strong><span>Net</span></div><div class="v43-metric"><strong>${d.income?Math.round(net/d.income*100):0}%</strong><span>Savings</span></div></div></section>`:''}
+        ${show('life')&&u.showNotes!==false?`<section class="v43-card"><div class="v43-card-head"><div><div class="v43-card-title">Knowledge</div><div class="v43-card-sub">Recent notes and unprocessed ideas</div></div>${openButton('notes','Notes')}</div><div class="v43-list">${notesHtml}</div>${arr(state.life?.inbox).length?`<div class="v431-inbox-note">${arr(state.life.inbox).length} capture${arr(state.life.inbox).length===1?'':'s'} waiting in Inbox.</div>`:''}</section>`:''}
       </aside>
     </div>`;
 
@@ -959,6 +1071,7 @@ function renderDashboard43(){
     });
     sec.querySelectorAll('[data-v431-area]').forEach(r=>r.onclick=()=>openLife43('overview'));
 } 
+
 function persist43(){try{storage.setItem('omnios_v3_state',JSON.stringify(state))}catch(e){}}
 function openDashboardOptions43(){const u=state.settings.v43.dashboard;const m=modal35('Customize Dashboard',`<div class="settings-row"><div><div class="settings-row-label">Wellness card</div><div class="settings-row-desc">Habits, workouts, nutrition and focus.</div></div><button class="settings-toggle ${u.showWellness!==false?'on':''}" data-v43-opt="showWellness"></button></div><div class="settings-row"><div><div class="settings-row-label">Recent notes</div><div class="settings-row-desc">Knowledge and Inbox snapshot.</div></div><button class="settings-toggle ${u.showNotes!==false?'on':''}" data-v43-opt="showNotes"></button></div><div class="settings-row"><div><div class="settings-row-label">Life overview</div><div class="settings-row-desc">Goals, projects and life areas.</div></div><button class="settings-toggle ${u.showLife!==false?'on':''}" data-v43-opt="showLife"></button></div>`);m.querySelectorAll('[data-v43-opt]').forEach(b=>b.onclick=()=>{const k=b.dataset.v43Opt;u[k]=u[k]===false?true:false;b.classList.toggle('on',u[k]!==false);persist43();renderDashboard43()})}
 /* ---------- Notes: canonical IDs + reading-first UX ---------- */

@@ -951,6 +951,7 @@ function renderAuto43(host){
 }
 function renderLifeSection43(host,tab){
   const def=LIFE43[tab],records=lifeRecords43(tab);
+  if(tab==='people')window.SecondBrainAvatars?.warm?.(records.map(x=>x.id)).then(n=>{if(n&&document.getElementById('view-life-hub')?.classList.contains('active'))renderLife43()});
   if(tab==='admin')return renderAdmin43(host);
   if(tab==='automations')return renderAuto43(host);
   let lead='';
@@ -1386,7 +1387,7 @@ function personInitials43(x){
   return parts.slice(0,2).map(p=>p[0]?.toUpperCase()||'').join('')||'?';
 }
 function personAvatar43(x){
-  const src=String(x?.avatar||x?.avatarImage||x?.photo||x?.image||'').trim();
+  const src=String(x?.avatar||x?.avatarImage||x?.photo||x?.image||window.SecondBrainAvatars?.peek?.(x?.id)||'').trim();
   return `<div class="v43-person-avatar" aria-hidden="true">${src?`<img src="${E(src)}" alt="">`:`<span>${E(personInitials43(x))}</span>`}</div>`;
 }
 function ensure43(){state.settings=state.settings||{};state.settings.v43=state.settings.v43||{};state.settings.v43.dashboard={period:'week',scope:'all',compact:false,showNotes:true,showLife:true,showWellness:true,...(state.settings.v43.dashboard||{})};state.settings.v43.lifeHub={tab:'overview',q:'',layout:'cards',defaultOverview:true,...(state.settings.v43.lifeHub||{})};state.life=state.life||{};['people','home','health','learning','travel','money','documents','journal','importantDates','vehicles','decisions'].forEach(k=>state.life[k]=arr(state.life[k]));}

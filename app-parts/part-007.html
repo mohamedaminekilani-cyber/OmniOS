@@ -150,7 +150,7 @@ const host45=document.querySelector('.view-container');if(host45){const obs45=ne
 const oldSwitch45=window.switchView;if(typeof oldSwitch45==='function'){window.switchView=function(target){const r=oldSwitch45.apply(this,arguments);setTimeout(refresh45,0);return r}}
 
 /* Force document/app version coherence. */
-document.title='Second Brain v51 — QA Rebuild';
+
 refresh45();
 })();
 </script>
@@ -485,7 +485,7 @@ refresh49();setTimeout(refresh49,250);
 
 
 <script id="omnios-clean-baseline-stamp">
-(function(){document.documentElement.dataset.omniosVersion='53';document.title='Second Brain v53 — Interaction & Performance Fixed';window.OmniBuild={version:'53',name:'Interaction & Performance Fixed'};})();
+(function(){document.documentElement.dataset.omniosVersion='53';window.OmniBuild={version:'53',name:'Interaction & Performance Fixed'};})();
 </script>
 
 <style id="omnios-v51-qa-css">
@@ -550,7 +550,7 @@ function normalizeHelpCopy(){const h=document.getElementById('view-help');if(!h)
 let queued=false;function refresh(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;normalizeNav();normalizeOrganizeIcons();cleanTaskTabs();normalizeHelpCopy()})}
 new MutationObserver(ms=>{const relevant=ms.some(m=>[...m.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('.nav-item,.org-hero-icon,[data-taskview],#help-content,#help-nav')||n.querySelector?.('.nav-item,.org-hero-icon,[data-taskview],#help-content,#help-nav'))));if(relevant)refresh()}).observe(document.body,{childList:true,subtree:true});refresh();
 const old=window.switchView;if(typeof old==='function'&&!old.__v51){const f=function(v){const r=old.apply(this,arguments);queueMicrotask(refresh);return r};f.__v51=true;window.switchView=f}
-window.OmniQA51={refresh,labels:LABELS};document.documentElement.dataset.omniosVersion='53';document.title='Second Brain v53 — Interaction & Performance Fixed';
+window.OmniQA51={refresh,labels:LABELS};document.documentElement.dataset.omniosVersion='53';
 })();
 </script>
 
@@ -617,7 +617,7 @@ input[type="checkbox"]:not([data-event-weekday]):focus-visible,input[type="radio
 <script id="omnios-v53-interaction-js">
 (function(){'use strict';
 const BUILD={version:'53',name:'Interaction & Performance Fixed'};
-function stamp(){document.documentElement.dataset.omniosVersion='53';document.title='Second Brain v53 — Interaction & Performance Fixed';window.OmniBuild=BUILD}
+function stamp(){document.documentElement.dataset.omniosVersion='53';window.OmniBuild=BUILD}
 stamp();
 // One authoritative delegated navigation click prevents duplicate/stacked item handlers from requiring a second click.
 document.addEventListener('click',e=>{

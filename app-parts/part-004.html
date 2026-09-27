@@ -1399,11 +1399,12 @@ window.OmniLifeCRUD35={
 
 /* ---------- initialization ---------- */
 async function init35(){
+  const initialView=activeView35();
   ensureV35State();await recoverLatestIDB35();ensureV35State();ensureSyncMeta35();ensureAuxMeta35();if(!storage.getItem('omnios_v35_migrated')){storage.setItem('omnios_v35_migrated','1');if(getSetting('appearance.startView','dashboard')==='dashboard')setSetting('appearance.startView','today')}installRouteHistory35();installUndo35();installAutoSnapshotFallback35();installTopbar35();installMobileTopbar35();buildMobileNav35();installTaskAdvanced35();patchMasterCalendar35();ensureDrawer35();patchViewButton35();enrichSettings35();installHelp35();processRecurringTasks35();loadBackupFolder35().then(()=>updateDBStatus35());if(idbRecovered35)renderAll?.();persistIDB35('init');renderNewView35(activeView35());document.documentElement.dataset.omniosVersion='35';if(idbRecovered35)setTimeout(()=>window.toast?.('Recovered newer Second Brain data from the local recovery database.'),0);
   // The old dashboard database card is superseded by Data Center.
   const legacy=document.getElementById('database-panel');if(legacy)legacy.style.display='none';
   // Make Today the first-run landing page while respecting an explicit saved start view.
-  const firstStart=!storage.getItem('omnios_v35_started');if(firstStart)storage.setItem('omnios_v35_started','1');const desired=getSetting('appearance.startView','today');if(firstStart||activeView35()==='dashboard')window.switchView(document.getElementById('view-'+desired)?desired:'today')
+  const firstStart=!storage.getItem('omnios_v35_started');if(firstStart)storage.setItem('omnios_v35_started','1');const desired=getSetting('appearance.startView','today');if(activeView35()===initialView&&(firstStart||initialView==='dashboard'))window.switchView(document.getElementById('view-'+desired)?desired:'today')
   updateDBStatus35();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init35,{once:true});else queueMicrotask(init35);

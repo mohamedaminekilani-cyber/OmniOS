@@ -13,10 +13,11 @@
     "jsdom": "^30.1.1"
   },
   "scripts": {
-    "test": "node scripts/release-check.mjs && node scripts/ui-consistency-check.mjs && node --test tests/*.test.js",
+    "test": "node scripts/release-source.mjs --check && node scripts/release-check.mjs && node scripts/ui-consistency-check.mjs && node --test tests/*.test.js",
     "test:release": "node scripts/release-check.mjs",
     "build": "node scripts/build.mjs",
     "test:runtime": "npm run build && node scripts/runtime-check.mjs",
-    "test:ui": "node scripts/ui-consistency-check.mjs"
+    "test:ui": "node scripts/ui-consistency-check.mjs",
+    "release:source": "node scripts/release-source.mjs --write"
   }
 }

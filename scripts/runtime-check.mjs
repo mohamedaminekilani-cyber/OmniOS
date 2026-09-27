@@ -13,4 +13,21 @@ if(!w.eval('!!state.passwordVault')||w.eval('state.passwords.length')!==0)throw 
 const saved=w.localStorage.getItem('omnios_v3_state');if(saved.includes('test-only-secret'))throw Error('Plaintext credentials persisted after migration');
 const unlocked=await w.SecondBrainCrypto.open(JSON.parse(saved).passwordVault,'synthetic-test-passphrase-123');if(unlocked.value[0].password!=='test-only-secret')throw Error('Migration lost credentials');
 w.SecondBrainPasswords.lock();console.log('Vault migration, encrypted persistence and unlock passed.');
+
+// Exercise real editor/search handlers against the assembled application.
+w.eval("state.notes.push({id:9001,title:'First note',contentHtml:'<p>First</p>',tags:['alpha'],type:'research',favorite:true},{id:9002,title:'Second note',contentHtml:'<p>Second</p>',tags:['beta'],type:'meeting',favorite:false});openNoteModal('9001')");
+if(w.document.getElementById('note-title').value!=='First note')throw Error('String note IDs must open existing numeric records');
+if(w.document.getElementById('org-note-tags-field').value!=='alpha')throw Error('First note metadata missing');
+const title=w.document.getElementById('note-title');title.value='Edited before closing';title.dispatchEvent(new w.Event('input',{bubbles:true}));
+w.closeModal('note-modal');
+if(JSON.parse(w.localStorage.getItem('omnios_v3_state')).notes.find(n=>n.id===9001).title!=='Edited before closing')throw Error('Closing note lost pending edits');
+w.openNoteModal('9002');
+if(w.document.getElementById('org-note-tags-field').value!=='beta'||w.document.getElementById('org-note-fav-field').dataset.on!=='0')throw Error('Previous note metadata leaked into next note');
+const tags=w.document.getElementById('org-note-tags-field');tags.value='changed';tags.dispatchEvent(new w.Event('input',{bubbles:true}));w.closeModal('note-modal');
+if(JSON.parse(w.localStorage.getItem('omnios_v3_state')).notes.find(n=>n.id===9002).tags[0]!=='changed')throw Error('Metadata-only edits did not save');
+w.switchView('notes');await new Promise(r=>setTimeout(r,250));
+const search=w.document.getElementById('org-note-search');search.focus();search.value='Edited';search.setSelectionRange(2,4);search.dispatchEvent(new w.Event('input',{bubbles:true}));
+const restored=w.document.getElementById('org-note-search');
+if(w.document.activeElement!==restored||restored.selectionStart!==2||restored.selectionEnd!==4)throw Error('Search redraw lost focus/caret');
+console.log('Note ID lookup, close-time save, metadata isolation, metadata autosave and search focus passed.');
 dom.window.close();if(errors.length)process.exitCode=1;

@@ -1627,7 +1627,7 @@ function setNoteEditorHtml(html) {
 function getNoteEditorHtml() { return sanitizeNoteHtml(document.getElementById('note-content').innerHTML); }
 
 function updateNotePinButton() {
-    const note = state.notes.find(n => n.id === editingNoteId);
+    const note = state.notes.find(n => String(n.id) === String(editingNoteId));
     const btn = document.getElementById('note-pin-btn');
     if (!btn) return;
     btn.textContent = note && note.pinned ? '★ Pinned' : '☆ Pin note';
@@ -1635,7 +1635,7 @@ function updateNotePinButton() {
 
 function openNoteModal(noteId = null) {
     editingNoteId = noteId;
-    const note = noteId ? state.notes.find(n => n.id === noteId) : null;
+    const note = noteId ? state.notes.find(n => String(n.id) === String(noteId)) : null;
     document.getElementById('note-modal-title').textContent = note ? 'Edit Note' : 'New Note';
     document.getElementById('note-title').value = note ? (note.title || '') : '';
     setNoteEditorHtml(note ? (note.contentHtml || note.content || '') : '');
@@ -1654,7 +1654,7 @@ function persistCurrentNote(showStatus = true) {
     if (!title && !content) return false;
     const now = new Date().toISOString();
     if (editingNoteId) {
-        const note = state.notes.find(n => n.id === editingNoteId);
+        const note = state.notes.find(n => String(n.id) === String(editingNoteId));
         if (note) { note.title = title || 'Untitled'; note.contentHtml = contentHtml; note.content = content; note.updatedAt = now; }
     } else {
         const newNote = { id: Date.now(), title: title || 'Untitled', contentHtml, content, date: now, updatedAt: now, pinned: false };
@@ -1678,13 +1678,14 @@ document.getElementById('note-save-btn').addEventListener('click', () => { if (p
 document.getElementById('note-delete-btn').addEventListener('click', () => {
     if (!editingNoteId) return;
     if (!confirm('Delete this note?')) return;
-    state.notes = state.notes.filter(n => n.id !== editingNoteId);
+    clearTimeout(noteSaveTimer);window.cancelNoteAutosave?.();
+    state.notes = state.notes.filter(n => String(n.id) !== String(editingNoteId));
     saveState(); closeModal('note-modal'); editingNoteId = null;
     window.toastUndo && window.toastUndo('Note deleted');
 });
 document.getElementById('note-pin-btn').addEventListener('click', () => {
     if (!editingNoteId) persistCurrentNote(false);
-    const note = state.notes.find(n => n.id === editingNoteId);
+    const note = state.notes.find(n => String(n.id) === String(editingNoteId));
     if (!note) return;
     note.pinned = !note.pinned; note.updatedAt = new Date().toISOString(); saveState(); updateNotePinButton();
 });
@@ -1709,6 +1710,7 @@ document.getElementById('notes-sort').addEventListener('change', renderNotes);
 
 function deleteNote(id) {
     if (!confirm('Delete this note?')) return;
+    clearTimeout(noteSaveTimer);window.cancelNoteAutosave?.();
     state.notes = state.notes.filter(n => n.id !== id);
     saveState();
     window.toastUndo && window.toastUndo('Note deleted');

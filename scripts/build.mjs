@@ -1,9 +1,7 @@
 import fs from 'node:fs';
-import {createHash} from 'node:crypto';
-const sha=s=>createHash('sha256').update(s).digest('hex');
-let html=Array.from({length:28},(_,i)=>fs.readFileSync(`app-parts/part-${String(i+1).padStart(3,'0')}.html`,'utf8')).join('');
-html=html.replace(/<script\b[^>]*\bsrc=["'](\.\/)?(js\/[^"']+|pwa-personalization\.js)["'][^>]*><\/script>/gi,(_,prefix,file)=>'<script>\n'+fs.readFileSync(file,'utf8').replace(/<\/script/gi,'<\\/script')+'\n</script>');
-const hash=sha(html),file=`app.${hash.slice(0,20)}.html`;
+import {sourceRelease} from './release-source.mjs';
+const {html,manifest}=sourceRelease();
+const hash=manifest.sha256,file=manifest.file;
 fs.rmSync('dist',{recursive:true,force:true});fs.mkdirSync('dist');
 fs.writeFileSync('dist/'+file,html);
 const commit=(process.env.GITHUB_SHA||process.env.COMMIT_SHA||'').trim()||null;

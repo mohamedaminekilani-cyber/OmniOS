@@ -194,7 +194,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   const stamp=()=>{
     document.documentElement.dataset.omniosVersion='58.4';
     window.OmniBuild={version:'58.4',name:'Life Hub CRUD + Bible Persistence Fixed'};
-    document.title='Second Brain v58.4 — Life Hub CRUD + Bible Fixed';
+
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',stamp,{once:true});else stamp();
   setTimeout(stamp,120);setTimeout(stamp,500);
@@ -377,7 +377,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     ['#pf-name','#pf-cat','#pf-qty','#pf-unit','#pf-min','#pf-cost','#pf-loc','#pf-exp','#pf-purchase','#pf-opened','#pf-notes'].forEach(sel=>ov.querySelector(sel)?.addEventListener('input',rememberDraft));
     return ov;
   };
-  const stamp=()=>{document.documentElement.dataset.omniosVersion=V;window.OmniBuild={version:V,name:'Pantry Image Repositioning'};document.title='Second Brain v58.4.4 — Pantry Image Repositioning';observePantry();scheduleThumbPositions()};
+  const stamp=()=>{document.documentElement.dataset.omniosVersion=V;window.OmniBuild={version:V,name:'Pantry Image Repositioning'};observePantry();scheduleThumbPositions()};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',stamp,{once:true});else stamp();setTimeout(stamp,100);setTimeout(stamp,500);
 })();
 </script>
@@ -615,7 +615,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }
 
   const mo=new MutationObserver(()=>{clearTimeout(window.__v585DecorTimer);window.__v585DecorTimer=setTimeout(decorateAll,20)});
-  function init(){ensure();const changed=syncAll();if(changed){try{baseSave?.()}catch(e){console.warn('Initial nutrition-link save failed',e)}}decorateAll();mo.observe(document.body,{childList:true,subtree:true});document.documentElement.dataset.omniosVersion=V;window.OmniBuild={version:V,name:'Automatic Pantry & Grocery Nutrition Links'};document.title='Second Brain v58.5 — Automatic Nutrition Links';window.OmniNutritionLinks={sync:syncAll,isFoodPantry,isFoodGrocery,openFood:openNutritionFood,decorate:decorateAll};}
+  function init(){ensure();const changed=syncAll();if(changed){try{baseSave?.()}catch(e){console.warn('Initial nutrition-link save failed',e)}}decorateAll();mo.observe(document.body,{childList:true,subtree:true});document.documentElement.dataset.omniosVersion=V;window.OmniBuild={version:V,name:'Automatic Pantry & Grocery Nutrition Links'};window.OmniNutritionLinks={sync:syncAll,isFoodPantry,isFoodGrocery,openFood:openNutritionFood,decorate:decorateAll};}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,120),{once:true});else setTimeout(init,120);
 })();
 </script>
@@ -764,7 +764,7 @@ function renderRelevant(){const active=document.querySelector('.view.active')?.i
 normalizeAll();window.openGoalModal=openGoalModal;window.updateGoalProgressV586=updateProgress;window.renderGoalsV586=renderGoalsPage;window.renderBudgetGoalsV586=renderBudgetGoals;window.OmniGoals={normalize:normalizeAll,progress,open:openGoalModal,update:updateProgress,render:renderGoalsPage};
 const baseSave=window.saveState;if(typeof baseSave==='function'&&!baseSave.__v586Goals){const wrapped=function(){normalizeAll().forEach(syncLegacy);const r=baseSave.apply(this,arguments);setTimeout(renderRelevant,20);return r};wrapped.__v586Goals=true;wrapped.__base=baseSave;window.saveState=wrapped;try{saveState=wrapped}catch(_){}}
 const baseSwitch=window.switchView;if(typeof baseSwitch==='function'&&!baseSwitch.__v586Goals){const wrapped=function(v){const r=baseSwitch.apply(this,arguments);setTimeout(()=>{if(v==='goals')renderGoalsPage();if(v==='budget')renderBudgetGoals();patchQuick()},35);return r};wrapped.__v586Goals=true;wrapped.__base=baseSwitch;window.switchView=wrapped;try{switchView=wrapped}catch(_){}}
-function init(){normalizeAll().forEach(syncLegacy);patchQuick();renderRelevant();document.documentElement.dataset.omniosVersion=V;window.OmniBuild={version:V,name:'Universal Goals'};document.title='Second Brain v58.6 — Universal Goals';try{baseSave?.()}catch(e){console.warn('Goal migration save failed',e)}setTimeout(renderRelevant,80)}
+function init(){normalizeAll().forEach(syncLegacy);patchQuick();renderRelevant();document.documentElement.dataset.omniosVersion=V;window.OmniBuild={version:V,name:'Universal Goals'};try{baseSave?.()}catch(e){console.warn('Goal migration save failed',e)}setTimeout(renderRelevant,80)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,160),{once:true});else setTimeout(init,160);
 })();
 </script>
@@ -1232,7 +1232,7 @@ syncConversationState();syncLatest();
 /* Version marker. */
 document.documentElement.dataset.omniosVersion='58.8';
 window.OmniBuild={version:'58.8',name:'Assistant Chat UI/UX'};
-document.title='Second Brain v58.8 — Assistant Chat UI/UX';
+
 })();
 </script>
 
@@ -1254,7 +1254,7 @@ const panel=document.getElementById('omni-assistant-panel');
 if(panel)panel.dataset.aiMode='workspace';
 document.documentElement.dataset.omniosVersion='59.2';
 window.OmniBuild={version:'59.2',name:'Second Brain Assistant Only'};
-document.title='Second Brain v59.2 — Second Brain Assistant Only';
+
 })();
 </script>
 
@@ -1533,14 +1533,14 @@ function enhanceA11yV61(root=document){
   root.querySelectorAll('.nav-item[data-view]').forEach(el=>{
     if(!el.hasAttribute('tabindex'))el.tabIndex=0;
     if(!el.hasAttribute('role'))el.setAttribute('role','button');
-    if(!el.dataset.v61keys){el.dataset.v61keys='1';el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click();}})}
+    if(!el.__v33Key&&!el.dataset.v61keys){el.dataset.v61keys='1';el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click();}})}
   });
   root.querySelectorAll('.view-btn,.tab-btn,.v36-cal-mode,.rt-tab,.v603-preset').forEach(el=>{
     el.setAttribute('aria-pressed',el.classList.contains('active')?'true':'false');
   });
   root.querySelectorAll('button').forEach(b=>{
     const txt=(b.textContent||'').trim();
-    if(!b.getAttribute('aria-label')&&!b.getAttribute('title')&&txt && txt.length<=2 && /[^A-Za-z0-9]/.test(txt))b.setAttribute('aria-label','Action');
+    if(!b.getAttribute('aria-label')&&!b.getAttribute('title')&&txt && txt.length<=2 && /[^A-Za-z0-9]/.test(txt)){const label={'✕':'Close','×':'Close','✖':'Close','✎':'Edit','+':'Add','⋯':'More options','↻':'Refresh','←':'Back','→':'Forward'}[txt];if(label)b.setAttribute('aria-label',label);}
   });
 }
 function closeCalendarRailV61(){document.querySelector('.v603-calendar-layout.rail-open')?.classList.remove('rail-open');const b=document.getElementById('v603-rail-toggle');b?.classList.remove('active');b?.setAttribute('aria-expanded','false');document.documentElement.classList.remove('v603-tools-open')}
@@ -1555,7 +1555,7 @@ if(document.body)mo.observe(document.body,{childList:true,subtree:true});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>enhanceA11yV61(),{once:true});else enhanceA11yV61();
 document.documentElement.dataset.omniosVersion='61.0';
 window.OmniBuild={version:'61.0',name:'Professional Final'};
-document.title='Second Brain v61 — Professional Final';
+
 })();
 </script>
 
@@ -1759,7 +1759,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 document.addEventListener('click',e=>{if(e.target.closest?.('#view-dashboard [data-v43-scope]'))requestAnimationFrame(()=>requestAnimationFrame(renderDashboardRoutine611))},false);
 document.addEventListener('change',e=>{if(e.target.matches?.('#view-dashboard #v43-dash-period'))requestAnimationFrame(()=>requestAnimationFrame(renderDashboardRoutine611))},false);
 window.OmniRoutine={render:renderRoutinePage,renderDashboard:renderDashboardRoutine611,openEditor:openEditor611,cycleKey,toggleStep:toggleStep611};
-document.documentElement.dataset.omniosVersion=VERSION;window.OmniBuild={version:VERSION,name:'Unified Core — Clean Startup + Routine Persistence'};document.title='Second Brain v62.2 — Clean Startup';
+document.documentElement.dataset.omniosVersion=VERSION;window.OmniBuild={version:VERSION,name:'Unified Core — Clean Startup + Routine Persistence'};
 })();
 </script>
 

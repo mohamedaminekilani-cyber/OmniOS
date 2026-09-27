@@ -279,7 +279,14 @@ function carryLoaderIntoApp(html){
 
 (async()=>{
   try{
-    const releaseCache=await caches.open('secondbrain-releases-v1');
+    // Cache failures must not prevent an online launch (private mode / full storage).
+    let releaseCache;
+    try{releaseCache=await caches.open('secondbrain-releases-v1')}catch(_){
+      releaseCache={match:async()=>undefined,put:async()=>{}};
+    }
+    async function cacheRelease(key,response){
+      try{await releaseCache.put(key,response)}catch(e){console.warn('Offline app cache unavailable',e)}
+    }
     const activeKey=new URL('./__active_release__',location.href).href;
     const dismissedKey='omnios_update_dismissed_v1';
     let currentManifest=null,checkingUpdate=false,promptingSha='';
@@ -298,24 +305,53 @@ function carryLoaderIntoApp(html){
       return hash===m.sha256;
     }
 
+    async function requestReleaseFile(path){
+      const ctrl=new AbortController();
+      const timer=setTimeout(()=>ctrl.abort(),20000);
+      try{return await fetch(path,{cache:'no-store',signal:ctrl.signal})}
+      finally{clearTimeout(timer)}
+    }
+
+    async function sourceText(m){
+      // Branch-based Pages serves source files. Validate the assembled result with
+      // the SAME checksum as the atomic Actions build before executing anything.
+      const parts=Array.from({length:28},(_,i)=>`app-parts/part-${String(i+1).padStart(3,'0')}.html`);
+      if(JSON.stringify(m.parts)!==JSON.stringify(parts)||!Array.isArray(m.modules)||m.modules.length>20||
+        m.modules.some(p=>! /^(?:js\/[a-z0-9-]+\.js|pwa-personalization\.js)$/.test(p)))throw Error('Invalid source release');
+      const paths=[...parts,...new Set(m.modules)],files=new Map();let next=0,done=0;
+      await Promise.all(Array.from({length:6},async()=>{
+        while(next<paths.length){
+          const path=paths[next++],r=await requestReleaseFile('./'+path);
+          if(!r.ok)throw Error('Source release unavailable: '+path);
+          files.set(path,await r.text());done++;
+          if(!currentManifest)setProgress(Math.round(done/paths.length*PARTS.length),'Checking');
+        }
+      }));
+      return parts.map(p=>files.get(p)).join('').replace(/<script\b[^>]*\bsrc=["'](\.\/)?(js\/[^"']+|pwa-personalization\.js)["'][^>]*><\/script>/gi,
+        (_,prefix,file)=>{if(!files.has(file))throw Error('Missing release module');return '<script>\n'+files.get(file).replace(/<\/script/gi,'<\\/script')+'\n<\/script>'});
+    }
+
     async function fetchLatest(options={}){
       const activate=options.activate===true;
-      const r=await fetch('./release.json',{cache:'no-store',signal:AbortSignal.timeout(12000)});
+      let r=await requestReleaseFile('./release.json'),source=false;
+      if(r.status===404){r=await requestReleaseFile('./source-release.json');source=true}
       if(!r.ok)throw Error('Release manifest unavailable');
       const m=await r.json();
       if(!/^app\.[a-f0-9]{20}\.html$/.test(m.file||''))throw Error('Invalid release manifest');
       const url=new URL(m.file,location.href).href;
       let text='';
-      const cached=await releaseCache.match(url);
-      if(cached)text=await cached.text();
+      try{const cached=await releaseCache.match(url);if(cached)text=await cached.text()}catch(_){}
       if(!text||!await verified(m,text)){
-        const app=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(20000)});
-        if(!app.ok)throw Error('Release unavailable');
-        text=await app.text();
+        if(source)text=await sourceText(m);
+        else{
+          const app=await requestReleaseFile(url);
+          if(!app.ok)throw Error('Release unavailable');
+          text=await app.text();
+        }
         if(!await verified(m,text))throw Error('Release checksum failed');
-        await releaseCache.put(url,new Response(text,{headers:{'Content-Type':'text/html'}}));
+        await cacheRelease(url,new Response(text,{headers:{'Content-Type':'text/html'}}));
       }
-      if(activate)await releaseCache.put(activeKey,new Response(JSON.stringify(m),{headers:{'Content-Type':'application/json'}}));
+      if(activate)await cacheRelease(activeKey,new Response(JSON.stringify(m),{headers:{'Content-Type':'application/json'}}));
       return {m,text};
     }
 
@@ -393,7 +429,7 @@ function carryLoaderIntoApp(html){
       document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkForUpdate()});
     }
 
-    const saved=await installed();
+    const saved=await installed().catch(()=>null);
     const loaded=saved||await fetchLatest({activate:true});
     currentManifest=loaded.m;
     const html=carryLoaderIntoApp(loaded.text);

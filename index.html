@@ -281,35 +281,126 @@ function carryLoaderIntoApp(html){
   try{
     const releaseCache=await caches.open('secondbrain-releases-v1');
     const activeKey=new URL('./__active_release__',location.href).href;
+    const dismissedKey='omnios_update_dismissed_v1';
+    let currentManifest=null,checkingUpdate=false,promptingSha='';
+
     async function installed(){
       const pointer=await releaseCache.match(activeKey);if(!pointer)return null;
       const m=await pointer.json(),r=await releaseCache.match(new URL(m.file,location.href).href);
       if(!r)return null;const text=await r.text();
       return await verified(m,text)?{m,text}:null;
     }
+
     async function verified(m,text){
       if(m?.version!==1||!/^app\.[a-f0-9]{20}\.html$/.test(m.file)||!/^[a-f0-9]{64}$/.test(m.sha256))return false;
       const bytes=new TextEncoder().encode(text);if(bytes.length!==m.bytes)return false;
-      const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('');return hash===m.sha256;
+      const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('');
+      return hash===m.sha256;
     }
-    async function latest(){
-      const r=await fetch('./release.json',{cache:'no-store',signal:AbortSignal.timeout(12000)});if(!r.ok)throw Error('Release manifest unavailable');const m=await r.json();
+
+    async function fetchLatest(options={}){
+      const activate=options.activate===true;
+      const r=await fetch('./release.json',{cache:'no-store',signal:AbortSignal.timeout(12000)});
+      if(!r.ok)throw Error('Release manifest unavailable');
+      const m=await r.json();
       if(!/^app\.[a-f0-9]{20}\.html$/.test(m.file||''))throw Error('Invalid release manifest');
       const url=new URL(m.file,location.href).href;
-      const app=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(20000)});if(!app.ok)throw Error('Release unavailable');const text=await app.text();
-      if(!await verified(m,text))throw Error('Release checksum failed');
-      await releaseCache.put(url,new Response(text,{headers:{'Content-Type':'text/html'}}));
-      await releaseCache.put(activeKey,new Response(JSON.stringify(m)));
+      let text='';
+      const cached=await releaseCache.match(url);
+      if(cached)text=await cached.text();
+      if(!text||!await verified(m,text)){
+        const app=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(20000)});
+        if(!app.ok)throw Error('Release unavailable');
+        text=await app.text();
+        if(!await verified(m,text))throw Error('Release checksum failed');
+        await releaseCache.put(url,new Response(text,{headers:{'Content-Type':'text/html'}}));
+      }
+      if(activate)await releaseCache.put(activeKey,new Response(JSON.stringify(m),{headers:{'Content-Type':'application/json'}}));
       return {m,text};
     }
-    let saved=await installed();
-    const loaded=saved||await latest();
+
+    function updateSubject(m){
+      const s=String(m?.subject||'').trim().replace(/\s+/g,' ');
+      return s||'Second Brain improvements';
+    }
+
+    function ensureUpdateStyle(){
+      if(document.getElementById('omnios-update-prompt-style'))return;
+      const st=document.createElement('style');st.id='omnios-update-prompt-style';
+      st.textContent=
+        '#omnios-update-prompt{position:fixed;z-index:2147483000;right:18px;bottom:18px;width:min(390px,calc(100vw - 24px));font-family:inherit;color:var(--text-primary,#f4f4f5);background:color-mix(in srgb,var(--bg-surface,#18181b) 94%,#000 6%);border:1px solid var(--border-light,#3f3f46);border-radius:18px;box-shadow:0 22px 64px rgba(0,0,0,.44);padding:14px;display:grid;grid-template-columns:42px minmax(0,1fr);gap:11px;animation:omniosUpdateIn .22s ease both;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}'+
+        '#omnios-update-prompt .oup-icon{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent-cyan,#06b6d4) 15%,var(--bg-elevated,#27272a));color:var(--accent-cyan,#06b6d4);border:1px solid color-mix(in srgb,var(--accent-cyan,#06b6d4) 28%,var(--border-color,#27272a))}'+
+        '#omnios-update-prompt .oup-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}'+
+        '#omnios-update-prompt .oup-main{min-width:0}#omnios-update-prompt .oup-kicker{font-size:.58rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-cyan,#06b6d4)}'+
+        '#omnios-update-prompt .oup-title{font-size:.88rem;font-weight:800;margin-top:3px}#omnios-update-prompt .oup-subject{font-size:.72rem;line-height:1.45;color:var(--text-secondary,#a1a1aa);margin-top:4px;overflow-wrap:anywhere}'+
+        '#omnios-update-prompt .oup-meta{font-size:.56rem;color:var(--text-muted,#71717a);margin-top:5px}#omnios-update-prompt .oup-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:11px}'+
+        '#omnios-update-prompt .oup-btn{min-height:38px;border-radius:10px;border:1px solid var(--border-color,#27272a);background:var(--bg-elevated,#27272a);color:var(--text-primary,#f4f4f5);font:inherit;font-size:.68rem;font-weight:750;padding:0 12px;cursor:pointer}'+
+        '#omnios-update-prompt .oup-btn.primary{background:var(--accent-cyan,#06b6d4);border-color:var(--accent-cyan,#06b6d4);color:#001014}#omnios-update-prompt .oup-btn:disabled{opacity:.58;cursor:wait}'+
+        '@keyframes omniosUpdateIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}'+
+        '@media(max-width:760px){#omnios-update-prompt{left:10px;right:10px;bottom:calc(72px + env(safe-area-inset-bottom));width:auto;border-radius:16px;padding:12px;grid-template-columns:38px minmax(0,1fr)}#omnios-update-prompt .oup-icon{width:38px;height:38px;border-radius:11px}#omnios-update-prompt .oup-actions{display:grid;grid-template-columns:1fr 1fr}#omnios-update-prompt .oup-btn{width:100%;min-height:42px}}';
+      document.head.appendChild(st);
+    }
+
+    function showUpdatePrompt(m){
+      if(!m||m.sha256===currentManifest?.sha256)return;
+      try{if(sessionStorage.getItem(dismissedKey)===m.sha256)return}catch(_){}
+      if(promptingSha===m.sha256&&document.getElementById('omnios-update-prompt'))return;
+      promptingSha=m.sha256;
+      ensureUpdateStyle();
+      document.getElementById('omnios-update-prompt')?.remove();
+      const card=document.createElement('aside');card.id='omnios-update-prompt';card.setAttribute('role','status');card.setAttribute('aria-live','polite');
+      const shortCommit=String(m.commit||'').slice(0,7);
+      card.innerHTML='<div class="oup-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path></svg></div><div class="oup-main"><div class="oup-kicker">New update available</div><div class="oup-title">Second Brain is ready to update</div><div class="oup-subject"></div><div class="oup-meta"></div><div class="oup-actions"><button type="button" class="oup-btn" data-update-later>Later</button><button type="button" class="oup-btn primary" data-update-now>Update now</button></div></div>';
+      card.querySelector('.oup-subject').textContent=updateSubject(m);
+      card.querySelector('.oup-meta').textContent=shortCommit?'Build '+shortCommit:'A newer build is ready';
+      card.querySelector('[data-update-later]').onclick=()=>{
+        try{sessionStorage.setItem(dismissedKey,m.sha256)}catch(_){}
+        card.remove();promptingSha='';
+      };
+      card.querySelector('[data-update-now]').onclick=async e=>{
+        const btn=e.currentTarget,later=card.querySelector('[data-update-later]');
+        btn.disabled=true;later.disabled=true;btn.textContent='Updating…';
+        try{
+          await releaseCache.put(activeKey,new Response(JSON.stringify(m),{headers:{'Content-Type':'application/json'}}));
+          try{const reg=await navigator.serviceWorker?.getRegistration?.();await reg?.update?.()}catch(_){}
+          location.reload();
+        }catch(err){
+          btn.disabled=false;later.disabled=false;btn.textContent='Update now';
+          console.warn('Could not activate update',err);
+        }
+      };
+      document.body.appendChild(card);
+    }
+
+    async function checkForUpdate(){
+      if(checkingUpdate||!navigator.onLine||!currentManifest)return;
+      checkingUpdate=true;
+      try{
+        const next=await fetchLatest();
+        if(next.m.sha256!==currentManifest.sha256)showUpdatePrompt(next.m);
+      }catch(e){
+        console.info('Update check skipped',e.message);
+      }finally{
+        checkingUpdate=false;
+      }
+    }
+
+    function startUpdateWatcher(){
+      setTimeout(checkForUpdate,2200);
+      setInterval(checkForUpdate,5*60*1000);
+      window.addEventListener('focus',checkForUpdate);
+      window.addEventListener('online',checkForUpdate);
+      document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkForUpdate()});
+    }
+
+    const saved=await installed();
+    const loaded=saved||await fetchLatest({activate:true});
+    currentManifest=loaded.m;
     const html=carryLoaderIntoApp(loaded.text);
-    // Open a verified offline copy immediately. Stage complete updates only.
-    if(saved)setTimeout(()=>latest().then(next=>{if(next.m.sha256!==saved.m.sha256){const b=document.createElement('button');b.className='btn btn-primary';b.textContent='Update ready — reload';b.style.cssText='position:fixed;bottom:24px;right:24px;z-index:99999';b.onclick=()=>location.reload();document.body.append(b)}}).catch(e=>console.info('Using installed release',e.message)),1500);
     document.open();
     document.write(html);
     document.close();
+    startUpdateWatcher();
   }catch(e){
     console.error(e);
     document.querySelector('.boot')?.classList.add('failed');

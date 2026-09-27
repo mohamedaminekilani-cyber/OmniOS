@@ -62,8 +62,8 @@ for(const name of critical){
   if(count!==1)throw new Error(`Canonical UI helper ${name} expected once, found ${count}`);
 }
 
-const v64Theme=html.match(/<style\\b[^>]*\\bid=["']omnios-v64-aurora-glass-ui["'][^>]*>([\\s\\S]*?)<\\/style>/i)?.[1]||'';
-if(/@media\\s*\\(\\s*max-width\\s*:\\s*760px\\s*\\)/i.test(v64Theme)){
+const v64Theme=html.match(/<style\b[^>]*\bid=["']omnios-v64-aurora-glass-ui["'][^>]*>([\s\S]*?)<\/style>/i)?.[1]||'';
+if(/@media\s*\(\s*max-width\s*:\s*760px\s*\)/i.test(v64Theme)){
   throw new Error('Obsolete v64 mobile layout authority remains inside aurora theme');
 }
 

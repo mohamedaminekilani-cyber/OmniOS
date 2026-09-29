@@ -477,6 +477,7 @@ function persistLight40(){
     window.omniOSUIPersistence?.capture?.();window.SecondBrainSync?.capture();
     storage.setItem('omnios_v3_state',JSON.stringify(state));
     storage.setItem('omnios_v3_backup',JSON.stringify({version:3,savedAt:new Date().toISOString(),state}));
+    window.OmniRecovery35?.queueBackgroundProtect?.('editor-save');
     return true;
   }catch(e){
     console.error('Primary editor save failed',e);

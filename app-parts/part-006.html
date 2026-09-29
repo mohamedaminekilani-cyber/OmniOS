@@ -216,6 +216,74 @@ window.renderOrganizeV40=renderOrganize40;window.openGroceryShopV40=openGroceryS
 .nut-side-row.has-thumb{justify-content:flex-start}.nut-side-row.has-thumb .nut-side-row-main{flex:1}.nut-prep-head-main{display:flex;align-items:center;gap:10px;min-width:0}.nut-prep-head-copy{min-width:0}
 @media(max-width:520px){.nut-item-thumb{width:40px}.nut-card-thumb{width:58px}.nut-prep-thumb{width:52px}.nut-side-thumb{width:42px}.nut-ingredient-row{grid-template-columns:1fr 1fr}.nut-ingredient-row [data-mi-food]{grid-column:1/-1}.nut-ingredient-row [data-mi-qty]{grid-column:1/2}.nut-ingredient-row [data-mi-del]{grid-column:2/3;justify-self:end}}
 
+/* ===== v94 — reference-inspired Nutrition Today dashboard ===== */
+.nut-dashboard-v94{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.34fr);gap:14px;align-items:start;margin-top:12px}
+.nut-dashboard-main-v94{display:flex;flex-direction:column;gap:14px;min-width:0}
+.nut-body-targets-v94{display:grid;grid-template-columns:minmax(340px,1.18fr) minmax(300px,.82fr);gap:14px;align-items:stretch}
+.nut-v94-section-head{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:9px}
+.nut-v94-section-head h4{font-size:1.05rem;letter-spacing:-.025em;margin:0;font-weight:850}
+.nut-v94-section-head span{font-size:.6rem;color:var(--text-muted)}
+.nut-body-overview-v94{min-height:294px;border-radius:24px;padding:23px;background:linear-gradient(145deg,#0d1310,#151a17);color:#f5f7f4;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;position:relative}
+.nut-body-overview-v94:before{content:'';position:absolute;width:220px;height:220px;border-radius:50%;right:-92px;top:-110px;background:radial-gradient(circle,rgba(190,255,46,.14),transparent 68%);pointer-events:none}
+.nut-body-overview-copy-v94{font-size:.68rem;color:rgba(255,255,255,.65);position:relative;z-index:1}
+.nut-body-energy-v94{position:relative;z-index:1;margin:12px 0 16px}
+.nut-body-energy-v94 small{display:block;font-size:.64rem;color:rgba(255,255,255,.56);margin-bottom:5px}
+.nut-body-energy-v94 strong{display:block;font-size:2rem;line-height:1;font-weight:850;letter-spacing:-.04em}
+.nut-body-energy-v94 span{display:block;font-size:.6rem;color:rgba(255,255,255,.55);margin-top:6px}
+.nut-macro-rings-v94{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;position:relative;z-index:1}
+.nut-macro-ring-wrap-v94{text-align:center;min-width:0}
+.nut-macro-ring-v94{--p:0;--ring:#befe2d;width:66px;height:66px;margin:0 auto 6px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--ring) calc(var(--p)*1%),rgba(255,255,255,.14) 0);position:relative}
+.nut-macro-ring-v94:after{content:'';position:absolute;inset:7px;border-radius:50%;background:#121714}
+.nut-macro-ring-v94 b{position:relative;z-index:1;font-size:.67rem}
+.nut-macro-ring-wrap-v94 span{display:block;font-size:.58rem;color:rgba(255,255,255,.72);white-space:nowrap}
+.nut-target-panel-v94{display:flex;flex-direction:column;min-width:0}
+.nut-target-grid-v94{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;flex:1}
+.nut-target-card-v94{border:1px solid var(--border-color);background:var(--bg-surface);border-radius:18px;padding:14px;min-height:132px;display:flex;flex-direction:column;justify-content:space-between;min-width:0}
+.nut-target-icon-v94{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:1.05rem;background:var(--bg-elevated)}
+.nut-target-card-v94.water .nut-target-icon-v94{color:var(--accent-cyan);background:color-mix(in srgb,var(--accent-cyan) 10%,var(--bg-elevated))}
+.nut-target-card-v94.calories .nut-target-icon-v94{color:var(--accent-yellow);background:color-mix(in srgb,var(--accent-yellow) 10%,var(--bg-elevated))}
+.nut-target-card-v94.weight .nut-target-icon-v94{color:#ff7a1a;background:rgba(255,122,26,.1)}
+.nut-target-card-v94.protein .nut-target-icon-v94{color:var(--accent-red);background:color-mix(in srgb,var(--accent-red) 10%,var(--bg-elevated))}
+.nut-target-title-v94{font-size:.82rem;font-weight:820;margin-top:7px}
+.nut-target-meta-v94{font-size:.55rem;color:var(--text-muted)}
+.nut-target-value-v94{font-size:1.03rem;font-weight:850;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nut-meal-rail-v94{border:1px solid var(--border-color);background:var(--bg-surface);border-radius:22px;padding:15px;min-width:0}
+.nut-meal-rail-head-v94{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.nut-meal-rail-head-v94 h4{font-size:1.05rem;margin:0;letter-spacing:-.025em}
+.nut-meal-date-v94{display:inline-flex;align-items:center;gap:6px;font-size:.58rem;color:var(--text-muted);padding:7px 9px;border-radius:999px;background:var(--bg-base);border:1px solid var(--border-color);margin-bottom:10px}
+.nut-meal-card-v94{padding:12px 0;border-top:1px solid var(--border-color)}
+.nut-meal-card-v94:first-of-type{border-top:0}
+.nut-meal-card-head-v94{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.nut-meal-card-title-v94{font-size:.75rem;font-weight:820}
+.nut-meal-card-total-v94{font-size:.54rem;color:var(--text-muted);margin-top:2px}
+.nut-meal-items-v94{display:flex;align-items:center;margin-top:9px;min-height:46px}
+.nut-meal-thumb-v94{width:44px;height:44px;border-radius:50%;border:2px solid var(--bg-surface);background:var(--bg-elevated);display:grid;place-items:center;overflow:hidden;margin-left:-8px;position:relative}
+.nut-meal-thumb-v94:first-child{margin-left:0}
+.nut-meal-thumb-v94 img{width:100%;height:100%;object-fit:cover;background:#fff}
+.nut-meal-thumb-v94 span{font-size:.9rem}
+.nut-meal-add-v94{width:44px;height:44px;border-radius:50%;border:0;background:var(--text-primary);color:var(--bg-base);font-size:1.15rem;display:grid;place-items:center;margin-left:6px;cursor:pointer}
+.nut-meal-empty-v94{font-size:.58rem;color:var(--text-muted)}
+.nut-macro-analysis-v94{border:1px solid var(--border-color);border-radius:18px;background:var(--bg-surface);padding:14px}
+.nut-analysis-row-v94{display:grid;grid-template-columns:62px 1fr 42px;gap:8px;align-items:center;margin-top:11px;font-size:.58rem}
+.nut-analysis-row-v94:first-of-type{margin-top:14px}
+.nut-analysis-track-v94{height:7px;border-radius:999px;background:var(--bg-hover);overflow:hidden}
+.nut-analysis-fill-v94{height:100%;border-radius:999px}
+.nut-analysis-fill-v94.carbs{background:#f3a34b}.nut-analysis-fill-v94.fat{background:#ff5c62}.nut-analysis-fill-v94.protein{background:#4e6ce8}
+.nut-activity-grid-v94{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.nut-activity-card-v94{min-height:172px;border-radius:22px;padding:18px;border:1px solid var(--border-color);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;color:#101410}
+.nut-activity-card-v94:after{content:'';position:absolute;width:140px;height:140px;border-radius:50%;right:-42px;bottom:-58px;background:rgba(255,255,255,.24)}
+.nut-activity-card-v94.water{background:linear-gradient(145deg,#c8ff2f,#b8f72b)}
+.nut-activity-card-v94.prep{background:linear-gradient(145deg,#f8f8f6,#eceeea)}
+.nut-activity-card-v94.insights{background:linear-gradient(145deg,#353334,#222223);color:#fff}
+.nut-activity-card-v94 h5{font-size:1.2rem;line-height:1.06;margin:0;max-width:150px;letter-spacing:-.035em;position:relative;z-index:1}
+.nut-activity-card-v94 p{font-size:.58rem;line-height:1.4;margin:7px 0 0;max-width:180px;opacity:.72;position:relative;z-index:1}
+.nut-activity-stat-v94{font-size:.78rem;font-weight:850;position:relative;z-index:1}
+.nut-detail-v94{border-top:1px solid var(--border-color);padding-top:14px}
+@media(max-width:1180px){.nut-dashboard-v94{grid-template-columns:1fr}.nut-meal-rail-v94{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px}.nut-meal-rail-head-v94,.nut-meal-date-v94{grid-column:1/-1}}
+@media(max-width:900px){.nut-body-targets-v94{grid-template-columns:1fr}.nut-target-grid-v94{grid-template-columns:repeat(4,minmax(0,1fr))}.nut-target-card-v94{min-height:112px}.nut-activity-grid-v94{grid-template-columns:1fr 1fr}.nut-activity-card-v94:last-child{grid-column:1/-1}}
+@media(max-width:760px){.nut-dashboard-v94{gap:10px}.nut-dashboard-main-v94{gap:10px}.nut-body-targets-v94{gap:10px}.nut-body-overview-v94{min-height:260px;border-radius:18px;padding:18px}.nut-target-grid-v94{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.nut-target-card-v94{min-height:112px;border-radius:15px}.nut-meal-rail-v94{display:block;border-radius:18px}.nut-activity-grid-v94{grid-template-columns:1fr;gap:8px}.nut-activity-card-v94,.nut-activity-card-v94:last-child{grid-column:auto;min-height:142px;border-radius:18px}.nut-macro-rings-v94{gap:7px}.nut-macro-ring-v94{width:60px;height:60px}.nut-detail-v94{padding-top:10px}}
+@media(max-width:390px){.nut-body-overview-v94{padding:15px}.nut-body-energy-v94 strong{font-size:1.72rem}.nut-macro-ring-v94{width:56px;height:56px}.nut-macro-ring-v94:after{inset:6px}.nut-target-card-v94{padding:11px}.nut-target-value-v94{font-size:.92rem}}
+
 #view-diet.v34-density-compact .nut-surface{padding:12px}#view-diet.v34-density-compact .nut-day-card{min-height:140px;padding:8px}#view-diet.v34-generic-list .nut-library-grid{grid-template-columns:1fr!important}
 @media(max-width:1180px){.nut-kpis{grid-template-columns:repeat(3,1fr)}.nut-library-grid{grid-template-columns:repeat(3,1fr)}.nut-week{grid-template-columns:repeat(7,minmax(105px,1fr));overflow-x:auto}.nut-prep-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:820px){.nut-hero,.nut-today-grid,.nut-insights-grid{grid-template-columns:1fr}.nut-library-grid{grid-template-columns:repeat(2,1fr)}.nut-library-toolbar{grid-template-columns:1fr 1fr}.nut-library-toolbar .search-input{grid-column:1/-1;width:100%}.nut-slot-columns{grid-template-columns:1fr}.nut-slot-col+ .nut-slot-col{border-left:0;border-top:1px solid var(--border-color)}.nut-week{grid-template-columns:repeat(7,minmax(120px,1fr))}}
@@ -502,7 +570,107 @@ function render(){ensure();const sec=document.getElementById('view-diet');if(!se
 function renderProfile(el){const p=state.settings?.profile||{},t=targets(),est=profileEnergy();el.innerHTML=`<div class="nut-profile-row"><div class="nut-profile-main"><div class="nut-profile-name">${esc(p.name||'Nutrition profile')}</div><div class="nut-profile-meta">${p.age?`${p.age} yr · `:''}${p.heightCm?`${p.heightCm} cm · `:''}${p.weightKg?`${p.weightKg} kg · `:''}${esc(p.activity||'profile incomplete')}<br>${t.calories?`Energy tracking reference: ${Math.round(t.calories)} kcal/day${state.settings.diet.targets.calories?' (custom)':est?' (profile estimate)':''}.`: 'No energy target configured.'}</div></div><button class="btn btn-sm" id="nut-profile-edit">Profile</button></div><div class="nut-profile-meta" style="margin-top:8px">Targets are optional tracking references. Second Brain does not prescribe a diet or target weight.</div>`;el.querySelector('#nut-profile-edit').onclick=()=>{switchView('settings');setTimeout(()=>document.querySelector('[data-settings-tab="profile"]')?.click(),50)}}
 function dateToolbar(label){return `<div class="nut-toolbar"><div class="nut-toolbar-group"><button class="btn btn-sm" data-nut-prev>←</button><button class="btn btn-sm" data-nut-today>Today</button><button class="btn btn-sm" data-nut-next>→</button><strong>${esc(label)}</strong></div><div class="nut-toolbar-group"><button class="btn btn-sm" id="nut-copy-plan">Copy previous plan</button><button class="btn btn-sm" id="nut-log-planned">Log all planned</button></div></div>`}
 function bindDateNav(host,step=1){host.querySelector('[data-nut-prev]').onclick=()=>{selected=addDays(selected,-step);render()};host.querySelector('[data-nut-next]').onclick=()=>{selected=addDays(selected,step);render()};host.querySelector('[data-nut-today]').onclick=()=>{selected=localDateString();render()};host.querySelector('#nut-copy-plan')?.addEventListener('click',()=>copyPlan(addDays(selected,-1),selected));host.querySelector('#nut-log-planned')?.addEventListener('click',()=>logAllPlanned(selected))}
-function renderToday(host){const plan=dayPlan(selected),log=dayLog(selected),water=+state.dietHydration[selected]||0,t=targets(),wp=t.waterMl?Math.min(100,water/t.waterMl*100):0;host.innerHTML=`${dateToolbar(fmtDate(selected))}<div class="nut-kpis">${nutritionKpis(log.total)}</div><div class="nut-today-grid"><div class="nut-stack">${slots().map(s=>renderSlot(s,plan.day[s.id]||[],log.day[s.id]||[])).join('')}</div><div class="nut-stack"><div class="nut-surface"><div class="nut-toolbar"><div><div class="nut-toolbar-title">Hydration</div><div class="nut-toolbar-sub">Logged for ${fmtDate(selected)}</div></div></div><div class="nut-water"><div class="nut-water-ring" style="--water-pct:${wp}%"><strong>${water} ml</strong></div><div><div class="nut-profile-meta">${t.waterMl?`${Math.round(wp)}% of ${t.waterMl} ml target`:'Set a personal hydration target if you want progress tracking.'}</div><div class="nut-water-actions"><button class="btn btn-sm" data-water="250">+250</button><button class="btn btn-sm" data-water="500">+500</button><button class="btn btn-sm" data-water="-250">−250</button></div></div></div></div>${renderTodaySide(selected)}</div></div>`;bindDateNav(host,1);host.querySelectorAll('[data-water]').forEach(b=>b.onclick=()=>{state.dietHydration[selected]=Math.max(0,(+state.dietHydration[selected]||0)+Number(b.dataset.water));saveState()});bindSlotActions(host);bindSide(host)}
+function macroProgressV94(value,target){
+  if(target>0)return Math.max(0,Math.min(100,value/target*100));
+  return 0
+}
+function macroRingV94(label,value,target,color){
+  const pct=macroProgressV94(value,target);
+  const center=target?Math.round(pct)+'%':(Number(value)||0).toFixed(0)+'g';
+  return `<div class="nut-macro-ring-wrap-v94"><div class="nut-macro-ring-v94" style="--p:${pct};--ring:${color}"><b>${center}</b></div><span>${esc(label)}</span></div>`
+}
+function targetCardV94(kind,title,icon,value,meta){
+  return `<div class="nut-target-card-v94 ${kind}"><div><div class="nut-target-icon-v94">${icon}</div><div class="nut-target-title-v94">${esc(title)}</div></div><div><div class="nut-target-meta-v94">${esc(meta)}</div><div class="nut-target-value-v94">${value}</div></div></div>`
+}
+function mealThumbV94(it){
+  const ent=entryEntity(it),raw=entityImage(ent),src=dietImageProxy(raw);
+  if(raw)return `<span class="nut-meal-thumb-v94" title="${esc(entryName(it))}"><img src="${esc(src)}" data-diet-image="${esc(raw)}" alt="${esc(entryName(it))}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><span style="display:none">🍽️</span></span>`;
+  return `<span class="nut-meal-thumb-v94" title="${esc(entryName(it))}"><span>${it?.type==='meal'?'🍽️':'🥦'}</span></span>`
+}
+function mealRailCardV94(slot,items){
+  const total=items.reduce((a,i)=>plus(a,entryNut(i)),zero());
+  return `<div class="nut-meal-card-v94"><div class="nut-meal-card-head-v94"><div><div class="nut-meal-card-title-v94">${slot.icon||'🍽️'} ${esc(slot.label)}</div><div class="nut-meal-card-total-v94">${items.length?Math.round(total.calories)+' kcal planned':'Nothing planned yet'}</div></div></div><div class="nut-meal-items-v94">${items.slice(0,4).map(mealThumbV94).join('')}${!items.length?'<span class="nut-meal-empty-v94">Add a food or recipe</span>':''}<button class="nut-meal-add-v94" type="button" data-v94-plan-slot="${slot.id}" aria-label="Add to ${esc(slot.label)}" title="Add to ${esc(slot.label)}">+</button></div></div>`
+}
+function macroAnalysisV94(log,t){
+  const rows=[
+    ['Carbs','carbs',log.total.carbs,t.carbs],
+    ['Fat','fat',log.total.fat,t.fat],
+    ['Protein','protein',log.total.protein,t.protein]
+  ];
+  return rows.map(([label,cls,value,target])=>{
+    const pct=target?Math.max(0,Math.min(100,value/target*100)):0;
+    const meta=target?Math.round(pct)+'%':(Number(value)||0).toFixed(0)+'g';
+    return `<div class="nut-analysis-row-v94"><span>${label}</span><div class="nut-analysis-track-v94"><div class="nut-analysis-fill-v94 ${cls}" style="width:${pct}%"></div></div><strong>${meta}</strong></div>`
+  }).join('')
+}
+function preparedCountV94(){return (state.dietPrep||[]).reduce((n,p)=>n+Math.max(0,(+p.preparedPortions||0)-(+p.usedPortions||0)),0)}
+function renderToday(host){
+  const plan=dayPlan(selected),log=dayLog(selected),water=+state.dietHydration[selected]||0,t=targets(),profile=state.settings?.profile||{};
+  const remaining=t.calories?Math.max(0,t.calories-log.total.calories):null,waterPct=t.waterMl?Math.min(100,water/t.waterMl*100):0,prepCount=preparedCountV94();
+  const energyHeadline=t.calories?`${Math.round(remaining)} kcal`:`${Math.round(log.total.calories)} kcal`;
+  const energyMeta=t.calories?`${Math.round(log.total.calories)} consumed of ${Math.round(t.calories)} kcal target`:'Logged energy today';
+  host.innerHTML=`${dateToolbar(fmtDate(selected))}
+    <div class="nut-dashboard-v94">
+      <div class="nut-dashboard-main-v94">
+        <div class="nut-body-targets-v94">
+          <section>
+            <div class="nut-v94-section-head"><h4>Body Overview</h4><span>${t.calories?'Daily targets':'Today'}</span></div>
+            <div class="nut-body-overview-v94">
+              <div class="nut-body-overview-copy-v94">${log.count?`${log.count} logged item${log.count===1?'':'s'} today`:'Start logging to build your daily overview.'}</div>
+              <div class="nut-body-energy-v94"><small>${t.calories?'Still available today':'Consumed today'}</small><strong>${energyHeadline}</strong><span>${energyMeta}</span></div>
+              <div class="nut-macro-rings-v94">
+                ${macroRingV94('Protein',log.total.protein,t.protein,'#c8ff36')}
+                ${macroRingV94('Carbs',log.total.carbs,t.carbs,'#f5b942')}
+                ${macroRingV94('Fat',log.total.fat,t.fat,'#ff5a37')}
+              </div>
+            </div>
+          </section>
+          <section class="nut-target-panel-v94">
+            <div class="nut-v94-section-head"><h4>My Daily Target</h4><span>Live values</span></div>
+            <div class="nut-target-grid-v94">
+              ${targetCardV94('water','Water','💧',`${Math.round(water)} ml`,t.waterMl?`${Math.round(waterPct)}% of ${t.waterMl} ml`:'No target set')}
+              ${targetCardV94('calories','Calories','🔥',`${Math.round(log.total.calories)} kcal`,t.calories?`of ${Math.round(t.calories)} kcal`:'Logged today')}
+              ${targetCardV94('weight','Weight','⚖️',profile.weightKg?`${Number(profile.weightKg).toFixed(1)} kg`:'—',profile.weightKg?'Profile weight':'Add in profile')}
+              ${targetCardV94('protein','Protein','◉',`${log.total.protein.toFixed(1)} g`,t.protein?`of ${Math.round(t.protein)} g`:'Logged today')}
+            </div>
+          </section>
+        </div>
+
+        <section>
+          <div class="nut-v94-section-head"><h4>New Activity</h4><span>Quick actions</span></div>
+          <div class="nut-activity-grid-v94">
+            <button type="button" class="nut-activity-card-v94 water" id="nut-v94-water-card"><div><h5>Drinking Tracker</h5><p>Keep hydration visible without leaving Today.</p></div><div class="nut-activity-stat-v94">${Math.round(water)} ml · +250 ml</div></button>
+            <button type="button" class="nut-activity-card-v94 prep" id="nut-v94-open-prep"><div><h5>Meal Prep</h5><p>Prepared portions ready to plan or log.</p></div><div class="nut-activity-stat-v94">${prepCount} portion${prepCount===1?'':'s'} ready</div></button>
+            <button type="button" class="nut-activity-card-v94 insights" id="nut-v94-open-insights"><div><h5>Nutrition Insights</h5><p>See intake trends, consistency, hydration and weight history.</p></div><div class="nut-activity-stat-v94">${log.count} entries today</div></button>
+          </div>
+        </section>
+
+        <section class="nut-detail-v94">
+          <div class="nut-v94-section-head"><div><h4>Meals & logging</h4><span>Plan and consumed entries stay separate</span></div><button class="btn btn-primary btn-sm" id="nut-v94-log">+ Log food</button></div>
+          <div class="nut-stack">${slots().map(s=>renderSlot(s,plan.day[s.id]||[],log.day[s.id]||[])).join('')}</div>
+        </section>
+      </div>
+
+      <aside class="nut-meal-rail-v94">
+        <div class="nut-meal-rail-head-v94"><h4>My Meal Plan</h4><button class="btn btn-sm" id="nut-v94-grocery">Grocery</button></div>
+        <div class="nut-meal-date-v94">▣ ${esc(fmtDate(selected))}</div>
+        ${slots().map(s=>mealRailCardV94(s,plan.day[s.id]||[])).join('')}
+        <div class="nut-macro-analysis-v94" style="margin-top:12px">
+          <div class="nut-v94-section-head" style="margin-bottom:0"><h4 style="font-size:.82rem">Calories Analysis</h4><span>${Math.round(log.total.calories)} kcal</span></div>
+          ${macroAnalysisV94(log,t)}
+        </div>
+      </aside>
+    </div>`;
+
+  bindDateNav(host,1);
+  host.querySelectorAll('[data-v94-plan-slot]').forEach(b=>b.onclick=()=>openEntry('plan',selected,b.dataset.v94PlanSlot));
+  host.querySelector('#nut-v94-water-card')?.addEventListener('click',()=>{state.dietHydration[selected]=Math.max(0,(+state.dietHydration[selected]||0)+250);saveState()});
+  host.querySelector('#nut-v94-open-prep')?.addEventListener('click',()=>{tab='prep';persistWorkspace();render()});
+  host.querySelector('#nut-v94-open-insights')?.addEventListener('click',()=>{tab='insights';persistWorkspace();render()});
+  host.querySelector('#nut-v94-log')?.addEventListener('click',()=>openEntry('log',selected));
+  host.querySelector('#nut-v94-grocery')?.addEventListener('click',()=>createGrocery([selected],`Nutrition groceries · ${selected}`));
+  bindSlotActions(host);
+}
 function renderSlot(s,planItems,logItems){const pn=planItems.reduce((a,i)=>plus(a,entryNut(i)),zero()),ln=logItems.reduce((a,i)=>plus(a,entryNut(i)),zero());return `<div class="nut-slot"><div class="nut-slot-head"><div><div class="nut-slot-name">${s.icon||'🍽️'} ${esc(s.label)}</div><div class="nut-slot-meta">planned ${Math.round(pn.calories)} kcal · logged ${Math.round(ln.calories)} kcal</div></div><div><button class="btn btn-sm" data-add-plan="${s.id}">Plan</button> <button class="btn btn-sm btn-primary" data-add-log="${s.id}">Log</button></div></div><div class="nut-slot-columns"><div class="nut-slot-col"><div class="nut-col-label"><span>Planned</span><span>${planItems.length}</span></div>${planItems.length?planItems.map((it,i)=>renderItem(it,'plan',s.id,i)).join(''):'<div class="nut-empty-inline">Nothing planned.</div>'}</div><div class="nut-slot-col"><div class="nut-col-label"><span>Consumed</span><span>${logItems.length}</span></div>${logItems.length?logItems.map((it,i)=>renderItem(it,'log',s.id,i)).join(''):'<div class="nut-empty-inline">Nothing logged.</div>'}</div></div></div>`}
 function renderItem(it,kind,slot,index){const already=kind==='plan'&&(state.dietLog[selected]?.[slot]||[]).some(x=>x.sourcePlanId&&String(x.sourcePlanId)===String(it.id));return `<div class="nut-item">${entryThumb(it)}<div class="nut-item-main"><div class="nut-item-name">${esc(entryName(it))}</div><div class="nut-item-meta">${entryMeta(it)}${already?' · logged':''}</div></div><div class="nut-item-actions">${kind==='plan'?`<button class="nut-mini-btn" title="Log this planned item" data-log-plan="${slot}|${index}">✓</button>`:''}<button class="nut-mini-btn" title="Edit" data-edit-entry="${kind}|${slot}|${index}">✎</button><button class="nut-mini-btn" title="Delete" data-del-entry="${kind}|${slot}|${index}">×</button></div></div>`}
 function bindSlotActions(host){host.querySelectorAll('[data-add-plan]').forEach(b=>b.onclick=()=>openEntry('plan',selected,b.dataset.addPlan));host.querySelectorAll('[data-add-log]').forEach(b=>b.onclick=()=>openEntry('log',selected,b.dataset.addLog));host.querySelectorAll('[data-edit-entry]').forEach(b=>{b.onclick=()=>{const [kind,slot,index]=b.dataset.editEntry.split('|');openEntry(kind,selected,slot,Number(index))}});host.querySelectorAll('[data-del-entry]').forEach(b=>{b.onclick=()=>{const [kind,slot,index]=b.dataset.delEntry.split('|'),store=kind==='plan'?state.dietPlan:state.dietLog;if(store[selected]?.[slot])store[selected][slot].splice(Number(index),1);saveState()}});host.querySelectorAll('[data-log-plan]').forEach(b=>b.onclick=()=>{const [slot,index]=b.dataset.logPlan.split('|');logPlanned(selected,slot,Number(index))})}

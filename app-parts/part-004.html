@@ -190,6 +190,12 @@ function renderHabitOverviewV95(container){
   container.querySelectorAll('[data-v95-habit]').forEach(card=>card.onclick=e=>{if(e.target.closest('button'))return;openHabitDetailV95(card.dataset.v95Habit)});
 }
 window.renderHabitWeek=renderHabitOverviewV95;
+window.renderHabits=function(){
+  const container=document.getElementById('habits-container');if(!container)return;
+  renderHabitSummary();
+  if(!state.habits.length){container.innerHTML='<div class="v95-habit-empty">No habits yet. Add your first habit to start building a consistency map.</div>';return}
+  if(habitView==='week')renderHabitOverviewV95(container);else renderHabitCalendar(container)
+};
 
 function ensureHabitDetailV95(){
   let ov=document.getElementById('v95-habit-detail');if(ov)return ov;

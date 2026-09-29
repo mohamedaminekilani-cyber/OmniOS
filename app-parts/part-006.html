@@ -216,73 +216,139 @@ window.renderOrganizeV40=renderOrganize40;window.openGroceryShopV40=openGroceryS
 .nut-side-row.has-thumb{justify-content:flex-start}.nut-side-row.has-thumb .nut-side-row-main{flex:1}.nut-prep-head-main{display:flex;align-items:center;gap:10px;min-width:0}.nut-prep-head-copy{min-width:0}
 @media(max-width:520px){.nut-item-thumb{width:40px}.nut-card-thumb{width:58px}.nut-prep-thumb{width:52px}.nut-side-thumb{width:42px}.nut-ingredient-row{grid-template-columns:1fr 1fr}.nut-ingredient-row [data-mi-food]{grid-column:1/-1}.nut-ingredient-row [data-mi-qty]{grid-column:1/2}.nut-ingredient-row [data-mi-del]{grid-column:2/3;justify-self:end}}
 
-/* ===== v94 — reference-inspired Nutrition Today dashboard ===== */
-.nut-dashboard-v94{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.34fr);gap:14px;align-items:start;margin-top:12px}
-.nut-dashboard-main-v94{display:flex;flex-direction:column;gap:14px;min-width:0}
-.nut-body-targets-v94{display:grid;grid-template-columns:minmax(340px,1.18fr) minmax(300px,.82fr);gap:14px;align-items:stretch}
-.nut-v94-section-head{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:9px}
-.nut-v94-section-head h4{font-size:1.05rem;letter-spacing:-.025em;margin:0;font-weight:850}
-.nut-v94-section-head span{font-size:.6rem;color:var(--text-muted)}
-.nut-body-overview-v94{min-height:294px;border-radius:24px;padding:23px;background:linear-gradient(145deg,#0d1310,#151a17);color:#f5f7f4;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;position:relative}
-.nut-body-overview-v94:before{content:'';position:absolute;width:220px;height:220px;border-radius:50%;right:-92px;top:-110px;background:radial-gradient(circle,rgba(190,255,46,.14),transparent 68%);pointer-events:none}
-.nut-body-overview-copy-v94{font-size:.68rem;color:rgba(255,255,255,.65);position:relative;z-index:1}
-.nut-body-energy-v94{position:relative;z-index:1;margin:12px 0 16px}
-.nut-body-energy-v94 small{display:block;font-size:.64rem;color:rgba(255,255,255,.56);margin-bottom:5px}
-.nut-body-energy-v94 strong{display:block;font-size:2rem;line-height:1;font-weight:850;letter-spacing:-.04em}
-.nut-body-energy-v94 span{display:block;font-size:.6rem;color:rgba(255,255,255,.55);margin-top:6px}
-.nut-macro-rings-v94{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;position:relative;z-index:1}
+/* ===== v94 — Nutrition Today, harmonized with Second Brain UI ===== */
+.nut-dashboard-v94{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.34fr);gap:12px;align-items:start;margin-top:12px}
+.nut-dashboard-main-v94{display:flex;flex-direction:column;gap:12px;min-width:0}
+.nut-body-targets-v94{display:grid;grid-template-columns:minmax(340px,1.18fr) minmax(300px,.82fr);gap:12px;align-items:stretch}
+.nut-v94-section-head{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:8px}
+.nut-v94-section-head h4{font-size:.9rem;letter-spacing:-.015em;margin:0;font-weight:820;color:var(--text-primary)}
+.nut-v94-section-head span{font-size:.58rem;color:var(--text-muted)}
+
+.nut-body-overview-v94{
+  min-height:278px;border-radius:16px;padding:17px;
+  background:
+    radial-gradient(circle at top right,color-mix(in srgb,var(--accent-green) 12%,transparent),transparent 42%),
+    var(--bg-surface);
+  color:var(--text-primary);display:flex;flex-direction:column;justify-content:space-between;
+  overflow:hidden;position:relative;border:1px solid var(--border-color);box-shadow:var(--shadow-sm,none)
+}
+.nut-body-overview-v94:before{content:none}
+.nut-body-overview-copy-v94{font-size:.64rem;color:var(--text-muted);position:relative;z-index:1}
+.nut-body-energy-v94{position:relative;z-index:1;margin:11px 0 14px}
+.nut-body-energy-v94 small{display:block;font-size:.6rem;color:var(--text-muted);margin-bottom:5px}
+.nut-body-energy-v94 strong{display:block;font-size:1.72rem;line-height:1;font-weight:850;letter-spacing:-.035em;color:var(--text-primary)}
+.nut-body-energy-v94 span{display:block;font-size:.58rem;color:var(--text-muted);margin-top:6px}
+.nut-macro-rings-v94{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;position:relative;z-index:1}
 .nut-macro-ring-wrap-v94{text-align:center;min-width:0}
-.nut-macro-ring-v94{--p:0;--ring:#befe2d;width:66px;height:66px;margin:0 auto 6px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--ring) calc(var(--p)*1%),rgba(255,255,255,.14) 0);position:relative}
-.nut-macro-ring-v94:after{content:'';position:absolute;inset:7px;border-radius:50%;background:#121714}
-.nut-macro-ring-v94 b{position:relative;z-index:1;font-size:.67rem}
-.nut-macro-ring-wrap-v94 span{display:block;font-size:.58rem;color:rgba(255,255,255,.72);white-space:nowrap}
+.nut-macro-ring-v94{
+  --p:0;--ring:var(--accent-green);
+  width:62px;height:62px;margin:0 auto 6px;border-radius:50%;display:grid;place-items:center;
+  background:conic-gradient(var(--ring) calc(var(--p)*1%),var(--bg-hover) 0);position:relative
+}
+.nut-macro-ring-v94:after{content:'';position:absolute;inset:7px;border-radius:50%;background:var(--bg-surface);box-shadow:inset 0 0 0 1px var(--border-color)}
+.nut-macro-ring-v94 b{position:relative;z-index:1;font-size:.65rem;color:var(--text-primary)}
+.nut-macro-ring-wrap-v94 span{display:block;font-size:.56rem;color:var(--text-muted);white-space:nowrap}
+
 .nut-target-panel-v94{display:flex;flex-direction:column;min-width:0}
-.nut-target-grid-v94{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;flex:1}
-.nut-target-card-v94{border:1px solid var(--border-color);background:var(--bg-surface);border-radius:18px;padding:14px;min-height:132px;display:flex;flex-direction:column;justify-content:space-between;min-width:0}
-.nut-target-icon-v94{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:1.05rem;background:var(--bg-elevated)}
-.nut-target-card-v94.water .nut-target-icon-v94{color:var(--accent-cyan);background:color-mix(in srgb,var(--accent-cyan) 10%,var(--bg-elevated))}
-.nut-target-card-v94.calories .nut-target-icon-v94{color:var(--accent-yellow);background:color-mix(in srgb,var(--accent-yellow) 10%,var(--bg-elevated))}
-.nut-target-card-v94.weight .nut-target-icon-v94{color:#ff7a1a;background:rgba(255,122,26,.1)}
-.nut-target-card-v94.protein .nut-target-icon-v94{color:var(--accent-red);background:color-mix(in srgb,var(--accent-red) 10%,var(--bg-elevated))}
-.nut-target-title-v94{font-size:.82rem;font-weight:820;margin-top:7px}
-.nut-target-meta-v94{font-size:.55rem;color:var(--text-muted)}
-.nut-target-value-v94{font-size:1.03rem;font-weight:850;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nut-meal-rail-v94{border:1px solid var(--border-color);background:var(--bg-surface);border-radius:22px;padding:15px;min-width:0}
+.nut-target-grid-v94{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;flex:1}
+.nut-target-card-v94{
+  border:1px solid var(--border-color);background:var(--bg-surface);border-radius:14px;padding:12px;
+  min-height:126px;display:flex;flex-direction:column;justify-content:space-between;min-width:0
+}
+.nut-target-icon-v94{
+  width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-size:.92rem;
+  background:var(--bg-elevated);border:1px solid var(--border-light)
+}
+.nut-target-card-v94.water .nut-target-icon-v94{color:var(--accent-cyan);background:color-mix(in srgb,var(--accent-cyan) 9%,var(--bg-elevated))}
+.nut-target-card-v94.calories .nut-target-icon-v94{color:var(--accent-yellow);background:color-mix(in srgb,var(--accent-yellow) 9%,var(--bg-elevated))}
+.nut-target-card-v94.weight .nut-target-icon-v94{color:var(--accent-green);background:color-mix(in srgb,var(--accent-green) 9%,var(--bg-elevated))}
+.nut-target-card-v94.protein .nut-target-icon-v94{color:var(--accent-red);background:color-mix(in srgb,var(--accent-red) 9%,var(--bg-elevated))}
+.nut-target-title-v94{font-size:.72rem;font-weight:800;margin-top:6px;color:var(--text-primary)}
+.nut-target-meta-v94{font-size:.54rem;color:var(--text-muted)}
+.nut-target-value-v94{font-size:.96rem;font-weight:850;margin-top:2px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.nut-meal-rail-v94{border:1px solid var(--border-color);background:var(--bg-surface);border-radius:16px;padding:14px;min-width:0}
 .nut-meal-rail-head-v94{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
-.nut-meal-rail-head-v94 h4{font-size:1.05rem;margin:0;letter-spacing:-.025em}
-.nut-meal-date-v94{display:inline-flex;align-items:center;gap:6px;font-size:.58rem;color:var(--text-muted);padding:7px 9px;border-radius:999px;background:var(--bg-base);border:1px solid var(--border-color);margin-bottom:10px}
-.nut-meal-card-v94{padding:12px 0;border-top:1px solid var(--border-color)}
+.nut-meal-rail-head-v94 h4{font-size:.9rem;margin:0;letter-spacing:-.015em;color:var(--text-primary)}
+.nut-meal-date-v94{display:inline-flex;align-items:center;gap:6px;font-size:.56rem;color:var(--text-muted);padding:6px 8px;border-radius:8px;background:var(--bg-base);border:1px solid var(--border-color);margin-bottom:9px}
+.nut-meal-card-v94{padding:11px 0;border-top:1px solid var(--border-color)}
 .nut-meal-card-v94:first-of-type{border-top:0}
 .nut-meal-card-head-v94{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.nut-meal-card-title-v94{font-size:.75rem;font-weight:820}
-.nut-meal-card-total-v94{font-size:.54rem;color:var(--text-muted);margin-top:2px}
-.nut-meal-items-v94{display:flex;align-items:center;margin-top:9px;min-height:46px}
-.nut-meal-thumb-v94{width:44px;height:44px;border-radius:50%;border:2px solid var(--bg-surface);background:var(--bg-elevated);display:grid;place-items:center;overflow:hidden;margin-left:-8px;position:relative}
+.nut-meal-card-title-v94{font-size:.7rem;font-weight:800;color:var(--text-primary)}
+.nut-meal-card-total-v94{font-size:.53rem;color:var(--text-muted);margin-top:2px}
+.nut-meal-items-v94{display:flex;align-items:center;margin-top:8px;min-height:42px}
+.nut-meal-thumb-v94{
+  width:40px;height:40px;border-radius:10px;border:1px solid var(--border-color);
+  background:var(--bg-elevated);display:grid;place-items:center;overflow:hidden;margin-left:-6px;position:relative
+}
 .nut-meal-thumb-v94:first-child{margin-left:0}
 .nut-meal-thumb-v94 img{width:100%;height:100%;object-fit:cover;background:#fff}
-.nut-meal-thumb-v94 span{font-size:.9rem}
-.nut-meal-add-v94{width:44px;height:44px;border-radius:50%;border:0;background:var(--text-primary);color:var(--bg-base);font-size:1.15rem;display:grid;place-items:center;margin-left:6px;cursor:pointer}
-.nut-meal-empty-v94{font-size:.58rem;color:var(--text-muted)}
-.nut-macro-analysis-v94{border:1px solid var(--border-color);border-radius:18px;background:var(--bg-surface);padding:14px}
-.nut-analysis-row-v94{display:grid;grid-template-columns:62px 1fr 42px;gap:8px;align-items:center;margin-top:11px;font-size:.58rem}
-.nut-analysis-row-v94:first-of-type{margin-top:14px}
-.nut-analysis-track-v94{height:7px;border-radius:999px;background:var(--bg-hover);overflow:hidden}
+.nut-meal-thumb-v94 span{font-size:.85rem}
+.nut-meal-add-v94{
+  width:40px;height:40px;border-radius:10px;border:1px solid var(--border-color);
+  background:var(--bg-elevated);color:var(--text-primary);font-size:1rem;display:grid;place-items:center;margin-left:6px;cursor:pointer
+}
+.nut-meal-add-v94:hover{border-color:var(--accent-green);color:var(--accent-green)}
+.nut-meal-empty-v94{font-size:.56rem;color:var(--text-muted)}
+
+.nut-macro-analysis-v94{border:1px solid var(--border-color);border-radius:14px;background:var(--bg-base);padding:12px}
+.nut-analysis-row-v94{display:grid;grid-template-columns:58px 1fr 40px;gap:8px;align-items:center;margin-top:10px;font-size:.56rem;color:var(--text-secondary)}
+.nut-analysis-row-v94:first-of-type{margin-top:12px}
+.nut-analysis-track-v94{height:6px;border-radius:999px;background:var(--bg-hover);overflow:hidden}
 .nut-analysis-fill-v94{height:100%;border-radius:999px}
-.nut-analysis-fill-v94.carbs{background:#f3a34b}.nut-analysis-fill-v94.fat{background:#ff5c62}.nut-analysis-fill-v94.protein{background:#4e6ce8}
-.nut-activity-grid-v94{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.nut-activity-card-v94{min-height:172px;border-radius:22px;padding:18px;border:1px solid var(--border-color);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;color:#101410}
-.nut-activity-card-v94:after{content:'';position:absolute;width:140px;height:140px;border-radius:50%;right:-42px;bottom:-58px;background:rgba(255,255,255,.24)}
-.nut-activity-card-v94.water{background:linear-gradient(145deg,#c8ff2f,#b8f72b)}
-.nut-activity-card-v94.prep{background:linear-gradient(145deg,#f8f8f6,#eceeea)}
-.nut-activity-card-v94.insights{background:linear-gradient(145deg,#353334,#222223);color:#fff}
-.nut-activity-card-v94 h5{font-size:1.2rem;line-height:1.06;margin:0;max-width:150px;letter-spacing:-.035em;position:relative;z-index:1}
-.nut-activity-card-v94 p{font-size:.58rem;line-height:1.4;margin:7px 0 0;max-width:180px;opacity:.72;position:relative;z-index:1}
-.nut-activity-stat-v94{font-size:.78rem;font-weight:850;position:relative;z-index:1}
-.nut-detail-v94{border-top:1px solid var(--border-color);padding-top:14px}
-@media(max-width:1180px){.nut-dashboard-v94{grid-template-columns:1fr}.nut-meal-rail-v94{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px}.nut-meal-rail-head-v94,.nut-meal-date-v94{grid-column:1/-1}}
-@media(max-width:900px){.nut-body-targets-v94{grid-template-columns:1fr}.nut-target-grid-v94{grid-template-columns:repeat(4,minmax(0,1fr))}.nut-target-card-v94{min-height:112px}.nut-activity-grid-v94{grid-template-columns:1fr 1fr}.nut-activity-card-v94:last-child{grid-column:1/-1}}
-@media(max-width:760px){.nut-dashboard-v94{gap:10px}.nut-dashboard-main-v94{gap:10px}.nut-body-targets-v94{gap:10px}.nut-body-overview-v94{min-height:260px;border-radius:18px;padding:18px}.nut-target-grid-v94{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.nut-target-card-v94{min-height:112px;border-radius:15px}.nut-meal-rail-v94{display:block;border-radius:18px}.nut-activity-grid-v94{grid-template-columns:1fr;gap:8px}.nut-activity-card-v94,.nut-activity-card-v94:last-child{grid-column:auto;min-height:142px;border-radius:18px}.nut-macro-rings-v94{gap:7px}.nut-macro-ring-v94{width:60px;height:60px}.nut-detail-v94{padding-top:10px}}
-@media(max-width:390px){.nut-body-overview-v94{padding:15px}.nut-body-energy-v94 strong{font-size:1.72rem}.nut-macro-ring-v94{width:56px;height:56px}.nut-macro-ring-v94:after{inset:6px}.nut-target-card-v94{padding:11px}.nut-target-value-v94{font-size:.92rem}}
+.nut-analysis-fill-v94.carbs{background:var(--accent-yellow)}.nut-analysis-fill-v94.fat{background:var(--accent-red)}.nut-analysis-fill-v94.protein{background:var(--accent-cyan)}
+
+.nut-activity-grid-v94{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.nut-activity-card-v94{
+  min-height:150px;border-radius:15px;padding:14px;border:1px solid var(--border-color);
+  position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;
+  cursor:pointer;color:var(--text-primary);background:var(--bg-surface);text-align:left;font:inherit
+}
+.nut-activity-card-v94:after{content:'';position:absolute;width:100px;height:100px;border-radius:50%;right:-34px;bottom:-46px;background:color-mix(in srgb,var(--accent-green) 7%,transparent)}
+.nut-activity-card-v94.water{background:linear-gradient(145deg,color-mix(in srgb,var(--accent-cyan) 8%,var(--bg-surface)),var(--bg-surface))}
+.nut-activity-card-v94.prep{background:linear-gradient(145deg,color-mix(in srgb,var(--accent-green) 7%,var(--bg-surface)),var(--bg-surface))}
+.nut-activity-card-v94.insights{background:linear-gradient(145deg,color-mix(in srgb,var(--accent-purple,#a78bfa) 7%,var(--bg-surface)),var(--bg-surface));color:var(--text-primary)}
+.nut-activity-card-v94:hover{border-color:color-mix(in srgb,var(--accent-green) 45%,var(--border-color));background:var(--bg-elevated)}
+.nut-activity-card-v94 h5{font-size:.92rem;line-height:1.1;margin:0;max-width:170px;letter-spacing:-.02em;position:relative;z-index:1;color:inherit}
+.nut-activity-card-v94 p{font-size:.56rem;line-height:1.45;margin:7px 0 0;max-width:190px;color:var(--text-muted);position:relative;z-index:1}
+.nut-activity-stat-v94{font-size:.68rem;font-weight:820;position:relative;z-index:1;color:var(--text-secondary)}
+
+.nut-detail-v94{border-top:1px solid var(--border-color);padding-top:12px}
+
+@media(max-width:1180px){
+  .nut-dashboard-v94{grid-template-columns:1fr}
+  .nut-meal-rail-v94{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}
+  .nut-meal-rail-head-v94,.nut-meal-date-v94{grid-column:1/-1}
+}
+@media(max-width:900px){
+  .nut-body-targets-v94{grid-template-columns:1fr}
+  .nut-target-grid-v94{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .nut-target-card-v94{min-height:106px}
+  .nut-activity-grid-v94{grid-template-columns:1fr 1fr}
+  .nut-activity-card-v94:last-child{grid-column:1/-1}
+}
+@media(max-width:760px){
+  .nut-dashboard-v94{gap:10px}
+  .nut-dashboard-main-v94{gap:10px}
+  .nut-body-targets-v94{gap:10px}
+  .nut-body-overview-v94{min-height:252px;border-radius:14px;padding:14px}
+  .nut-target-grid-v94{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .nut-target-card-v94{min-height:108px;border-radius:13px}
+  .nut-meal-rail-v94{display:block;border-radius:14px}
+  .nut-activity-grid-v94{grid-template-columns:1fr;gap:8px}
+  .nut-activity-card-v94,.nut-activity-card-v94:last-child{grid-column:auto;min-height:126px;border-radius:13px}
+  .nut-macro-rings-v94{gap:7px}
+  .nut-macro-ring-v94{width:58px;height:58px}
+  .nut-detail-v94{padding-top:10px}
+}
+@media(max-width:390px){
+  .nut-body-overview-v94{padding:13px}
+  .nut-body-energy-v94 strong{font-size:1.5rem}
+  .nut-macro-ring-v94{width:54px;height:54px}
+  .nut-macro-ring-v94:after{inset:6px}
+  .nut-target-card-v94{padding:10px}
+  .nut-target-value-v94{font-size:.88rem}
+}
 
 #view-diet.v34-density-compact .nut-surface{padding:12px}#view-diet.v34-density-compact .nut-day-card{min-height:140px;padding:8px}#view-diet.v34-generic-list .nut-library-grid{grid-template-columns:1fr!important}
 @media(max-width:1180px){.nut-kpis{grid-template-columns:repeat(3,1fr)}.nut-library-grid{grid-template-columns:repeat(3,1fr)}.nut-week{grid-template-columns:repeat(7,minmax(105px,1fr));overflow-x:auto}.nut-prep-grid{grid-template-columns:repeat(2,1fr)}}
@@ -637,11 +703,11 @@ function renderToday(host){
         </div>
 
         <section>
-          <div class="nut-v94-section-head"><h4>New Activity</h4><span>Quick actions</span></div>
+          <div class="nut-v94-section-head"><h4>Quick actions</h4><span>Nutrition tools</span></div>
           <div class="nut-activity-grid-v94">
-            <button type="button" class="nut-activity-card-v94 water" id="nut-v94-water-card"><div><h5>Drinking Tracker</h5><p>Keep hydration visible without leaving Today.</p></div><div class="nut-activity-stat-v94">${Math.round(water)} ml · +250 ml</div></button>
+            <button type="button" class="nut-activity-card-v94 water" id="nut-v94-water-card"><div><h5>Hydration</h5><p>Keep hydration visible without leaving Today.</p></div><div class="nut-activity-stat-v94">${Math.round(water)} ml · +250 ml</div></button>
             <button type="button" class="nut-activity-card-v94 prep" id="nut-v94-open-prep"><div><h5>Meal Prep</h5><p>Prepared portions ready to plan or log.</p></div><div class="nut-activity-stat-v94">${prepCount} portion${prepCount===1?'':'s'} ready</div></button>
-            <button type="button" class="nut-activity-card-v94 insights" id="nut-v94-open-insights"><div><h5>Nutrition Insights</h5><p>See intake trends, consistency, hydration and weight history.</p></div><div class="nut-activity-stat-v94">${log.count} entries today</div></button>
+            <button type="button" class="nut-activity-card-v94 insights" id="nut-v94-open-insights"><div><h5>Insights</h5><p>See intake trends, consistency, hydration and weight history.</p></div><div class="nut-activity-stat-v94">${log.count} entries today</div></button>
           </div>
         </section>
 

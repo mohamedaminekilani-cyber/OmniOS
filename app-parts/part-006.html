@@ -281,7 +281,7 @@ window.renderOrganizeV40=renderOrganize40;window.openGroceryShopV40=openGroceryS
 }
 .nut-meal-thumb-v94:first-child{margin-left:0}
 .nut-meal-thumb-v94 img{width:100%;height:100%;object-fit:cover;background:#fff}
-.nut-meal-thumb-v94 span{font-size:.85rem}
+.nut-meal-thumb-v94 span{font-size:.85rem}.nut-meal-thumb-v94[data-v94-edit-log]{cursor:pointer}.nut-meal-thumb-v94[data-v94-edit-log]:hover{border-color:var(--accent-green)}
 .nut-meal-add-v94{
   width:40px;height:40px;border-radius:10px;border:1px solid var(--border-color);
   background:var(--bg-elevated);color:var(--text-primary);font-size:1rem;display:grid;place-items:center;margin-left:6px;cursor:pointer
@@ -645,17 +645,18 @@ function mealThumbV94(it){
   if(raw)return `<span class="nut-meal-thumb-v94" title="${esc(entryName(it))}"><img src="${esc(src)}" data-diet-image="${esc(raw)}" alt="${esc(entryName(it))}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><span style="display:none">🍽️</span></span>`;
   return `<span class="nut-meal-thumb-v94" title="${esc(entryName(it))}"><span>${it?.type==='meal'?'🍽️':'🥦'}</span></span>`
 }
-function mealRailCardV94(slot,items){
+function loggedMealCardV94(slot,items){
   const total=items.reduce((a,i)=>plus(a,entryNut(i)),zero());
-  return `<div class="nut-meal-card-v94"><div class="nut-meal-card-head-v94"><div><div class="nut-meal-card-title-v94">${slot.icon||'🍽️'} ${esc(slot.label)}</div><div class="nut-meal-card-total-v94">${items.length?Math.round(total.calories)+' kcal planned':'Nothing planned yet'}</div></div></div><div class="nut-meal-items-v94">${items.slice(0,4).map(mealThumbV94).join('')}${!items.length?'<span class="nut-meal-empty-v94">Add a food or recipe</span>':''}<button class="nut-meal-add-v94" type="button" data-v94-plan-slot="${slot.id}" aria-label="Add to ${esc(slot.label)}" title="Add to ${esc(slot.label)}">+</button></div></div>`
+  const thumbs=items.slice(0,4).map((it,i)=>{
+    const ent=entryEntity(it),raw=entityImage(ent),src=dietImageProxy(raw),name=entryName(it);
+    if(raw)return `<span class="nut-meal-thumb-v94" data-v94-edit-log="${slot.id}|${i}" title="Edit ${esc(name)}"><img src="${esc(src)}" data-diet-image="${esc(raw)}" alt="${esc(name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><span style="display:none">🍽️</span></span>`;
+    return `<span class="nut-meal-thumb-v94" data-v94-edit-log="${slot.id}|${i}" title="Edit ${esc(name)}"><span>${it?.type==='meal'?'🍽️':'🥦'}</span></span>`
+  }).join('');
+  return `<div class="nut-meal-card-v94"><div class="nut-meal-card-head-v94"><div><div class="nut-meal-card-title-v94">${slot.icon||'🍽️'} ${esc(slot.label)}</div><div class="nut-meal-card-total-v94">${items.length?items.length+' logged · '+Math.round(total.calories)+' kcal':'Nothing logged yet'}</div></div></div><div class="nut-meal-items-v94">${thumbs}${!items.length?'<span class="nut-meal-empty-v94">Add consumed food or recipe</span>':''}<button class="nut-meal-add-v94" type="button" data-v94-log-slot="${slot.id}" aria-label="Log to ${esc(slot.label)}" title="Log to ${esc(slot.label)}">+</button></div></div>`
 }
 function preparedCountV94(){return (state.dietPrep||[]).reduce((n,p)=>n+Math.max(0,(+p.preparedPortions||0)-(+p.usedPortions||0)),0)}
-function renderLoggedSlotV94(slot,items){
-  const total=items.reduce((a,i)=>plus(a,entryNut(i)),zero());
-  return `<div class="nut-slot nut-log-slot-v94"><div class="nut-slot-head"><div><div class="nut-slot-name">${slot.icon||'🍽️'} ${esc(slot.label)}</div><div class="nut-slot-meta">${items.length?items.length+' logged · '+Math.round(total.calories)+' kcal':'Nothing logged yet'}</div></div><button class="btn btn-sm btn-primary" data-add-log="${slot.id}">Log</button></div><div class="nut-slot-col">${items.length?items.map((it,i)=>renderItem(it,'log',slot.id,i)).join(''):'<div class="nut-empty-inline">No consumed items logged.</div>'}</div></div>`
-}
 function renderToday(host){
-  const plan=dayPlan(selected),log=dayLog(selected),water=+state.dietHydration[selected]||0,t=targets();
+  const log=dayLog(selected),water=+state.dietHydration[selected]||0,t=targets();
   const remaining=t.calories?Math.max(0,t.calories-log.total.calories):null,waterPct=t.waterMl?Math.min(100,water/t.waterMl*100):0,prepCount=preparedCountV94();
   const energyHeadline=t.calories?`${Math.round(remaining)} kcal`:`${Math.round(log.total.calories)} kcal`;
   const energyMeta=t.calories?`${Math.round(log.total.calories)} consumed of ${Math.round(t.calories)} kcal target`:'Logged energy today';
@@ -693,25 +694,21 @@ function renderToday(host){
           </div>
         </section>
 
-        <section class="nut-detail-v94">
-          <div class="nut-v94-section-head"><div><h4>Logged today</h4><span>Consumed items only</span></div><button class="btn btn-primary btn-sm" id="nut-v94-log">+ Log food</button></div>
-          <div class="nut-stack">${slots().map(s=>renderLoggedSlotV94(s,log.day[s.id]||[])).join('')}</div>
-        </section>
       </div>
 
       <aside class="nut-meal-rail-v94">
-        <div class="nut-meal-rail-head-v94"><h4>My Meal Plan</h4><button class="btn btn-sm" id="nut-v94-grocery">Grocery</button></div>
-        ${slots().map(s=>mealRailCardV94(s,plan.day[s.id]||[])).join('')}
+        <div class="nut-meal-rail-head-v94"><div><h4>Logged today</h4><div class="nut-meal-card-total-v94">${log.count} entr${log.count===1?'y':'ies'} · ${Math.round(log.total.calories)} kcal</div></div><button class="btn btn-primary btn-sm" id="nut-v94-log">+ Log food</button></div>
+        ${slots().map(s=>loggedMealCardV94(s,log.day[s.id]||[])).join('')}
       </aside>
     </div>`;
 
   bindDateNav(host,1);
-  host.querySelectorAll('[data-v94-plan-slot]').forEach(b=>b.onclick=()=>openEntry('plan',selected,b.dataset.v94PlanSlot));
+  host.querySelectorAll('[data-v94-log-slot]').forEach(b=>b.onclick=()=>openEntry('log',selected,b.dataset.v94LogSlot));
+  host.querySelectorAll('[data-v94-edit-log]').forEach(el=>el.onclick=()=>{const [slot,index]=el.dataset.v94EditLog.split('|');openEntry('log',selected,slot,Number(index))});
   host.querySelector('#nut-v94-water-card')?.addEventListener('click',()=>{state.dietHydration[selected]=Math.max(0,(+state.dietHydration[selected]||0)+250);saveState()});
   host.querySelector('#nut-v94-open-prep')?.addEventListener('click',()=>{tab='prep';persistWorkspace();render()});
   host.querySelector('#nut-v94-open-insights')?.addEventListener('click',()=>{tab='insights';persistWorkspace();render()});
   host.querySelector('#nut-v94-log')?.addEventListener('click',()=>openEntry('log',selected));
-  host.querySelector('#nut-v94-grocery')?.addEventListener('click',()=>createGrocery([selected],`Nutrition groceries · ${selected}`));
   bindSlotActions(host);
 }
 function renderSlot(s,planItems,logItems){const pn=planItems.reduce((a,i)=>plus(a,entryNut(i)),zero()),ln=logItems.reduce((a,i)=>plus(a,entryNut(i)),zero());return `<div class="nut-slot"><div class="nut-slot-head"><div><div class="nut-slot-name">${s.icon||'🍽️'} ${esc(s.label)}</div><div class="nut-slot-meta">planned ${Math.round(pn.calories)} kcal · logged ${Math.round(ln.calories)} kcal</div></div><div><button class="btn btn-sm" data-add-plan="${s.id}">Plan</button> <button class="btn btn-sm btn-primary" data-add-log="${s.id}">Log</button></div></div><div class="nut-slot-columns"><div class="nut-slot-col"><div class="nut-col-label"><span>Planned</span><span>${planItems.length}</span></div>${planItems.length?planItems.map((it,i)=>renderItem(it,'plan',s.id,i)).join(''):'<div class="nut-empty-inline">Nothing planned.</div>'}</div><div class="nut-slot-col"><div class="nut-col-label"><span>Consumed</span><span>${logItems.length}</span></div>${logItems.length?logItems.map((it,i)=>renderItem(it,'log',s.id,i)).join(''):'<div class="nut-empty-inline">Nothing logged.</div>'}</div></div></div>`}

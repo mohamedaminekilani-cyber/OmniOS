@@ -2995,7 +2995,8 @@ function saveState() {
         window.SecondBrainSync?.capture();
         storage.setItem('omnios_v3_state', JSON.stringify(state));
         storage.setItem('omnios_v3_backup', JSON.stringify({ version:3, savedAt: new Date().toISOString(), state }));
-        setSaveStatus(storageIsPersistent ? 'Saved locally' : 'Session only', storageIsPersistent ? 'saved' : 'error');
+        window.OmniRecovery35?.queueBackgroundProtect?.('save');
+        setSaveStatus('Saved locally','saved');
     } catch (e) {
         console.error('Primary Second Brain save failed:', e);
         setSaveStatus('Protecting locally…');

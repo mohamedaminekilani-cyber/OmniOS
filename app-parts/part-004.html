@@ -705,12 +705,20 @@ async function backupPayload35(kind='portable'){
 }
 async function persistStateDurably35(){
   const raw=JSON.stringify(state),at=new Date().toISOString(),oldState=storage.getItem('omnios_v3_state'),oldBackup=storage.getItem('omnios_v3_backup');
-  if(!storageIsPersistent)throw Error('Persistent browser storage is unavailable');
-  try{
-    storage.setItem('omnios_v3_state',raw);storage.setItem('omnios_v3_backup',JSON.stringify({version:3,savedAt:at,state}));
-    if(storage.getItem('omnios_v3_state')!==raw)throw Error('State persistence verification failed');
-    await idbPut35(STORE_STATE,'latest',{version:38,savedAt:at,state:clone(state),aux:captureAux35(),auxMeta:ensureAuxMeta35()});
-  }catch(error){for(const[k,v]of [['omnios_v3_state',oldState],['omnios_v3_backup',oldBackup]]){try{if(v===null)storage.removeItem(k);else storage.setItem(k,v)}catch(_){}}throw error}
+  let primaryOk=false,primaryError=null;
+  if(storageIsPersistent){
+    try{
+      storage.setItem('omnios_v3_state',raw);
+      storage.setItem('omnios_v3_backup',JSON.stringify({version:3,savedAt:at,state}));
+      if(storage.getItem('omnios_v3_state')!==raw)throw Error('State persistence verification failed');
+      primaryOk=true;
+    }catch(error){
+      primaryError=error;
+      for(const[k,v]of [['omnios_v3_state',oldState],['omnios_v3_backup',oldBackup]]){try{if(v===null)storage.removeItem(k);else storage.setItem(k,v)}catch(_){}}
+    }
+  }
+  const protectedOk=await backgroundProtect35('durable-save');
+  if(!primaryOk&&!protectedOk)throw(primaryError||new Error('No local recovery store is available'));
   return at
 }
 
@@ -758,6 +766,71 @@ function captureAux35(){
   }catch(_){}
   return out
 }
+const AUTO_RECOVERY_CACHE35='secondbrain-auto-recovery-v1';
+const AUTO_RECOVERY_URL35=new URL('./__secondbrain_auto_recovery__',location.href).href;
+const AUTO_RECOVERY_FILE35='SecondBrain_AutoRecovery.json';
+let backgroundProtectTimer35=null;
+
+function recoveryDoc35(reason='save',stateValue=state){
+  return {
+    version:39,
+    savedAt:new Date().toISOString(),
+    reason,
+    state:clone(stateValue),
+    aux:captureAux35(),
+    auxMeta:ensureAuxMeta35()
+  }
+}
+async function writeCacheRecovery35(doc){
+  if(!('caches'in window))return false;
+  const cache=await caches.open(AUTO_RECOVERY_CACHE35);
+  await cache.put(AUTO_RECOVERY_URL35,new Response(JSON.stringify(doc),{headers:{'Content-Type':'application/json','Cache-Control':'no-store'}}));
+  return true
+}
+async function readCacheRecovery35(){
+  if(!('caches'in window))return null;
+  try{
+    const cache=await caches.open(AUTO_RECOVERY_CACHE35),res=await cache.match(AUTO_RECOVERY_URL35);
+    return res?await res.json():null
+  }catch(_){return null}
+}
+async function writePrivateFileRecovery35(doc){
+  if(!navigator.storage?.getDirectory)return false;
+  const root=await navigator.storage.getDirectory(),file=await root.getFileHandle(AUTO_RECOVERY_FILE35,{create:true}),w=await file.createWritable();
+  await w.write(new Blob([JSON.stringify(doc)],{type:'application/json'}));
+  await w.close();
+  return true
+}
+async function readPrivateFileRecovery35(){
+  if(!navigator.storage?.getDirectory)return null;
+  try{
+    const root=await navigator.storage.getDirectory(),h=await root.getFileHandle(AUTO_RECOVERY_FILE35),file=await h.getFile();
+    return JSON.parse(await file.text())
+  }catch(_){return null}
+}
+async function backgroundProtect35(reason='save',stateValue=state){
+  const doc=recoveryDoc35(reason,stateValue);
+  let successes=0;
+  const jobs=[
+    idbPut35(STORE_STATE,'latest',doc).then(()=>{successes++}).catch(e=>console.warn('Recovery database write skipped',e)),
+    writeCacheRecovery35(doc).then(ok=>{if(ok)successes++}).catch(e=>console.warn('Recovery cache write skipped',e)),
+    writePrivateFileRecovery35(doc).then(ok=>{if(ok)successes++}).catch(e=>console.warn('Private recovery file write skipped',e))
+  ];
+  await Promise.allSettled(jobs);
+  try{
+    ensureV35State();
+    state.core.localDB.lastSavedAt=doc.savedAt;
+    state.core.localDB.status=successes?'ok':'error';
+    if(!successes)state.core.localDB.error='No automatic recovery store accepted the latest save';
+    updateDBStatus35();
+  }catch(_){}
+  return successes>0
+}
+function queueBackgroundProtect35(reason='save'){
+  clearTimeout(backgroundProtectTimer35);
+  backgroundProtectTimer35=setTimeout(()=>backgroundProtect35(reason).catch(e=>console.warn('Background protection failed',e)),350)
+}
+
 function restoreAux35(aux){
   if(!aux||typeof aux!=='object')return;
   try{
@@ -844,11 +917,8 @@ function persistIDB35(reason='save'){
   persistTimer35=setTimeout(async()=>{
     try{
       ensureV35State();
-      const payload={version:35,savedAt:new Date().toISOString(),state:clone(state),aux:captureAux35(),auxMeta:ensureAuxMeta35()};
-      await idbPut35(STORE_STATE,'latest',payload);
-      state.core.localDB.lastSavedAt=payload.savedAt;
-      state.core.localDB.status='ok';
-      updateDBStatus35();
+      const ok=await backgroundProtect35(reason);
+      if(!ok)throw new Error('Automatic recovery storage unavailable');
       if(backupDir35)mirrorBackupFolder35()
     }catch(e){
       state.core.localDB.status='error';
@@ -938,8 +1008,8 @@ function installAutoSnapshotFallback35(){
     }
   }catch(e){console.warn('Auxiliary auto-snapshot hook unavailable',e)}
 
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&autoSnapshotTimer35){clearTimeout(autoSnapshotTimer35);commitAutoSnapshot35()}});
-  window.addEventListener('pagehide',()=>{if(autoSnapshotTimer35){clearTimeout(autoSnapshotTimer35);commitAutoSnapshot35()}});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){if(autoSnapshotTimer35){clearTimeout(autoSnapshotTimer35);commitAutoSnapshot35()}backgroundProtect35('background').catch(()=>{})}});
+  window.addEventListener('pagehide',()=>{if(autoSnapshotTimer35){clearTimeout(autoSnapshotTimer35);commitAutoSnapshot35()}backgroundProtect35('pagehide').catch(()=>{})});
 }
 window.OmniRecovery35={
   clearUndo:()=>{undo35=[];redo35=[];lastCommitted35=clone(state);updateUndoControls35()},
@@ -948,6 +1018,8 @@ window.OmniRecovery35={
   restoreAux:(aux)=>restoreAux35(aux),
   applyAuxDurably:(changes)=>applyAuxDurably35(changes),
   persistStateDurably:()=>persistStateDurably35(),
+  backgroundProtect:(reason,stateValue)=>backgroundProtect35(reason,stateValue),
+  queueBackgroundProtect:(reason)=>queueBackgroundProtect35(reason),
   readAuxMeta:()=>ensureAuxMeta35(),
   writeAuxMeta:(m)=>writeAuxMeta35(m),
   writeAuxMetaDurably:(m)=>writeAuxMetaDurably35(m),
@@ -1046,16 +1118,20 @@ let idbRecovered35=false;
 function time35(v){const n=Date.parse(String(v||''));return Number.isFinite(n)?n:0}
 async function recoverLatestIDB35(){
   try{
-    const latest=await idbGet35(STORE_STATE,'latest');
-    if(!latest?.state||typeof latest.state!=='object')return false;
+    const candidates=[];
+    try{const x=await idbGet35(STORE_STATE,'latest');if(x?.state)candidates.push(x)}catch(_){}
+    try{const x=await readCacheRecovery35();if(x?.state)candidates.push(x)}catch(_){}
+    try{const x=await readPrivateFileRecovery35();if(x?.state)candidates.push(x)}catch(_){}
+    if(!candidates.length)return false;
+    const latest=candidates.sort((a,b)=>time35(b.savedAt)-time35(a.savedAt))[0];
     let localAt=0,resetAt=0;
     try{
       const backup=JSON.parse(storage.getItem('omnios_v3_backup')||'null');
       localAt=time35(backup?.savedAt);
       resetAt=time35(storage.getItem('omnios_v35_full_reset_at'));
     }catch(_){}
-    const idbAt=time35(latest.savedAt);
-    if(!idbAt||idbAt<=localAt||resetAt>=idbAt)return false;
+    const protectedAt=time35(latest.savedAt);
+    if(!protectedAt||protectedAt<=localAt||resetAt>=protectedAt)return false;
     state=clone(latest.state);
     restoreAux35(latest.aux);
     if(latest.auxMeta)writeAuxMeta35(latest.auxMeta);
@@ -1067,12 +1143,13 @@ async function recoverLatestIDB35(){
       storage.setItem('omnios_v3_state',raw);
       storage.setItem('omnios_v3_backup',JSON.stringify({version:3,savedAt:latest.savedAt,state}));
     }catch(e){
-      console.warn('Recovered IndexedDB state, but localStorage is still unavailable or full',e);
+      console.warn('Protected data restored; primary browser storage is still unavailable or full',e);
     }
     idbRecovered35=true;
+    backgroundProtect35('recovery-refresh').catch(()=>{});
     return true;
   }catch(e){
-    console.warn('IndexedDB recovery check failed',e);
+    console.warn('Automatic recovery check failed',e);
     return false;
   }
 }
@@ -1089,20 +1166,18 @@ function dataInventory35(){
 async function renderDataCenter35(){
   const el=root('data-center');if(!el)return;ensureV35State();
   const last=state.core?.localDB?.lastSavedAt||'';
-  el.innerHTML=`<div class="v35-page-head"><div><div class="v35-kicker">LOCAL DATA & RECOVERY</div><h3>Data Center</h3><div class="text-muted text-sm">Your Second Brain data stays local to this browser. Review storage health, create recovery snapshots, and export portable backups.</div></div><div class="v35-page-actions"><button class="btn" id="v35-db-refresh">↻ Refresh</button><button class="btn btn-primary" id="v35-db-snapshot">+ Snapshot</button></div></div>
+  el.innerHTML=`<div class="v35-page-head"><div><div class="v35-kicker">AUTOMATIC PROTECTION</div><h3>Data Center</h3><div class="text-muted text-sm">Second Brain protects your changes automatically in the background. Nothing needs to be configured.</div></div><div class="v35-page-actions"><button class="btn" id="v35-db-refresh">↻ Refresh</button></div></div>
   <div class="v35-db-hero"><div class="v35-card-head"><div><div class="v35-card-title">Local database</div><div class="v35-card-sub">Primary app state + IndexedDB recovery layer</div></div><span class="v35-chip" id="v35-db-health-chip">Checking…</span></div><div class="v35-db-state"><span class="v35-db-led" id="v35-db-led"></span><span id="v35-db-health-text">Checking browser storage…</span></div><div class="v35-stat-grid" style="margin-top:14px"><div class="v35-stat"><div class="v35-stat-label">Last saved</div><div class="v35-stat-value" style="font-size:.92rem" id="v35-db-last">${last?esc(new Date(last).toLocaleString()):'This session'}</div></div><div class="v35-stat"><div class="v35-stat-label">Storage used</div><div class="v35-stat-value" id="v35-db-used">—</div></div><div class="v35-stat"><div class="v35-stat-label">Available quota</div><div class="v35-stat-value" id="v35-db-quota">—</div></div><div class="v35-stat"><div class="v35-stat-label">Persistent storage</div><div class="v35-stat-value" style="font-size:.92rem" id="v35-db-persisted">—</div></div></div></div>
   <div class="v35-grid" style="margin-top:12px">
-    <div class="v35-card v35-span-7"><div class="v35-card-head"><div><div class="v35-card-title">Recovery snapshots</div><div class="v35-card-sub">Automatic snapshots are created after meaningful changes, with a short debounce to group typing. Up to 80 automatic and 20 manual snapshots are retained.</div></div><button class="btn btn-sm" id="v35-db-clear-snaps">Clear snapshots</button></div><div id="v35-db-snapshots"><div class="v35-empty">Loading snapshots…</div></div></div>
-    <div class="v35-card v35-span-5"><div class="v35-card-head"><div><div class="v35-card-title">Portable backup</div><div class="v35-card-sub">Export one JSON file containing the complete Second Brain state, or restore from a previous backup.</div></div></div><div class="v35-list"><button class="btn btn-primary" id="v35-db-export" style="justify-content:flex-start">⇩ Export complete backup</button><button class="btn" id="v35-db-import" style="justify-content:flex-start">⇧ Restore from backup</button><button class="btn" id="v35-db-folder" style="justify-content:flex-start">▣ ${backupDir35?'Backup folder connected':'Connect backup folder'}</button></div><div class="text-muted" style="font-size:.62rem;line-height:1.5;margin-top:10px">Folder mirroring is available only when the browser permits direct folder access. Portable export works without it.</div></div>
+    <div class="v35-card v35-span-7"><div class="v35-card-head"><div><div class="v35-card-title">Restore points</div><div class="v35-card-sub">Second Brain creates restore points automatically after meaningful changes.</div></div><button class="btn btn-sm" id="v35-db-clear-snaps">Clear restore points</button></div><div id="v35-db-snapshots"><div class="v35-empty">Loading restore points…</div></div></div>
+    <div class="v35-card v35-span-5"><div class="v35-card-head"><div><div class="v35-card-title">Protected automatically</div><div class="v35-card-sub">Your current data is backed up in the background on this device. No folder, save dialog, or setup is required.</div></div></div><details><summary class="btn" style="cursor:pointer;justify-content:flex-start">Advanced recovery & transfer</summary><div class="v35-list" style="margin-top:8px"><button class="btn" id="v35-db-export" style="justify-content:flex-start">⇩ Download a copy</button><button class="btn" id="v35-db-import" style="justify-content:flex-start">⇧ Restore from a file</button></div></details></div>
     <div class="v35-card v35-span-7"><div class="v35-card-head"><div><div class="v35-card-title">Data inventory</div><div class="v35-card-sub">Live counts from the current Second Brain state.</div></div></div><div class="v35-grid">${dataInventory35().map(([k,n])=>`<div class="v35-stat v35-span-3"><div class="v35-stat-label">${esc(k)}</div><div class="v35-stat-value">${Number(n)||0}</div></div>`).join('')}</div></div>
     <div class="v35-card v35-span-5"><div class="v35-card-head"><div><div class="v35-card-title">Recent changes</div><div class="v35-card-sub">Latest local change-history records.</div></div><button class="btn btn-sm" id="v35-db-history">Full history</button></div><div class="v35-list">${[...(state.core?.changeLog||[])].reverse().slice(0,8).map(x=>`<div class="v35-history-item"><div class="v35-row-icon">↺</div><div><div class="v35-row-title">${esc(x.label||'Saved changes')}</div><div class="v35-history-time">${esc(new Date(x.at).toLocaleString())}</div></div></div>`).join('')||'<div class="v35-empty">No recorded changes yet.</div>'}</div></div>
   </div>`;
 
   el.querySelector('#v35-db-refresh')?.addEventListener('click',()=>renderDataCenter35());
-  el.querySelector('#v35-db-snapshot')?.addEventListener('click',async()=>{try{await makeSnapshot35('Manual snapshot');window.toast?.('Snapshot created');await renderDataCenter35()}catch(e){window.toast?.('Snapshot could not be created')}});
   el.querySelector('#v35-db-export')?.addEventListener('click',exportBackup35);
   el.querySelector('#v35-db-import')?.addEventListener('click',importBackup35);
-  el.querySelector('#v35-db-folder')?.addEventListener('click',connectBackupFolder35);
   el.querySelector('#v35-db-history')?.addEventListener('click',openHistory35);
 
   let info={usage:0,quota:0,persisted:false},snaps=[],dbErr='';
@@ -1459,7 +1534,7 @@ window.OmniLifeCRUD35={
 /* ---------- initialization ---------- */
 async function init35(){
   const initialView=activeView35();
-  ensureV35State();await recoverLatestIDB35();ensureV35State();ensureSyncMeta35();ensureAuxMeta35();if(!storage.getItem('omnios_v35_migrated')){storage.setItem('omnios_v35_migrated','1');if(getSetting('appearance.startView','dashboard')==='dashboard')setSetting('appearance.startView','today')}installRouteHistory35();installUndo35();installAutoSnapshotFallback35();installTopbar35();installMobileTopbar35();buildMobileNav35();installTaskAdvanced35();patchMasterCalendar35();ensureDrawer35();patchViewButton35();enrichSettings35();installHelp35();processRecurringTasks35();loadBackupFolder35().then(()=>updateDBStatus35());if(idbRecovered35)renderAll?.();persistIDB35('init');renderNewView35(activeView35());document.documentElement.dataset.omniosVersion='35';if(idbRecovered35)setTimeout(()=>window.toast?.('Recovered newer Second Brain data from the local recovery database.'),0);
+  ensureV35State();await recoverLatestIDB35();ensureV35State();ensureSyncMeta35();ensureAuxMeta35();if(!storage.getItem('omnios_v35_migrated')){storage.setItem('omnios_v35_migrated','1');if(getSetting('appearance.startView','dashboard')==='dashboard')setSetting('appearance.startView','today')}installRouteHistory35();installUndo35();installAutoSnapshotFallback35();installTopbar35();installMobileTopbar35();buildMobileNav35();installTaskAdvanced35();patchMasterCalendar35();ensureDrawer35();patchViewButton35();enrichSettings35();installHelp35();processRecurringTasks35();loadBackupFolder35().then(()=>updateDBStatus35());if(idbRecovered35)renderAll?.();persistIDB35('init');renderNewView35(activeView35());document.documentElement.dataset.omniosVersion='35';if(idbRecovered35)setTimeout(()=>window.toast?.('Second Brain restored your latest protected data automatically.'),0);
   // The old dashboard database card is superseded by Data Center.
   const legacy=document.getElementById('database-panel');if(legacy)legacy.style.display='none';
   // Make Today the first-run landing page while respecting an explicit saved start view.

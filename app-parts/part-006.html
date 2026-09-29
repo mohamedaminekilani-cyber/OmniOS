@@ -1525,8 +1525,8 @@ function persist(){
     else localStorage.setItem('omnios_v3_state',raw);
     try{setSaveStatus?.('Saved locally','saved')}catch(_){}
   }catch(e){
-    console.warn('Cover save failed',e);
-    window.toast?.('Cover is visible, but browser storage is full. Export a backup and remove old large images.');
+    console.warn('Primary cover save failed',e);
+    window.OmniRecovery35?.queueBackgroundProtect?.('cover-save-fallback');
   }
   try{decorate()}catch(_){}
   requestDecorate();

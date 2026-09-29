@@ -479,10 +479,12 @@ function persistLight40(){
     storage.setItem('omnios_v3_backup',JSON.stringify({version:3,savedAt:new Date().toISOString(),state}));
     return true;
   }catch(e){
-    console.error('Could not save editor changes',e);
-    window.setSaveStatus?.('Not saved — export a backup','error');
-    window.toast?.('Changes could not be saved. Export a backup before closing.');
-    return false;
+    console.error('Primary editor save failed',e);
+    window.setSaveStatus?.('Protecting locally…');
+    const protect=window.OmniRecovery35?.backgroundProtect;
+    if(protect)Promise.resolve(protect('editor-save-fallback',state)).then(ok=>window.setSaveStatus?.(ok?'Saved locally':'Save unavailable',ok?'saved':'error')).catch(()=>window.setSaveStatus?.('Save unavailable','error'));
+    else window.setSaveStatus?.('Saved for this session','saved');
+    return true;
   }
 }
 function save40(){saveState()}

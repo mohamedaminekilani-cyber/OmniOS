@@ -958,8 +958,67 @@ window.OmniRecovery35={
   fingerprint:(s,aux)=>fingerprint35(s,aux)
 };
 async function restoreSnapshot35(id){const all=await idbAll35(STORE_SNAPS),snap=all.find(x=>x.id===id);if(!snap)return;if(!confirm(`Restore snapshot from ${new Date(snap.at).toLocaleString()}? A recovery snapshot will be saved first.`))return;try{await restoreDocument35(snap);window.toast?.('Snapshot restored and verified')}catch(e){window.toast?.('Restore failed: '+e.message)}}
-function download35(name,text,type='application/json'){const blob=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-async function exportBackup35(){try{const payload=await backupPayload35('portable');download35(`SecondBrain_Backup_${todayKey()}.json`,JSON.stringify(payload,null,2));window.toast?.(state.passwords?.length?'Backup exported. Legacy passwords excluded: encrypt them in Passwords first.':'Complete portable backup exported')}catch(e){console.error('Portable backup export failed',e);window.toast?.('Backup export failed · '+String(e?.message||e))}}
+function exportCancelled35(e){return e?.name==='AbortError'||/cancelled|canceled|aborted/i.test(String(e?.message||e||''))}
+function anchorDownload35(name,blob){
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=name;a.rel='noopener';a.style.display='none';
+  // iOS standalone/Safari may ignore the download attribute; opening the Blob in
+  // a separate context keeps Second Brain alive and still exposes Share/Save to Files.
+  if(/iPad|iPhone|iPod|Macintosh.*Mobile/i.test(navigator.userAgent||''))a.target='_blank';
+  (document.body||document.documentElement).appendChild(a);
+  a.click();
+  setTimeout(()=>{try{a.remove()}catch(_){}try{URL.revokeObjectURL(url)}catch(_){}},8000);
+  return 'download';
+}
+async function download35(name,text,type='application/json'){
+  const blob=new Blob([text],{type}),file=typeof File==='function'?new File([blob],name,{type,lastModified:Date.now()}):null;
+  // On iPhone/iPad PWA the system share sheet is the most reliable route to
+  // "Save to Files". If the browser rejects it, fall back to a normal Blob download.
+  if(file&&navigator.share&&navigator.canShare){
+    try{
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:'Second Brain backup'});
+        return 'shared';
+      }
+    }catch(e){
+      if(exportCancelled35(e))return 'cancelled';
+      console.warn('Native backup share unavailable; using download fallback',e);
+    }
+  }
+  return anchorDownload35(name,blob);
+}
+async function exportBackup35(){
+  const name=`SecondBrain_Backup_${todayKey()}.json`;
+  let handle=null;
+  // Chromium desktop gets a real Save As dialog. Ask for the handle while the
+  // click still has user activation, then generate the backup.
+  if(window.showSaveFilePicker){
+    try{
+      handle=await window.showSaveFilePicker({
+        suggestedName:name,
+        types:[{description:'Second Brain JSON backup',accept:{'application/json':['.json']}}]
+      });
+    }catch(e){
+      if(exportCancelled35(e)){window.toast?.('Backup export cancelled');return}
+      console.warn('Save picker unavailable; using portable fallback',e);
+    }
+  }
+  try{
+    const payload=await backupPayload35('portable'),text=JSON.stringify(payload,null,2);
+    let method='download';
+    if(handle){
+      const writable=await handle.createWritable();
+      await writable.write(new Blob([text],{type:'application/json'}));
+      await writable.close();
+      method='saved';
+    }else method=await download35(name,text,'application/json');
+    if(method==='cancelled'){window.toast?.('Backup export cancelled');return}
+    window.toast?.(state.passwords?.length?'Backup exported. Legacy passwords excluded: encrypt them in Passwords first.':method==='shared'?'Backup ready in the system share sheet — choose Save to Files.':'Complete portable backup exported');
+  }catch(e){
+    console.error('Portable backup export failed',e);
+    window.toast?.('Backup export failed · '+String(e?.message||e));
+  }
+}
 function validateRestore35(value){
   if(!value||typeof value!=='object'||!Array.isArray(value.entries))throw Error('Not a Second Brain backup');
   const walk=(v,depth=0)=>{if(depth>60)throw Error('Backup is too deeply nested');if(v&&typeof v==='object')for(const k of Object.keys(v)){if(['__proto__','constructor','prototype'].includes(k))throw Error('Unsafe backup property');walk(v[k],depth+1)}};walk(value);

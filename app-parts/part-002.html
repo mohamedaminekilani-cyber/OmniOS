@@ -2031,7 +2031,7 @@ async function fullResetApp() {
     // A single, unambiguous confirmation instead of two back-to-back native dialogs.
     // Clear both the primary browser state and the IndexedDB recovery mirror so an
     // intentional reset can never be undone automatically on the next launch.
-    if (!window.omniosConfirm('Erase ALL Second Brain data on this device?\n\nThis permanently deletes every task, note, habit, workout, budget entry and setting. It cannot be undone — export a backup first if you want to keep a copy.\n\nType-check: click OK only if you are certain.')) return;
+    if (!window.omniosConfirm('Erase ALL Second Brain data on this device?\n\nThis permanently deletes every task, note, habit, workout, budget entry and setting on this device.\n\nClick OK only if you are certain.')) return;
     const resetAt=new Date().toISOString();
     try {
         storage.setItem('omnios_v35_full_reset_at',resetAt);

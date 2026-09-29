@@ -56,6 +56,211 @@ select.sb-select,.form-select.sb-select,.filter-select.sb-select{
   }
 }
 
+
+/* Final mobile UX contract. This normalizes behavior only; it deliberately does not
+   redefine card padding, section margins, or page spacing. */
+@media(max-width:760px){
+  :root{
+    --sb-mobile-control:44px;
+    --sb-mobile-edge:8px;
+  }
+
+  html,body{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden!important;
+    overscroll-behavior-x:none;
+  }
+  body{touch-action:pan-y}
+  .view-container,.view,.view.active,.view>*{
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box;
+  }
+  .view-container{
+    scroll-padding-top:calc(var(--ux-topbar-h,54px) + 10px);
+    scroll-padding-bottom:calc(var(--ux-bottomnav-h,64px) + env(safe-area-inset-bottom) + 12px);
+  }
+
+  /* One touch-target standard everywhere. */
+  :is(
+    .btn,.icon-btn,.view-btn,.filter-select,.form-select,.search-input,
+    button:not(.v36-month-date):not(.v602-mini-day):not(.habit-check):not(.v34-habit-month-day)
+  ){
+    min-height:var(--sb-mobile-control)!important;
+  }
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="hidden"]),
+    select,textarea
+  ){
+    max-width:100%!important;
+    font-size:16px!important;
+  }
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="hidden"]),
+    select
+  ){
+    min-height:var(--sb-mobile-control)!important;
+  }
+  textarea{min-height:92px}
+  .form-grid,.form-row,.settings-row,.toolbar,.toolbar-group{min-width:0}
+  .form-grid>*,
+  .form-row>*,
+  .settings-row>*,
+  .toolbar>*,
+  .toolbar-group>*{min-width:0}
+
+  /* One navigation pattern for tabs/modes: a single swipeable rail, never a squeezed grid. */
+  :is(
+    .v38-fin-tabs,.workout-tabs,.tab-btns,.v35-segmented,.v43-life-tabs,
+    .rt-tabs,.v58-seg,.v431-tabs,.org-seg,.help-nav,#settings-tabs
+  ){
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    grid-template-columns:none!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    overscroll-behavior-inline:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none!important;
+    scroll-snap-type:x proximity;
+    max-width:100%!important;
+  }
+  :is(
+    .v38-fin-tabs,.workout-tabs,.tab-btns,.v35-segmented,.v43-life-tabs,
+    .rt-tabs,.v58-seg,.v431-tabs,.org-seg,.help-nav,#settings-tabs
+  )::-webkit-scrollbar{display:none!important}
+  :is(
+    .v38-fin-tabs,.workout-tabs,.tab-btns,.v35-segmented,.v43-life-tabs,
+    .rt-tabs,.v58-seg,.v431-tabs,.org-seg,.help-nav,#settings-tabs
+  )>*{
+    flex:0 0 auto!important;
+    width:auto!important;
+    min-width:max-content!important;
+    scroll-snap-align:start;
+    white-space:nowrap!important;
+  }
+
+  /* Headers keep titles readable; actions may scroll instead of crushing the title/card. */
+  :is(
+    .v35-page-head,.v43-page-head,.v58-page-head,.v38-finance-head,
+    .workout-hero,.org-hero,.card-header,.v35-card-head,.v43-card-head,
+    .v55-card-head,.v58-card-head,.v38-fin-card-head
+  ){
+    min-width:0!important;
+  }
+  :is(
+    .v35-page-head,.v43-page-head,.v58-page-head,.v38-finance-head,
+    .workout-hero,.org-hero
+  ) > :first-child{
+    min-width:0!important;
+    flex:1 1 180px!important;
+  }
+  :is(
+    .v35-page-actions,.v43-page-actions,.v58-page-actions,.v38-finance-head-actions,
+    .workout-hero-actions,.org-actions
+  ){
+    max-width:100%!important;
+    min-width:0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    flex-wrap:nowrap!important;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none!important;
+  }
+  :is(
+    .v35-page-actions,.v43-page-actions,.v58-page-actions,.v38-finance-head-actions,
+    .workout-hero-actions,.org-actions
+  )::-webkit-scrollbar{display:none!important}
+  :is(
+    .v35-page-actions,.v43-page-actions,.v58-page-actions,.v38-finance-head-actions,
+    .workout-hero-actions,.org-actions
+  )>*{
+    flex:0 0 auto!important;
+  }
+
+  /* Keep cards and rich content inside the viewport without changing their spacing. */
+  :is(
+    .card,.v35-card,.v43-card,.v55-card,.v58-card,.v38-fin-card,.rt-card,
+    .note-card,.goal586-card,.org-card,.v37-card,.workout-card
+  ){
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box;
+  }
+  :is(
+    .card-title,.v35-card-title,.v43-card-title,.v55-card-title,.v58-card-title,
+    .v38-fin-card-title,.v35-row-title,.v43-row-title,.v55-row-title,.v38-txn-title
+  ){
+    min-width:0!important;
+    overflow-wrap:anywhere;
+  }
+  img,svg,video,canvas{max-width:100%}
+  pre{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+  /* Wide data stays scrollable inside its own surface instead of widening the whole page. */
+  :is(
+    .table-container,.table-wrap,.set-table-wrap,.calendar-container,
+    .master-cal-shell-wrap,.habit-week-card,.v37-week-bars,.v34-habit-matrix-wrap
+  ){
+    max-width:100%!important;
+    overflow-x:auto!important;
+    overscroll-behavior-inline:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* Consistent mobile dialogs: bounded by visible chrome, body scrolls, footer remains usable. */
+  .modal{
+    width:min(100%,680px)!important;
+    max-width:calc(100vw - max(16px,env(safe-area-inset-left) + env(safe-area-inset-right)))!important;
+    max-height:calc(
+      var(--ux-visible-h,100dvh) -
+      var(--ux-topbar-h,54px) -
+      var(--ux-bottomnav-h,64px) -
+      18px
+    )!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+  }
+  .modal-body,.v35-modal-body,.v45-modal-body{
+    min-height:0!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .modal-footer{
+    max-width:100%!important;
+    min-width:0!important;
+    flex-wrap:wrap!important;
+  }
+
+  /* Fixed app chrome uses the same control height and remains above page content. */
+  :root{--v89-mobile-header-control:var(--sb-mobile-control)}
+  #v35-mobile-add,#v35-mobile-actions,.v35-topbar-icon{
+    min-height:var(--sb-mobile-control)!important;
+    height:var(--sb-mobile-control)!important;
+  }
+  .mobile-nav button{touch-action:manipulation}
+  .mobile-nav,.topbar{isolation:isolate}
+
+  *{-webkit-tap-highlight-color:transparent}
+}
+
+@media(max-width:390px){
+  :is(
+    .v35-page-head,.v43-page-head,.v58-page-head,.v38-finance-head,
+    .workout-hero,.org-hero
+  ){
+    align-items:stretch!important;
+  }
+  :is(
+    .v35-page-actions,.v43-page-actions,.v58-page-actions,.v38-finance-head-actions,
+    .workout-hero-actions,.org-actions
+  ){
+    width:100%!important;
+  }
+}
+
 @media(max-width:760px){
   select.sb-select,.form-select.sb-select,.filter-select.sb-select{
     min-height:44px!important;

@@ -260,9 +260,7 @@ window.renderOrganizeV40=renderOrganize40;window.openGroceryShopV40=openGroceryS
   background:var(--bg-elevated);border:1px solid var(--border-light)
 }
 .nut-target-card-v94.water .nut-target-icon-v94{color:var(--accent-cyan);background:color-mix(in srgb,var(--accent-cyan) 9%,var(--bg-elevated))}
-.nut-target-card-v94.calories .nut-target-icon-v94{color:var(--accent-yellow);background:color-mix(in srgb,var(--accent-yellow) 9%,var(--bg-elevated))}
-.nut-target-card-v94.weight .nut-target-icon-v94{color:var(--accent-green);background:color-mix(in srgb,var(--accent-green) 9%,var(--bg-elevated))}
-.nut-target-card-v94.protein .nut-target-icon-v94{color:var(--accent-red);background:color-mix(in srgb,var(--accent-red) 9%,var(--bg-elevated))}
+.nut-target-card-v94.fiber .nut-target-icon-v94{color:var(--accent-green);background:color-mix(in srgb,var(--accent-green) 9%,var(--bg-elevated))}
 .nut-target-title-v94{font-size:.72rem;font-weight:800;margin-top:6px;color:var(--text-primary)}
 .nut-target-meta-v94{font-size:.54rem;color:var(--text-muted)}
 .nut-target-value-v94{font-size:.96rem;font-weight:850;margin-top:2px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -291,12 +289,6 @@ window.renderOrganizeV40=renderOrganize40;window.openGroceryShopV40=openGroceryS
 .nut-meal-add-v94:hover{border-color:var(--accent-green);color:var(--accent-green)}
 .nut-meal-empty-v94{font-size:.56rem;color:var(--text-muted)}
 
-.nut-macro-analysis-v94{border:1px solid var(--border-color);border-radius:14px;background:var(--bg-base);padding:12px}
-.nut-analysis-row-v94{display:grid;grid-template-columns:58px 1fr 40px;gap:8px;align-items:center;margin-top:10px;font-size:.56rem;color:var(--text-secondary)}
-.nut-analysis-row-v94:first-of-type{margin-top:12px}
-.nut-analysis-track-v94{height:6px;border-radius:999px;background:var(--bg-hover);overflow:hidden}
-.nut-analysis-fill-v94{height:100%;border-radius:999px}
-.nut-analysis-fill-v94.carbs{background:var(--accent-yellow)}.nut-analysis-fill-v94.fat{background:var(--accent-red)}.nut-analysis-fill-v94.protein{background:var(--accent-cyan)}
 
 .nut-activity-grid-v94{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .nut-activity-card-v94{
@@ -318,7 +310,7 @@ window.renderOrganizeV40=renderOrganize40;window.openGroceryShopV40=openGroceryS
 @media(max-width:1180px){
   .nut-dashboard-v94{grid-template-columns:1fr}
   .nut-meal-rail-v94{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}
-  .nut-meal-rail-head-v94,.nut-meal-date-v94{grid-column:1/-1}
+  .nut-meal-rail-head-v94{grid-column:1/-1}
 }
 @media(max-width:900px){
   .nut-body-targets-v94{grid-template-columns:1fr}
@@ -657,21 +649,13 @@ function mealRailCardV94(slot,items){
   const total=items.reduce((a,i)=>plus(a,entryNut(i)),zero());
   return `<div class="nut-meal-card-v94"><div class="nut-meal-card-head-v94"><div><div class="nut-meal-card-title-v94">${slot.icon||'🍽️'} ${esc(slot.label)}</div><div class="nut-meal-card-total-v94">${items.length?Math.round(total.calories)+' kcal planned':'Nothing planned yet'}</div></div></div><div class="nut-meal-items-v94">${items.slice(0,4).map(mealThumbV94).join('')}${!items.length?'<span class="nut-meal-empty-v94">Add a food or recipe</span>':''}<button class="nut-meal-add-v94" type="button" data-v94-plan-slot="${slot.id}" aria-label="Add to ${esc(slot.label)}" title="Add to ${esc(slot.label)}">+</button></div></div>`
 }
-function macroAnalysisV94(log,t){
-  const rows=[
-    ['Carbs','carbs',log.total.carbs,t.carbs],
-    ['Fat','fat',log.total.fat,t.fat],
-    ['Protein','protein',log.total.protein,t.protein]
-  ];
-  return rows.map(([label,cls,value,target])=>{
-    const pct=target?Math.max(0,Math.min(100,value/target*100)):0;
-    const meta=target?Math.round(pct)+'%':(Number(value)||0).toFixed(0)+'g';
-    return `<div class="nut-analysis-row-v94"><span>${label}</span><div class="nut-analysis-track-v94"><div class="nut-analysis-fill-v94 ${cls}" style="width:${pct}%"></div></div><strong>${meta}</strong></div>`
-  }).join('')
-}
 function preparedCountV94(){return (state.dietPrep||[]).reduce((n,p)=>n+Math.max(0,(+p.preparedPortions||0)-(+p.usedPortions||0)),0)}
+function renderLoggedSlotV94(slot,items){
+  const total=items.reduce((a,i)=>plus(a,entryNut(i)),zero());
+  return `<div class="nut-slot nut-log-slot-v94"><div class="nut-slot-head"><div><div class="nut-slot-name">${slot.icon||'🍽️'} ${esc(slot.label)}</div><div class="nut-slot-meta">${items.length?items.length+' logged · '+Math.round(total.calories)+' kcal':'Nothing logged yet'}</div></div><button class="btn btn-sm btn-primary" data-add-log="${slot.id}">Log</button></div><div class="nut-slot-col">${items.length?items.map((it,i)=>renderItem(it,'log',slot.id,i)).join(''):'<div class="nut-empty-inline">No consumed items logged.</div>'}</div></div>`
+}
 function renderToday(host){
-  const plan=dayPlan(selected),log=dayLog(selected),water=+state.dietHydration[selected]||0,t=targets(),profile=state.settings?.profile||{};
+  const plan=dayPlan(selected),log=dayLog(selected),water=+state.dietHydration[selected]||0,t=targets();
   const remaining=t.calories?Math.max(0,t.calories-log.total.calories):null,waterPct=t.waterMl?Math.min(100,water/t.waterMl*100):0,prepCount=preparedCountV94();
   const energyHeadline=t.calories?`${Math.round(remaining)} kcal`:`${Math.round(log.total.calories)} kcal`;
   const energyMeta=t.calories?`${Math.round(log.total.calories)} consumed of ${Math.round(t.calories)} kcal target`:'Logged energy today';
@@ -695,9 +679,7 @@ function renderToday(host){
             <div class="nut-v94-section-head"><h4>My Daily Target</h4><span>Live values</span></div>
             <div class="nut-target-grid-v94">
               ${targetCardV94('water','Water','💧',`${Math.round(water)} ml`,t.waterMl?`${Math.round(waterPct)}% of ${t.waterMl} ml`:'No target set')}
-              ${targetCardV94('calories','Calories','🔥',`${Math.round(log.total.calories)} kcal`,t.calories?`of ${Math.round(t.calories)} kcal`:'Logged today')}
-              ${targetCardV94('weight','Weight','⚖️',profile.weightKg?`${Number(profile.weightKg).toFixed(1)} kg`:'—',profile.weightKg?'Profile weight':'Add in profile')}
-              ${targetCardV94('protein','Protein','◉',`${log.total.protein.toFixed(1)} g`,t.protein?`of ${Math.round(t.protein)} g`:'Logged today')}
+              ${targetCardV94('fiber','Fiber','◌',`${log.total.fiber.toFixed(1)} g`,t.fiber?`${Math.round(Math.min(100,log.total.fiber/t.fiber*100))}% of ${Math.round(t.fiber)} g`:'No target set')}
             </div>
           </section>
         </div>
@@ -712,19 +694,14 @@ function renderToday(host){
         </section>
 
         <section class="nut-detail-v94">
-          <div class="nut-v94-section-head"><div><h4>Meals & logging</h4><span>Plan and consumed entries stay separate</span></div><button class="btn btn-primary btn-sm" id="nut-v94-log">+ Log food</button></div>
-          <div class="nut-stack">${slots().map(s=>renderSlot(s,plan.day[s.id]||[],log.day[s.id]||[])).join('')}</div>
+          <div class="nut-v94-section-head"><div><h4>Logged today</h4><span>Consumed items only</span></div><button class="btn btn-primary btn-sm" id="nut-v94-log">+ Log food</button></div>
+          <div class="nut-stack">${slots().map(s=>renderLoggedSlotV94(s,log.day[s.id]||[])).join('')}</div>
         </section>
       </div>
 
       <aside class="nut-meal-rail-v94">
         <div class="nut-meal-rail-head-v94"><h4>My Meal Plan</h4><button class="btn btn-sm" id="nut-v94-grocery">Grocery</button></div>
-        <div class="nut-meal-date-v94">▣ ${esc(fmtDate(selected))}</div>
         ${slots().map(s=>mealRailCardV94(s,plan.day[s.id]||[])).join('')}
-        <div class="nut-macro-analysis-v94" style="margin-top:12px">
-          <div class="nut-v94-section-head" style="margin-bottom:0"><h4 style="font-size:.82rem">Calories Analysis</h4><span>${Math.round(log.total.calories)} kcal</span></div>
-          ${macroAnalysisV94(log,t)}
-        </div>
       </aside>
     </div>`;
 

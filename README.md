@@ -4,6 +4,8 @@ Local-first personal workspace, installed as a PWA or used in a browser.
 
 Live: https://mohamedaminekilani-cyber.github.io/OmniOS/
 
+Production releases are published from verified commits on `main`.
+
 ## Develop and verify
 
 ```sh

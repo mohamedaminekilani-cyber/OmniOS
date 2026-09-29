@@ -40,6 +40,22 @@ select.sb-select,.form-select.sb-select,.filter-select.sb-select{
   gap:8px!important;
   min-width:0;
 }
+
+/* Efficient card flow. Layout-only: card padding, internal margins and section spacing remain untouched. */
+.sb-layout-grid{
+  min-width:0;
+  align-items:stretch;
+}
+.sb-layout-grid > *{min-width:0}
+.sb-layout-grid[data-sb-cols]{
+  grid-template-columns:repeat(var(--sb-layout-cols),minmax(0,1fr))!important;
+}
+@media(max-width:760px){
+  .sb-layout-grid[data-sb-mobile-one="1"]{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+}
+
 @media(max-width:760px){
   select.sb-select,.form-select.sb-select,.filter-select.sb-select{
     min-height:44px!important;
@@ -71,6 +87,71 @@ function conflicts(){const rows=SecondBrainSync.conflicts();const o=document.cre
 function addTools(){const exportBtn=document.getElementById('v35-db-export');if(!exportBtn||document.getElementById('sb-recovery-tools'))return;const box=document.createElement('div');box.id='sb-recovery-tools';box.className='sb-recovery-tools';box.innerHTML='<button class="btn" data-conflicts>Review sync alternatives</button><button class="btn" data-diagnostics>Export diagnostics</button>';exportBtn.closest('.v35-card')?.append(box);box.querySelector('[data-conflicts]').onclick=conflicts;box.querySelector('[data-diagnostics]').onclick=async()=>{let quota;try{quota=await navigator.storage?.estimate()}catch(_){}download('SecondBrain_Diagnostics.json',{version:2,at:new Date().toISOString(),online:navigator.onLine,secureContext:isSecureContext,storage:quota,recordCounts:Object.fromEntries(Object.entries(state).filter(([,v])=>Array.isArray(v)).map(([k,v])=>[k,v.length])),retainedAlternatives:SecondBrainSync.conflicts().length})}}
 let pending=false;const base=window.renderAll;if(base)window.renderAll=function(){const result=base.apply(this,arguments);if(!pending){pending=true;requestAnimationFrame(()=>{pending=false;addTools()})}return result};
 
+const cardGridSpecs=[
+  {
+    selector:'.workout-kpi-grid,.kpi-grid,.habit-summary-grid,.diet-kpi-grid,.v37-session-stats,.v37-progress-summary,.v38-fin-grid,.org-kpis,.conn34-kpis,.v58-kpis,.v58-flow,.v58-project-health,.goal586-kpis,.rt-kpis,.bib-today-metrics-v67,.bib-atlas-stats',
+    min:138,max:6,mobileOne:false
+  },
+  {
+    selector:'.template-grid,.exercise-library-grid,.history-grid,.v25-group-grid,.goal-grid,.custom-list-grid,.diet-db-grid,.diet-prep-grid,.power-grid,.power-pantry-grid,.v35-project-grid,.v35-record-grid,.v37-template-grid,.v37-library-grid,.v37-history-grid,.v38-account-grid,.v38-rec-grid,.v38-goal-grid,.org-grid,.goal586-grid,.goal586-board,.bib-today-guidance-v67,.bib-today-reading-list-v67,.rd611-steps',
+    min:224,max:4,mobileOne:true
+  },
+  {
+    selector:'.analytics-grid,.v38-overview-charts',
+    min:300,max:3,mobileOne:true
+  },
+  {
+    selector:'.workout-analytics-grid,.master-cal-agenda,.diet-progress-grid,.power-grid-2,.v34-habit-month-cards,.v35-review-grid,.v35-life-detail-grid,.v37-progress-grid,.v38-insight-grid,.w63-grid,.bib-today-bottom-v67',
+    min:300,max:2,mobileOne:true
+  },
+  {
+    selector:'.v38-budget-grid,.v37-start-grid,.quick-add-grid,.v25-mobile-more-grid,.v36-preview-schedule,.calendar-preview-actions,.pantry-image-actions,.pantry-photo-actions,.rt-hero-actions,.workout-hero-actions',
+    min:220,max:2,mobileOne:true
+  }
+];
+function layoutColumnsFor(width,min,max){
+  if(!Number.isFinite(width)||width<=0)return 1;
+  return Math.max(1,Math.min(max,Math.floor(width/min)));
+}
+function applyCardGridLayout(el,spec){
+  if(!(el instanceof Element))return;
+  el.classList.add('sb-layout-grid');
+  if(spec.mobileOne)el.dataset.sbMobileOne='1';else delete el.dataset.sbMobileOne;
+  const width=el.clientWidth||el.getBoundingClientRect().width||0;
+  const cols=layoutColumnsFor(width,spec.min,spec.max);
+  if(String(cols)!==el.dataset.sbCols){
+    el.dataset.sbCols=String(cols);
+    el.style.setProperty('--sb-layout-cols',String(cols));
+  }
+}
+function polishCardLayouts(root=document){
+  cardGridSpecs.forEach(spec=>{
+    root.querySelectorAll?.(spec.selector).forEach(el=>applyCardGridLayout(el,spec));
+    if(root instanceof Element&&root.matches?.(spec.selector))applyCardGridLayout(root,spec);
+  });
+}
+const cardResizeObserver=typeof ResizeObserver==='function'?new ResizeObserver(entries=>{
+  entries.forEach(({target})=>{
+    const spec=cardGridSpecs.find(s=>target.matches?.(s.selector));
+    if(spec)applyCardGridLayout(target,spec);
+  });
+}):null;
+const observedCardGrids=new WeakSet();
+function observeCardLayouts(root=document){
+  cardGridSpecs.forEach(spec=>{
+    const els=[];
+    if(root instanceof Element&&root.matches?.(spec.selector))els.push(root);
+    root.querySelectorAll?.(spec.selector).forEach(el=>els.push(el));
+    els.forEach(el=>{
+      applyCardGridLayout(el,spec);
+      if(cardResizeObserver&&!observedCardGrids.has(el)){
+        observedCardGrids.add(el);
+        cardResizeObserver.observe(el);
+      }
+    });
+  });
+}
+
 function polishSelect(select){
   if(!(select instanceof HTMLSelectElement)||select.multiple||select.size>1)return;
   select.classList.add('sb-select');
@@ -91,6 +172,7 @@ function polishControlScope(root=document){
     const count=scope.querySelectorAll('select.filter-select,select.form-select').length;
     scope.classList.toggle('sb-filter-rail',count>=2);
   });
+  observeCardLayouts(root);
 }
 let polishQueued=false;
 function queueControlPolish(){
@@ -100,10 +182,11 @@ function queueControlPolish(){
 }
 document.addEventListener('change',e=>{if(e.target instanceof HTMLSelectElement)polishSelect(e.target)},true);
 const controlObserver=new MutationObserver(mutations=>{
-  if(mutations.some(m=>Array.from(m.addedNodes).some(n=>n.nodeType===1&&(n.matches?.('select,.toolbar-group,.list-controls,.notes-toolbar,.dashboard-toolbar,.habit-toolbar,.v37-filter-row')||n.querySelector?.('select')))))queueControlPolish();
+  if(mutations.some(m=>Array.from(m.addedNodes).some(n=>n.nodeType===1)))queueControlPolish();
 });
 controlObserver.observe(document.body||document.documentElement,{childList:true,subtree:true});
 polishControlScope(document);
+polishCardLayouts(document);
 
 document.addEventListener('secondbrain:transfer',e=>{const d=e.detail;document.querySelectorAll('[data-local-progress-text]').forEach(el=>el.textContent=`Receiving ${Math.round(d.received/1024)} / ${Math.round(d.total/1024)} KB`)});
 document.addEventListener('click',e=>{if(e.target.closest('[data-sb-disconnect]')){SecondBrainSync.disconnect();e.target.closest('.omni-sync-overlay')?.remove()}requestAnimationFrame(addTools)});addTools();

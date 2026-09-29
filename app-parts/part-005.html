@@ -670,7 +670,7 @@ function flushNoteAutosave40(){
       n.archived=meta.querySelector('#org-note-archive-field')?.dataset.on==='1';
     }
     const saved=persistLight40();
-    if(status)status.textContent=saved?'Saved locally':'Not saved — export a backup';
+    if(status)status.textContent=saved?'Saved locally':'Protecting locally…';
     noteDirty40=!saved;
     const del=document.getElementById('note-delete-btn');if(del)del.style.display='inline-flex';
     const mt=document.getElementById('note-modal-title');if(mt)mt.textContent='Edit Note';

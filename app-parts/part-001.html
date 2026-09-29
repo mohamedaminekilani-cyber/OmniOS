@@ -2996,7 +2996,19 @@ function saveState() {
         storage.setItem('omnios_v3_state', JSON.stringify(state));
         storage.setItem('omnios_v3_backup', JSON.stringify({ version:3, savedAt: new Date().toISOString(), state }));
         setSaveStatus(storageIsPersistent ? 'Saved locally' : 'Session only', storageIsPersistent ? 'saved' : 'error');
-    } catch (e) { console.error('OmniOS save failed:', e); setSaveStatus('Not saved — storage is full or unavailable','error'); window.toast?.('Changes could not be saved. Export a backup before closing.'); throw e; }
+    } catch (e) {
+        console.error('Primary Second Brain save failed:', e);
+        setSaveStatus('Protecting locally…');
+        const protect=window.OmniRecovery35?.backgroundProtect;
+        if(protect){
+            Promise.resolve(protect('primary-save-fallback',state)).then(ok=>{
+                if(ok)setSaveStatus('Saved locally','saved');
+                else{setSaveStatus('Save unavailable','error');window.toast?.('Second Brain could not protect this change on this device.')}
+            }).catch(()=>{setSaveStatus('Save unavailable','error');window.toast?.('Second Brain could not protect this change on this device.')});
+        }else{
+            setSaveStatus('Saved for this session','saved');
+        }
+    }
     applyAppearance();
     renderAll();
     // Full renders used to steal focus from the control being edited. Restore it

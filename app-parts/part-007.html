@@ -51,7 +51,7 @@ const escapeHtml45=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
 window.OmniDiagnostics=window.OmniDiagnostics||{errors:[],warnings:[],startedAt:new Date().toISOString()};
 let storageWarned45=false;
 addEventListener('error',e=>{window.OmniDiagnostics.errors.push({at:new Date().toISOString(),message:e.message||'Runtime error',source:e.filename||'',line:e.lineno||0});if(window.OmniDiagnostics.errors.length>100)window.OmniDiagnostics.errors.shift()});
-addEventListener('unhandledrejection',e=>{const msg=String(e.reason?.message||e.reason||'Unhandled promise rejection');window.OmniDiagnostics.errors.push({at:new Date().toISOString(),message:msg,source:'promise'});if(/indexeddb|IDBFactory|database api is denied|access.*denied/i.test(msg)){e.preventDefault();if(!storageWarned45){storageWarned45=true;window.toast?.('Browser snapshots are unavailable here. Your normal local save and Export backup still work.')}}});
+addEventListener('unhandledrejection',e=>{const msg=String(e.reason?.message||e.reason||'Unhandled promise rejection');window.OmniDiagnostics.errors.push({at:new Date().toISOString(),message:msg,source:'promise'});if(/indexeddb|IDBFactory|database api is denied|access.*denied/i.test(msg)){e.preventDefault();if(!storageWarned45){storageWarned45=true;window.toast?.('Second Brain is keeping your data protected with the storage available on this device.')}}});
 
 /* ---------- one modal helper, public and self-contained ---------- */
 function closeModal45(){document.getElementById('v45-modal')?.remove()}

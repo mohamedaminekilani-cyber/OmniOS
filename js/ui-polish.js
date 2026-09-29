@@ -71,7 +71,6 @@ select.sb-select,.form-select.sb-select,.filter-select.sb-select{
     overflow-x:hidden!important;
     overscroll-behavior-x:none;
   }
-  body{touch-action:pan-y}
   .view-container,.view,.view.active,.view>*{
     min-width:0!important;
     max-width:100%!important;

@@ -14,6 +14,71 @@
   .v34-habit-month-card{padding:11px}.v34-habit-mini-calendar{gap:3px}.v34-habit-month-day,.v34-habit-blank{min-height:36px}
   #omni-context-menu-v34{display:none!important} /* native long-press remains untouched on phones */
 }
+
+/* ===== v95 — Habit cards + detail sheet ===== */
+.v95-habit-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.v95-habit-card{--habit-accent:var(--accent-cyan);position:relative;min-width:0;border:1px solid var(--border-color);border-radius:16px;background:var(--bg-surface);padding:14px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm,none);transition:border-color .16s ease,transform .16s ease,background .16s ease}
+.v95-habit-card:hover{border-color:color-mix(in srgb,var(--habit-accent) 55%,var(--border-color));background:var(--bg-elevated);transform:translateY(-1px)}
+.v95-habit-card.is-done-today{border-color:color-mix(in srgb,var(--habit-accent) 42%,var(--border-color))}
+.v95-habit-head{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+.v95-habit-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none;font-size:1.12rem;background:color-mix(in srgb,var(--habit-accent) 14%,var(--bg-elevated));border:1px solid color-mix(in srgb,var(--habit-accent) 24%,var(--border-color))}
+.v95-habit-title-wrap{min-width:0;flex:1}
+.v95-habit-name{font-size:.84rem;font-weight:820;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v95-habit-goal{font-size:.59rem;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v95-habit-done-btn{width:42px;height:42px;border-radius:12px;border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-muted);display:grid;place-items:center;font-size:1rem;cursor:pointer;flex:none}
+.v95-habit-done-btn.active{background:color-mix(in srgb,var(--habit-accent) 18%,var(--bg-elevated));border-color:color-mix(in srgb,var(--habit-accent) 55%,var(--border-color));color:var(--habit-accent)}
+.v95-heatmap{display:grid;grid-template-rows:repeat(7,11px);grid-auto-flow:column;grid-auto-columns:11px;gap:3px;justify-content:start;max-width:100%;overflow:hidden}
+.v95-heat-cell{width:11px;height:11px;border-radius:3px;background:var(--bg-hover);border:1px solid color-mix(in srgb,var(--border-color) 75%,transparent)}
+.v95-heat-cell.done{background:color-mix(in srgb,var(--habit-accent) 76%,var(--bg-hover));border-color:color-mix(in srgb,var(--habit-accent) 66%,var(--border-color))}
+.v95-heat-cell.today{box-shadow:0 0 0 1px var(--habit-accent)}
+.v95-habit-footer{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:11px}
+.v95-habit-pill{display:inline-flex;align-items:center;gap:4px;min-height:25px;padding:4px 8px;border-radius:999px;background:var(--bg-elevated);border:1px solid var(--border-color);font-size:.56rem;color:var(--text-secondary)}
+.v95-habit-pill.accent{color:var(--habit-accent);background:color-mix(in srgb,var(--habit-accent) 9%,var(--bg-elevated));border-color:color-mix(in srgb,var(--habit-accent) 22%,var(--border-color))}
+.v95-habit-empty{padding:30px 16px;text-align:center;color:var(--text-muted);border:1px dashed var(--border-color);border-radius:14px;background:var(--bg-surface)}
+
+#v95-habit-detail{position:fixed;inset:0;z-index:1900;background:rgba(0,0,0,.48);display:none;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(7px)}
+#v95-habit-detail.active{display:flex}
+.v95-habit-sheet{--habit-accent:var(--accent-cyan);width:min(720px,calc(100vw - 28px));max-height:min(820px,calc(100dvh - 36px));display:flex;flex-direction:column;overflow:hidden;border-radius:20px;background:var(--bg-surface);border:1px solid var(--border-color);box-shadow:0 28px 90px rgba(0,0,0,.42)}
+.v95-habit-sheet-handle{display:none;width:38px;height:4px;border-radius:999px;background:var(--border-light);margin:8px auto 0}
+.v95-habit-detail-head{display:flex;align-items:center;gap:11px;padding:16px 16px 12px;border-bottom:1px solid var(--border-color)}
+.v95-habit-detail-icon{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;font-size:1.2rem;background:color-mix(in srgb,var(--habit-accent) 14%,var(--bg-elevated));border:1px solid color-mix(in srgb,var(--habit-accent) 24%,var(--border-color))}
+.v95-habit-detail-copy{min-width:0;flex:1}
+.v95-habit-detail-name{font-size:1rem;font-weight:850;color:var(--text-primary)}
+.v95-habit-detail-goal{font-size:.62rem;color:var(--text-muted);margin-top:2px}
+.v95-habit-detail-actions{display:flex;gap:7px}
+.v95-habit-detail-body{min-height:0;overflow-y:auto;padding:15px}
+.v95-habit-detail-section{border:1px solid var(--border-color);background:var(--bg-base);border-radius:14px;padding:13px;margin-bottom:12px}
+.v95-habit-detail-section:last-child{margin-bottom:0}
+.v95-habit-detail-heat{display:grid;grid-template-rows:repeat(7,13px);grid-auto-flow:column;grid-auto-columns:13px;gap:3px;overflow-x:auto;padding:2px 1px 5px;scrollbar-width:none}
+.v95-habit-detail-heat::-webkit-scrollbar{display:none}
+.v95-habit-detail-heat .v95-heat-cell{width:13px;height:13px}
+.v95-habit-detail-meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.v95-habit-month-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.v95-habit-month-title{font-size:.78rem;font-weight:820;color:var(--text-primary)}
+.v95-habit-month-nav{display:flex;gap:6px}
+.v95-habit-detail-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.v95-habit-detail-weekday{font-size:.54rem;color:var(--text-muted);text-align:center;font-weight:750;padding:2px 0}
+.v95-habit-detail-blank{aspect-ratio:1}
+.v95-habit-detail-day{aspect-ratio:1;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-surface);color:var(--text-secondary);font:inherit;font-size:.64rem;display:grid;place-items:center;cursor:pointer;position:relative;min-height:38px}
+.v95-habit-detail-day.done{background:color-mix(in srgb,var(--habit-accent) 13%,var(--bg-surface));border-color:color-mix(in srgb,var(--habit-accent) 48%,var(--border-color));color:var(--habit-accent);font-weight:820}
+.v95-habit-detail-day.today{box-shadow:inset 0 0 0 1px var(--habit-accent)}
+.v95-habit-note-dot{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--habit-accent);bottom:4px}
+.v95-habit-note{font-size:.57rem;color:var(--text-muted);margin-top:8px;text-align:center}
+#v95-habit-note-modal{position:fixed;inset:0;z-index:1950;background:rgba(0,0,0,.4);display:none;place-items:center;padding:16px}
+#v95-habit-note-modal.active{display:grid}.v95-note-card{width:min(440px,100%);border:1px solid var(--border-color);background:var(--bg-surface);border-radius:15px;padding:14px;box-shadow:0 22px 70px rgba(0,0,0,.36)}
+.v95-note-card textarea{width:100%;min-height:120px;resize:vertical}
+.v95-note-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:10px}
+
+@media(max-width:900px){.v95-habit-list{grid-template-columns:1fr}}
+@media(max-width:760px){
+  .v95-habit-card{border-radius:14px;padding:12px}
+  .v95-habit-head{margin-bottom:10px}.v95-habit-icon,.v95-habit-done-btn{width:40px;height:40px}
+  .v95-heatmap{grid-template-rows:repeat(7,10px);grid-auto-columns:10px;gap:3px}.v95-heat-cell{width:10px;height:10px}
+  #v95-habit-detail{align-items:flex-end;padding:calc(var(--ux-topbar-h,54px) + 8px) 8px calc(var(--ux-bottomnav-h,64px) + env(safe-area-inset-bottom) + 8px)}
+  .v95-habit-sheet{width:100%;max-height:100%;border-radius:18px 18px 14px 14px}.v95-habit-sheet-handle{display:block}
+  .v95-habit-detail-head{padding:10px 12px}.v95-habit-detail-body{padding:10px}
+  .v95-habit-detail-calendar{gap:4px}.v95-habit-detail-day{min-height:42px;border-radius:8px}
+}
 </style>
 <script id="omnios-v34-interaction-js">
 (function(){
@@ -76,6 +141,114 @@ function renderHabitMonthMatrixV34(container){
 window.renderHabitCalendar=function(container){const layout=optsV34('habits').monthLayout||'cards';layout==='matrix'?renderHabitMonthMatrixV34(container):renderHabitMonthCardsV34(container)};
 window.goToHabitToday=function(){const today=new Date();habitMonth=today.getMonth();habitYear=today.getFullYear();habitWeekStart=new Date(today);habitWeekStart.setHours(0,0,0,0);const dow=habitWeekStart.getDay();habitWeekStart.setDate(habitWeekStart.getDate()-(weekStartIndexV34()===1?(dow+6)%7:dow));renderHabits()};
 const habitBtn=document.querySelector('[data-habitview="calendar"]');if(habitBtn)habitBtn.innerHTML='▦ Monthly';
+const habitOverviewBtnV95=document.querySelector('[data-habitview="week"]');if(habitOverviewBtnV95)habitOverviewBtnV95.innerHTML='▦ Overview';
+
+/* ---------- v95 Habit cards + detail sheet ---------- */
+const HABIT_ACCENTS_V95=['#7c83ff','#f2a84b','#43b8d6','#52b788','#d46bc8','#ef6f6c','#9a7bd1','#6ea8fe'];
+let habitDetailIdV95=null,habitDetailMonthV95=new Date();
+
+function habitAccentV95(h){
+  const i=Math.max(0,state.habits.findIndex(x=>String(x.id)===String(h.id)));
+  return HABIT_ACCENTS_V95[i%HABIT_ACCENTS_V95.length]
+}
+function habitTargetV95(h){
+  const g=String(h.goal||'');
+  const m=g.match(/(\d+)\s*(?:x|times?)?\s*(?:per|\/)?\s*week/i)||g.match(/(\d+)\s*x/i);
+  return m?Math.max(1,Math.min(7,Number(m[1]))):7
+}
+function weekStartDateV95(date=new Date()){
+  const d=new Date(date);d.setHours(12,0,0,0);const dow=d.getDay(),off=weekStartIndexV34()===1?(dow+6)%7:dow;d.setDate(d.getDate()-off);return d
+}
+function habitWeekCountV95(h,date=new Date()){
+  const s=weekStartDateV95(date);let n=0;for(let i=0;i<7;i++){const d=new Date(s);d.setDate(s.getDate()+i);if(h.log?.[dateKeyLocal(d)])n++}return n
+}
+function heatDatesV95(weeks,endDate=new Date()){
+  const current=weekStartDateV95(endDate),start=new Date(current);start.setDate(current.getDate()-(weeks-1)*7);
+  const out=[];for(let i=0;i<weeks*7;i++){const d=new Date(start);d.setDate(start.getDate()+i);out.push(d)}return out
+}
+function habitHeatmapV95(h,weeks=13,detail=false){
+  const today=localDateString(),notes=h.notes||{};
+  return `<div class="${detail?'v95-habit-detail-heat':'v95-heatmap'}" aria-label="${escapeHtml(h.name||'Habit')} completion heatmap">${heatDatesV95(weeks).map(d=>{const k=dateKeyLocal(d),done=!!h.log?.[k],note=!!notes[k];return `<span class="v95-heat-cell ${done?'done':''} ${k===today?'today':''}" title="${k} · ${done?'Completed':'Not completed'}${note?' · note':''}"></span>`}).join('')}</div>`
+}
+function renderHabitOverviewV95(container){
+  const today=localDateString();
+  if(!state.habits.length){container.innerHTML='<div class="v95-habit-empty">No habits yet. Add your first habit to start building a consistency map.</div>';return}
+  container.innerHTML=`<div class="v95-habit-list">${state.habits.map(h=>{const target=habitTargetV95(h),week=habitWeekCountV95(h),done=!!h.log?.[today],accent=habitAccentV95(h);return `
+    <article class="v95-habit-card ${done?'is-done-today':''}" data-v95-habit="${escapeHtml(String(h.id))}" style="--habit-accent:${accent}">
+      <div class="v95-habit-head">
+        <div class="v95-habit-icon">${escapeHtml(h.icon||'✨')}</div>
+        <div class="v95-habit-title-wrap"><div class="v95-habit-name">${escapeHtml(h.name||'Habit')}</div><div class="v95-habit-goal">${escapeHtml(h.goal||target+'x per week')}</div></div>
+        <button type="button" class="v95-habit-done-btn ${done?'active':''}" data-v95-toggle-today="${escapeHtml(String(h.id))}" aria-label="${done?'Mark not complete today':'Mark complete today'}">✓</button>
+      </div>
+      ${habitHeatmapV95(h,13,false)}
+      <div class="v95-habit-footer">
+        <span class="v95-habit-pill accent">🔥 ${getStreak(h)} day streak</span>
+        <span class="v95-habit-pill">${week} of ${target} this week</span>
+      </div>
+    </article>`}).join('')}</div>`;
+  container.querySelectorAll('[data-v95-toggle-today]').forEach(b=>b.onclick=e=>{e.stopPropagation();toggleHabitDay(b.dataset.v95ToggleToday,today);renderHabits()});
+  container.querySelectorAll('[data-v95-habit]').forEach(card=>card.onclick=e=>{if(e.target.closest('button'))return;openHabitDetailV95(card.dataset.v95Habit)});
+}
+window.renderHabitWeek=renderHabitOverviewV95;
+
+function ensureHabitDetailV95(){
+  let ov=document.getElementById('v95-habit-detail');if(ov)return ov;
+  ov=document.createElement('div');ov.id='v95-habit-detail';
+  ov.innerHTML='<div class="v95-habit-sheet"><div class="v95-habit-sheet-handle"></div><div id="v95-habit-detail-content"></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',e=>{if(e.target===ov)closeHabitDetailV95()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ov.classList.contains('active'))closeHabitDetailV95()});
+  return ov
+}
+function closeHabitDetailV95(){document.getElementById('v95-habit-detail')?.classList.remove('active');habitDetailIdV95=null}
+function shiftHabitDetailMonthV95(delta){habitDetailMonthV95=new Date(habitDetailMonthV95.getFullYear(),habitDetailMonthV95.getMonth()+delta,1,12);renderHabitDetailV95()}
+function habitDetailCalendarV95(h){
+  const y=habitDetailMonthV95.getFullYear(),m=habitDetailMonthV95.getMonth(),days=new Date(y,m+1,0).getDate(),offset=monthOffsetV34(y,m),labels=weekdayLabelsV34(),today=localDateString(),notes=h.notes||{};
+  let html=`<div class="v95-habit-month-head"><div class="v95-habit-month-title">${habitDetailMonthV95.toLocaleDateString(undefined,{month:'long',year:'numeric'})}</div><div class="v95-habit-month-nav"><button type="button" class="btn btn-sm" data-v95-month-prev>‹</button><button type="button" class="btn btn-sm" data-v95-month-today>Today</button><button type="button" class="btn btn-sm" data-v95-month-next>›</button></div></div><div class="v95-habit-detail-calendar">${labels.map(x=>`<div class="v95-habit-detail-weekday">${x}</div>`).join('')}${'<div class="v95-habit-detail-blank"></div>'.repeat(offset)}`;
+  for(let d=1;d<=days;d++){const k=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,done=!!h.log?.[k],note=!!notes[k];html+=`<button type="button" class="v95-habit-detail-day ${done?'done':''} ${k===today?'today':''}" data-v95-day="${k}" title="${note?'Has note · ':''}Tap to toggle; hold for note"><span>${d}</span>${note?'<i class="v95-habit-note-dot"></i>':''}</button>`}return html+'</div><div class="v95-habit-note">Tap a day to toggle completion · press and hold a day to add a note</div>'
+}
+function openHabitDetailV95(id){
+  const h=state.habits.find(x=>String(x.id)===String(id));if(!h)return;
+  habitDetailIdV95=String(id);habitDetailMonthV95=new Date();habitDetailMonthV95.setDate(1);habitDetailMonthV95.setHours(12,0,0,0);
+  ensureHabitDetailV95().classList.add('active');renderHabitDetailV95()
+}
+function renderHabitDetailV95(){
+  const h=state.habits.find(x=>String(x.id)===String(habitDetailIdV95));if(!h){closeHabitDetailV95();return}
+  const host=document.getElementById('v95-habit-detail-content'),target=habitTargetV95(h),week=habitWeekCountV95(h),accent=habitAccentV95(h);
+  const completed=Object.keys(h.log||{}).filter(k=>h.log[k]).length;
+  host.innerHTML=`<div class="v95-habit-detail-head" style="--habit-accent:${accent}">
+    <div class="v95-habit-detail-icon">${escapeHtml(h.icon||'✨')}</div>
+    <div class="v95-habit-detail-copy"><div class="v95-habit-detail-name">${escapeHtml(h.name||'Habit')}</div><div class="v95-habit-detail-goal">${escapeHtml(h.goal||target+'x per week')}</div></div>
+    <div class="v95-habit-detail-actions"><button type="button" class="icon-btn" data-v95-edit title="Edit habit">✎</button><button type="button" class="icon-btn" data-v95-settings title="Habit view settings">⚙</button><button type="button" class="icon-btn" data-v95-close title="Close">✕</button></div>
+  </div><div class="v95-habit-detail-body" style="--habit-accent:${accent}">
+    <section class="v95-habit-detail-section">${habitHeatmapV95(h,26,true)}<div class="v95-habit-detail-meta"><span class="v95-habit-pill accent">◎ ${week} / ${target} week</span><span class="v95-habit-pill">🔥 ${getStreak(h)} current</span><span class="v95-habit-pill">★ ${getBestStreak(h)} best</span><span class="v95-habit-pill">${completed} total</span></div></section>
+    <section class="v95-habit-detail-section">${habitDetailCalendarV95(h)}</section>
+  </div>`;
+  host.querySelector('[data-v95-close]').onclick=closeHabitDetailV95;
+  host.querySelector('[data-v95-edit]').onclick=()=>{closeHabitDetailV95();openHabitModal(h.id)};
+  host.querySelector('[data-v95-settings]').onclick=()=>openViewCustomizerV34('habits');
+  host.querySelector('[data-v95-month-prev]').onclick=()=>shiftHabitDetailMonthV95(-1);
+  host.querySelector('[data-v95-month-next]').onclick=()=>shiftHabitDetailMonthV95(1);
+  host.querySelector('[data-v95-month-today]').onclick=()=>{habitDetailMonthV95=new Date();habitDetailMonthV95.setDate(1);renderHabitDetailV95()};
+  host.querySelectorAll('[data-v95-day]').forEach(day=>{
+    let timer=null,longPress=false;
+    day.onclick=()=>{if(longPress){longPress=false;return}toggleHabitDay(h.id,day.dataset.v95Day);renderHabitDetailV95();renderHabits()};
+    day.oncontextmenu=e=>{e.preventDefault();openHabitDayNoteV95(h.id,day.dataset.v95Day)};
+    day.onpointerdown=e=>{if(e.pointerType==='mouse')return;longPress=false;timer=setTimeout(()=>{longPress=true;openHabitDayNoteV95(h.id,day.dataset.v95Day)},550)};
+    const clear=()=>{if(timer){clearTimeout(timer);timer=null}};day.onpointerup=clear;day.onpointercancel=clear;day.onpointerleave=clear;
+  })
+}
+function ensureHabitNoteModalV95(){
+  let ov=document.getElementById('v95-habit-note-modal');if(ov)return ov;
+  ov=document.createElement('div');ov.id='v95-habit-note-modal';ov.innerHTML='<div class="v95-note-card"><div class="v95-habit-month-title" id="v95-note-title">Day note</div><textarea class="form-input" id="v95-note-text" placeholder="Optional note for this day…"></textarea><div class="v95-note-actions"><button type="button" class="btn" data-v95-note-cancel>Cancel</button><button type="button" class="btn btn-primary" data-v95-note-save>Save note</button></div></div>';document.body.appendChild(ov);
+  ov.onclick=e=>{if(e.target===ov)ov.classList.remove('active')};ov.querySelector('[data-v95-note-cancel]').onclick=()=>ov.classList.remove('active');return ov
+}
+function openHabitDayNoteV95(id,date){
+  const h=state.habits.find(x=>String(x.id)===String(id));if(!h)return;h.notes=h.notes||{};
+  const ov=ensureHabitNoteModalV95(),ta=ov.querySelector('#v95-note-text');ov.querySelector('#v95-note-title').textContent=`${h.name} · ${date}`;ta.value=h.notes[date]||'';ov.classList.add('active');setTimeout(()=>ta.focus(),0);
+  ov.querySelector('[data-v95-note-save]').onclick=()=>{const v=ta.value.trim();if(v)h.notes[date]=v;else delete h.notes[date];ov.classList.remove('active');saveState();renderHabitDetailV95();renderHabits()}
+}
+window.openHabitDetailV95=openHabitDetailV95;
 
 /* ---------- View customization UI ---------- */
 const SCHEMAS={

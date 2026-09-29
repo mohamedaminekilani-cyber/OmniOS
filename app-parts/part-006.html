@@ -1523,6 +1523,7 @@ function persist(){
     const raw=JSON.stringify(state);
     if(typeof storage!=='undefined'&&storage?.setItem)storage.setItem('omnios_v3_state',raw);
     else localStorage.setItem('omnios_v3_state',raw);
+    window.OmniRecovery35?.queueBackgroundProtect?.('cover-save');
     try{setSaveStatus?.('Saved locally','saved')}catch(_){}
   }catch(e){
     console.warn('Primary cover save failed',e);

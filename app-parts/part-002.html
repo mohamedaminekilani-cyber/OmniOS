@@ -687,11 +687,38 @@ function renderBudget() {
     const expenseCount=monthlyTransactions.filter(t=>t.type!=='income').length;
 
     const stats=document.getElementById('budget-stats');
+    const budgetFill=Math.min(100,Math.max(0,budgetUsed));
+    const budgetFillClass=budgetUsed>100?'over':budgetUsed>80?'warn':'';
     if(stats) stats.innerHTML = `
-        <div class="finance-kpi" data-tone="income"><div class="finance-kpi-label">Income</div><div class="finance-kpi-value positive">${currencyLocal(totalIncome)}</div><div class="finance-kpi-sub">${incomeCount} income entr${incomeCount===1?'y':'ies'} · ${monthText}</div></div>
-        <div class="finance-kpi" data-tone="expense"><div class="finance-kpi-label">Expenses</div><div class="finance-kpi-value ${totalExpense>0?'negative':''}">${currencyLocal(totalExpense)}</div><div class="finance-kpi-sub">${expenseCount} expense${expenseCount===1?'':'s'} logged</div></div>
-        <div class="finance-kpi" data-tone="net"><div class="finance-kpi-label">Net cash flow</div><div class="finance-kpi-value ${totalIncome-totalExpense>=0?'positive':'negative'}">${currencyLocal(totalIncome-totalExpense)}</div><div class="finance-kpi-sub">${totalIncome>0?`Savings rate ${savingsRate}%`:'Add income to calculate savings rate'}</div></div>
-        <div class="finance-kpi" data-tone="budget"><div class="finance-kpi-label">Budget left</div><div class="finance-kpi-value ${budgetLeft<0?'negative':''}">${currencyLocal(budgetLeft)}</div><div class="finance-kpi-sub">${totalLimit>0?`${budgetUsed}% of ${currencyLocal(totalLimit)} used`:'Set category limits to track a budget'}</div></div>
+        <div class="finance-kpi" data-tone="net">
+            <div class="finance-kpi-label">Net cash flow</div>
+            <div class="finance-kpi-value ${totalIncome-totalExpense>=0?'positive':'negative'}">${currencyLocal(totalIncome-totalExpense)}</div>
+            <div class="finance-kpi-detail">
+                <span>${escapeHtml(monthText)}</span>
+                <span>${totalIncome>0?`Savings rate ${savingsRate}%`:'Savings rate unavailable'}</span>
+            </div>
+        </div>
+        <div class="finance-kpi" data-tone="income">
+            <div class="finance-kpi-label">Income</div>
+            <div class="finance-kpi-value positive">${currencyLocal(totalIncome)}</div>
+            <div class="finance-kpi-sub">${incomeCount} entr${incomeCount===1?'y':'ies'} this month</div>
+        </div>
+        <div class="finance-kpi" data-tone="expense">
+            <div class="finance-kpi-label">Expenses</div>
+            <div class="finance-kpi-value ${totalExpense>0?'negative':''}">${currencyLocal(totalExpense)}</div>
+            <div class="finance-kpi-sub">${expenseCount} expense${expenseCount===1?'':'s'} logged</div>
+        </div>
+        <div class="finance-kpi" data-tone="budget">
+            <div class="finance-kpi-budget-copy">
+                <div class="finance-kpi-label">Budget left</div>
+                <div class="finance-kpi-value ${budgetLeft<0?'negative':''}">${currencyLocal(budgetLeft)}</div>
+                <div class="finance-kpi-sub">${totalLimit>0?`${currencyLocal(totalExpense)} spent of ${currencyLocal(totalLimit)}`:'Set category limits to track your monthly budget'}</div>
+            </div>
+            <div class="finance-kpi-budget-progress">
+                <div class="finance-kpi-budget-head"><span>${totalLimit>0?'Budget used':'Budget limits'}</span><strong>${totalLimit>0?`${budgetUsed}%`:'Not set'}</strong></div>
+                <div class="finance-kpi-budget-track"><div class="finance-kpi-budget-fill ${budgetFillClass}" style="width:${totalLimit>0?budgetFill:0}%"></div></div>
+            </div>
+        </div>
     `;
 
     const spendOverview=document.getElementById('finance-spending-overview');

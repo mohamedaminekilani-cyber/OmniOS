@@ -2993,8 +2993,10 @@ function saveState() {
     try {
         normalizeState();
         window.SecondBrainSync?.capture();
-        storage.setItem('omnios_v3_state', JSON.stringify(state));
-        storage.setItem('omnios_v3_backup', JSON.stringify({ version:3, savedAt: new Date().toISOString(), state }));
+        const savedAt = new Date().toISOString();
+        const serializedState = JSON.stringify(state);
+        storage.setItem('omnios_v3_state', serializedState);
+        storage.setItem('omnios_v3_backup', '{"version":3,"savedAt":' + JSON.stringify(savedAt) + ',"state":' + serializedState + '}');
         window.OmniRecovery35?.queueBackgroundProtect?.('save');
         setSaveStatus('Saved locally','saved');
     } catch (e) {

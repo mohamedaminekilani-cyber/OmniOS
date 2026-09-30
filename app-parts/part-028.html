@@ -611,7 +611,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   /* Final save wrapper: every data save reconciles Pantry/Grocery foods with Nutrition first. */
   const baseSave=window.saveState;
   if(typeof baseSave==='function'&&!baseSave.__v585Nutrition){
-    const wrapped=function(){syncAll();const r=baseSave.apply(this,arguments);setTimeout(decorateAll,0);return r};wrapped.__v585Nutrition=true;wrapped.__base=baseSave;window.saveState=wrapped;try{saveState=wrapped}catch(_){ }
+    const wrapped=function(){syncAll();const r=baseSave.apply(this,arguments);if(document.querySelector('#view-diet.active,#view-pantry.active,#view-grocery.active,#nut-food-modal.active'))setTimeout(decorateAll,0);return r};wrapped.__v585Nutrition=true;wrapped.__base=baseSave;window.saveState=wrapped;try{saveState=wrapped}catch(_){ }
   }
 
   const mo=new MutationObserver(()=>{clearTimeout(window.__v585DecorTimer);window.__v585DecorTimer=setTimeout(decorateAll,20)});
@@ -6841,8 +6841,11 @@ setTimeout(bindChrome,500);
     });
   }
 
-  const mo=new MutationObserver(()=>requestAnimationFrame(refresh));
-  if(document.body)mo.observe(document.body,{childList:true,subtree:true});
+  let legacyFrame=0;
+  const mq=matchMedia('(max-width:760px)');
+  const mo=new MutationObserver(()=>{if(!mq.matches||legacyFrame)return;legacyFrame=requestAnimationFrame(()=>{legacyFrame=0;refresh()})});
+  if(mq.matches&&document.body)mo.observe(document.body,{childList:true,subtree:true});
+  mq.addEventListener?.('change',e=>{if(e.matches){refresh();if(document.body)mo.observe(document.body,{childList:true,subtree:true})}else mo.disconnect()});
   addEventListener('resize',refresh,{passive:true});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh,{once:true});
   else refresh();

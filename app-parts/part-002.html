@@ -2207,6 +2207,32 @@ function openPasswordModal(id = null) {
     }
 }
 
+function renderCoreView(target) {
+    let rendered = true;
+    if (target === 'dashboard') renderDashboard();
+    else if (target === 'master-calendar') renderMasterCalendar();
+    else if (target === 'tasks') renderTasks();
+    else if (target === 'budget') renderBudget();
+    else if (target === 'habits') renderHabits();
+    else if (target === 'workout') renderWorkout();
+    else if (target === 'notes') renderNotes();
+    else if (target === 'passwords') renderPasswords();
+    else if (target === 'settings') renderSettings();
+    else if (target === 'focus') {
+        updateTimerDisplay();
+        const focusTime=document.getElementById('total-focus-time');
+        const sessions=document.getElementById('total-sessions');
+        if(focusTime)focusTime.textContent = `${(state.focusDaily && state.focusDaily[localDateString()]) || 0} min`;
+        if(sessions)sessions.textContent = state.focusSessions || 0;
+        renderFocusGuard();
+    } else rendered = false;
+    if (rendered) applyCustomIcons();
+    return rendered;
+}
+function renderActiveCoreView() {
+    const target=document.querySelector('.view.active')?.id?.replace(/^view-/,'');
+    return target ? renderCoreView(target) : false;
+}
 function renderAll() {
     renderDashboard();
     renderMasterCalendar();

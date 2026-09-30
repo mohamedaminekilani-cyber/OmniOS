@@ -405,6 +405,36 @@ function renderDashboard(){
 let editingBudgetCatId = null;
 let txnFilter = 'all';
 let editingTxnId = null;
+let financeTxnSearch = '';
+let financeMonthDate = new Date();
+financeMonthDate.setDate(1);
+
+function financeMonthKey(date=financeMonthDate) {
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+}
+function financeMonthText(date=financeMonthDate) {
+    return date.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+}
+function shiftFinanceMonth(delta) {
+    financeMonthDate = new Date(financeMonthDate.getFullYear(), financeMonthDate.getMonth()+Number(delta||0), 1, 12);
+    renderBudget();
+}
+function resetFinanceMonth() {
+    financeMonthDate = new Date();
+    financeMonthDate.setDate(1);
+    renderBudget();
+}
+function openFinanceTxn(type='expense') {
+    openTxnModal();
+    const select=document.getElementById('txn-type');
+    if(select){
+        select.value=type==='income'?'income':'expense';
+        updateTxnCategories();
+    }
+}
+window.openFinanceTxn=openFinanceTxn;
+window.shiftFinanceMonth=shiftFinanceMonth;
+window.resetFinanceMonth=resetFinanceMonth;
 
 document.querySelectorAll('[data-txnfilter]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -414,6 +444,10 @@ document.querySelectorAll('[data-txnfilter]').forEach(btn => {
         renderBudget();
     });
 });
+document.getElementById('finance-prev-month')?.addEventListener('click',()=>shiftFinanceMonth(-1));
+document.getElementById('finance-next-month')?.addEventListener('click',()=>shiftFinanceMonth(1));
+document.getElementById('finance-month-label')?.addEventListener('click',resetFinanceMonth);
+document.getElementById('finance-txn-search')?.addEventListener('input',e=>{financeTxnSearch=e.target.value||'';renderBudget()});
 
 function updateTxnCategories() {
     const type = document.getElementById('txn-type').value || 'expense';
@@ -621,15 +655,24 @@ function openWalletModal(walletId = null) {
 }
 
 function renderBudget() {
+    const monthKey = financeMonthKey();
+    const monthText = financeMonthText();
+    const monthLabel=document.getElementById('finance-month-label');
+    if(monthLabel) monthLabel.textContent=monthText;
+    const spendingPeriod=document.getElementById('finance-spending-period');
+    if(spendingPeriod) spendingPeriod.textContent=monthText;
+
     let totalIncome = 0, totalExpense = 0;
     const catSpending = {}, catIncome = {};
-    const currentMonth = localDateString().slice(0, 7);
-    const monthlyTransactions = state.transactions.filter(t => String(t.date || '').slice(0, 7) === currentMonth && !t.isTransfer);
+    const monthlyTransactions = state.transactions.filter(t => String(t.date || '').slice(0, 7) === monthKey && !t.isTransfer);
 
     monthlyTransactions.forEach(t => {
-        if (t.type === 'income') { const amount=Number(t.amount||0); totalIncome += amount; if (t.categoryId) catIncome[t.categoryId] = (catIncome[t.categoryId] || 0) + amount; }
-        else {
-            const amount=Number(t.amount||0); totalExpense += amount;
+        const amount=Number(t.amount||0);
+        if (t.type === 'income') {
+            totalIncome += amount;
+            if (t.categoryId) catIncome[t.categoryId] = (catIncome[t.categoryId] || 0) + amount;
+        } else {
+            totalExpense += amount;
             if (t.categoryId) catSpending[t.categoryId] = (catSpending[t.categoryId] || 0) + amount;
         }
     });
@@ -637,100 +680,151 @@ function renderBudget() {
     const expenseCats = state.budgetCategories.filter(c => (c.type || 'expense') === 'expense');
     const incomeCats = state.budgetCategories.filter(c => c.type === 'income');
     const totalLimit = expenseCats.reduce((s, c) => s + (Number(c.limit) || 0), 0);
+    const budgetLeft=totalLimit-totalExpense;
+    const savingsRate=totalIncome>0?Math.round(((totalIncome-totalExpense)/totalIncome)*100):0;
+    const budgetUsed=totalLimit>0?Math.round(totalExpense/totalLimit*100):0;
+    const incomeCount=monthlyTransactions.filter(t=>t.type==='income').length;
+    const expenseCount=monthlyTransactions.filter(t=>t.type!=='income').length;
 
-    document.getElementById('budget-stats').innerHTML = `
-        <div class="stat-card"><span class="stat-label">Income This Month</span><span class="stat-value green">${currencyLocal(totalIncome)}</span></div>
-        <div class="stat-card"><span class="stat-label">Expenses This Month</span><span class="stat-value red">${currencyLocal(totalExpense)}</span></div>
-        <div class="stat-card"><span class="stat-label">Net This Month</span><span class="stat-value cyan">${currencyLocal(totalIncome-totalExpense)}</span></div>
-        <div class="stat-card"><span class="stat-label">Budget Left This Month</span><span class="stat-value ${totalLimit - totalExpense < 0 ? 'red' : 'purple'}">${currencyLocal(totalLimit-totalExpense)}</span></div>
+    const stats=document.getElementById('budget-stats');
+    if(stats) stats.innerHTML = `
+        <div class="finance-kpi" data-tone="income"><div class="finance-kpi-label">Income</div><div class="finance-kpi-value positive">${currencyLocal(totalIncome)}</div><div class="finance-kpi-sub">${incomeCount} income entr${incomeCount===1?'y':'ies'} · ${monthText}</div></div>
+        <div class="finance-kpi" data-tone="expense"><div class="finance-kpi-label">Expenses</div><div class="finance-kpi-value ${totalExpense>0?'negative':''}">${currencyLocal(totalExpense)}</div><div class="finance-kpi-sub">${expenseCount} expense${expenseCount===1?'':'s'} logged</div></div>
+        <div class="finance-kpi" data-tone="net"><div class="finance-kpi-label">Net cash flow</div><div class="finance-kpi-value ${totalIncome-totalExpense>=0?'positive':'negative'}">${currencyLocal(totalIncome-totalExpense)}</div><div class="finance-kpi-sub">${totalIncome>0?`Savings rate ${savingsRate}%`:'Add income to calculate savings rate'}</div></div>
+        <div class="finance-kpi" data-tone="budget"><div class="finance-kpi-label">Budget left</div><div class="finance-kpi-value ${budgetLeft<0?'negative':''}">${currencyLocal(budgetLeft)}</div><div class="finance-kpi-sub">${totalLimit>0?`${budgetUsed}% of ${currencyLocal(totalLimit)} used`:'Set category limits to track a budget'}</div></div>
     `;
 
-    const limitsList = document.getElementById('budget-limits-list');
-    limitsList.innerHTML = '';
-    if (!expenseCats.length && !incomeCats.length) {
-        limitsList.innerHTML = '<div class="empty-state">No categories yet. Add an expense or income category to get started.</div>';
+    const spendOverview=document.getElementById('finance-spending-overview');
+    if(spendOverview){
+        const uncategorized=monthlyTransactions.filter(t=>t.type!=='income'&&!t.categoryId).reduce((s,t)=>s+Number(t.amount||0),0);
+        const spendEntries=expenseCats.map(cat=>({name:cat.name,icon:cat.icon||'•',amount:catSpending[cat.id]||0})).filter(x=>x.amount>0);
+        if(uncategorized>0) spendEntries.push({name:'Uncategorized',icon:'•',amount:uncategorized});
+        spendEntries.sort((a,b)=>b.amount-a.amount);
+        if(!spendEntries.length||totalExpense<=0){
+            spendOverview.innerHTML='<div class="finance-spend-empty">No expenses in this month yet.</div>';
+        }else{
+            const palette=['var(--accent-red)','var(--accent-cyan)','var(--accent-yellow)','var(--accent-purple)','var(--accent-green)','var(--accent-blue)'];
+            let cursor=0;
+            const segments=spendEntries.map((entry,i)=>{
+                const start=cursor,pct=entry.amount/totalExpense*100;cursor+=pct;
+                return `${palette[i%palette.length]} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`;
+            });
+            const top=spendEntries.slice(0,5);
+            spendOverview.innerHTML=`<div class="finance-spending-layout">
+                <div class="finance-donut" style="background:conic-gradient(${segments.join(',')})"><div class="finance-donut-center"><strong>${currencyLocal(totalExpense)}</strong><span>Total spent</span></div></div>
+                <div class="finance-spend-legend">${top.map((entry,i)=>`<div class="finance-spend-row"><i style="background:${palette[i%palette.length]}"></i><span class="finance-spend-name">${escapeHtml(entry.icon+' '+entry.name)}</span><span class="finance-spend-value">${currencyLocal(entry.amount)}</span></div>`).join('')}${spendEntries.length>5?`<div class="finance-spend-row"><i style="background:var(--border-light)"></i><span class="finance-spend-name">Other categories</span><span class="finance-spend-value">${currencyLocal(spendEntries.slice(5).reduce((s,x)=>s+x.amount,0))}</span></div>`:''}</div>
+            </div>`;
+        }
     }
-    expenseCats.forEach(cat => {
-        const spent = catSpending[cat.id] || 0;
-        const pct = cat.limit > 0 ? Math.min((spent / cat.limit) * 100, 100) : 0;
-        const color = pct > 90 ? 'var(--accent-red)' : pct > 70 ? 'var(--accent-yellow)' : 'var(--accent-green)';
 
-        const div = document.createElement('div');
-        div.className = 'budget-progress';
-        div.style.cursor = 'pointer';
-        div.innerHTML = `
-            <div class="budget-progress-header">
-                <span>${cat.icon || '📁'} ${escapeHtml(cat.name)}</span>
-                <span style="color:${color};">${currencyLocal(spent)} / ${currencyLocal(cat.limit)}</span>
-            </div>
-            <div class="progress-bar-bg">
-                <div class="progress-bar-fill" style="width: ${pct}%; background: ${color};"></div>
-            </div>
-        `;
-        div.addEventListener('click', () => openBudgetCatModal(cat.id));
-        limitsList.appendChild(div);
-    });
-    if (incomeCats.length) {
-        const header = document.createElement('div');
-        header.className = 'text-muted text-sm';
-        header.style.cssText = 'margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em;font-size:.65rem';
-        header.textContent = 'Income sources';
-        limitsList.appendChild(header);
-        incomeCats.forEach(cat => {
-            const received = catIncome[cat.id] || 0;
+    const flow=document.getElementById('finance-cashflow-chart');
+    if(flow){
+        const points=[];
+        for(let offset=-5;offset<=0;offset++){
+            const d=new Date(financeMonthDate.getFullYear(),financeMonthDate.getMonth()+offset,1,12);
+            const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+            const tx=state.transactions.filter(t=>String(t.date||'').slice(0,7)===key&&!t.isTransfer);
+            const income=tx.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount||0),0);
+            const expense=tx.filter(t=>t.type!=='income').reduce((s,t)=>s+Number(t.amount||0),0);
+            points.push({label:d.toLocaleDateString(undefined,{month:'short'}),income,expense});
+        }
+        const max=Math.max(1,...points.flatMap(p=>[p.income,p.expense]));
+        flow.innerHTML=`<div class="finance-flow-chart">${points.map(p=>`<div class="finance-flow-col"><div class="finance-flow-bars"><div class="finance-flow-bar income" style="height:${p.income?Math.max(4,p.income/max*100):0}%" title="Income: ${currencyLocal(p.income)}"></div><div class="finance-flow-bar expense" style="height:${p.expense?Math.max(4,p.expense/max*100):0}%" title="Expenses: ${currencyLocal(p.expense)}"></div></div><div class="finance-flow-label">${escapeHtml(p.label)}</div></div>`).join('')}</div>`;
+    }
+
+    const limitsList = document.getElementById('budget-limits-list');
+    if(limitsList){
+        limitsList.innerHTML = '';
+        if (!expenseCats.length && !incomeCats.length) {
+            limitsList.innerHTML = '<div class="empty-state">No categories yet. Add an expense or income category to get started.</div>';
+        }
+        expenseCats.forEach(cat => {
+            const spent = catSpending[cat.id] || 0;
+            const limit=Number(cat.limit)||0;
+            const rawPct = limit > 0 ? (spent / limit) * 100 : 0;
+            const pct=Math.min(rawPct,100);
+            const remaining=limit-spent;
+            const color = rawPct > 100 ? 'var(--accent-red)' : rawPct > 80 ? 'var(--accent-yellow)' : 'var(--accent-green)';
             const div = document.createElement('div');
             div.className = 'budget-progress';
-            div.style.cursor = 'pointer';
             div.innerHTML = `
                 <div class="budget-progress-header">
-                    <span>${cat.icon || '💰'} ${escapeHtml(cat.name)}</span>
-                    <span style="color:var(--accent-green);">+${currencyLocal(received)}</span>
+                    <div class="finance-category-name">${escapeHtml((cat.icon || '•')+' '+cat.name)}<span>${limit>0?`${Math.round(rawPct)}% used`:'No limit set'}</span></div>
+                    <div class="finance-category-amount" style="color:${color}">${currencyLocal(spent)} / ${currencyLocal(limit)}<small>${limit>0?(remaining>=0?`${currencyLocal(remaining)} left`:`${currencyLocal(Math.abs(remaining))} over`):'Click to set a limit'}</small></div>
                 </div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${color}"></div></div>
             `;
             div.addEventListener('click', () => openBudgetCatModal(cat.id));
             limitsList.appendChild(div);
         });
+        if (incomeCats.length) {
+            const header = document.createElement('div');
+            header.className = 'finance-income-heading';
+            header.textContent = 'INCOME SOURCES';
+            limitsList.appendChild(header);
+            incomeCats.forEach(cat => {
+                const received = catIncome[cat.id] || 0;
+                const div = document.createElement('div');
+                div.className = 'budget-progress';
+                div.innerHTML = `<div class="budget-progress-header"><div class="finance-category-name">${escapeHtml((cat.icon || '•')+' '+cat.name)}<span>Income category</span></div><div class="finance-category-amount" style="color:var(--accent-green)">+${currencyLocal(received)}<small>received in ${escapeHtml(monthText)}</small></div></div>`;
+                div.addEventListener('click', () => openBudgetCatModal(cat.id));
+                limitsList.appendChild(div);
+            });
+        }
     }
 
     const walletList = document.getElementById('wallet-list');
     if (walletList) {
         walletList.innerHTML = (state.wallets || []).length ? state.wallets.map(w => {
-            const bal = state.transactions.filter(t => String(t.walletId) === String(w.id)).reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0);
-            return `<div class="exercise-chip" data-open-wallet="${w.id}" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:8px 12px">${w.images?.[0]?`<img src="${w.images[0]}" alt="" style="width:20px;height:20px;object-fit:cover;border-radius:4px">`:(w.icon || '💳')} ${escapeHtml(w.name)} <span class="text-muted text-sm">${bal >= 0 ? '+' : ''}${currencyLocal(bal)}</span></div>`;
-        }).join('') : '<div class="empty-state">No wallets yet — add Cash, a bank account, or a card.</div>';
+            const bal = state.transactions.filter(t => String(t.walletId) === String(w.id)).reduce((s, t) => s + (t.type === 'income' ? Number(t.amount||0) : -Number(t.amount||0)), 0);
+            return `<button type="button" class="finance-wallet-card" data-open-wallet="${escapeHtml(String(w.id))}"><span class="finance-wallet-icon">${w.images?.[0]?`<img src="${w.images[0]}" alt="">`:escapeHtml(w.icon || '•')}</span><span class="finance-wallet-main"><span class="finance-wallet-name">${escapeHtml(w.name)}</span><span class="finance-wallet-balance">${bal>=0?'+':''}${currencyLocal(bal)}</span></span></button>`;
+        }).join('') : '<div class="empty-state" style="grid-column:1/-1">No wallets yet — add cash, a bank account, or a card.</div>';
         walletList.querySelectorAll('[data-open-wallet]').forEach(el => el.addEventListener('click', () => openWalletModal(el.dataset.openWallet)));
     }
 
-    let txns = [...state.transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const q=financeTxnSearch.trim().toLowerCase();
+    let txns = monthlyTransactions.slice().sort((a, b) => String(b.date||'').localeCompare(String(a.date||'')) || Number(b.id||0)-Number(a.id||0));
     if (txnFilter !== 'all') txns = txns.filter(t => t.type === txnFilter);
+    if(q) txns=txns.filter(t=>{
+        const cat=t.categoryId?state.budgetCategories.find(c=>String(c.id)===String(t.categoryId)):null;
+        const wallet=t.walletId?(state.wallets||[]).find(w=>String(w.id)===String(t.walletId)):null;
+        return `${t.desc||''} ${cat?.name||''} ${wallet?.name||''} ${t.amount||''}`.toLowerCase().includes(q);
+    });
 
     const txnList = document.getElementById('transaction-list');
-    txnList.innerHTML = '';
-    if (txns.length === 0) {
-        txnList.innerHTML = '<div class="empty-state">No transactions yet.</div>';
-    } else {
-        txns.forEach(t => {
-            const catName = t.categoryId ? (state.budgetCategories.find(c => String(c.id) === String(t.categoryId))?.name || 'Other') : 'Other / Uncategorized';
-            const catIcon = t.categoryId ? (state.budgetCategories.find(c => String(c.id) === String(t.categoryId))?.icon || '📁') : '💰';
-            const walletName = t.walletId ? (state.wallets || []).find(w => String(w.id) === String(t.walletId))?.name : null;
-            const div = document.createElement('div');
-            div.className = 'transaction-item';
-            div.innerHTML = `
-                <div class="txn-left">
-                    <div class="txn-icon ${t.type}">${t.type === 'income' ? '↗' : '↘'}</div>
-                    <div>
-                        <div style="font-size:0.83rem; font-weight:500;">${escapeHtml(t.desc)}</div>
-                        <div style="font-size:0.68rem; color:var(--text-muted);">${catIcon} ${catName} • ${formatDateKeyLocal(t.date)}${walletName ? ' • ' + escapeHtml(walletName) : ''}</div>
+    if(txnList){
+        txnList.innerHTML = '';
+        if (txns.length === 0) {
+            txnList.innerHTML = `<div class="empty-state">${q?'No transactions match your search.':`No ${txnFilter==='all'?'transactions':txnFilter+' transactions'} in ${escapeHtml(monthText)}.`}</div>`;
+        } else {
+            txns.forEach(t => {
+                const cat = t.categoryId ? state.budgetCategories.find(c => String(c.id) === String(t.categoryId)) : null;
+                const catName = cat?.name || 'Uncategorized';
+                const catIcon = cat?.icon || '•';
+                const walletName = t.walletId ? (state.wallets || []).find(w => String(w.id) === String(t.walletId))?.name : null;
+                const div = document.createElement('div');
+                div.className = 'transaction-item';
+                const icon=t.type==='income'
+                    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg>'
+                    : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"></path></svg>';
+                div.innerHTML = `
+                    <div class="txn-left">
+                        <div class="txn-icon ${t.type}">${icon}</div>
+                        <div class="txn-copy">
+                            <div class="txn-title">${escapeHtml(t.desc||'Transaction')}</div>
+                            <div class="txn-meta">${escapeHtml(catIcon+' '+catName)} · ${formatDateKeyLocal(t.date)}${walletName ? ' · ' + escapeHtml(walletName) : ''}</div>
+                        </div>
                     </div>
-                </div>
-                <div style="display:flex; align-items:center; gap:7px;">
                     <span class="txn-amount ${t.type}">${t.type === 'income' ? '+' : '-'}${currencyLocal(t.amount)}</span>
-                </div>
-            `;
-            div.addEventListener('click', () => editTransaction(t.id));
-            txnList.appendChild(div);
-        });
+                `;
+                div.addEventListener('click', () => editTransaction(t.id));
+                txnList.appendChild(div);
+            });
+        }
     }
+
+    try{renderFinanceExtension?.()}catch(_){}
+    try{window.renderBudgetGoalsV586?.()}catch(_){}
 }
 
 // ================= HABITS =================
@@ -2273,8 +2367,8 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalon
 
 
 <style id="omnios-budget-lists-style">
-/* ===== Budget planning + lists workspace ===== */
-.finance-hub{display:grid;grid-template-columns:1.15fr 1fr;gap:12px;margin-top:14px}.finance-card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:14px;padding:15px}.finance-card h3{font-size:.9rem}.finance-toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}.finance-list{display:flex;flex-direction:column;gap:7px}.finance-item{display:flex;align-items:flex-start;gap:10px;padding:10px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base);cursor:pointer}.finance-item:hover{border-color:var(--accent-cyan);background:var(--bg-elevated)}.finance-item-main{min-width:0;flex:1}.finance-item-title{font-size:.76rem;font-weight:700}.finance-item-meta{font-size:.62rem;color:var(--text-muted);margin-top:3px;line-height:1.4}.finance-amount{font-weight:800;font-size:.76rem;white-space:nowrap}.finance-pill{display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;background:var(--bg-hover);font-size:.58rem;color:var(--text-secondary);margin-right:4px}.finance-pill.warn{background:rgba(245,158,11,.13);color:var(--accent-yellow)}.finance-pill.good{background:rgba(16,185,129,.13);color:var(--accent-green)}.finance-pill.bad{background:rgba(239,68,68,.13);color:var(--accent-red)}.finance-progress{height:7px;background:var(--bg-hover);border-radius:99px;overflow:hidden;margin-top:7px}.finance-progress>div{height:100%;background:var(--accent-cyan);border-radius:99px}.goal-grid,.custom-list-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.custom-item-card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:14px;overflow:hidden;cursor:pointer;transition:.15s}.custom-item-card:hover{border-color:var(--accent-cyan);transform:translateY(-1px)}.custom-item-media{height:135px;background:var(--bg-base);display:flex;align-items:center;justify-content:center;overflow:hidden}.custom-item-media img{width:100%;height:100%;object-fit:cover}.custom-item-noimg{font-size:2rem;opacity:.65}.custom-item-body{padding:12px}.custom-item-title{font-size:.82rem;font-weight:750;display:flex;justify-content:space-between;gap:8px}.custom-item-meta{font-size:.64rem;color:var(--text-muted);line-height:1.45;margin-top:5px}.custom-item-actions{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}.list-controls{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.list-controls .search-input{width:190px}.list-empty{padding:30px;text-align:center;color:var(--text-muted);border:1px dashed var(--border-light);border-radius:12px}.image-strip{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.image-thumb{width:64px;height:64px;border-radius:8px;border:1px solid var(--border-color);object-fit:cover;cursor:pointer}.upload-zone{padding:10px;border:1px dashed var(--border-light);border-radius:10px;background:var(--bg-base);font-size:.7rem;color:var(--text-muted)}.item-modal-preview{max-width:100%;max-height:190px;border-radius:10px;border:1px solid var(--border-color);object-fit:cover}.quick-add-choice[data-quick-type="wishlist"],.quick-add-choice[data-quick-type="grocery"],.quick-add-choice[data-quick-type="bill"],.quick-add-choice[data-quick-type="goal"]{border-color:var(--border-light)}
+/* ===== Finance planning + lists workspace ===== */
+.finance-hub{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-top:14px}.finance-card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:14px;padding:15px}.finance-card h3{font-size:.86rem}.finance-toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}.finance-list{display:flex;flex-direction:column;gap:7px}.finance-item{display:flex;align-items:flex-start;gap:10px;padding:10px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base);cursor:pointer}.finance-item:hover{border-color:var(--border-light);background:var(--bg-elevated)}.finance-item-main{min-width:0;flex:1}.finance-item-title{font-size:.72rem;font-weight:750}.finance-item-meta{font-size:.59rem;color:var(--text-muted);margin-top:3px;line-height:1.45}.finance-amount{font-weight:800;font-size:.72rem;white-space:nowrap}.finance-pill{display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;background:var(--bg-hover);font-size:.56rem;color:var(--text-secondary);margin-right:4px}.finance-pill.warn{background:rgba(245,158,11,.13);color:var(--accent-yellow)}.finance-pill.good{background:rgba(16,185,129,.13);color:var(--accent-green)}.finance-pill.bad{background:rgba(239,68,68,.13);color:var(--accent-red)}.finance-progress{height:6px;background:var(--bg-hover);border-radius:99px;overflow:hidden;margin-top:7px}.finance-progress>div{height:100%;background:var(--accent-cyan);border-radius:99px}.goal-grid,.custom-list-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.custom-item-card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:14px;overflow:hidden;cursor:pointer;transition:.15s}.custom-item-card:hover{border-color:var(--accent-cyan);transform:translateY(-1px)}.custom-item-media{height:135px;background:var(--bg-base);display:flex;align-items:center;justify-content:center;overflow:hidden}.custom-item-media img{width:100%;height:100%;object-fit:cover}.custom-item-noimg{font-size:2rem;opacity:.65}.custom-item-body{padding:12px}.custom-item-title{font-size:.82rem;font-weight:750;display:flex;justify-content:space-between;gap:8px}.custom-item-meta{font-size:.64rem;color:var(--text-muted);line-height:1.45;margin-top:5px}.custom-item-actions{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}.list-controls{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.list-controls .search-input{width:190px}.list-empty{padding:30px;text-align:center;color:var(--text-muted);border:1px dashed var(--border-light);border-radius:12px}.image-strip{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.image-thumb{width:64px;height:64px;border-radius:8px;border:1px solid var(--border-color);object-fit:cover;cursor:pointer}.upload-zone{padding:10px;border:1px dashed var(--border-light);border-radius:10px;background:var(--bg-base);font-size:.7rem;color:var(--text-muted)}.item-modal-preview{max-width:100%;max-height:190px;border-radius:10px;border:1px solid var(--border-color);object-fit:cover}.quick-add-choice[data-quick-type="wishlist"],.quick-add-choice[data-quick-type="grocery"],.quick-add-choice[data-quick-type="bill"],.quick-add-choice[data-quick-type="goal"]{border-color:var(--border-light)}
 @media(max-width:1100px){.finance-hub{grid-template-columns:1fr}.goal-grid,.custom-list-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.goal-grid,.custom-list-grid{grid-template-columns:1fr}.list-controls{align-items:stretch}.list-controls>*{width:100%!important}.finance-item{padding:12px}.custom-item-media{height:155px}}
 </style>
@@ -2336,8 +2430,9 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalon
   const budget=document.getElementById('view-budget');
   if(budget&&!document.getElementById('budget-planning-extension')){
     const wrap=document.createElement('div');wrap.id='budget-planning-extension';wrap.className='finance-hub';wrap.innerHTML=`
-      <div class="finance-card"><div id="finance-reminders"></div><div class="finance-toolbar"><h3>🔔 Bills & recurring payments</h3><div><button type="button" class="btn btn-sm" onclick="openPaymentPlanModal()">+ Plan payment</button><button type="button" class="btn btn-sm btn-primary" onclick="openBillModal()">+ Add bill</button></div></div><div id="bills-list" class="finance-list"></div><div class="finance-toolbar" style="margin-top:12px"><span class="text-muted text-sm">Upcoming planned payments</span></div><div id="payment-plans-list" class="finance-list"></div></div>
-      <div class="finance-card"><div class="finance-toolbar"><h3>🎯 Saving & purchase goals</h3><button type="button" class="btn btn-sm btn-primary" onclick="openGoalModal()">+ New goal</button></div><div id="goals-list" class="finance-list"></div></div>`;
+      <div class="fin-planning-head"><div><div class="finance-panel-kicker">PLANNING</div><h3>Upcoming commitments & goals</h3><p>Keep recurring bills, planned payments and financial goals together.</p></div></div>
+      <div class="finance-card"><div id="finance-reminders"></div><div class="finance-toolbar"><h3>Bills & recurring payments</h3><div><button type="button" class="btn btn-sm" onclick="openPaymentPlanModal()">+ Payment plan</button><button type="button" class="btn btn-sm btn-primary" onclick="openBillModal()">+ Bill</button></div></div><div id="bills-list" class="finance-list"></div><div class="finance-toolbar" style="margin-top:12px"><span class="text-muted text-sm">Upcoming planned payments</span></div><div id="payment-plans-list" class="finance-list"></div></div>
+      <div class="finance-card"><div class="finance-toolbar"><h3>Financial goals</h3><button type="button" class="btn btn-sm btn-primary" onclick="openGoalModal()">+ Goal</button></div><div id="goals-list" class="finance-list"></div></div>`;
     budget.appendChild(wrap);
   }
 

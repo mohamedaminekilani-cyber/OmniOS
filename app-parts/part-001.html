@@ -326,26 +326,50 @@
     .cal-day-view-container { max-width: 600px; margin: 0 auto; background: var(--bg-base); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; }
     .cal-day-header { border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px; font-weight: 700; font-size: 1.1rem; }
 
-    /* Budget */
-    .budget-progress { margin-bottom: 12px; cursor: pointer; padding: 10px; border-radius: var(--radius-sm); transition: background 0.15s; }
-    .budget-progress:hover { background: var(--bg-elevated); }
-    .budget-progress-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.8rem; }
-    .progress-bar-bg { height: 7px; background: var(--bg-base); border-radius: 4px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
-
-    .transaction-list { max-height: 400px; overflow-y: auto; }
-    .transaction-item {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 9px 0; border-bottom: 1px solid var(--border-color); cursor: pointer;
-    }
-    .transaction-item:hover { background: var(--bg-elevated); margin: 0 -8px; padding: 9px 8px; border-radius: var(--radius-sm); }
-    .transaction-item:last-child { border-bottom: none; }
-    .txn-left { display: flex; align-items: center; gap: 9px; }
-    .txn-icon { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; }
-    .txn-icon.income { background: rgba(16,185,129,0.15); color: var(--accent-green); }
-    .txn-icon.expense { background: rgba(239,68,68,0.15); color: var(--accent-red); }
-    .txn-amount.income { color: var(--accent-green); font-weight: 600; font-size: 0.82rem; }
-    .txn-amount.expense { color: var(--accent-red); font-weight: 600; font-size: 0.82rem; }
+    /* Finance workspace */
+    #view-budget{--finance-gap:12px}
+    .finance-workspace{display:flex;flex-direction:column;gap:var(--finance-gap);max-width:1440px;margin:0 auto}
+    .finance-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:18px 20px;border:1px solid var(--border-color);border-radius:16px;background:linear-gradient(135deg,var(--bg-surface),var(--bg-elevated))}
+    .finance-hero-copy{min-width:0}.finance-eyebrow,.finance-panel-kicker{font-size:.58rem;font-weight:800;letter-spacing:.13em;color:var(--text-muted)}
+    .finance-hero h3{font-size:1.35rem;margin:4px 0 5px;letter-spacing:-.025em}.finance-hero p{margin:0;max-width:620px;color:var(--text-muted);font-size:.72rem;line-height:1.5}
+    .finance-hero-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+    .finance-hero-actions .btn{gap:7px}.finance-btn-icon{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+    .finance-period-nav{display:flex;align-items:center;gap:4px;padding:3px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base)}
+    .finance-period-nav .icon-btn{width:32px;height:32px;min-width:32px;border:0;background:transparent}.finance-period-nav svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .finance-month-label{min-width:108px;height:32px;padding:0 8px;border:0;background:transparent;color:var(--text-primary);font:inherit;font-size:.7rem;font-weight:700;cursor:pointer;border-radius:7px}
+    .finance-month-label:hover{background:var(--bg-elevated)}
+    .finance-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .finance-kpi{position:relative;overflow:hidden;padding:14px 15px;border:1px solid var(--border-color);border-radius:14px;background:var(--bg-surface);min-width:0}
+    .finance-kpi::after{content:'';position:absolute;inset:auto 0 0;height:2px;background:var(--finance-kpi-accent,var(--border-light));opacity:.9}
+    .finance-kpi[data-tone="income"]{--finance-kpi-accent:var(--accent-green)}.finance-kpi[data-tone="expense"]{--finance-kpi-accent:var(--accent-red)}.finance-kpi[data-tone="net"]{--finance-kpi-accent:var(--accent-cyan)}.finance-kpi[data-tone="budget"]{--finance-kpi-accent:var(--accent-purple)}
+    .finance-kpi-label{font-size:.61rem;color:var(--text-muted);font-weight:750;text-transform:uppercase;letter-spacing:.06em}.finance-kpi-value{margin-top:5px;font-size:1.35rem;font-weight:800;letter-spacing:-.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .finance-kpi-value.positive{color:var(--accent-green)}.finance-kpi-value.negative{color:var(--accent-red)}.finance-kpi-sub{margin-top:4px;font-size:.61rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .finance-panel{min-width:0;padding:15px;border:1px solid var(--border-color);border-radius:14px;background:var(--bg-surface)}
+    .finance-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}.finance-panel-head h3{font-size:.88rem;margin:3px 0 0;letter-spacing:-.01em}.finance-panel-meta,.finance-panel-copy{font-size:.62rem;color:var(--text-muted);line-height:1.45}
+    .finance-panel-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+    .finance-analytics-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--finance-gap)}
+    .finance-main-grid{display:grid;grid-template-columns:minmax(300px,.86fr) minmax(420px,1.14fr);gap:var(--finance-gap);align-items:start}
+    .finance-spending-layout{display:grid;grid-template-columns:136px minmax(0,1fr);gap:18px;align-items:center;min-height:150px}
+    .finance-donut{width:128px;height:128px;border-radius:50%;display:grid;place-items:center;position:relative;background:var(--bg-elevated)}
+    .finance-donut::after{content:'';width:82px;height:82px;border-radius:50%;background:var(--bg-surface);position:absolute}
+    .finance-donut-center{position:relative;z-index:1;text-align:center}.finance-donut-center strong{display:block;font-size:.8rem}.finance-donut-center span{display:block;margin-top:2px;font-size:.55rem;color:var(--text-muted)}
+    .finance-spend-legend{display:flex;flex-direction:column;gap:7px;min-width:0}.finance-spend-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:7px;font-size:.65rem}.finance-spend-row i{width:8px;height:8px;border-radius:50%;display:block}.finance-spend-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.finance-spend-value{font-weight:700;white-space:nowrap}.finance-spend-empty{padding:28px 10px;text-align:center;color:var(--text-muted);font-size:.7rem}
+    .finance-chart-legend{display:flex;gap:9px;font-size:.58rem;color:var(--text-muted);white-space:nowrap}.finance-chart-legend span{display:inline-flex;align-items:center;gap:4px}.finance-chart-legend i{width:7px;height:7px;border-radius:2px}.finance-chart-legend i.income{background:var(--accent-green)}.finance-chart-legend i.expense{background:var(--accent-red)}
+    .finance-flow-chart{height:150px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;align-items:end;padding-top:8px}.finance-flow-col{height:100%;min-width:0;display:grid;grid-template-rows:1fr auto;gap:6px}.finance-flow-bars{display:flex;align-items:flex-end;justify-content:center;gap:3px;height:100%;min-height:100px;border-bottom:1px solid var(--border-color)}.finance-flow-bar{width:min(18px,36%);min-height:2px;border-radius:4px 4px 1px 1px;transition:height .2s ease}.finance-flow-bar.income{background:var(--accent-green)}.finance-flow-bar.expense{background:var(--accent-red)}.finance-flow-label{text-align:center;font-size:.55rem;color:var(--text-muted);white-space:nowrap}
+    .budget-progress{margin-bottom:7px;cursor:pointer;padding:10px;border:1px solid transparent;border-radius:10px;transition:background .15s,border-color .15s}.budget-progress:hover{background:var(--bg-elevated);border-color:var(--border-color)}
+    .budget-progress-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px;font-size:.72rem}.finance-category-name{min-width:0;font-weight:700}.finance-category-name span{display:block;margin-top:2px;color:var(--text-muted);font-size:.58rem;font-weight:500}.finance-category-amount{text-align:right;white-space:nowrap;font-weight:750}.finance-category-amount small{display:block;margin-top:2px;font-size:.55rem;color:var(--text-muted);font-weight:500}
+    .progress-bar-bg{height:6px;background:var(--bg-base);border-radius:99px;overflow:hidden}.progress-bar-fill{height:100%;border-radius:99px;transition:width .3s ease}
+    .finance-income-heading{margin:13px 10px 5px;padding-top:10px;border-top:1px solid var(--border-color);font-size:.56rem;color:var(--text-muted);font-weight:800;letter-spacing:.1em}
+    .finance-transaction-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}.finance-search-wrap{position:relative;display:flex;align-items:center;min-width:0}.finance-search-wrap svg{position:absolute;left:9px;width:14px;height:14px;fill:none;stroke:var(--text-muted);stroke-width:1.8;pointer-events:none}.finance-search-wrap .search-input{width:180px;padding-left:30px}
+    .transaction-list{max-height:460px;overflow:auto;padding-right:2px}.transaction-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 8px;border-bottom:1px solid var(--border-color);cursor:pointer;border-radius:9px;transition:background .14s}.transaction-item:hover{background:var(--bg-elevated)}.transaction-item:last-child{border-bottom:none}
+    .txn-left{display:flex;align-items:center;gap:9px;min-width:0}.txn-copy{min-width:0}.txn-title{font-size:.75rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.txn-meta{font-size:.58rem;color:var(--text-muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .txn-icon{width:31px;height:31px;flex:none;border-radius:9px;display:grid;place-items:center}.txn-icon svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.txn-icon.income{background:rgba(16,185,129,.12);color:var(--accent-green)}.txn-icon.expense{background:rgba(239,68,68,.12);color:var(--accent-red)}
+    .txn-amount{font-weight:800;font-size:.72rem;white-space:nowrap}.txn-amount.income{color:var(--accent-green)}.txn-amount.expense{color:var(--accent-red)}
+    .finance-wallet-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:8px;margin-top:10px}.finance-wallet-card{display:flex;align-items:center;gap:9px;min-width:0;padding:10px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base);cursor:pointer;transition:border-color .14s,background .14s}.finance-wallet-card:hover{border-color:var(--border-light);background:var(--bg-elevated)}.finance-wallet-icon{width:34px;height:34px;display:grid;place-items:center;flex:none;border-radius:9px;background:var(--bg-elevated);overflow:hidden;font-size:1rem}.finance-wallet-icon img{width:100%;height:100%;object-fit:cover}.finance-wallet-main{min-width:0;flex:1}.finance-wallet-name{font-size:.7rem;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.finance-wallet-balance{font-size:.61rem;color:var(--text-muted);margin-top:2px}
+    #budget-planning-extension{margin-top:var(--finance-gap);display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:var(--finance-gap)!important}.fin-planning-head{grid-column:1/-1;display:flex;justify-content:space-between;align-items:end;gap:12px;padding:2px 1px}.fin-planning-head h3{margin:2px 0 0;font-size:.92rem}.fin-planning-head p{margin:3px 0 0;font-size:.62rem;color:var(--text-muted)}#view-budget .finance-card{padding:15px;border-radius:14px;background:var(--bg-surface);border:1px solid var(--border-color)}#view-budget .finance-toolbar{margin-bottom:10px}#view-budget .finance-item{background:var(--bg-base);border-color:var(--border-color);border-radius:10px}
+    @media(max-width:980px){.finance-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.finance-analytics-grid,.finance-main-grid,#budget-planning-extension{grid-template-columns:1fr!important}.finance-main-grid{align-items:stretch}}
+    @media(max-width:700px){#view-budget{--finance-gap:10px}.finance-workspace{gap:10px}.finance-hero{padding:14px;flex-direction:column}.finance-hero-actions{width:100%;justify-content:stretch}.finance-period-nav{flex:1;min-width:100%}.finance-month-label{flex:1}.finance-hero-actions>.btn{flex:1}.finance-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.finance-kpi{padding:12px}.finance-kpi-value{font-size:1.05rem}.finance-analytics-grid{gap:10px}.finance-panel{padding:12px}.finance-spending-layout{grid-template-columns:104px minmax(0,1fr);gap:12px}.finance-donut{width:98px;height:98px}.finance-donut::after{width:62px;height:62px}.finance-flow-chart{gap:4px;height:130px}.finance-flow-label{font-size:.5rem}.finance-transaction-tools{align-items:stretch;flex-direction:column}.finance-transaction-tools .tab-btns{width:100%;display:grid;grid-template-columns:repeat(3,1fr)}.finance-search-wrap,.finance-search-wrap .search-input{width:100%}.transaction-list{max-height:none}.transaction-item{padding:10px 4px}.txn-meta{max-width:58vw}.finance-wallet-grid{grid-template-columns:1fr 1fr}.finance-panel-head{align-items:flex-start}.finance-panel-actions{max-width:52%}}
+    @media(max-width:430px){.finance-kpi-grid{grid-template-columns:1fr 1fr}.finance-wallet-grid{grid-template-columns:1fr}.finance-spending-layout{grid-template-columns:1fr}.finance-donut{margin:0 auto}.finance-panel-actions{max-width:none}.finance-panel-head{flex-wrap:wrap}.txn-meta{max-width:52vw}}
 
     /* Habits Month */
     .habit-month-card {
@@ -2192,38 +2216,108 @@ img,svg{max-width:100%}
 
         <!-- BUDGET -->
         <section id="view-budget" class="view">
-            <div class="stats-row" id="budget-stats"></div>
-            <div class="grid-2">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Budget Categories</h3>
-                        <div style="display:flex;gap:6px">
-                            <button type="button" class="btn btn-sm" onclick="openBudgetCatModal(null,'expense')">+ Expense</button>
-                            <button type="button" class="btn btn-sm" onclick="openBudgetCatModal(null,'income')">+ Income</button>
+            <div class="finance-workspace">
+                <header class="finance-hero">
+                    <div class="finance-hero-copy">
+                        <div class="finance-eyebrow">FINANCE</div>
+                        <h3>Money overview</h3>
+                        <p>Track cash flow, stay inside your category budgets, and keep upcoming commitments visible.</p>
+                    </div>
+                    <div class="finance-hero-actions">
+                        <div class="finance-period-nav" aria-label="Finance month">
+                            <button type="button" class="icon-btn" id="finance-prev-month" aria-label="Previous month" title="Previous month">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+                            </button>
+                            <button type="button" class="finance-month-label" id="finance-month-label" title="Return to current month">This month</button>
+                            <button type="button" class="icon-btn" id="finance-next-month" aria-label="Next month" title="Next month">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+                            </button>
                         </div>
+                        <button type="button" class="btn" onclick="openFinanceTxn('income')">
+                            <svg class="finance-btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg>
+                            Income
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="openFinanceTxn('expense')">
+                            <svg class="finance-btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"></path></svg>
+                            Expense
+                        </button>
                     </div>
-                    <div id="budget-limits-list"></div>
+                </header>
+
+                <div class="finance-kpi-grid" id="budget-stats"></div>
+
+                <div class="finance-analytics-grid">
+                    <article class="finance-panel finance-analytics-card">
+                        <div class="finance-panel-head">
+                            <div>
+                                <div class="finance-panel-kicker">SPENDING</div>
+                                <h3>Where the money went</h3>
+                            </div>
+                            <span class="finance-panel-meta" id="finance-spending-period"></span>
+                        </div>
+                        <div id="finance-spending-overview"></div>
+                    </article>
+                    <article class="finance-panel finance-analytics-card">
+                        <div class="finance-panel-head">
+                            <div>
+                                <div class="finance-panel-kicker">CASH FLOW</div>
+                                <h3>6-month trend</h3>
+                            </div>
+                            <div class="finance-chart-legend"><span><i class="income"></i>Income</span><span><i class="expense"></i>Expenses</span></div>
+                        </div>
+                        <div id="finance-cashflow-chart"></div>
+                    </article>
                 </div>
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Recent Transactions</h3>
-                        <button type="button" class="btn btn-sm btn-primary" onclick="openTxnModal()">+ Add Transaction</button>
+
+                <div class="finance-main-grid">
+                    <article class="finance-panel">
+                        <div class="finance-panel-head">
+                            <div>
+                                <div class="finance-panel-kicker">BUDGETS</div>
+                                <h3>Categories</h3>
+                            </div>
+                            <div class="finance-panel-actions">
+                                <button type="button" class="btn btn-sm" onclick="openBudgetCatModal(null,'income')">+ Income</button>
+                                <button type="button" class="btn btn-sm" onclick="openBudgetCatModal(null,'expense')">+ Expense</button>
+                            </div>
+                        </div>
+                        <div id="budget-limits-list"></div>
+                    </article>
+
+                    <article class="finance-panel finance-transactions-panel">
+                        <div class="finance-panel-head finance-transactions-head">
+                            <div>
+                                <div class="finance-panel-kicker">ACTIVITY</div>
+                                <h3>Transactions</h3>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="openFinanceTxn('expense')">+ Add</button>
+                        </div>
+                        <div class="finance-transaction-tools">
+                            <div class="tab-btns">
+                                <button type="button" class="tab-btn active" data-txnfilter="all">All</button>
+                                <button type="button" class="tab-btn" data-txnfilter="expense">Expenses</button>
+                                <button type="button" class="tab-btn" data-txnfilter="income">Income</button>
+                            </div>
+                            <label class="finance-search-wrap">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m16 16 4 4"></path></svg>
+                                <input type="search" class="search-input" id="finance-txn-search" placeholder="Search transactions">
+                            </label>
+                        </div>
+                        <div class="transaction-list" id="transaction-list"></div>
+                    </article>
+                </div>
+
+                <article class="finance-panel finance-wallet-panel">
+                    <div class="finance-panel-head">
+                        <div>
+                            <div class="finance-panel-kicker">ACCOUNTS</div>
+                            <h3>Wallets</h3>
+                        </div>
+                        <button type="button" class="btn btn-sm" onclick="openWalletModal()">+ Add wallet</button>
                     </div>
-                    <div class="tab-btns">
-                        <button type="button" class="tab-btn active" data-txnfilter="all">All</button>
-                        <button type="button" class="tab-btn" data-txnfilter="expense">Expenses</button>
-                        <button type="button" class="tab-btn" data-txnfilter="income">Income</button>
-                    </div>
-                    <div class="transaction-list" id="transaction-list"></div>
-                </div>
-            </div>
-            <div class="card" style="margin-top:16px">
-                <div class="card-header">
-                    <h3 class="card-title">Wallets</h3>
-                    <button type="button" class="btn btn-sm" onclick="openWalletModal()">+ Add Wallet</button>
-                </div>
-                <div class="text-muted text-sm" style="margin-bottom:8px">Where your money lives — pick one when logging a transaction. Click a wallet to rename or remove it.</div>
-                <div id="wallet-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+                    <div class="finance-panel-copy">Cash, bank accounts and cards. Wallet balances reflect every transaction assigned to them.</div>
+                    <div id="wallet-list" class="finance-wallet-grid"></div>
+                </article>
             </div>
         </section>
 

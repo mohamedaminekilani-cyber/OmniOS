@@ -307,17 +307,29 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .v38-month-nav{display:flex;align-items:center;gap:5px;padding:3px;border:1px solid var(--border-color);background:var(--bg-surface);border-radius:10px}.v38-month-label{min-width:140px;text-align:center;font-size:.78rem;font-weight:750}
 .v38-fin-tabs{display:flex;gap:4px;overflow-x:auto;padding:3px;margin-bottom:14px;border:1px solid var(--border-color);background:var(--bg-surface);border-radius:11px;scrollbar-width:none}.v38-fin-tabs::-webkit-scrollbar{display:none}.v38-fin-tab{flex:0 0 auto;border:0;background:transparent;color:var(--text-muted);padding:8px 11px;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer}.v38-fin-tab:hover{background:var(--bg-elevated);color:var(--text-primary)}.v38-fin-tab.active{background:rgba(6,182,212,.12);color:var(--accent-cyan)}
 .v38-fin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}.v38-fin-kpi{border:1px solid var(--border-color);background:linear-gradient(145deg,var(--bg-surface),var(--bg-base));border-radius:12px;padding:13px;min-width:0}.v38-fin-kpi .l{font-size:.61rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em}.v38-fin-kpi .v{font-size:1.32rem;font-weight:800;margin-top:5px;overflow-wrap:anywhere}.v38-fin-kpi .m{font-size:.61rem;color:var(--text-muted);margin-top:3px;line-height:1.35}.v38-positive{color:var(--accent-green)}.v38-negative{color:var(--accent-red)}.v38-warn{color:var(--accent-yellow)}
-.v38-overview-kpis{grid-template-columns:minmax(0,1.45fr) minmax(0,.78fr) minmax(0,.78fr);grid-template-areas:"net income expense" "net budget budget";align-items:stretch}
+.v38-overview-kpis{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr) minmax(0,.9fr);grid-template-areas:"net income budget" "net expense budget";align-items:stretch}
 .v38-overview-kpis .v38-fin-kpi{position:relative;overflow:hidden;padding:14px 15px}
 .v38-overview-kpis .v38-fin-kpi::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--v38-kpi-accent,var(--border-light))}
 .v38-overview-kpis .v38-overview-net{grid-area:net;--v38-kpi-accent:var(--accent-cyan);min-height:150px;display:flex;flex-direction:column;justify-content:center;padding:18px;background:linear-gradient(145deg,var(--bg-surface),color-mix(in srgb,var(--accent-cyan) 6%,var(--bg-base)))}
 .v38-overview-kpis .v38-overview-income{grid-area:income;--v38-kpi-accent:var(--accent-green)}
 .v38-overview-kpis .v38-overview-expense{grid-area:expense;--v38-kpi-accent:var(--accent-red)}
-.v38-overview-kpis .v38-overview-budget{grid-area:budget;--v38-kpi-accent:var(--accent-purple,#a78bfa);display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.9fr);gap:18px;align-items:center}
+.v38-overview-kpis .v38-overview-budget{grid-area:budget;--v38-kpi-accent:var(--accent-purple,#a78bfa);display:grid;grid-template-columns:1fr;gap:12px;align-content:center}
 .v38-overview-kpis .v38-overview-net .v{font-size:2rem;line-height:1;margin-top:8px;letter-spacing:-.035em}
 .v38-overview-kpis .v38-overview-net .m{margin-top:10px}
 .v38-overview-kpi-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}.v38-overview-kpi-chips span{display:inline-flex;align-items:center;padding:5px 8px;border:1px solid var(--border-color);border-radius:999px;background:var(--bg-base);font-size:.57rem;color:var(--text-secondary);white-space:nowrap}
 .v38-overview-budget-copy{min-width:0}.v38-overview-budget-meter{min-width:0}.v38-overview-budget-head{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:.58rem;color:var(--text-muted);margin-bottom:6px}.v38-overview-budget-track{height:7px;border-radius:99px;background:var(--bg-hover);overflow:hidden}.v38-overview-budget-fill{height:100%;border-radius:99px;background:var(--accent-purple,#a78bfa);transition:width .2s ease}.v38-overview-budget-fill.warn{background:var(--accent-yellow)}.v38-overview-budget-fill.bad{background:var(--accent-red)}
+.v38-overview-columns{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1.05fr) minmax(280px,.9fr);gap:12px;align-items:start}
+.v38-overview-column{display:flex;flex-direction:column;gap:12px;min-width:0}
+.v38-overview-column>.v38-fin-card{margin:0!important}
+.v38-overview-column .v38-chart-card{min-width:0}
+.v38-overview-column .v38-chart-stage{height:190px;min-height:170px}
+.v38-overview-column .v38-bars{height:180px}
+.v38-overview-column .v38-category-chart{grid-template-columns:128px minmax(0,1fr);gap:12px;min-height:185px}
+.v38-overview-column .v38-donut{width:122px;height:122px}
+.v38-overview-column .v38-donut::after{inset:24px}
+.v38-overview-column .v38-fin-grid{margin-bottom:0}
+.v38-overview-column-planning .v38-fin-grid{grid-template-columns:1fr 1fr!important}
+
 .v38-fin-layout{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}.v38-fin-card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:14px;padding:14px;min-width:0}.v38-fin-card+.v38-fin-card{}.v38-fin-card-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap}.v38-fin-card-title{font-size:.86rem;font-weight:800}.v38-fin-card-sub{font-size:.62rem;color:var(--text-muted);margin-top:2px;line-height:1.4}
 .v38-attention{display:flex;flex-direction:column;gap:7px}.v38-attn{padding:9px 10px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);font-size:.7rem;line-height:1.4}.v38-attn.bad{border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.05)}.v38-attn.warn{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.05)}
 .v38-progress-row{margin:9px 0}.v38-progress-head{display:flex;justify-content:space-between;gap:8px;font-size:.68rem;margin-bottom:5px}.v38-progress-track{height:7px;background:var(--bg-hover);border-radius:99px;overflow:hidden}.v38-progress-fill{height:100%;background:var(--accent-cyan);border-radius:99px}.v38-progress-fill.warn{background:var(--accent-yellow)}.v38-progress-fill.bad{background:var(--accent-red)}
@@ -330,8 +342,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .v38-overview-charts{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr);gap:12px;margin:12px 0}.v38-chart-card{overflow:hidden}.v38-chart-stage{height:210px;min-height:180px;position:relative}.v38-svg-chart{width:100%;height:100%;display:block;overflow:visible}.v38-svg-grid{stroke:var(--border-color);stroke-width:1;vector-effect:non-scaling-stroke}.v38-svg-axis{fill:var(--text-muted);font-size:10px}.v38-svg-line{fill:none;stroke:var(--accent-cyan);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}.v38-svg-area{fill:color-mix(in srgb,var(--accent-cyan) 14%,transparent)}.v38-svg-dot{fill:var(--bg-surface);stroke:var(--accent-cyan);stroke-width:2;vector-effect:non-scaling-stroke}.v38-bars{height:190px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));align-items:end;gap:8px;padding:18px 4px 24px}.v38-bars-month{height:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px;position:relative;min-width:0}.v38-bars-bar{width:min(18px,42%);border-radius:5px 5px 2px 2px;min-height:2px;transition:height .2s ease}.v38-bars-bar.income{background:var(--accent-green)}.v38-bars-bar.expense{background:var(--accent-red)}.v38-bars-label{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:.55rem;color:var(--text-muted);white-space:nowrap}.v38-chart-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:.6rem;color:var(--text-muted);margin-top:8px}.v38-legend-item{display:inline-flex;align-items:center;gap:5px}.v38-legend-dot{width:7px;height:7px;border-radius:50%;display:inline-block}.v38-legend-dot.income{background:var(--accent-green)}.v38-legend-dot.expense{background:var(--accent-red)}.v38-category-chart{display:grid;grid-template-columns:150px minmax(0,1fr);align-items:center;gap:16px;min-height:210px}.v38-donut{width:144px;height:144px;border-radius:50%;position:relative;background:var(--bg-hover);margin:auto}.v38-donut::after{content:'';position:absolute;inset:28px;border-radius:50%;background:var(--bg-surface);box-shadow:inset 0 0 0 1px var(--border-color)}.v38-donut-center{position:absolute;inset:0;z-index:1;display:grid;place-content:center;text-align:center;pointer-events:none}.v38-donut-center strong{font-size:.92rem}.v38-donut-center span{font-size:.55rem;color:var(--text-muted);margin-top:2px}.v38-cat-legend{display:flex;flex-direction:column;gap:7px;min-width:0}.v38-cat-line{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:7px;align-items:center;font-size:.63rem}.v38-cat-swatch{width:8px;height:8px;border-radius:3px}.v38-cat-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v38-cat-value{font-weight:750;white-space:nowrap}.v38-insight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v38-empty{padding:24px 12px;text-align:center;color:var(--text-muted);font-size:.72rem;border:1px dashed var(--border-light);border-radius:10px}
 .v38-chip{display:inline-flex;gap:4px;align-items:center;padding:3px 7px;border-radius:999px;background:var(--bg-hover);color:var(--text-secondary);font-size:.57rem;margin:2px 3px 0 0}
 .v38-modal-wide{max-width:620px}.v38-modal-note{font-size:.65rem;color:var(--text-muted);line-height:1.45;margin-top:8px}
-@media(max-width:1100px){.v38-fin-grid{grid-template-columns:repeat(2,1fr)}.v38-overview-kpis{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"net net" "income expense" "budget budget"}.v38-overview-kpis .v38-overview-net{min-height:118px}.v38-fin-layout{grid-template-columns:1fr}.v38-overview-charts{grid-template-columns:1fr}.v38-account-grid,.v38-rec-grid,.v38-goal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.v38-txn-toolbar{grid-template-columns:1fr 1fr 1fr}}
-@media(max-width:760px){.v38-fin-head{display:block}.v38-fin-head-actions{margin-top:10px}.v38-month-nav{width:100%;justify-content:space-between}.v38-month-label{flex:1}.v38-fin-grid{grid-template-columns:1fr 1fr}.v38-overview-kpis{grid-template-columns:1fr 1fr;grid-template-areas:"net net" "income expense" "budget budget"}.v38-overview-kpis .v38-overview-net{min-height:108px;padding:15px}.v38-overview-kpis .v38-overview-net .v{font-size:1.65rem}.v38-overview-kpis .v38-overview-budget{grid-template-columns:1fr;gap:10px}.v38-fin-kpi .v{font-size:1.05rem}.v38-fin-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible;margin-inline:-2px}.v38-fin-tab{width:100%;padding:8px 5px;font-size:.66rem}.v38-txn-toolbar{grid-template-columns:1fr 1fr}.v38-txn-toolbar .v38-search{grid-column:1/-1}.v38-account-grid,.v38-rec-grid,.v38-budget-grid,.v38-goal-grid,.v38-insight-grid{grid-template-columns:1fr}.v38-txn{padding:9px}.v38-txn-meta{white-space:normal}.v38-chart{height:145px}.v38-chart-stage{height:185px}.v38-category-chart{grid-template-columns:118px minmax(0,1fr);gap:10px}.v38-donut{width:112px;height:112px}.v38-donut::after{inset:23px}.v38-fin-card{padding:12px}}
+@media(max-width:1100px){.v38-fin-grid{grid-template-columns:repeat(2,1fr)}.v38-overview-kpis{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"net net" "income expense" "budget budget"}.v38-overview-kpis .v38-overview-net{min-height:118px}.v38-overview-kpis .v38-overview-budget{grid-template-columns:minmax(0,1fr) minmax(180px,.8fr)}.v38-overview-columns{grid-template-columns:repeat(2,minmax(0,1fr))}.v38-overview-column-planning{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}.v38-fin-layout{grid-template-columns:1fr}.v38-overview-charts{grid-template-columns:1fr}.v38-account-grid,.v38-rec-grid,.v38-goal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.v38-txn-toolbar{grid-template-columns:1fr 1fr 1fr}}
+@media(max-width:760px){.v38-fin-head{display:block}.v38-fin-head-actions{margin-top:10px}.v38-month-nav{width:100%;justify-content:space-between}.v38-month-label{flex:1}.v38-fin-grid{grid-template-columns:1fr 1fr}.v38-overview-kpis{grid-template-columns:1fr 1fr;grid-template-areas:"net net" "income expense" "budget budget"}.v38-overview-kpis .v38-overview-net{min-height:108px;padding:15px}.v38-overview-kpis .v38-overview-net .v{font-size:1.65rem}.v38-overview-kpis .v38-overview-budget{grid-template-columns:1fr;gap:10px}.v38-overview-columns{grid-template-columns:1fr}.v38-overview-column-planning{grid-column:auto;display:flex;grid-template-columns:none}.v38-overview-column .v38-category-chart{grid-template-columns:118px minmax(0,1fr)}.v38-fin-kpi .v{font-size:1.05rem}.v38-fin-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible;margin-inline:-2px}.v38-fin-tab{width:100%;padding:8px 5px;font-size:.66rem}.v38-txn-toolbar{grid-template-columns:1fr 1fr}.v38-txn-toolbar .v38-search{grid-column:1/-1}.v38-account-grid,.v38-rec-grid,.v38-budget-grid,.v38-goal-grid,.v38-insight-grid{grid-template-columns:1fr}.v38-txn{padding:9px}.v38-txn-meta{white-space:normal}.v38-chart{height:145px}.v38-chart-stage{height:185px}.v38-category-chart{grid-template-columns:118px minmax(0,1fr);gap:10px}.v38-donut{width:112px;height:112px}.v38-donut::after{inset:23px}.v38-fin-card{padding:12px}}
 @media(max-width:390px){.v38-fin-grid{grid-template-columns:1fr}.v38-overview-kpis{grid-template-columns:1fr 1fr;grid-template-areas:"net net" "income expense" "budget budget"}.v38-txn-toolbar{grid-template-columns:1fr}.v38-txn-toolbar .v38-search{grid-column:auto}}
 </style>
 <script id="omnios-v38-finance-js">
@@ -418,37 +430,86 @@ function categoryDonut38(){
   return `<div class="v38-category-chart"><div class="v38-donut" style="background:conic-gradient(${stops.join(',')})" role="img" aria-label="Spending by category"><div class="v38-donut-center"><strong>${money38(total)}</strong><span>spent</span></div></div><div class="v38-cat-legend">${items.map((x,i)=>`<div class="v38-cat-line"><i class="v38-cat-swatch" style="background:${financePalette38(i)}"></i><span class="v38-cat-name">${esc38(x.c.icon||'')} ${esc38(x.c.name)}</span><span class="v38-cat-value">${Math.round(x.spent/total*100)}%</span></div>`).join('')}</div></div>`
 }
 
-function renderOverview38(el){const t=totals38(),prev=totals38(shiftMonth38(state.settings.finance.selectedMonth,-1)),budget=totalBudget38(),left=budget-t.expense,rate=t.income>0?t.savingsRate:0,fc=forecast38(),att=attention38(),cats=expenseCats38().map(c=>({c,spent:catExpense38(c.id)})).sort((a,b)=>b.spent-a.spent),recent=monthTx38().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,6),projectedSpend=t.expense/elapsedDays38()*daysInSelected38();el.innerHTML=`<div class="v38-fin-grid v38-overview-kpis">
-  <div class="v38-fin-kpi v38-overview-net">
-    <div class="l">Net cash flow</div>
-    <div class="v ${t.net>=0?'v38-positive':'v38-negative'}">${t.net>=0?'+':''}${money38(t.net)}</div>
-    <div class="v38-overview-kpi-chips">
-      <span>${esc38(monthLabel38(state.settings.finance.selectedMonth))}</span>
-      <span>Savings rate ${Number.isFinite(rate)?rate.toFixed(0):0}%</span>
+function renderOverview38(el){
+  const t=totals38(),prev=totals38(shiftMonth38(state.settings.finance.selectedMonth,-1)),budget=totalBudget38(),left=budget-t.expense,rate=t.income>0?t.savingsRate:0,fc=forecast38(),att=attention38(),cats=expenseCats38().map(c=>({c,spent:catExpense38(c.id)})).sort((a,b)=>b.spent-a.spent),recent=monthTx38().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,6),projectedSpend=t.expense/elapsedDays38()*daysInSelected38();
+  el.innerHTML=`<div class="v38-fin-grid v38-overview-kpis">
+    <div class="v38-fin-kpi v38-overview-net">
+      <div class="l">Net cash flow</div>
+      <div class="v ${t.net>=0?'v38-positive':'v38-negative'}">${t.net>=0?'+':''}${money38(t.net)}</div>
+      <div class="v38-overview-kpi-chips">
+        <span>${esc38(monthLabel38(state.settings.finance.selectedMonth))}</span>
+        <span>Savings rate ${Number.isFinite(rate)?rate.toFixed(0):0}%</span>
+      </div>
+    </div>
+    <div class="v38-fin-kpi v38-overview-income">
+      <div class="l">Income</div>
+      <div class="v v38-positive">${money38(t.income)}</div>
+      <div class="m">${prev.income?`${((t.income-prev.income)/Math.abs(prev.income)*100).toFixed(0)}% vs previous month`:'Selected month'}</div>
+    </div>
+    <div class="v38-fin-kpi v38-overview-expense">
+      <div class="l">Expenses</div>
+      <div class="v v38-negative">${money38(t.expense)}</div>
+      <div class="m">Projected ${money38(projectedSpend)} at current pace</div>
+    </div>
+    <div class="v38-fin-kpi v38-overview-budget">
+      <div class="v38-overview-budget-copy">
+        <div class="l">Budget remaining</div>
+        <div class="v ${left>=0?'':'v38-negative'}">${money38(left)}</div>
+        <div class="m">${budget?`${money38(t.expense)} spent of ${money38(budget)}`:'No category budget set'}</div>
+      </div>
+      <div class="v38-overview-budget-meter">
+        <div class="v38-overview-budget-head"><span>Budget used</span><strong>${budget?`${Math.round(t.expense/budget*100)}%`:'—'}</strong></div>
+        <div class="v38-overview-budget-track"><div class="v38-overview-budget-fill ${budget&&t.expense>budget?'bad':budget&&t.expense/budget>=.8?'warn':''}" style="width:${budget?Math.min(100,Math.max(0,t.expense/budget*100)):0}%"></div></div>
+      </div>
     </div>
   </div>
-  <div class="v38-fin-kpi v38-overview-income">
-    <div class="l">Income</div>
-    <div class="v v38-positive">${money38(t.income)}</div>
-    <div class="m">${prev.income?`${((t.income-prev.income)/Math.abs(prev.income)*100).toFixed(0)}% vs previous month`:'Selected month'}</div>
-  </div>
-  <div class="v38-fin-kpi v38-overview-expense">
-    <div class="l">Expenses</div>
-    <div class="v v38-negative">${money38(t.expense)}</div>
-    <div class="m">Projected ${money38(projectedSpend)} at current pace</div>
-  </div>
-  <div class="v38-fin-kpi v38-overview-budget">
-    <div class="v38-overview-budget-copy">
-      <div class="l">Budget remaining</div>
-      <div class="v ${left>=0?'':'v38-negative'}">${money38(left)}</div>
-      <div class="m">${budget?`${money38(t.expense)} spent of ${money38(budget)}`:'No category budget set'}</div>
+  <div class="v38-overview-columns">
+    <div class="v38-overview-column v38-overview-column-cashflow">
+      <section class="v38-fin-card v38-chart-card">
+        <div class="v38-fin-card-head"><div><div class="v38-fin-card-title">Cash flow trend</div><div class="v38-fin-card-sub">Income versus cleared expenses across six months.</div></div><button class="btn btn-sm" data-open-tab="insights">More insights</button></div>
+        ${cashFlowBars38()}
+      </section>
+      <section class="v38-fin-card">
+        <div class="v38-fin-card-head"><div><div class="v38-fin-card-title">Recent activity</div><div class="v38-fin-card-sub">Latest transactions in the selected month.</div></div><button class="btn btn-sm" data-open-tab="transactions">See all</button></div>
+        <div class="v38-txn-list">${recent.length?recent.map(txnRow38).join(''):'<div class="v38-empty">No transactions for this month.</div>'}</div>
+      </section>
     </div>
-    <div class="v38-overview-budget-meter">
-      <div class="v38-overview-budget-head"><span>Budget used</span><strong>${budget?`${Math.round(t.expense/budget*100)}%`:'—'}</strong></div>
-      <div class="v38-overview-budget-track"><div class="v38-overview-budget-fill ${budget&&t.expense>budget?'bad':budget&&t.expense/budget>=.8?'warn':''}" style="width:${budget?Math.min(100,Math.max(0,t.expense/budget*100)):0}%"></div></div>
+
+    <div class="v38-overview-column v38-overview-column-spending">
+      <section class="v38-fin-card v38-chart-card">
+        <div class="v38-fin-card-title">Spending by category</div>
+        <div class="v38-fin-card-sub">Share of cleared expenses in ${esc38(monthLabel38(state.settings.finance.selectedMonth))}.</div>
+        ${categoryDonut38()}
+      </section>
+      <section class="v38-fin-card v38-chart-card">
+        <div class="v38-fin-card-head"><div><div class="v38-fin-card-title">Daily spending</div><div class="v38-fin-card-sub">Expense pattern across the selected month.</div></div><div class="v38-chip">Total ${money38(t.expense)}</div></div>
+        <div class="v38-chart-stage">${dailySpendChart38()}</div>
+      </section>
     </div>
-  </div>
-</div><div class="v38-overview-charts"><section class="v38-fin-card v38-chart-card"><div class="v38-fin-card-head"><div><div class="v38-fin-card-title">Cash flow trend</div><div class="v38-fin-card-sub">Income versus cleared expenses across six months.</div></div><button class="btn btn-sm" data-open-tab="insights">More insights</button></div>${cashFlowBars38()}</section><section class="v38-fin-card v38-chart-card"><div class="v38-fin-card-title">Spending by category</div><div class="v38-fin-card-sub">Share of cleared expenses in ${esc38(monthLabel38(state.settings.finance.selectedMonth))}.</div>${categoryDonut38()}</section></div><section class="v38-fin-card v38-chart-card" style="margin-bottom:12px"><div class="v38-fin-card-head"><div><div class="v38-fin-card-title">Daily spending</div><div class="v38-fin-card-sub">Expense pattern across the selected month. Hover or tap points for values.</div></div><div class="v38-chip">Total ${money38(t.expense)}</div></div><div class="v38-chart-stage">${dailySpendChart38()}</div></section><div class="v38-fin-layout"><div><section class="v38-fin-card"><div class="v38-fin-card-head"><div><div class="v38-fin-card-title">Month at a glance</div><div class="v38-fin-card-sub">Highest spending categories and budget pressure.</div></div><button class="btn btn-sm" data-open-tab="budget">Open budget</button></div>${cats.filter(x=>x.spent>0).slice(0,6).map(({c,spent})=>{const lim=Number(c.limit)||0,p=lim?Math.min(100,spent/lim*100):0;return `<div class="v38-progress-row"><div class="v38-progress-head"><span>${esc38(c.icon||'📁')} ${esc38(c.name)}</span><strong>${money38(spent)}${lim?' / '+money38(lim):''}</strong></div><div class="v38-progress-track"><div class="v38-progress-fill ${lim&&spent>lim?'bad':lim&&p>=80?'warn':''}" style="width:${lim?p:Math.min(100,spent/(cats[0]?.spent||1)*100)}%"></div></div></div>`}).join('')||'<div class="v38-empty">No cleared expenses in this month yet.</div>'}</section><section class="v38-fin-card" style="margin-top:12px"><div class="v38-fin-card-head"><div><div class="v38-fin-card-title">Recent activity</div><div class="v38-fin-card-sub">Latest transactions in the selected month.</div></div><button class="btn btn-sm" data-open-tab="transactions">See all</button></div><div class="v38-txn-list">${recent.length?recent.map(txnRow38).join(''):'<div class="v38-empty">No transactions for this month.</div>'}</div></section></div><div><section class="v38-fin-card"><div class="v38-fin-card-head"><div><div class="v38-fin-card-title">Attention</div><div class="v38-fin-card-sub">Items that may need action.</div></div></div><div class="v38-attention">${att.length?att.slice(0,7).map(a=>`<div class="v38-attn ${a.type}">${esc38(a.txt)}</div>`).join(''):'<div class="v38-attn">✓ Nothing urgent detected.</div>'}</div></section><section class="v38-fin-card" style="margin-top:12px"><div class="v38-fin-card-head"><div><div class="v38-fin-card-title">${fc.days}-day cash-flow outlook</div><div class="v38-fin-card-sub">Cleared account balances plus scheduled income, bills and payment plans.</div></div></div><div class="v38-fin-grid" style="grid-template-columns:1fr 1fr;margin:0"><div class="v38-fin-kpi"><div class="l">Accounts</div><div class="v">${money38(fc.base)}</div></div><div class="v38-fin-kpi"><div class="l">Projected</div><div class="v ${fc.projected>=0?'v38-positive':'v38-negative'}">${money38(fc.projected)}</div></div><div class="v38-fin-kpi"><div class="l">Expected in</div><div class="v v38-positive">+${money38(fc.inflow)}</div></div><div class="v38-fin-kpi"><div class="l">Committed out</div><div class="v v38-negative">-${money38(fc.outflow)}</div></div></div></section></div></div>`;el.querySelectorAll('[data-open-tab]').forEach(b=>b.onclick=()=>setTab38(b.dataset.openTab));decorateTxnRows38(el)}
+
+    <div class="v38-overview-column v38-overview-column-planning">
+      <section class="v38-fin-card">
+        <div class="v38-fin-card-head"><div><div class="v38-fin-card-title">Month at a glance</div><div class="v38-fin-card-sub">Highest spending categories and budget pressure.</div></div><button class="btn btn-sm" data-open-tab="budget">Open budget</button></div>
+        ${cats.filter(x=>x.spent>0).slice(0,6).map(({c,spent})=>{const lim=Number(c.limit)||0,p=lim?Math.min(100,spent/lim*100):0;return `<div class="v38-progress-row"><div class="v38-progress-head"><span>${esc38(c.icon||'📁')} ${esc38(c.name)}</span><strong>${money38(spent)}${lim?' / '+money38(lim):''}</strong></div><div class="v38-progress-track"><div class="v38-progress-fill ${lim&&spent>lim?'bad':lim&&p>=80?'warn':''}" style="width:${lim?p:Math.min(100,spent/(cats[0]?.spent||1)*100)}%"></div></div></div>`}).join('')||'<div class="v38-empty">No cleared expenses in this month yet.</div>'}
+      </section>
+      <section class="v38-fin-card">
+        <div class="v38-fin-card-head"><div><div class="v38-fin-card-title">Attention</div><div class="v38-fin-card-sub">Items that may need action.</div></div></div>
+        <div class="v38-attention">${att.length?att.slice(0,7).map(a=>`<div class="v38-attn ${a.type}">${esc38(a.txt)}</div>`).join(''):'<div class="v38-attn">✓ Nothing urgent detected.</div>'}</div>
+      </section>
+      <section class="v38-fin-card">
+        <div class="v38-fin-card-head"><div><div class="v38-fin-card-title">${fc.days}-day cash-flow outlook</div><div class="v38-fin-card-sub">Cleared balances plus scheduled income and commitments.</div></div></div>
+        <div class="v38-fin-grid" style="grid-template-columns:1fr 1fr;margin:0">
+          <div class="v38-fin-kpi"><div class="l">Accounts</div><div class="v">${money38(fc.base)}</div></div>
+          <div class="v38-fin-kpi"><div class="l">Projected</div><div class="v ${fc.projected>=0?'v38-positive':'v38-negative'}">${money38(fc.projected)}</div></div>
+          <div class="v38-fin-kpi"><div class="l">Expected in</div><div class="v v38-positive">+${money38(fc.inflow)}</div></div>
+          <div class="v38-fin-kpi"><div class="l">Committed out</div><div class="v v38-negative">-${money38(fc.outflow)}</div></div>
+        </div>
+      </section>
+    </div>
+  </div>`;
+  el.querySelectorAll('[data-open-tab]').forEach(b=>b.onclick=()=>setTab38(b.dataset.openTab));
+  decorateTxnRows38(el)
+}
 function txnLabel38(t){if(t.isTransfer){const other=wallet38(t.transferOtherWalletId);return `Transfer ${t.transferDirection==='in'?'from':'to'} ${other?.name||'account'}`}return t.desc||'Transaction'}
 function txnRow38(t){const c=category38(t.categoryId),w=wallet38(t.walletId),sign=t.type==='income'?'+':'-',cls=t.type==='income'?'v38-positive':'v38-negative';return `<div class="v38-txn ${(t.status||'cleared')==='pending'?'v38-pending':''}" data-v38-txn="${esc38(String(t.id))}" ${t.isTransfer?'data-v38-transfer="'+esc38(String(t.transferGroupId||''))+'"':''}><div class="v38-txn-icon">${t.isTransfer?'⇄':t.type==='income'?'↗':'↘'}</div><div class="v38-txn-main"><div class="v38-txn-title">${esc38(txnLabel38(t))}</div><div class="v38-txn-meta">${esc38(c?.icon||'')} ${esc38(c?.name|| (t.isTransfer?'Transfer':'Uncategorized'))}${w?' · '+esc38(w.name):''}${t.tags?.length?' · #'+t.tags.map(esc38).join(' #'):''}</div></div><div class="v38-txn-amount ${t.isTransfer?'':cls}">${t.isTransfer?'':sign}${money38(t.amount)}</div></div>`}
 function decorateTxnRows38(host){host.querySelectorAll('[data-v38-txn]').forEach(r=>r.onclick=()=>{if(r.dataset.v38Transfer)openTransferV38(r.dataset.v38Transfer);else openFinanceTransactionV38(r.dataset.v38Txn)})}

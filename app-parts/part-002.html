@@ -405,6 +405,36 @@ function renderDashboard(){
 let editingBudgetCatId = null;
 let txnFilter = 'all';
 let editingTxnId = null;
+let financeTxnSearch = '';
+let financeMonthDate = new Date();
+financeMonthDate.setDate(1);
+
+function financeMonthKey(date=financeMonthDate) {
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+}
+function financeMonthText(date=financeMonthDate) {
+    return date.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+}
+function shiftFinanceMonth(delta) {
+    financeMonthDate = new Date(financeMonthDate.getFullYear(), financeMonthDate.getMonth()+Number(delta||0), 1, 12);
+    renderBudget();
+}
+function resetFinanceMonth() {
+    financeMonthDate = new Date();
+    financeMonthDate.setDate(1);
+    renderBudget();
+}
+function openFinanceTxn(type='expense') {
+    openTxnModal();
+    const select=document.getElementById('txn-type');
+    if(select){
+        select.value=type==='income'?'income':'expense';
+        updateTxnCategories();
+    }
+}
+window.openFinanceTxn=openFinanceTxn;
+window.shiftFinanceMonth=shiftFinanceMonth;
+window.resetFinanceMonth=resetFinanceMonth;
 
 document.querySelectorAll('[data-txnfilter]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -414,6 +444,10 @@ document.querySelectorAll('[data-txnfilter]').forEach(btn => {
         renderBudget();
     });
 });
+document.getElementById('finance-prev-month')?.addEventListener('click',()=>shiftFinanceMonth(-1));
+document.getElementById('finance-next-month')?.addEventListener('click',()=>shiftFinanceMonth(1));
+document.getElementById('finance-month-label')?.addEventListener('click',resetFinanceMonth);
+document.getElementById('finance-txn-search')?.addEventListener('input',e=>{financeTxnSearch=e.target.value||'';renderBudget()});
 
 function updateTxnCategories() {
     const type = document.getElementById('txn-type').value || 'expense';

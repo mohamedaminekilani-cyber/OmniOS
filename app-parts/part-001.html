@@ -3013,7 +3013,8 @@ function saveState() {
         }
     }
     applyAppearance();
-    renderAll();
+    if (typeof renderActiveCoreView === 'function') renderActiveCoreView();
+    else renderAll();
     // Full renders used to steal focus from the control being edited. Restore it
     // when the same control survives the render, including text caret position.
     if (activeId) {
@@ -3095,6 +3096,7 @@ function switchView(target) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     view.classList.add('active');
     document.getElementById('view-title').textContent = desktopItem ? desktopItem.textContent.trim() : ({'master-calendar':'Calendar'}[target] || target);
+    if (typeof renderCoreView === 'function') renderCoreView(target);
 }
 
 document.querySelectorAll('.nav-item').forEach(item => {

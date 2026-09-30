@@ -103,7 +103,7 @@ function enhanceMobileMore58(){const more=$('#v35-mobile-more');if(!more||more.d
 function setTitle58(){ /* v62 build metadata is authoritative */ }
 function installSwitch58(){const base=window.switchView;if(typeof base!=='function'||base.__v58)return;const f=function(target){const r=base.apply(this,arguments);setTimeout(()=>{if(target==='today')renderToday58();if(target==='projects')renderProjectEnhancements58();if(target==='relations')renderRelations58();if(target==='automations')renderAutomations58();if(target==='inbox')renderInbox58();setTitle58()},60);return r};f.__v58=true;window.switchView=f;try{switchView=f}catch(_){}}
 function installSave58(){const base=window.saveState;if(typeof base!=='function'||base.__v58)return;let guard=false;const f=function(){if(!guard){ensure58();guard=true}const r=base.apply(this,arguments);guard=false;setTimeout(()=>{if($('#view-today')?.classList.contains('active'))renderToday58();if($('#view-projects')?.classList.contains('active'))renderProjectEnhancements58();if($('#view-relations')?.classList.contains('active'))renderRelations58();if($('#view-automations')?.classList.contains('active'))renderAutomations58();if($('#view-inbox')?.classList.contains('active'))renderInbox58();setTitle58()},50);return r};f.__v58=true;window.saveState=f;try{saveState=f}catch(_){}}
-function installDetailWrappers58(){const base=window.showPowerSidebarFor;if(typeof base==='function'&&!base.__v58){const f=function(type,id){const r=base.apply(this,arguments);setTimeout(()=>decoratePowerSidebar58(type,id),30);return r};f.__v58=true;window.showPowerSidebarFor=f}const obs=new MutationObserver(()=>{if($('#v35-drawer')?.classList.contains('open'))decorateProjectDrawer58()});obs.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']})}
+function installDetailWrappers58(){const base=window.showPowerSidebarFor;if(typeof base==='function'&&!base.__v58){const f=function(type,id){const r=base.apply(this,arguments);setTimeout(()=>decoratePowerSidebar58(type,id),30);return r};f.__v58=true;window.showPowerSidebarFor=f}const drawer=$('#v35-drawer');if(drawer){let queued=false;const obs=new MutationObserver(()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;if(drawer.classList.contains('open'))decorateProjectDrawer58()})});obs.observe(drawer,{subtree:true,childList:true,attributes:true,attributeFilter:['class']})}}
 function init58(){ensure58();ensureView58('relations');ensureView58('automations');ensureNav58();enhanceMobileMore58();installDetailWrappers58();installSwitch58();installSave58();setTitle58();setTimeout(()=>{const active=$('.view.active')?.id?.replace(/^view-/,'');if(active==='today')renderToday58();if(active==='projects')renderProjectEnhancements58();if(active==='inbox')renderInbox58();if(active==='relations')renderRelations58();if(active==='automations')renderAutomations58();setTitle58()},120)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init58,{once:true});else init58();
 })();
@@ -611,11 +611,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   /* Final save wrapper: every data save reconciles Pantry/Grocery foods with Nutrition first. */
   const baseSave=window.saveState;
   if(typeof baseSave==='function'&&!baseSave.__v585Nutrition){
-    const wrapped=function(){syncAll();const r=baseSave.apply(this,arguments);setTimeout(decorateAll,0);return r};wrapped.__v585Nutrition=true;wrapped.__base=baseSave;window.saveState=wrapped;try{saveState=wrapped}catch(_){ }
+    const wrapped=function(){syncAll();const r=baseSave.apply(this,arguments);if(document.querySelector('#view-diet.active,#view-pantry.active,#view-grocery.active,#nut-food-modal.active'))setTimeout(decorateAll,0);return r};wrapped.__v585Nutrition=true;wrapped.__base=baseSave;window.saveState=wrapped;try{saveState=wrapped}catch(_){ }
   }
 
   const mo=new MutationObserver(()=>{clearTimeout(window.__v585DecorTimer);window.__v585DecorTimer=setTimeout(decorateAll,20)});
-  function init(){ensure();const changed=syncAll();if(changed){try{baseSave?.()}catch(e){console.warn('Initial nutrition-link save failed',e)}}decorateAll();mo.observe(document.body,{childList:true,subtree:true});document.documentElement.dataset.omniosVersion=V;window.OmniBuild={version:V,name:'Automatic Pantry & Grocery Nutrition Links'};window.OmniNutritionLinks={sync:syncAll,isFoodPantry,isFoodGrocery,openFood:openNutritionFood,decorate:decorateAll};}
+  function init(){ensure();const changed=syncAll();if(changed){try{baseSave?.()}catch(e){console.warn('Initial nutrition-link save failed',e)}}decorateAll();['view-diet','view-pantry','view-grocery'].forEach(id=>{const host=document.getElementById(id);if(host)mo.observe(host,{childList:true,subtree:true})});document.documentElement.dataset.omniosVersion=V;window.OmniBuild={version:V,name:'Automatic Pantry & Grocery Nutrition Links'};window.OmniNutritionLinks={sync:syncAll,isFoodPantry,isFoodGrocery,openFood:openNutritionFood,decorate:decorateAll};}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,120),{once:true});else setTimeout(init,120);
 })();
 </script>
@@ -1550,7 +1550,8 @@ document.addEventListener('click',e=>{
   if(el)requestAnimationFrame(()=>enhanceA11yV61(el.parentElement||document));
   if(matchMedia('(max-width:760px)').matches && e.target.closest('[data-v603-open],[data-v603-add],#v603-new-event,.v602-mini-day'))setTimeout(closeCalendarRailV61,0);
 },true);
-const mo=new MutationObserver(rs=>{for(const r of rs)for(const n of r.addedNodes)if(n.nodeType===1)enhanceA11yV61(n)});
+let a11yFrameV61=0,a11yRootsV61=[];
+const mo=new MutationObserver(rs=>{for(const r of rs)for(const n of r.addedNodes)if(n.nodeType===1)a11yRootsV61.push(n);if(a11yRootsV61.length&&!a11yFrameV61)a11yFrameV61=requestAnimationFrame(()=>{const roots=a11yRootsV61.splice(0,16);a11yFrameV61=0;roots.forEach(enhanceA11yV61);if(a11yRootsV61.length)a11yFrameV61=requestAnimationFrame(()=>{const more=a11yRootsV61.splice(0,16);a11yFrameV61=0;more.forEach(enhanceA11yV61)})})});
 if(document.body)mo.observe(document.body,{childList:true,subtree:true});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>enhanceA11yV61(),{once:true});else enhanceA11yV61();
 document.documentElement.dataset.omniosVersion='61.0';
@@ -5680,10 +5681,13 @@ document.addEventListener('focusin',e=>{
 },true);
 
 repairSemantics();
+let semanticsFrame74=0,semanticsRoots74=[];
 const observer=new MutationObserver(records=>{
-  const roots=[];
-  for(const r of records)for(const n of r.addedNodes)if(n.nodeType===1)roots.push(n);
-  roots.slice(0,12).forEach(repairSemantics);
+  for(const r of records)for(const n of r.addedNodes)if(n.nodeType===1)semanticsRoots74.push(n);
+  if(semanticsRoots74.length&&!semanticsFrame74)semanticsFrame74=requestAnimationFrame(()=>{
+    const roots=semanticsRoots74.splice(0,16);semanticsFrame74=0;roots.forEach(repairSemantics);
+    if(semanticsRoots74.length)semanticsFrame74=requestAnimationFrame(()=>{const more=semanticsRoots74.splice(0,16);semanticsFrame74=0;more.forEach(repairSemantics)});
+  });
 });
 observer.observe(document.body,{subtree:true,childList:true});
 
@@ -6647,8 +6651,10 @@ setTimeout(bindChrome,500);
     ensureShortcutsClose();
   }
 
-  const mo=new MutationObserver(()=>requestAnimationFrame(refresh));
-  if(document.body)mo.observe(document.body,{childList:true,subtree:true});
+  let refreshFrame=0;
+  const mo=new MutationObserver(()=>{if(!mobile()||refreshFrame)return;refreshFrame=requestAnimationFrame(()=>{refreshFrame=0;refresh()})});
+  const shortcutsHost=document.getElementById('shortcuts-overlay');
+  if(shortcutsHost)mo.observe(shortcutsHost,{childList:true,subtree:true});
   addEventListener('resize',refresh,{passive:true});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh,{once:true});
   else refresh();
@@ -6835,8 +6841,11 @@ setTimeout(bindChrome,500);
     });
   }
 
-  const mo=new MutationObserver(()=>requestAnimationFrame(refresh));
-  if(document.body)mo.observe(document.body,{childList:true,subtree:true});
+  let legacyFrame=0;
+  const mq=matchMedia('(max-width:760px)');
+  const mo=new MutationObserver(()=>{if(!mq.matches||legacyFrame)return;legacyFrame=requestAnimationFrame(()=>{legacyFrame=0;refresh()})});
+  if(mq.matches&&document.body)mo.observe(document.body,{childList:true,subtree:true});
+  mq.addEventListener?.('change',e=>{if(e.matches){refresh();if(document.body)mo.observe(document.body,{childList:true,subtree:true})}else mo.disconnect()});
   addEventListener('resize',refresh,{passive:true});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh,{once:true});
   else refresh();
@@ -7831,8 +7840,7 @@ setTimeout(bindChrome,500);
     }
   }
 
-  const mo=new MutationObserver(()=>requestAnimationFrame(polish));
-  if(document.body)mo.observe(document.body,{childList:true,subtree:true});
+  document.addEventListener('click',e=>{if(e.target.closest?.('[data-habitview]'))requestAnimationFrame(polish)},true);
   addEventListener('resize',polish,{passive:true});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',polish,{once:true});
   else polish();
@@ -8651,15 +8659,14 @@ window.SecondBrainA11y={repair:repairLabels,syncDialog};
 
   function start(){
     decorate();
+    let decorateFrame=0,pendingRoots=[];
     const observer=new MutationObserver(records=>{
-      for(const record of records){
-        for(const node of record.addedNodes){
-          if(node.nodeType===1)decorate(node.matches?.('button')?node.parentElement||node:node);
-        }
-      }
+      if(!matchMedia('(max-width:760px)').matches)return;
+      for(const record of records)for(const node of record.addedNodes)if(node.nodeType===1)pendingRoots.push(node.matches?.('button')?node.parentElement||node:node);
+      if(pendingRoots.length&&!decorateFrame)decorateFrame=requestAnimationFrame(()=>{const roots=pendingRoots.splice(0,12);decorateFrame=0;roots.forEach(decorate)});
     });
-    observer.observe(document.body,{subtree:true,childList:true});
-    matchMedia('(max-width:760px)').addEventListener?.('change',e=>{if(e.matches)decorate()});
+    if(matchMedia('(max-width:760px)').matches)observer.observe(document.body,{subtree:true,childList:true});
+    matchMedia('(max-width:760px)').addEventListener?.('change',e=>{if(e.matches){decorate();observer.observe(document.body,{subtree:true,childList:true})}else observer.disconnect()});
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
@@ -8848,12 +8855,15 @@ window.SecondBrainA11y={repair:repairLabels,syncDialog};
 
   function start(){
     decorate();
+    let decorateFrame=0;
     const mo=new MutationObserver(records=>{
+      if(!matchMedia('(max-width:760px)').matches)return;
       let needs=false;
       for(const r of records){if(r.addedNodes?.length){needs=true;break}}
-      if(needs)requestAnimationFrame(()=>decorate());
+      if(needs&&!decorateFrame)decorateFrame=requestAnimationFrame(()=>{decorateFrame=0;decorate()});
     });
-    mo.observe(document.body,{subtree:true,childList:true});
+    if(matchMedia('(max-width:760px)').matches)mo.observe(document.body,{subtree:true,childList:true});
+    matchMedia('(max-width:760px)').addEventListener?.('change',e=>{if(e.matches){decorate();mo.observe(document.body,{subtree:true,childList:true})}else mo.disconnect()});
     document.addEventListener('click',e=>{
       if(e.target.closest?.('#v35-mobile-actions,#v35-mobile-more'))setTimeout(()=>decorate(),20);
     },true);

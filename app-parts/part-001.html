@@ -2993,8 +2993,10 @@ function saveState() {
     try {
         normalizeState();
         window.SecondBrainSync?.capture();
-        storage.setItem('omnios_v3_state', JSON.stringify(state));
-        storage.setItem('omnios_v3_backup', JSON.stringify({ version:3, savedAt: new Date().toISOString(), state }));
+        const savedAt = new Date().toISOString();
+        const serializedState = JSON.stringify(state);
+        storage.setItem('omnios_v3_state', serializedState);
+        storage.setItem('omnios_v3_backup', '{"version":3,"savedAt":' + JSON.stringify(savedAt) + ',"state":' + serializedState + '}');
         window.OmniRecovery35?.queueBackgroundProtect?.('save');
         setSaveStatus('Saved locally','saved');
     } catch (e) {
@@ -3011,7 +3013,8 @@ function saveState() {
         }
     }
     applyAppearance();
-    renderAll();
+    if (typeof renderActiveCoreView === 'function') renderActiveCoreView();
+    else renderAll();
     // Full renders used to steal focus from the control being edited. Restore it
     // when the same control survives the render, including text caret position.
     if (activeId) {
@@ -3093,6 +3096,7 @@ function switchView(target) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     view.classList.add('active');
     document.getElementById('view-title').textContent = desktopItem ? desktopItem.textContent.trim() : ({'master-calendar':'Calendar'}[target] || target);
+    if (typeof renderCoreView === 'function') renderCoreView(target);
 }
 
 document.querySelectorAll('.nav-item').forEach(item => {

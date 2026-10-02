@@ -7994,6 +7994,192 @@ window.SecondBrainA11y={repair:repairLabels,syncDialog};
 <script src="./js/crypto-vault.js"></script>
 <script src="./js/password-vault.js"></script>
 <script src="./js/ui-polish.js"></script>
+
+<style id="omnios-task-toolbar-repair-v93">
+/* Second Brain — Tasks responsive toolbar repair.
+   Keeps every control inside the viewport, gives the dynamic Saved Views group
+   its own layout, and restores a visible selection affordance on narrow screens. */
+#view-tasks,
+#view-tasks > .toolbar,
+#view-tasks > .toolbar > .toolbar-group{min-width:0;max-width:100%}
+#view-tasks > .toolbar{width:100%;box-sizing:border-box}
+#view-tasks > .toolbar select,
+#view-tasks > .toolbar input,
+#view-tasks > .toolbar button{box-sizing:border-box;max-width:100%}
+
+@media (max-width:760px){
+  #view-tasks{overflow-x:hidden!important}
+
+  /* Empty cover affordance is visual noise on the task workspace; an existing
+     cover still remains visible. */
+  #view-tasks > .v44-page-cover-shell:has(.v44-page-cover-empty){
+    display:none!important;
+  }
+
+  #view-tasks > .toolbar{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:8px!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    padding:8px!important;
+    margin:0 0 10px!important;
+    overflow:hidden!important;
+    border-radius:14px!important;
+  }
+  #view-tasks > .toolbar > .toolbar-divider{display:none!important}
+  #view-tasks > .toolbar > .toolbar-group{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+  }
+
+  /* View modes stay compact and swipeable instead of forcing the page wider. */
+  #view-tasks > .toolbar > .toolbar-group:nth-of-type(1),
+  #view-tasks > .toolbar > .task-view-group-v33{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    gap:6px!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    overscroll-behavior-x:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    scrollbar-width:none!important;
+    padding:0 0 2px!important;
+  }
+  #view-tasks > .toolbar > .toolbar-group:nth-of-type(1)::-webkit-scrollbar,
+  #view-tasks > .toolbar > .task-view-group-v33::-webkit-scrollbar{display:none!important}
+  #view-tasks > .toolbar > .toolbar-group:nth-of-type(1) .view-btn,
+  #view-tasks > .toolbar > .task-view-group-v33 .view-btn{
+    flex:0 0 auto!important;
+    width:auto!important;
+    min-width:max-content!important;
+    min-height:40px!important;
+    padding:8px 11px!important;
+    border-radius:10px!important;
+    white-space:nowrap!important;
+  }
+
+  /* Five filters: clean 2-column grid, with Bucket spanning the last row. */
+  #view-tasks > .toolbar > .toolbar-group:nth-of-type(2),
+  #view-tasks > .toolbar > .task-filter-group-v33{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:6px!important;
+    overflow:visible!important;
+  }
+  #view-tasks > .toolbar > .toolbar-group:nth-of-type(2) > select,
+  #view-tasks > .toolbar > .task-filter-group-v33 > select{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    height:42px!important;
+    padding-inline:11px 30px!important;
+    text-overflow:ellipsis!important;
+  }
+  #view-tasks #filter-bucket-v35{
+    grid-column:1 / -1!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  /* Search gets the full row; sort + selection sit below it. */
+  #view-tasks > .toolbar > .toolbar-group:nth-of-type(3),
+  #view-tasks > .toolbar > .task-action-group-v33{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 44px!important;
+    gap:6px!important;
+    align-items:center!important;
+    overflow:visible!important;
+  }
+  #view-tasks #search-input{
+    grid-column:1 / -1!important;
+    grid-row:1!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    height:42px!important;
+  }
+  #view-tasks #sort-by{
+    grid-column:1!important;
+    grid-row:2!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    height:42px!important;
+  }
+  #view-tasks [data-v25-select="task"]{
+    grid-column:2!important;
+    grid-row:2!important;
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    height:42px!important;
+    min-height:42px!important;
+    padding:0!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    font-size:0!important;
+    color:var(--text-primary)!important;
+  }
+  #view-tasks [data-v25-select="task"]::before{
+    content:"✓";
+    font-size:1rem!important;
+    line-height:1;
+    font-weight:800;
+  }
+
+  /* v55 appends Saved Views as a fourth toolbar-group. v33 labels every group
+     after the second as an action group, so explicitly separate this one. */
+  #view-tasks > .toolbar > .toolbar-group:nth-of-type(4){
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:6px!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    overflow:visible!important;
+  }
+  #view-tasks > .toolbar > .toolbar-group:nth-of-type(4) > button,
+  #view-tasks #v55-save-task-view,
+  #view-tasks #v55-task-views{
+    grid-column:auto!important;
+    grid-row:auto!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    min-height:40px!important;
+    padding:8px 10px!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    font-size:.72rem!important;
+  }
+
+  #view-tasks #tasks-content{min-width:0!important;width:100%!important}
+  #view-tasks #tasks-content > .empty-state{
+    width:100%!important;
+    margin:0!important;
+    padding:28px 14px!important;
+    border-radius:14px!important;
+  }
+}
+
+@media (max-width:390px){
+  #view-tasks > .toolbar > .toolbar-group:nth-of-type(2),
+  #view-tasks > .toolbar > .task-filter-group-v33{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  #view-tasks #filter-bucket-v35{grid-column:1!important}
+}
+</style>
+
 </body>
 </html>
 

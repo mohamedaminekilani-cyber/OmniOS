@@ -8596,6 +8596,510 @@ window.SecondBrainA11y={repair:repairLabels,syncDialog};
 }
 </style>
 
+
+<style id="omnios-calendar-filter-cards-v95">
+/* Second Brain v95 — clean Calendar filter system:
+   preset tabs → two grouped sections → SVG card toggles → compact actions → apply button. */
+#view-master-calendar .v36-filter-btn[aria-expanded="true"]{
+  border-color:color-mix(in srgb,var(--accent-cyan) 42%,var(--border-color))!important;
+  color:var(--accent-cyan)!important;
+  background:color-mix(in srgb,var(--accent-cyan) 8%,var(--bg-base))!important;
+}
+
+/* Presets become a quiet segmented control instead of unrelated pills. */
+#view-master-calendar .v36-cal-subbar{
+  gap:4px!important;
+}
+#view-master-calendar .v36-cal-preset{
+  min-height:34px!important;
+  padding:7px 11px!important;
+  border:1px solid transparent!important;
+  border-radius:9px!important;
+  background:transparent!important;
+  color:var(--text-muted)!important;
+  font-size:.67rem!important;
+  font-weight:720!important;
+  transition:background .14s ease,color .14s ease,border-color .14s ease!important;
+}
+#view-master-calendar .v36-cal-preset:hover{
+  background:var(--bg-elevated)!important;
+  color:var(--text-primary)!important;
+}
+#view-master-calendar .v36-cal-preset.active{
+  color:var(--accent-cyan)!important;
+  border-color:color-mix(in srgb,var(--accent-cyan) 28%,var(--border-color))!important;
+  background:color-mix(in srgb,var(--accent-cyan) 8%,var(--bg-base))!important;
+  box-shadow:none!important;
+}
+#view-master-calendar #v36-open-planner{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:6px!important;
+}
+#view-master-calendar #v36-open-planner .v95-planner-icon{
+  width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;flex:none;
+}
+
+/* Filter panel shell. */
+#view-master-calendar #v36-filter-panel.v95-filter-panel{
+  display:none!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:12px!important;
+  width:100%!important;
+  padding:12px!important;
+  border-bottom:1px solid var(--border-color)!important;
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb,var(--bg-elevated) 72%,var(--bg-base)),
+      var(--bg-base))!important;
+}
+#view-master-calendar #v36-filter-panel.v95-filter-panel.open{
+  display:flex!important;
+}
+
+#view-master-calendar .v95-filter-groups{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+#view-master-calendar .v95-filter-group{
+  min-width:0;
+  padding:10px;
+  border:1px solid color-mix(in srgb,var(--border-color) 92%,transparent);
+  border-radius:14px;
+  background:color-mix(in srgb,var(--bg-surface) 88%,transparent);
+}
+#view-master-calendar .v95-filter-group-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+  padding:1px 2px;
+}
+#view-master-calendar .v95-filter-group-title{
+  min-width:0;
+}
+#view-master-calendar .v95-filter-group-title strong{
+  display:block;
+  color:var(--text-primary);
+  font-size:.74rem;
+  font-weight:800;
+  letter-spacing:-.01em;
+}
+#view-master-calendar .v95-filter-group-title span{
+  display:block;
+  margin-top:2px;
+  color:var(--text-muted);
+  font-size:.57rem;
+  line-height:1.25;
+}
+#view-master-calendar .v95-filter-group-count{
+  flex:none;
+  padding:4px 7px;
+  border-radius:999px;
+  background:var(--bg-base);
+  color:var(--text-muted);
+  font-size:.55rem;
+  font-weight:750;
+}
+#view-master-calendar .v95-filter-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+}
+
+/* Neutral cards: color is reserved for the icon/state, not a noisy full outline. */
+#view-master-calendar .v36-cal-filter-chip.v95-filter-card{
+  --chip-color:var(--accent-cyan);
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:9px!important;
+  min-width:0!important;
+  min-height:54px!important;
+  padding:8px 9px!important;
+  border:1px solid var(--border-color)!important;
+  border-radius:11px!important;
+  background:var(--bg-base)!important;
+  color:var(--text-secondary)!important;
+  box-shadow:none!important;
+  cursor:pointer!important;
+  user-select:none!important;
+  transition:background .14s ease,border-color .14s ease,transform .14s ease!important;
+}
+#view-master-calendar .v36-cal-filter-chip.v95-filter-card:hover{
+  background:var(--bg-elevated)!important;
+  border-color:var(--border-light)!important;
+}
+#view-master-calendar .v36-cal-filter-chip.v95-filter-card:active{
+  transform:scale(.99);
+}
+#view-master-calendar .v36-cal-filter-chip.v95-filter-card.is-selected,
+#view-master-calendar .v36-cal-filter-chip.v95-filter-card:has(input:checked){
+  border-color:color-mix(in srgb,var(--chip-color) 24%,var(--border-color))!important;
+  background:color-mix(in srgb,var(--chip-color) 5%,var(--bg-base))!important;
+  color:var(--text-primary)!important;
+  box-shadow:none!important;
+}
+#view-master-calendar .v36-cal-filter-chip.v95-filter-card:has(input:focus-visible){
+  outline:2px solid color-mix(in srgb,var(--accent-cyan) 78%,white);
+  outline-offset:2px;
+}
+#view-master-calendar .v95-filter-card-main{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+  flex:1;
+}
+#view-master-calendar .v95-filter-icon{
+  width:30px;height:30px;flex:0 0 30px;
+  display:grid;place-items:center;
+  border-radius:9px;
+  background:color-mix(in srgb,var(--chip-color) 9%,var(--bg-elevated));
+  color:color-mix(in srgb,var(--chip-color) 86%,white);
+}
+#view-master-calendar .v95-filter-icon svg{
+  width:15px;height:15px;
+  fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+#view-master-calendar .v95-filter-copy{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+#view-master-calendar .v95-filter-copy strong{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text-primary);
+  font-size:.66rem;
+  line-height:1.2;
+  font-weight:750;
+}
+#view-master-calendar .v95-filter-copy small{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text-muted);
+  font-size:.53rem;
+  line-height:1.2;
+}
+#view-master-calendar .v95-filter-card > input[data-v36-filter]{
+  position:absolute!important;
+  inline-size:1px!important;
+  block-size:1px!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+#view-master-calendar .v95-toggle-ui{
+  position:relative;
+  width:30px;height:18px;
+  flex:0 0 30px;
+  border:1px solid var(--border-light);
+  border-radius:999px;
+  background:var(--bg-elevated);
+  transition:background .14s ease,border-color .14s ease;
+}
+#view-master-calendar .v95-toggle-ui::after{
+  content:"";
+  position:absolute;
+  top:3px;left:3px;
+  width:10px;height:10px;
+  border-radius:50%;
+  background:var(--text-muted);
+  transition:transform .14s ease,background .14s ease;
+}
+#view-master-calendar .v95-filter-card:has(input:checked) .v95-toggle-ui{
+  border-color:color-mix(in srgb,var(--chip-color) 44%,var(--border-color));
+  background:color-mix(in srgb,var(--chip-color) 24%,var(--bg-elevated));
+}
+#view-master-calendar .v95-filter-card:has(input:checked) .v95-toggle-ui::after{
+  transform:translateX(12px);
+  background:color-mix(in srgb,var(--chip-color) 88%,white);
+}
+
+/* One odd planning card can use the available width instead of leaving a hole. */
+#view-master-calendar .v95-filter-group[data-v95-group="planning"] .v95-filter-card:last-child:nth-child(odd){
+  grid-column:1/-1;
+}
+
+/* Footer hierarchy: summary → compact utility row → one obvious preset action. */
+#view-master-calendar .v36-filter-actions.v95-filter-actions{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto auto auto!important;
+  align-items:center!important;
+  gap:6px!important;
+  width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+}
+#view-master-calendar .v36-filter-actions.v95-filter-actions .v36-filter-summary{
+  min-width:0;
+  margin:0!important;
+  color:var(--text-muted)!important;
+  font-size:.58rem!important;
+  font-weight:650!important;
+  white-space:nowrap!important;
+}
+#view-master-calendar .v36-filter-actions.v95-filter-actions .v95-action-btn{
+  min-width:0!important;
+  min-height:34px!important;
+  padding:6px 10px!important;
+  border-radius:9px!important;
+  background:var(--bg-surface)!important;
+  border:1px solid var(--border-color)!important;
+  color:var(--text-secondary)!important;
+  font-size:.6rem!important;
+  font-weight:700!important;
+  justify-content:center!important;
+}
+#view-master-calendar .v36-filter-actions.v95-filter-actions .v95-action-btn:hover{
+  background:var(--bg-elevated)!important;
+  border-color:var(--border-light)!important;
+  color:var(--text-primary)!important;
+}
+#view-master-calendar .v95-filter-apply{
+  width:100%;
+}
+#view-master-calendar #v36-filter-plan.v95-apply-btn{
+  width:100%!important;
+  min-height:40px!important;
+  justify-content:center!important;
+  border-radius:10px!important;
+  border:1px solid color-mix(in srgb,var(--accent-cyan) 24%,var(--border-color))!important;
+  background:color-mix(in srgb,var(--accent-cyan) 7%,var(--bg-surface))!important;
+  color:var(--text-primary)!important;
+  font-size:.64rem!important;
+  font-weight:780!important;
+}
+#view-master-calendar #v36-filter-plan.v95-apply-btn:hover{
+  border-color:color-mix(in srgb,var(--accent-cyan) 42%,var(--border-color))!important;
+  background:color-mix(in srgb,var(--accent-cyan) 10%,var(--bg-elevated))!important;
+}
+
+@media(max-width:760px){
+  #view-master-calendar .v36-cal-subbar{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) auto!important;
+    gap:5px!important;
+    width:100%!important;
+    padding:6px 8px!important;
+    overflow:visible!important;
+  }
+  #view-master-calendar .v36-cal-subbar .v36-cal-preset{
+    width:100%!important;
+    min-width:0!important;
+    padding-inline:4px!important;
+  }
+  #view-master-calendar .v36-cal-subbar .v36-cal-stat,
+  #view-master-calendar .v36-cal-subbar .v36-cal-stat-divider,
+  #view-master-calendar .v36-cal-subbar .v36-cal-sub-spacer{
+    display:none!important;
+  }
+  #view-master-calendar #v36-open-planner{
+    min-width:76px!important;
+    padding-inline:8px!important;
+  }
+  #view-master-calendar #v36-filter-panel.v95-filter-panel{
+    padding:10px!important;
+    gap:9px!important;
+  }
+  #view-master-calendar .v95-filter-groups{
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+  }
+  #view-master-calendar .v95-filter-group{
+    padding:9px!important;
+    border-radius:13px!important;
+  }
+  #view-master-calendar .v95-filter-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:6px!important;
+  }
+  #view-master-calendar .v36-cal-filter-chip.v95-filter-card{
+    min-height:52px!important;
+    padding:7px 8px!important;
+  }
+  #view-master-calendar .v95-filter-copy small{
+    display:none!important;
+  }
+  #view-master-calendar .v36-filter-actions.v95-filter-actions{
+    grid-template-columns:minmax(0,1fr) repeat(3,auto)!important;
+  }
+  #view-master-calendar .v36-filter-actions.v95-filter-actions .v95-action-btn{
+    min-width:64px!important;
+    padding-inline:8px!important;
+  }
+}
+@media(max-width:360px){
+  #view-master-calendar .v36-cal-subbar{
+    grid-template-columns:repeat(3,minmax(0,1fr)) 40px!important;
+  }
+  #view-master-calendar #v36-open-planner{
+    width:40px!important;min-width:40px!important;padding:0!important;font-size:0!important;
+  }
+  #view-master-calendar #v36-open-planner .v95-planner-icon{width:15px;height:15px}
+  #view-master-calendar .v95-filter-grid{
+    grid-template-columns:1fr!important;
+  }
+  #view-master-calendar .v95-filter-group[data-v95-group="planning"] .v95-filter-card:last-child:nth-child(odd){
+    grid-column:auto;
+  }
+  #view-master-calendar .v36-filter-actions.v95-filter-actions{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  #view-master-calendar .v36-filter-actions.v95-filter-actions .v36-filter-summary{
+    grid-column:1/-1!important;
+  }
+  #view-master-calendar .v36-filter-actions.v95-filter-actions .v95-action-btn{
+    width:100%!important;min-width:0!important;
+  }
+}
+</style>
+
+<script id="omnios-calendar-filter-cards-v95">
+(function(){
+  'use strict';
+  if(window.__omniCalendarFilterCards95)return;
+  window.__omniCalendarFilterCards95=true;
+
+  const defs={
+    event:{
+      label:'Events',desc:'Appointments and meetings',color:'#ec4899',
+      icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v3M17 4v3M4 9h16M6 6h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"/></svg>'
+    },
+    timeblock:{
+      label:'Time blocks',desc:'Planned schedule blocks',color:'#06b6d4',
+      icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M8 8h8M8 12h5M8 16h7"/></svg>'
+    },
+    task:{
+      label:'Tasks due',desc:'Linked and due tasks',color:'#3b82f6',
+      icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 12 2.4 2.4L16 8.5"/><path d="M5 5h14v14H5z"/></svg>'
+    },
+    deadline:{
+      label:'Deadlines',desc:'Upcoming due dates',color:'#f59e0b',
+      icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 12 12 21 4 12 12 3Z"/><path d="M12 8v5M12 16h.01"/></svg>'
+    },
+    workout:{
+      label:'Workouts',desc:'Training and exercise',color:'#ef4444',
+      icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M20 10v4M7 8v8M17 8v8M4 12h16"/></svg>'
+    },
+    habit:{
+      label:'Habit activity',desc:'Habit completions',color:'#10b981',
+      icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 12.5 10.2 16 17 8"/><circle cx="12" cy="12" r="9"/></svg>'
+    },
+    focus:{
+      label:'Focus activity',desc:'Tracked focus sessions',color:'#14b8a6',
+      icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4"/><circle cx="12" cy="12" r="3"/></svg>'
+    },
+    finance:{
+      label:'Finance activity',desc:'Money-related items',color:'#eab308',
+      icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M16.5 7.5c0-2-2-3.5-4.5-3.5S7.5 5.5 7.5 7.5 9.5 11 12 11s4.5 1.5 4.5 3.5S14.5 18 12 18s-4.5-1.5-4.5-3.5"/></svg>'
+    },
+    note:{
+      label:'Note activity',desc:'Notes and captures',color:'#a855f7',
+      icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h7l5 5v11H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M14 4v6h5M9 14h6M9 17h4"/></svg>'
+    }
+  };
+  const planning=['event','timeblock','task','deadline','workout'];
+  const activity=['habit','focus','finance','note'];
+
+  function esc(s){
+    return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  function valueFor(key){
+    try{return masterCalendarFilters[key]!==false}catch(_){
+      try{return state?.settings?.calendar?.workspace?.filters?.[key]!==false}catch(__){return true}
+    }
+  }
+  function card(key){
+    const d=defs[key],checked=valueFor(key);
+    return '<label class="v36-cal-filter-chip v95-filter-card'+(checked?' is-selected':'')+'" style="--chip-color:'+d.color+'">'+
+      '<span class="v95-filter-card-main">'+
+        '<span class="v95-filter-icon">'+d.icon+'</span>'+
+        '<span class="v95-filter-copy"><strong>'+esc(d.label)+'</strong><small>'+esc(d.desc)+'</small></span>'+
+      '</span>'+
+      '<input type="checkbox" data-v36-filter="'+esc(key)+'" '+(checked?'checked':'')+' aria-label="Show '+esc(d.label)+'">'+
+      '<span class="v95-toggle-ui" aria-hidden="true"></span>'+
+    '</label>';
+  }
+  function group(title,subtitle,keys,name){
+    return '<section class="v95-filter-group" data-v95-group="'+name+'">'+
+      '<div class="v95-filter-group-head">'+
+        '<div class="v95-filter-group-title"><strong>'+esc(title)+'</strong><span>'+esc(subtitle)+'</span></div>'+
+        '<span class="v95-filter-group-count">'+keys.length+' filters</span>'+
+      '</div>'+
+      '<div class="v95-filter-grid">'+keys.map(card).join('')+'</div>'+
+    '</section>';
+  }
+  function sync(panel){
+    let selected=0;
+    panel.querySelectorAll('[data-v36-filter]').forEach(input=>{
+      const checked=valueFor(input.dataset.v36Filter);
+      if(input.checked!==checked)input.checked=checked;
+      input.closest('.v95-filter-card')?.classList.toggle('is-selected',checked);
+      if(checked)selected++;
+    });
+    const summary=panel.querySelector('.v36-filter-summary');
+    if(summary)summary.textContent=selected+' of '+Object.keys(defs).length+' shown';
+  }
+  function plannerIcon(){
+    const b=document.getElementById('v36-open-planner');
+    if(!b||b.dataset.v95Icon==='1')return;
+    b.dataset.v95Icon='1';
+    b.innerHTML='<svg class="v95-planner-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3M17 3v3M4 8h16M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/><path d="M8 12h3M8 16h5"/></svg><span>Planner</span>';
+  }
+  function upgrade(){
+    const panel=document.getElementById('v36-filter-panel');
+    if(!panel)return;
+    plannerIcon();
+    if(panel.dataset.v95Ready!=='1'){
+      panel.dataset.v95Ready='1';
+      panel.classList.add('v95-filter-panel');
+      const selected=Object.keys(defs).filter(valueFor).length;
+      panel.innerHTML=
+        '<div class="v95-filter-groups">'+
+          group('Planning','Core calendar and scheduling items',planning,'planning')+
+          group('Activity','Optional life and tracking signals',activity,'activity')+
+        '</div>'+
+        '<div class="v36-filter-actions v95-filter-actions">'+
+          '<span class="v36-filter-summary">'+selected+' of '+Object.keys(defs).length+' shown</span>'+
+          '<button type="button" class="btn btn-sm v95-action-btn" id="v36-filter-all">Select all</button>'+
+          '<button type="button" class="btn btn-sm v95-action-btn" id="v561-filter-none">Clear all</button>'+
+          '<button type="button" class="btn btn-sm v95-action-btn" id="v561-filter-invert">Invert</button>'+
+        '</div>'+
+        '<div class="v95-filter-apply"><button type="button" class="btn btn-sm v95-apply-btn" id="v36-filter-plan">Apply “Planning only”</button></div>';
+    }
+    sync(panel);
+  }
+
+  let queued=false;
+  function queue(){
+    if(queued)return;queued=true;
+    requestAnimationFrame(()=>{queued=false;upgrade()});
+  }
+  const root=document.getElementById('master-calendar-content');
+  if(root)new MutationObserver(queue).observe(root,{childList:true,subtree:true});
+  document.addEventListener('change',e=>{
+    if(e.target?.matches?.('#v36-filter-panel [data-v36-filter]'))requestAnimationFrame(queue);
+  },true);
+  document.addEventListener('click',e=>{
+    if(e.target?.closest?.('#v36-filter-btn,[data-v36-preset],#v36-filter-all,#v561-filter-none,#v561-filter-invert,#v36-filter-plan'))requestAnimationFrame(queue);
+  },true);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',queue,{once:true});else queue();
+})();
+</script>
+
 </body>
 </html>
 

@@ -1707,7 +1707,7 @@ function openLinked611(rid,iid){const r=getRoutine(rid),i=getStep(r,iid);if(!i)r
 normalize();
 const prevSwitch=window.switchView;window.switchView=function(target){const r=prevSwitch?.apply(this,arguments);if(target==='routine')requestAnimationFrame(()=>{renderRoutinePage();const t=document.getElementById('view-title');if(t)t.textContent='Routine'});return r};
 const prevRenderAll=window.renderAll;if(typeof prevRenderAll==='function')window.renderAll=function(){const r=prevRenderAll.apply(this,arguments);if(document.getElementById('view-routine')?.classList.contains('active'))requestAnimationFrame(renderRoutinePage);return r};
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{if(document.getElementById('view-routine')?.classList.contains('active'))renderRoutinePage();if(document.getElementById('view-dashboard')?.classList.contains('active'))},{once:true});else{if(document.getElementById('view-routine')?.classList.contains('active'))renderRoutinePage();if(document.getElementById('view-dashboard')?.classList.contains('active'))}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{if(document.getElementById('view-routine')?.classList.contains('active'))renderRoutinePage()},{once:true});else if(document.getElementById('view-routine')?.classList.contains('active'))renderRoutinePage()
 
 window.OmniRoutine={render:renderRoutinePage,openEditor:openEditor611,cycleKey,toggleStep:toggleStep611};
 document.documentElement.dataset.omniosVersion=VERSION;window.OmniBuild={version:VERSION,name:'Unified Core — Clean Startup + Routine Persistence'};

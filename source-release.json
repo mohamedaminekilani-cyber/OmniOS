@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "file": "app.dd8a171ca31bbbcbdace.html",
-  "sha256": "dd8a171ca31bbbcbdaced717a984a52a0a0b7562a8677bbee2af591b455bf441",
-  "bytes": 7193000,
+  "file": "app.0d4f683f9f54dc2ae677.html",
+  "sha256": "0d4f683f9f54dc2ae677a8cc4e3e5cac6656440324e6313562e231818b604d43",
+  "bytes": 7194473,
   "parts": [
     "app-parts/part-001.html",
     "app-parts/part-002.html",
@@ -41,5 +41,5 @@
     "js/password-vault.js",
     "js/ui-polish.js"
   ],
-  "subject": "Startup, search, note saving and interface reliability fixes"
+  "subject": "Sync, vault and service-worker reliability fixes"
 }

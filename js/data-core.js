@@ -18,7 +18,8 @@ function flatten(value,p=[],out={}){
  }else out[key(p)]={kind:'value',value};
  return out;
 }
-function compare(a,b){return (Number(a?.[0])||0)-(Number(b?.[0])||0)||String(a?.[1]||'').localeCompare(String(b?.[1]||''))}
+function lexical(a,b){a=String(a??'');b=String(b??'');return a===b?0:(a<b?-1:1)}
+function compare(a,b){return (Number(a?.[0])||0)-(Number(b?.[0])||0)||lexical(a?.[1],b?.[1])}
 function materialize(entries){
  const children=new Map();
  for(const [k,e]of Object.entries(entries)){const p=path(k);if(!p.length)continue;const parent=key(p.slice(0,-1));if(!children.has(parent))children.set(parent,[]);children.get(parent).push(p[p.length-1])}
@@ -61,7 +62,7 @@ function merge(local,remote){
   result.counter=Math.max(result.counter,r.rev[0]);const l=result.entries[k];let cmp=l?compare(r.rev,l.rev):1;
   // Initial imported datasets can differ without revision history. Make the
   // choice deterministic and retain the alternative for explicit recovery.
-  if(l&&cmp===0&&!equal(l,r))cmp=JSON.stringify(r).localeCompare(JSON.stringify(l));
+  if(l&&cmp===0&&!equal(l,r))cmp=lexical(JSON.stringify(r),JSON.stringify(l));
   if(l&&!l.deleted&&!r.deleted&&l.node?.kind==='value'&&r.node?.kind==='value'&&!equal(l.node,r.node)&&l.rev[1]!==r.rev[1]){
    const id=key([k,JSON.stringify(l.rev),JSON.stringify(r.rev)].sort());
    if(!conflicts.some(x=>x.id===id))conflicts.push({id,path:k,values:[copy(l),copy(r)]});

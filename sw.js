@@ -1,4 +1,4 @@
-const SHELL_CACHE='second-brain-shell-v3';
+const SHELL_CACHE='second-brain-shell-v4';
 const USER_ASSET_CACHE='omnios-user-assets-v1';
 const SNAPSHOT_PREFIX='omnios-app-snapshot-v1-';
 const CORE=[
@@ -24,8 +24,7 @@ self.addEventListener('install',event=>{
 self.addEventListener('activate',event=>{
   event.waitUntil((async()=>{
     for(const key of await caches.keys()){
-      const keep=key===SHELL_CACHE||key===USER_ASSET_CACHE||key==='secondbrain-releases-v1'||key.startsWith(SNAPSHOT_PREFIX);
-      if(!keep)await caches.delete(key);
+      if(key.startsWith('second-brain-shell-')&&key!==SHELL_CACHE)await caches.delete(key);
     }
     await self.clients.claim();
   })());
@@ -42,9 +41,14 @@ async function userIconResponse(request){
 function isAppPart(url){
   return /\/app-parts\/part-\d{3}\.html$/.test(url.pathname);
 }
+function bypassCache(request,url){
+  return url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/')||request.headers?.has?.('authorization')||request.headers?.has?.('x-api-key');
+}
 
 function canCache(request,response){
   if(!response||!response.ok||response.type==='opaque')return false;
+  const policy=(response.headers.get('cache-control')||'').toLowerCase();
+  if(/(?:^|[,\s])(?:private|no-store)(?:[,\s=]|$)/.test(policy))return false;
   const type=(response.headers.get('content-type')||'').toLowerCase();
   if(request.mode==='navigate')return type.includes('text/html');
   if(request.destination==='manifest')return type.includes('application/manifest+json')||type.includes('application/json');
@@ -56,7 +60,7 @@ function canCache(request,response){
 self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET')return;
   const url=new URL(event.request.url);
-  if(url.origin!==self.location.origin)return;
+  if(url.origin!==self.location.origin||bypassCache(event.request,url))return;
 
   // App fragments are owned by index.html's validated two-slot snapshot loader.
   // Do not add a second, independent caching layer here.

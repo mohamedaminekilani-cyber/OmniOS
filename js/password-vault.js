@@ -1,28 +1,40 @@
 (function(){'use strict';
 const C=window.SecondBrainCrypto,E=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let key=null,salt=null,items=[],busy=false,idle;
-function lock(){key=null;salt=null;items=[];document.querySelectorAll('[data-password-editor]').forEach(x=>x.remove());render()}
+let key=null,salt=null,items=[],busy=false,writeBusy=false,idle,generation=0;
+function lock(){generation++;busy=false;key=null;salt=null;items=[];document.querySelectorAll('[data-password-editor]').forEach(x=>x.remove());render()}
 function touch(){clearTimeout(idle);if(key)idle=setTimeout(lock,5*60*1000)}
 async function persist(next){
- const encrypted=await C.seal(next,key,salt),before=state.passwordVault;state.passwordVault=encrypted;
- try{await window.OmniRecovery35.persistStateDurably();items=next;touch()}catch(e){state.passwordVault=before;throw e}
+ if(writeBusy)throw Error('Another vault change is already being saved.');
+ if(!key||!salt)throw Error('Vault is locked.');
+ writeBusy=true;const token=generation,sessionKey=key,sessionSalt=salt,before=state.passwordVault;
+ try{
+  const encrypted=await C.seal(next,sessionKey,sessionSalt);state.passwordVault=encrypted;
+  try{await window.OmniRecovery35.persistStateDurably()}catch(e){state.passwordVault=before;throw e}
+  if(token===generation&&key===sessionKey){items=next;touch()}
+ }finally{writeBusy=false}
 }
 function modal(title,html){const o=document.createElement('div');o.className='modal-overlay active';o.dataset.passwordEditor='';o.innerHTML='<section class="modal" role="dialog" aria-modal="true" aria-label="'+E(title)+'"><div class="modal-header"><h3>'+E(title)+'</h3><button class="icon-btn" aria-label="Close" data-close>×</button></div><div class="modal-body">'+html+'</div></section>';document.body.append(o);o.querySelector('[data-close]').onclick=()=>o.remove();return o}
-async function migrate(pass){
- salt=crypto.getRandomValues(new Uint8Array(16));key=await C.key(pass,salt);const legacy=JSON.parse(JSON.stringify(state.passwords||[])),box=await C.seal(legacy,key,salt);
- // Encrypt historical credentials too, instead of deleting their recovery history.
- const db=await new Promise((res,rej)=>{const q=indexedDB.open('OmniOS_Local_v35',1);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
- const snapshots=await new Promise((res,rej)=>{const q=db.transaction('snapshots').objectStore('snapshots').getAll();q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
- for(const snap of snapshots){if(snap.state?.passwords?.length){snap.state.passwordVault=await C.seal(snap.state.passwords,key,salt);snap.state.passwords=[]}}
- const before=JSON.parse(JSON.stringify(state));state.passwordVault=box;state.passwords=[];
+async function migrate(pass,token){
+ const tempSalt=crypto.getRandomValues(new Uint8Array(16)),tempKey=await C.key(pass,tempSalt);if(token!==generation)return false;
+ const legacy=JSON.parse(JSON.stringify(state.passwords||[])),box=await C.seal(legacy,tempKey,tempSalt);if(token!==generation)return false;
+ let db=null;
  try{
-  await new Promise((res,rej)=>{const tx=db.transaction(['state','snapshots'],'readwrite');for(const snap of snapshots)tx.objectStore('snapshots').put(snap);tx.objectStore('state').put({version:38,savedAt:new Date().toISOString(),state:JSON.parse(JSON.stringify(state)),aux:window.OmniRecovery35.captureAux()},'latest');tx.oncomplete=res;tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error||Error('Migration aborted'))});
-  await window.OmniRecovery35.persistStateDurably();window.OmniRecovery35.clearUndo?.();items=legacy;touch();
- }catch(e){state=before;lock();throw e}finally{db.close()}
+  db=await new Promise((res,rej)=>{const q=indexedDB.open('OmniOS_Local_v35',1);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});if(token!==generation)return false;
+  const snapshots=await new Promise((res,rej)=>{const q=db.transaction('snapshots').objectStore('snapshots').getAll();q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
+  for(const snap of snapshots){if(snap.state?.passwords?.length){snap.state.passwordVault=await C.seal(snap.state.passwords,tempKey,tempSalt);snap.state.passwords=[]}}
+  if(token!==generation)return false;
+  const before=JSON.parse(JSON.stringify(state));state.passwordVault=box;state.passwords=[];
+  try{
+   await new Promise((res,rej)=>{const tx=db.transaction(['state','snapshots'],'readwrite');for(const snap of snapshots)tx.objectStore('snapshots').put(snap);tx.objectStore('state').put({version:38,savedAt:new Date().toISOString(),state:JSON.parse(JSON.stringify(state)),aux:window.OmniRecovery35.captureAux()},'latest');tx.oncomplete=res;tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error||Error('Migration aborted'))});
+   await window.OmniRecovery35.persistStateDurably();window.OmniRecovery35.clearUndo?.();
+  }catch(e){state=before;throw e}
+  if(token===generation){key=tempKey;salt=tempSalt;items=legacy;touch();return true}
+  return false;
+ }finally{try{db?.close()}catch(_){}}
 }
 function unlock(){
  const exists=!!state.passwordVault,o=modal(exists?'Unlock passwords':'Protect your passwords','<p>'+ (exists?'Enter your vault passphrase.':'Create a passphrase to encrypt credentials on this device and their recovery snapshots. It cannot be recovered if lost.')+'</p><label for="sb-vault-pass">Passphrase</label><input id="sb-vault-pass" type="password" class="form-input" autocomplete="'+(exists?'current-password':'new-password')+'" minlength="12">'+(!exists?'<label for="sb-vault-confirm">Confirm passphrase</label><input id="sb-vault-confirm" class="form-input" type="password" autocomplete="new-password">':'')+'<p role="alert" data-error></p><button class="btn btn-primary" data-unlock>'+ (exists?'Unlock':'Encrypt and migrate')+'</button>');
- o.querySelector('[data-unlock]').onclick=async()=>{if(busy)return;const p=o.querySelector('#sb-vault-pass').value;if(!exists&&p!==o.querySelector('#sb-vault-confirm').value){o.querySelector('[data-error]').textContent='The passphrases do not match.';return}busy=true;o.querySelector('[data-unlock]').disabled=true;try{if(exists){const result=await C.open(state.passwordVault,p);if(!Array.isArray(result.value))throw Error('Invalid vault');key=result.key;salt=result.salt;items=result.value;touch()}else await migrate(p);o.remove();render()}catch(e){o.querySelector('[data-error]').textContent=exists?'Could not unlock the vault. Check your passphrase.':e.message}finally{busy=false;if(o.isConnected)o.querySelector('[data-unlock]').disabled=false}};
+ o.querySelector('[data-unlock]').onclick=async()=>{if(busy)return;const p=o.querySelector('#sb-vault-pass').value;if(!exists&&p!==o.querySelector('#sb-vault-confirm').value){o.querySelector('[data-error]').textContent='The passphrases do not match.';return}const token=generation;busy=true;o.querySelector('[data-unlock]').disabled=true;try{if(exists){const result=await C.open(state.passwordVault,p);if(token!==generation)return;if(!Array.isArray(result.value))throw Error('Invalid vault');key=result.key;salt=result.salt;items=result.value;touch()}else if(!await migrate(p,token))return;if(token!==generation)return;o.remove();render()}catch(e){if(token===generation&&o.isConnected)o.querySelector('[data-error]').textContent=exists?'Could not unlock the vault. Check your passphrase.':e.message}finally{if(token===generation)busy=false;if(token===generation&&o.isConnected)o.querySelector('[data-unlock]').disabled=false}};
 }
 function edit(id){if(!key)return unlock();touch();const p=items.find(x=>String(x.id)===String(id))||{},o=modal(p.id?'Edit login':'Add login','<label for="sb-p-site">Site or service</label><input id="sb-p-site" class="form-input" value="'+E(p.site)+'"><label for="sb-p-user">Username</label><input id="sb-p-user" class="form-input" autocomplete="off" value="'+E(p.username)+'"><label for="sb-p-secret">Password</label><input id="sb-p-secret" class="form-input" type="password" autocomplete="new-password" value="'+E(p.password)+'"><button class="btn" data-generate>Generate secure password</button><label for="sb-p-notes">Notes</label><textarea id="sb-p-notes" class="form-textarea">'+E(p.notes)+'</textarea><p role="alert" data-error></p><div class="modal-footer">'+(p.id?'<button class="btn btn-danger" data-delete>Delete</button>':'')+'<button class="btn btn-primary" data-save>Encrypt and save</button></div>');
  o.querySelector('[data-generate]').onclick=()=>o.querySelector('#sb-p-secret').value=window.genPassword(20);

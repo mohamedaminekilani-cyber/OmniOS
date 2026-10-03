@@ -548,6 +548,7 @@ window.OmniV34={openViewCustomizer:openViewCustomizerV34,applyViewOptions:applyV
 @media(max-width:620px){.v97-cover-editor{grid-template-columns:1fr}.v97-cover-preview{min-height:92px}}
 </style>
 <style id="omnios-v96-person-profile-ui">
+.v96-person-profile-overlay{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;margin:0!important;transform:none!important}
 .v96-person-profile-modal{max-width:620px!important}
 .v96-person-profile-modal .modal-header{padding-bottom:10px!important}
 .v96-person-profile{display:grid;gap:14px}
@@ -1688,7 +1689,8 @@ function openRecordDetail35(type,id){
       ${notes?`<section class="v96-person-notes"><div class="v96-person-notes-label">Notes</div><div class="v96-person-notes-copy">${esc(notes).replace(/\n/g,'<br>')}</div></section>`:''}
     </div>`;
     const m=modal35(name,body,`<button class="btn" data-v35-close>Close</button><button class="btn btn-danger" id="v35-detail-delete">Delete</button><button class="btn btn-primary" id="v35-detail-edit">Edit person</button>`);
-    m.classList.add('v96-person-profile-modal');
+    m.classList.add('v96-person-profile-overlay');
+    m.querySelector('.modal')?.classList.add('v96-person-profile-modal');
     m.querySelector('#v35-detail-edit').onclick=()=>{m.remove();openRecordModal35(type,id)};
     m.querySelector('#v35-detail-delete').onclick=()=>{m.remove();deleteLifeRecord35(type,id)};
     return;

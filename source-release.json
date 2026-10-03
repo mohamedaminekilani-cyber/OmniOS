@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "file": "app.141564d924b6b5be1faf.html",
-  "sha256": "141564d924b6b5be1faf2a1307c81e0610f2e9bcfecfebc20b3b6147f7b473b1",
-  "bytes": 7195493,
+  "file": "app.5ba94753649e6650b3a0.html",
+  "sha256": "5ba94753649e6650b3a0ffc653d503732492b2ec13823880d50becebb83daa5c",
+  "bytes": 7184488,
   "parts": [
     "app-parts/part-001.html",
     "app-parts/part-002.html",
@@ -41,5 +41,5 @@
     "js/password-vault.js",
     "js/ui-polish.js"
   ],
-  "subject": "Life Hub: keep only the current v43 interface"
+  "subject": "Dashboard: keep only the current v431 interface"
 }

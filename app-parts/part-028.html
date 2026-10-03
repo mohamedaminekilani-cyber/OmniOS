@@ -1736,19 +1736,7 @@ function openLinked611(rid,iid){const r=getRoutine(rid),i=getStep(r,iid);if(!i)r
 let dashTab=(()=>{try{return localStorage.getItem('omnios_v611_routine_dash_tab')||'daily'}catch(_){return'daily'}})();
 function setDashTab(v){dashTab=['daily','weekly','monthly'].includes(v)?v:'daily';try{localStorage.setItem('omnios_v611_routine_dash_tab',dashTab)}catch(_){}}
 function dashRoutineHtml(r){const p=cycleProgress(r);return `<div class="rd611-routine"><div class="rd611-routine-head"><div class="rd611-icon">${E(r.icon||'↻')}</div><div class="rd611-main"><div class="rd611-name">${E(r.name)}</div><div class="rd611-meta">${E(freqLabel(r))}${r.time?' · '+E(r.time):''} · ${p.done}/${p.total} · ${E(resetText(r))}</div></div><button type="button" class="btn btn-sm" data-rd611-open-routine="${E(r.id)}">Open</button></div><div class="rd611-progress"><i style="width:${p.pct}%"></i></div><div class="rd611-steps">${A(r.items).map(i=>`<button type="button" class="rd611-step ${p.map[i.id]?'done':''}" data-rd611-check="${E(r.id)}|${E(i.id)}"><span class="rd611-check">✓</span><span class="rd611-step-label">${E(i.title)}</span></button>`).join('')}</div></div>`}
-function renderDashboardRoutine611(){
-  normalize();const dash=document.getElementById('view-dashboard');if(!dash)return;
-  dash.querySelector('#routine-dashboard-v611')?.remove();dash.querySelector('#v55-dashboard-widgets [data-v55-widget="routines"]')?.remove();
-  const routines=normalize().filter(r=>!r.archived&&r.frequency===dashTab);
-  const wrap=document.createElement('section');wrap.id='routine-dashboard-v611';wrap.innerHTML=`<div class="rd611-card"><div class="rd611-head"><div><div class="rd611-title">Routine</div><div class="rd611-sub">Your repeatable checklists. Completion automatically starts fresh ${dashTab==='daily'?'each day':dashTab==='weekly'?'each week':'each month'}.</div></div><div class="rd611-head-actions"><button type="button" class="btn btn-sm" id="rd611-new">+ Routine</button><button type="button" class="btn btn-sm" id="rd611-page">Open page</button></div></div><div class="rd611-tabs" role="tablist">${[['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']].map(([k,l])=>`<button type="button" class="rd611-tab ${dashTab===k?'active':''}" data-rd611-tab="${k}">${l}</button>`).join('')}</div><div class="rd611-list">${routines.length?routines.map(dashRoutineHtml).join(''):`<div class="rd611-empty">No ${E(dashTab)} routines yet. Create one from here or from the Routine page.</div>`}</div></div>`;
-  const anchor=dash.querySelector('.v431-kpis,.v43-kpis,#dash-attention,.dashboard-toolbar,.v43-hero,.v431-hero');
-  if(anchor)anchor.insertAdjacentElement('afterend',wrap);else dash.prepend(wrap);
-  wrap.querySelectorAll('[data-rd611-tab]').forEach(b=>b.onclick=()=>{setDashTab(b.dataset.rd611Tab);renderDashboardRoutine611()});
-  wrap.querySelector('#rd611-page')?.addEventListener('click',()=>window.switchView?.('routine'));
-  wrap.querySelector('#rd611-new')?.addEventListener('click',()=>openEditor611());
-  wrap.querySelectorAll('[data-rd611-check]').forEach(b=>b.onclick=()=>{const [r,i]=b.dataset.rd611Check.split('|');toggleStep611(r,i)});
-  wrap.querySelectorAll('[data-rd611-open-routine]').forEach(b=>b.onclick=()=>{pageTab=getRoutine(b.dataset.rd611OpenRoutine)?.frequency||'all';window.switchView?.('routine')});
-}
+function renderDashboardRoutine611(){document.getElementById('routine-dashboard-v611')?.remove();document.querySelector('#v55-dashboard-widgets [data-v55-widget="routines"]')?.remove()}
 
 /* ---------- hooks ---------- */
 normalize();

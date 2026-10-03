@@ -1401,7 +1401,7 @@ const prevV35Customizer43=typeof openV35Customizer==='function'?openV35Customize
 /* expose/override */
 ensure43();installNoteIdFix43();
 const baseRenderNotes43=typeof renderNotes40==='function'?renderNotes40:null;if(baseRenderNotes43){const wrapped=function(){const r=baseRenderNotes43.apply(this,arguments);setTimeout(decorateNotes43,0);return r};try{renderNotes40=wrapped}catch(e){};}
-try{renderDashboard=renderDashboard43;window.renderDashboard=renderDashboard43}catch(e){window.renderDashboard=renderDashboard43}
+window.__secondBrainRenderDashboard=renderDashboard43;try{renderDashboard=renderDashboard43;window.renderDashboard=renderDashboard43}catch(e){window.renderDashboard=renderDashboard43}
 window.__secondBrainRenderLifeHub=renderLife43;try{renderLife35=renderLife43;window.renderLife35=renderLife43}catch(e){window.renderLife35=renderLife43}
 const prevSwitch43=window.switchView;window.switchView=function(target){const before=document.querySelector('.view.active')?.id?.replace(/^view-/,'')||'';if(target==='life-hub'&&before!=='life-hub'){ensure43();const u=state.settings.v43.lifeHub;if(lifeDirect43){u.tab=lifeDirect43;lifeDirect43=null}else u.tab=u.defaultOverview===false?(u.defaultTab||'people'):'overview'}const r=prevSwitch43.apply(this,arguments);setTimeout(()=>{if(target==='dashboard')renderDashboard43();if(target==='life-hub')renderLife43();if(target==='notes')decorateNotes43()},0);return r};
 function init43(){ensure43();installNoteIdFix43();renderDashboard43();if(document.getElementById('view-life-hub')?.classList.contains('active'))renderLife43();decorateNotes43();document.documentElement.dataset.omniosVersion='43'}

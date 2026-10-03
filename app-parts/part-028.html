@@ -1296,41 +1296,12 @@ window.OmniBuild={version:'59.2',name:'Second Brain Assistant Only'};
 .rt611-add-step{width:100%;justify-content:center;border-style:dashed;background:transparent}
 .rt611-editor-help{padding:9px 11px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-elevated);font-size:.66rem;line-height:1.45;color:var(--text-secondary);margin-bottom:12px}
 
-/* Dashboard routine block */
-#routine-dashboard-v611{margin:0 0 12px}
-.rd611-card{border:1px solid var(--border-color);border-radius:var(--radius-lg);background:var(--bg-surface);overflow:hidden}
-.rd611-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 15px 10px}
-.rd611-title{font-size:.88rem;font-weight:800}.rd611-sub{font-size:.64rem;line-height:1.45;color:var(--text-muted);margin-top:2px}
-.rd611-head-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.rd611-tabs{display:flex;gap:4px;padding:0 15px 10px;overflow-x:auto;scrollbar-width:none}
-.rd611-tabs::-webkit-scrollbar{display:none}
-.rd611-tab{min-height:34px;padding:6px 11px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--text-secondary);font:inherit;font-size:.67rem;font-weight:750;cursor:pointer;white-space:nowrap}
-.rd611-tab:hover{background:var(--bg-elevated)}
-.rd611-tab.active{background:color-mix(in srgb,var(--accent-cyan) 10%,var(--bg-elevated));border-color:color-mix(in srgb,var(--accent-cyan) 30%,var(--border-color));color:var(--accent-cyan)}
-.rd611-list{display:flex;flex-direction:column;border-top:1px solid var(--border-color);max-height:430px;overflow:auto}
-.rd611-routine{padding:11px 14px;border-top:1px solid var(--border-color)}
-.rd611-routine:first-child{border-top:0}
-.rd611-routine-head{display:flex;align-items:center;gap:9px;margin-bottom:8px}
-.rd611-icon{width:30px;height:30px;border-radius:8px;background:var(--bg-elevated);display:grid;place-items:center;flex:none}
-.rd611-main{min-width:0;flex:1}.rd611-name{font-size:.76rem;font-weight:800}.rd611-meta{font-size:.59rem;color:var(--text-muted);margin-top:2px}
-.rd611-progress{height:5px;border-radius:99px;overflow:hidden;background:var(--bg-base);margin-bottom:8px}.rd611-progress i{display:block;height:100%;border-radius:inherit;background:var(--accent-green)}
-.rd611-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:5px}
-.rd611-step{display:flex;align-items:center;gap:7px;min-width:0;padding:6px 7px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-base);cursor:pointer;color:var(--text-secondary);text-align:left;font:inherit}
-.rd611-step:hover{border-color:var(--border-light);background:var(--bg-elevated)}
-.rd611-step.done{color:var(--text-muted);background:color-mix(in srgb,var(--accent-green) 6%,var(--bg-base))}
-.rd611-check{width:18px;height:18px;border-radius:6px;border:1px solid var(--border-light);display:grid;place-items:center;flex:none;font-size:.57rem;color:transparent}
-.rd611-step.done .rd611-check{border-color:var(--accent-green);background:rgba(16,185,129,.12);color:var(--accent-green)}
-.rd611-step-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.64rem;font-weight:650}
-.rd611-empty{padding:20px 15px;color:var(--text-muted);font-size:.7rem;text-align:center}
-
 @media(max-width:900px){
   .rt611-step-row{grid-template-columns:1fr 1fr}.rt611-step-title{grid-column:1/-1}.rt611-step-note{grid-column:1/-1}.rt611-step-remove{grid-column:1/-1;grid-row:auto;width:100%}
 }
 @media(max-width:760px){
   .rt611-tabs{width:100%}.rt611-tab{flex:0 0 auto}
   .rt611-step-row{grid-template-columns:1fr;padding:9px}.rt611-step-title,.rt611-step-note,.rt611-step-remove{grid-column:auto}.rt611-step-remove{width:100%;min-height:40px}
-  .rd611-head{padding:12px;flex-direction:column}.rd611-head-actions{width:100%}.rd611-head-actions .btn{flex:1;justify-content:center}
-  .rd611-tabs{padding:0 12px 9px}.rd611-routine{padding:10px 11px}.rd611-steps{grid-template-columns:1fr}.rd611-step{min-height:39px}
 }
 </style>
 <!-- Legacy v60 Routine runtime removed in v61.3; v61.3 Routine system is authoritative. -->
@@ -1713,13 +1684,13 @@ function openEditor611(id=''){
     draft.items=A(draft.items).map(i=>({...i,title:String(i.title||'').trim(),notes:String(i.notes||'').trim()})).filter(i=>i.title);
     if(!draft.items.length){toast('Add at least one named routine step.');return}
     const s=stateRef();if(existing)Object.assign(existing,draft);else{s.routines=A(s.routines);s.routines.unshift(draft)}
-    save();ov.remove();renderRoutinePage();renderDashboardRoutine611();toast(existing?'Routine updated.':'Routine created.');
+    save();ov.remove();renderRoutinePage();toast(existing?'Routine updated.':'Routine created.');
   };
 }
-function deleteRoutine611(id){const r=getRoutine(id);if(!r)return;if(!confirm(`Delete “${r.name}”? Linked records will remain in their original modules.`))return;const s=stateRef();s.routines=A(s.routines).filter(x=>String(x.id)!==String(id));save();renderRoutinePage();renderDashboardRoutine611()}
-function resetRoutine611(id){const r=getRoutine(id);if(!r)return;delete r.log[cycleKey(r)];save();renderRoutinePage();renderDashboardRoutine611();toast('Current routine cycle reset.')}
-function toggleStep611(rid,iid){const r=getRoutine(rid),i=getStep(r,iid);if(!r||!i)return;const m=cycleMap(r);m[i.id]=!m[i.id];save();if(document.getElementById('view-routine')?.classList.contains('active'))renderRoutinePage();renderDashboardRoutine611()}
-function makeTask611(rid,iid){const r=getRoutine(rid),i=getStep(r,iid);if(!r||!i)return;const s=stateRef();s.entries=A(s.entries);const task={id:Date.now()+Math.random(),title:i.title,category:'routine',status:'todo',importance:'medium',urgency:'not-urgent',date:localKey(),notes:`From routine: ${r.name}${i.notes?'\n'+i.notes:''}`,subtasks:[],linkedIds:[],createdAt:new Date().toISOString(),routineRef:{routineId:r.id,itemId:i.id}};s.entries.push(task);i.linkType='task';i.linkId=task.id;save();renderRoutinePage();renderDashboardRoutine611();toast('Task created and linked to this routine step.')}
+function deleteRoutine611(id){const r=getRoutine(id);if(!r)return;if(!confirm(`Delete “${r.name}”? Linked records will remain in their original modules.`))return;const s=stateRef();s.routines=A(s.routines).filter(x=>String(x.id)!==String(id));save();renderRoutinePage()}
+function resetRoutine611(id){const r=getRoutine(id);if(!r)return;delete r.log[cycleKey(r)];save();renderRoutinePage();toast('Current routine cycle reset.')}
+function toggleStep611(rid,iid){const r=getRoutine(rid),i=getStep(r,iid);if(!r||!i)return;const m=cycleMap(r);m[i.id]=!m[i.id];save();if(document.getElementById('view-routine')?.classList.contains('active'))renderRoutinePage()}
+function makeTask611(rid,iid){const r=getRoutine(rid),i=getStep(r,iid);if(!r||!i)return;const s=stateRef();s.entries=A(s.entries);const task={id:Date.now()+Math.random(),title:i.title,category:'routine',status:'todo',importance:'medium',urgency:'not-urgent',date:localKey(),notes:`From routine: ${r.name}${i.notes?'\n'+i.notes:''}`,subtasks:[],linkedIds:[],createdAt:new Date().toISOString(),routineRef:{routineId:r.id,itemId:i.id}};s.entries.push(task);i.linkType='task';i.linkId=task.id;save();renderRoutinePage();toast('Task created and linked to this routine step.')}
 function openLinked611(rid,iid){const r=getRoutine(rid),i=getStep(r,iid);if(!i)return;const t=i.linkType,id=i.linkId;
   if(t==='task'){window.switchView?.('tasks');if(id&&typeof window.openInspector==='function')setTimeout(()=>window.openInspector(id),50)}
   else if(t==='habit')window.switchView?.('habits');
@@ -1732,22 +1703,13 @@ function openLinked611(rid,iid){const r=getRoutine(rid),i=getStep(r,iid);if(!i)r
   else if(t==='pantry')window.switchView?.('pantry');
 }
 
-/* ---------- dashboard routine list with Daily / Weekly / Monthly tabs ---------- */
-let dashTab=(()=>{try{return localStorage.getItem('omnios_v611_routine_dash_tab')||'daily'}catch(_){return'daily'}})();
-function setDashTab(v){dashTab=['daily','weekly','monthly'].includes(v)?v:'daily';try{localStorage.setItem('omnios_v611_routine_dash_tab',dashTab)}catch(_){}}
-function dashRoutineHtml(r){const p=cycleProgress(r);return `<div class="rd611-routine"><div class="rd611-routine-head"><div class="rd611-icon">${E(r.icon||'↻')}</div><div class="rd611-main"><div class="rd611-name">${E(r.name)}</div><div class="rd611-meta">${E(freqLabel(r))}${r.time?' · '+E(r.time):''} · ${p.done}/${p.total} · ${E(resetText(r))}</div></div><button type="button" class="btn btn-sm" data-rd611-open-routine="${E(r.id)}">Open</button></div><div class="rd611-progress"><i style="width:${p.pct}%"></i></div><div class="rd611-steps">${A(r.items).map(i=>`<button type="button" class="rd611-step ${p.map[i.id]?'done':''}" data-rd611-check="${E(r.id)}|${E(i.id)}"><span class="rd611-check">✓</span><span class="rd611-step-label">${E(i.title)}</span></button>`).join('')}</div></div>`}
-function renderDashboardRoutine611(){document.getElementById('routine-dashboard-v611')?.remove();document.querySelector('#v55-dashboard-widgets [data-v55-widget="routines"]')?.remove()}
-
 /* ---------- hooks ---------- */
 normalize();
-const prevSwitch=window.switchView;window.switchView=function(target){const r=prevSwitch?.apply(this,arguments);if(target==='routine')requestAnimationFrame(()=>{renderRoutinePage();const t=document.getElementById('view-title');if(t)t.textContent='Routine'});if(target==='dashboard')requestAnimationFrame(renderDashboardRoutine611);return r};
-const prevDashboard=window.renderDashboard;window.renderDashboard=function(){const r=prevDashboard?.apply(this,arguments);requestAnimationFrame(renderDashboardRoutine611);return r};
-const prevRenderAll=window.renderAll;if(typeof prevRenderAll==='function')window.renderAll=function(){const r=prevRenderAll.apply(this,arguments);if(document.getElementById('view-routine')?.classList.contains('active'))requestAnimationFrame(renderRoutinePage);if(document.getElementById('view-dashboard')?.classList.contains('active'))requestAnimationFrame(renderDashboardRoutine611);return r};
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{if(document.getElementById('view-routine')?.classList.contains('active'))renderRoutinePage();if(document.getElementById('view-dashboard')?.classList.contains('active'))renderDashboardRoutine611()},{once:true});else{if(document.getElementById('view-routine')?.classList.contains('active'))renderRoutinePage();if(document.getElementById('view-dashboard')?.classList.contains('active'))renderDashboardRoutine611()}
+const prevSwitch=window.switchView;window.switchView=function(target){const r=prevSwitch?.apply(this,arguments);if(target==='routine')requestAnimationFrame(()=>{renderRoutinePage();const t=document.getElementById('view-title');if(t)t.textContent='Routine'});return r};
+const prevRenderAll=window.renderAll;if(typeof prevRenderAll==='function')window.renderAll=function(){const r=prevRenderAll.apply(this,arguments);if(document.getElementById('view-routine')?.classList.contains('active'))requestAnimationFrame(renderRoutinePage);return r};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{if(document.getElementById('view-routine')?.classList.contains('active'))renderRoutinePage();if(document.getElementById('view-dashboard')?.classList.contains('active'))},{once:true});else{if(document.getElementById('view-routine')?.classList.contains('active'))renderRoutinePage();if(document.getElementById('view-dashboard')?.classList.contains('active'))}
 
-document.addEventListener('click',e=>{if(e.target.closest?.('#view-dashboard [data-v43-scope]'))requestAnimationFrame(()=>requestAnimationFrame(renderDashboardRoutine611))},false);
-document.addEventListener('change',e=>{if(e.target.matches?.('#view-dashboard #v43-dash-period'))requestAnimationFrame(()=>requestAnimationFrame(renderDashboardRoutine611))},false);
-window.OmniRoutine={render:renderRoutinePage,renderDashboard:renderDashboardRoutine611,openEditor:openEditor611,cycleKey,toggleStep:toggleStep611};
+window.OmniRoutine={render:renderRoutinePage,openEditor:openEditor611,cycleKey,toggleStep:toggleStep611};
 document.documentElement.dataset.omniosVersion=VERSION;window.OmniBuild={version:VERSION,name:'Unified Core — Clean Startup + Routine Persistence'};
 })();
 </script>
@@ -1993,156 +1955,6 @@ html[data-theme="light"] #view-bible .bib-med-passage-v633{background:var(--bg-s
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(reg=>reg.update().catch(()=>{})).catch(err=>console.warn('Second Brain service worker',err)),{once:true})}
 </script>
 
-<style id="omnios-v624-mobile-calendar-fit-css">
-/* Mobile Calendar: fit every view to the device width while keeping the timeline vertically scrollable. */
-@media(max-width:760px){
-  #view-master-calendar,
-  #view-master-calendar .v36-cal-shell,
-  #view-master-calendar .v36-cal-body,
-  #view-master-calendar .v603-calendar-layout,
-  #view-master-calendar .v603-calendar-stage,
-  #view-master-calendar .v603-calendar-stage-inner,
-  #view-master-calendar #v603-mode-host,
-  #view-master-calendar #v602-week-host{
-    width:100%!important;
-    max-width:100%!important;
-    min-width:0!important;
-    box-sizing:border-box!important;
-  }
-
-  #view-master-calendar{overflow-x:hidden!important}
-  #view-master-calendar .v603-calendar-stage{overflow:hidden!important}
-  #view-master-calendar .v603-calendar-stage-inner{overflow:hidden!important}
-
-  /* Week, Workspace and Day: seven days really fit the phone instead of keeping 120px desktop columns. */
-  #view-master-calendar .v36-time-wrap{
-    width:100%!important;
-    max-width:100%!important;
-    overflow-x:hidden!important;
-    overflow-y:auto!important;
-    -webkit-overflow-scrolling:touch;
-  }
-  #view-master-calendar .v36-all-day,
-  #view-master-calendar .v36-time-head{
-    grid-template-columns:38px repeat(var(--v36-visible-days,1),minmax(0,1fr))!important;
-    width:100%!important;
-    min-width:0!important;
-  }
-  #view-master-calendar .v36-time-body{
-    grid-template-columns:38px minmax(0,1fr)!important;
-    width:100%!important;
-    min-width:0!important;
-  }
-  #view-master-calendar .v36-time-days{
-    grid-template-columns:repeat(var(--v36-visible-days,1),minmax(0,1fr))!important;
-    width:100%!important;
-    min-width:0!important;
-  }
-  #view-master-calendar .v36-time-axis{min-width:0!important}
-  #view-master-calendar .v36-time-label,
-  #view-master-calendar .v36-time-end-label{
-    padding-inline:2px!important;
-    font-size:.47rem!important;
-    text-align:right!important;
-  }
-  #view-master-calendar .v36-time-day-head{min-width:0!important;padding:5px 1px!important}
-  #view-master-calendar .v36-time-day-head .dow{
-    font-size:.47rem!important;
-    overflow:hidden!important;
-    text-overflow:ellipsis!important;
-    white-space:nowrap!important;
-  }
-  #view-master-calendar .v36-time-day-head .num{
-    width:21px!important;height:21px!important;font-size:.66rem!important;margin-top:1px!important;
-  }
-  #view-master-calendar .v36-all-day-label{
-    padding:4px 2px!important;
-    font-size:.43rem!important;
-    line-height:1.05!important;
-    text-align:center!important;
-    justify-content:center!important;
-  }
-  #view-master-calendar .v36-all-day-cell{padding:2px!important;min-width:0!important;min-height:38px!important}
-  #view-master-calendar .v36-all-day-event{
-    padding:3px 2px!important;
-    font-size:.49rem!important;
-    border-left-width:2px!important;
-  }
-  #view-master-calendar .v36-timed-event{
-    min-width:0!important;
-    padding:3px 2px!important;
-    border-left-width:2px!important;
-    border-radius:5px!important;
-  }
-  #view-master-calendar .v36-timed-title{font-size:.51rem!important}
-  #view-master-calendar .v36-timed-meta{font-size:.43rem!important}
-
-  /* Month: no 700px forced canvas on phones. */
-  #view-master-calendar .v603-calendar-stage-inner>.v36-month-grid,
-  #view-master-calendar .v36-month-grid{
-    width:100%!important;
-    max-width:100%!important;
-    min-width:0!important;
-    grid-template-columns:repeat(7,minmax(0,1fr))!important;
-  }
-  #view-master-calendar .v36-month-weekday{
-    min-width:0!important;
-    padding:6px 1px!important;
-    font-size:.48rem!important;
-  }
-  #view-master-calendar .v36-month-day{
-    min-width:0!important;
-    min-height:72px!important;
-    padding:3px!important;
-  }
-  #view-master-calendar .v36-month-date{
-    width:19px!important;height:19px!important;font-size:.57rem!important;
-  }
-  #view-master-calendar .v36-month-event{
-    min-width:0!important;
-    min-height:17px!important;
-    height:auto!important;
-    padding:2px!important;
-    gap:1px!important;
-    border-left-width:2px!important;
-    font-size:.48rem!important;
-  }
-  #view-master-calendar .v36-month-event .v36-event-time,
-  #view-master-calendar .v36-month-event .v36-event-icon{display:none!important}
-  #view-master-calendar .v36-month-event .v36-event-title{
-    display:block!important;
-    min-width:0!important;
-    overflow:hidden!important;
-    text-overflow:ellipsis!important;
-    white-space:nowrap!important;
-  }
-  #view-master-calendar .v36-more{font-size:.48rem!important;padding:2px!important}
-
-  /* Header controls stay inside the viewport. */
-  #view-master-calendar .v36-cal-toolbar{width:100%!important;max-width:100%!important}
-  #view-master-calendar .v36-cal-nav{width:100%!important;min-width:0!important}
-  #view-master-calendar .v36-cal-period{
-    min-width:0!important;
-    overflow:hidden!important;
-    text-overflow:ellipsis!important;
-    white-space:nowrap!important;
-  }
-  #view-master-calendar .v36-cal-modes{
-    width:100%!important;
-    display:flex!important;
-    overflow-x:auto!important;
-    -webkit-overflow-scrolling:touch;
-  }
-  #view-master-calendar .v36-cal-actions{
-    width:100%!important;
-    min-width:0!important;
-  }
-}
-@media(max-width:430px){
-  #view-master-calendar .v36-timed-meta{display:none!important}
-  #view-master-calendar .v36-month-day{min-height:66px!important}
-}
-</style>
 <style id="omnios-welcome-screen-css">
 /* Second Brain Welcome — calm, spacious, responsive launch briefing */
 #welcome63{
@@ -2501,7 +2313,7 @@ html:not([data-theme="light"]) .topbar-title{color:#f5f8ff!important}
 html:not([data-theme="light"]) :is(
   .card,.stat-card,.kpi-card,.finance-card,.diet-card,.workout-kpi,.workout-session-card,
   .workout-item-card,.note-card,.eq-box,.calendar-container,.master-calendar-shell,
-  .v35-card,.v35-stat,.v43-card,.v58-card,.rt-card,.goal586-card,.rd611-card,
+  .v35-card,.v35-stat,.v43-card,.v58-card,.rt-card,.goal586-card,
   .v36-cal-shell,.v603-calendar-rail,.v603-calendar-stage,.settings-section
 ){
   background:

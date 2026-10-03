@@ -538,6 +538,15 @@ window.OmniV34={openViewCustomizer:openViewCustomizerV34,applyViewOptions:applyV
 @media(min-width:560px) and (max-width:760px){.v35-launcher-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:390px){.v35-launcher-sheet{border-radius:20px 20px 0 0}.v35-launcher-grid{gap:4px}.v35-launcher-item{min-height:52px;padding:7px 8px}.v35-launcher-icon{width:32px;height:32px;min-width:32px}.v35-launcher-label{font-size:.68rem}}
 </style>
+<style id="omnios-v97-person-cover-editor">
+.v97-cover-editor{display:grid;grid-template-columns:minmax(150px,1fr) 1.45fr;gap:12px;align-items:stretch;margin:0 0 14px;padding:11px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-base)}
+.v97-cover-preview{min-height:104px;border-radius:10px;border:1px solid var(--border-color);background:linear-gradient(135deg,#06b6d4,#7c3aed 58%,#111827);background-size:cover!important;background-position:center!important}
+.v97-cover-controls{display:flex;flex-direction:column;gap:9px}.v97-cover-controls strong{display:block;font-size:.72rem}.v97-cover-controls small{display:block;margin-top:2px;color:var(--text-muted);font-size:.58rem;line-height:1.35}
+.v97-cover-presets{display:flex;gap:6px;flex-wrap:wrap}.v97-cover-presets button{width:34px;height:26px;border-radius:8px;border:2px solid transparent;cursor:pointer;padding:0}.v97-cover-presets button.active{border-color:var(--text-primary);box-shadow:0 0 0 2px var(--bg-surface)}
+.v97-cover-presets [data-cover-preset="aurora"]{background:linear-gradient(135deg,#06b6d4,#7c3aed,#111827)}.v97-cover-presets [data-cover-preset="ocean"]{background:linear-gradient(135deg,#0ea5e9,#06b6d4,#0f172a)}.v97-cover-presets [data-cover-preset="sunset"]{background:linear-gradient(135deg,#fb7185,#f59e0b,#8b5cf6)}.v97-cover-presets [data-cover-preset="forest"]{background:linear-gradient(135deg,#14532d,#16a34a,#06b6d4)}.v97-cover-presets [data-cover-preset="graphite"]{background:linear-gradient(135deg,#111827,#334155,#64748b)}
+.v97-cover-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.v97-cover-color-wrap{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px 7px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-surface);font-size:.58rem;color:var(--text-muted)}.v97-cover-color-wrap input{width:24px;height:22px;padding:0;border:0;background:none}
+@media(max-width:620px){.v97-cover-editor{grid-template-columns:1fr}.v97-cover-preview{min-height:92px}}
+</style>
 <style id="omnios-v96-person-profile-ui">
 .v96-person-profile-modal{max-width:620px!important}
 .v96-person-profile-modal .modal-header{padding-bottom:10px!important}
@@ -1616,6 +1625,32 @@ function readAvatarImage35(file,maxSize=192){
     reader.readAsDataURL(file);
   });
 }
+function readPersonCoverImage35(file,maxWidth=1200,maxHeight=360){
+  return new Promise((resolve,reject)=>{
+    if(!file||!String(file.type||'').startsWith('image/')){reject(new Error('Choose an image file.'));return}
+    const reader=new FileReader();
+    reader.onerror=()=>reject(reader.error||new Error('Could not read image.'));
+    reader.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error('Could not decode image.'));
+      img.onload=()=>{
+        try{
+          const width=img.naturalWidth||img.width,height=img.naturalHeight||img.height,targetRatio=maxWidth/maxHeight,ratio=width/height;
+          let sx=0,sy=0,sw=width,sh=height;
+          if(ratio>targetRatio){sw=height*targetRatio;sx=(width-sw)/2}else{sh=width/targetRatio;sy=(height-sh)/2}
+          const outW=Math.min(maxWidth,Math.round(sw)),outH=Math.round(outW/targetRatio);
+          const canvas=document.createElement('canvas');canvas.width=outW;canvas.height=outH;
+          const ctx=canvas.getContext('2d',{alpha:false});ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+          ctx.drawImage(img,sx,sy,sw,sh,0,0,outW,outH);
+          resolve(canvas.toDataURL('image/jpeg',.78));
+        }catch(err){reject(err)}
+      };
+      img.src=String(reader.result||'');
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function lifeRecordValue35(type,key,value,fieldType){
   if(value==null||value==='')return '—';
   if(fieldType==='date')return dateLabel(String(value));
@@ -1680,6 +1715,7 @@ function openRecordModal35(type,id){
   const s=SCHEMA35[type],arr=state.life[type],x=id?arr.find(y=>String(y.id)===String(id)):null;if(!s)return;
   const recordId=String(x?.id||uid(type));
   let avatar=type==='people'?String(x?.avatar||window.SecondBrainAvatars?.peek?.(recordId)||''):'';
+  let coverPreset=type==='people'?String(x?.coverPreset||'aurora'):'',coverColor=type==='people'?String(x?.coverColor||'#06b6d4'):'',coverImage=type==='people'?String(x?.coverImage||''):'';
   if(type==='people'&&!avatar)window.SecondBrainAvatars?.load?.(recordId).then(src=>{if(src){avatar=src;const p=document.getElementById('v35-person-avatar-preview');if(p)p.innerHTML=`<img src="${esc(src)}" alt="">`}});
   const fields=s.fields.map(([k,l,t,opts])=>{
     const v=x?.[k]??((k==='date')?todayKey():'');
@@ -1687,17 +1723,42 @@ function openRecordModal35(type,id){
     if(t==='select')return `<div class="form-group"><label>${esc(l)}</label><select class="form-select" id="v35-rec-${k}">${opts.map(o=>`<option ${String(v)===String(o)?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
     return `<div class="form-group"><label>${esc(l)}</label><input class="form-input" type="${t}" id="v35-rec-${k}" value="${esc(v)}" ${t==='number'?'step="0.1"':''}></div>`;
   }).join('');
-  const avatarEditor=type==='people'?`<div class="v35-avatar-editor"><div class="v35-avatar-preview" id="v35-person-avatar-preview"></div><div class="v35-avatar-controls"><div><strong>Avatar</strong><small>Saved permanently for this person.</small></div><div class="v35-avatar-buttons"><label class="btn btn-sm" for="v35-person-avatar-file">Choose photo</label><input id="v35-person-avatar-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="v35-person-avatar-remove">Remove</button></div></div></div>`:'';
+  const avatarEditor=type==='people'?`<div class="v35-avatar-editor"><div class="v35-avatar-preview" id="v35-person-avatar-preview"></div><div class="v35-avatar-controls"><div><strong>Avatar</strong><small>Profile photo for this person.</small></div><div class="v35-avatar-buttons"><label class="btn btn-sm" for="v35-person-avatar-file">Choose photo</label><input id="v35-person-avatar-file" type="file" accept="image/*" hidden><button type="button" class="btn btn-sm" id="v35-person-avatar-remove">Remove</button></div></div></div>
+  <div class="v97-cover-editor">
+    <div class="v97-cover-preview" id="v97-person-cover-preview"></div>
+    <div class="v97-cover-controls">
+      <div><strong>Profile cover</strong><small>Choose a preset, custom colour, or cover image.</small></div>
+      <div class="v97-cover-presets" id="v97-cover-presets">
+        <button type="button" data-cover-preset="aurora" aria-label="Aurora cover"></button>
+        <button type="button" data-cover-preset="ocean" aria-label="Ocean cover"></button>
+        <button type="button" data-cover-preset="sunset" aria-label="Sunset cover"></button>
+        <button type="button" data-cover-preset="forest" aria-label="Forest cover"></button>
+        <button type="button" data-cover-preset="graphite" aria-label="Graphite cover"></button>
+      </div>
+      <div class="v97-cover-actions">
+        <label class="v97-cover-color-wrap"><span>Accent</span><input type="color" id="v97-cover-color" value="${esc(coverColor)}"></label>
+        <label class="btn btn-sm" for="v97-cover-file">Choose image</label><input id="v97-cover-file" type="file" accept="image/*" hidden>
+        <button type="button" class="btn btn-sm" id="v97-cover-remove">Remove image</button>
+      </div>
+    </div>
+  </div>`:'';
   const m=modal35(x?`Edit ${s.title}`:`New ${s.title}`,avatarEditor+fields,`<button class="btn ${x?'btn-danger':''}" id="v35-rec-delete">${x?'Delete':'Cancel'}</button><button class="btn btn-primary" id="v35-rec-save">Save</button>`);
   if(type==='people'){
-    const preview=m.querySelector('#v35-person-avatar-preview'),remove=m.querySelector('#v35-person-avatar-remove'),file=m.querySelector('#v35-person-avatar-file'),nameInput=m.querySelector('#v35-rec-name');
+    const preview=m.querySelector('#v35-person-avatar-preview'),remove=m.querySelector('#v35-person-avatar-remove'),file=m.querySelector('#v35-person-avatar-file'),nameInput=m.querySelector('#v35-rec-name'),coverPreview=m.querySelector('#v97-person-cover-preview'),coverColorInput=m.querySelector('#v97-cover-color'),coverFile=m.querySelector('#v97-cover-file'),coverRemove=m.querySelector('#v97-cover-remove');
     const paint=()=>{const initials=avatarInitials35(nameInput?.value||x?.name||'Person');preview.innerHTML=avatar?`<img src="${esc(avatar)}" alt="">`:`<span>${esc(initials)}</span>`;remove.hidden=!avatar};
     paint();nameInput?.addEventListener('input',()=>{if(!avatar)paint()});
     file.onchange=async()=>{const chosen=file.files?.[0];if(!chosen)return;try{avatar=await readAvatarImage35(chosen);await window.SecondBrainAvatars?.set?.(recordId,avatar);if(x)x.avatar=avatar;paint();window.toast?.('Avatar saved')}catch(err){window.toast?.(err?.message||'Could not use that image.')}finally{file.value=''}};
     remove.onclick=async()=>{avatar='';if(x)x.avatar='';await window.SecondBrainAvatars?.remove?.(recordId);paint()};
+    const coverBg=()=>{if(coverImage)return `url("${coverImage.replace(/"/g,'%22')}") center/cover no-repeat`;const c=coverColor||'#06b6d4',presets={aurora:`linear-gradient(135deg,${c},#7c3aed 58%,#111827)`,ocean:`linear-gradient(135deg,#0ea5e9,${c},#0f172a)`,sunset:`linear-gradient(135deg,#fb7185,#f59e0b,${c})`,forest:`linear-gradient(135deg,#14532d,#16a34a,${c})`,graphite:`linear-gradient(135deg,#111827,#334155,${c})`};return presets[coverPreset]||presets.aurora};
+    const paintCover=()=>{coverPreview.style.background=coverBg();m.querySelectorAll('[data-cover-preset]').forEach(b=>b.classList.toggle('active',b.dataset.coverPreset===coverPreset));coverRemove.hidden=!coverImage};
+    m.querySelectorAll('[data-cover-preset]').forEach(b=>b.onclick=()=>{coverPreset=b.dataset.coverPreset;coverImage='';paintCover()});
+    coverColorInput.oninput=()=>{coverColor=coverColorInput.value;coverImage='';paintCover()};
+    coverFile.onchange=async()=>{const chosen=coverFile.files?.[0];if(!chosen)return;try{coverImage=await readPersonCoverImage35(chosen);paintCover()}catch(err){window.toast?.(err?.message||'Could not use that cover image.')}finally{coverFile.value=''}};
+    coverRemove.onclick=()=>{coverImage='';paintCover()};
+    paintCover();
   }
   m.querySelector('#v35-rec-delete').onclick=()=>{if(x){if(!confirm('Delete this record?'))return;state.life[type]=arr.filter(y=>String(y.id)!==String(id));if(type==='people')window.SecondBrainAvatars?.remove?.(recordId);window.saveState();refreshLifeHub35()}else if(type==='people')window.SecondBrainAvatars?.remove?.(recordId);m.remove()};
-  m.querySelector('#v35-rec-save').onclick=async()=>{const data={};s.fields.forEach(([k,,t])=>{const e=m.querySelector('#v35-rec-'+k);data[k]=t==='number'?(e.value===''?'':Number(e.value)):e.value});if(type==='people'){data.avatar=avatar;await window.SecondBrainAvatars?.set?.(recordId,avatar)}if(x)Object.assign(x,data);else arr.unshift({id:recordId,...data,createdAt:new Date().toISOString()});window.saveState();m.remove();refreshLifeHub35()}
+  m.querySelector('#v35-rec-save').onclick=async()=>{const data={};s.fields.forEach(([k,,t])=>{const e=m.querySelector('#v35-rec-'+k);data[k]=t==='number'?(e.value===''?'':Number(e.value)):e.value});if(type==='people'){data.avatar=avatar;data.coverPreset=coverPreset;data.coverColor=coverColor;data.coverImage=coverImage;await window.SecondBrainAvatars?.set?.(recordId,avatar)}if(x)Object.assign(x,data);else arr.unshift({id:recordId,...data,createdAt:new Date().toISOString()});window.saveState();m.remove();refreshLifeHub35()}
 }
 function openAdminChooser35(){const m=modal35('Add life administration record',`<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px"><button class="btn" data-admin-add="importantDates">⏳ Important date</button><button class="btn" data-admin-add="vehicles">🚗 Vehicle</button><button class="btn" data-admin-add="decisions">◆ Decision</button></div>`,'');m.querySelectorAll('[data-admin-add]').forEach(b=>b.onclick=()=>{m.remove();openRecordModal35(b.dataset.adminAdd)})}
 function renderAdmin35(b){

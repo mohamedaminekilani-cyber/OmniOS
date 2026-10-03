@@ -1355,40 +1355,36 @@ function renderLifeSection43(host,tab){
   }
 
   const recordsMarkup=tab==='people'
-    ? `<div class="v94-people-grid">${records.map(x=>`<article class="v94-person-card" data-v35-record="people|${E(x.id)}">
-        <div class="v94-person-cover">
-          <div class="v94-person-cover-orb one"></div>
-          <div class="v94-person-cover-orb two"></div>
-          <button type="button" class="v94-person-edit" data-v43-record-edit="people|${E(x.id)}" aria-label="Edit ${E(recordTitle35('people',x))}" title="Edit">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4Z"></path><path d="m13.5 6.5 4 4"></path></svg>
-          </button>
-        </div>
-        <div class="v94-person-avatar-wrap">${personAvatar43(x,'v94-person-avatar')}</div>
-        <div class="v94-person-body">
-          <div class="v94-person-heading">
-            <div class="v94-person-heading-copy">
-              <div class="v94-person-name">${E(recordTitle35('people',x))}</div>
-              <div class="v94-person-relation">${E(x.relation||'Contact')}</div>
+    ? `<div class="v96-people-grid">${records.map(x=>`<article class="v96-person-card" data-v35-record="people|${E(x.id)}">
+        <div class="v96-person-card-main">
+          ${personAvatar43(x,'v96-person-card-avatar')}
+          <div class="v96-person-card-copy">
+            <div class="v96-person-card-top">
+              <div>
+                <div class="v96-person-card-name">${E(recordTitle35('people',x))}</div>
+                <div class="v96-person-card-relation">${E(x.relation||'Person')}</div>
+              </div>
+              <button type="button" class="v96-person-card-edit" data-v43-record-edit="people|${E(x.id)}" aria-label="Edit ${E(recordTitle35('people',x))}" title="Edit">
+                ${lifeIcon43('edit')}
+              </button>
             </div>
-            <div class="v94-person-contacts">${personContact43(x)}</div>
+            <div class="v96-person-card-meta">
+              ${x.email?`<span title="${E(x.email)}">${E(x.email)}</span>`:''}
+              ${x.phone?`<span title="${E(x.phone)}">${E(x.phone)}</span>`:''}
+            </div>
           </div>
-          <div class="v94-person-chip-row">
-            <span class="v94-person-chip">${E(x.relation||'Person')}</span>
-            ${x.email?'<span class="v94-person-chip muted">Email</span>':''}
-            ${x.phone?'<span class="v94-person-chip muted">Phone</span>':''}
-          </div>
-          <div class="v94-person-stats">
-            ${personStat43('Birthday',personDate43(x.birthday))}
-            ${personStat43('Last contact',personDate43(x.lastContact))}
-            ${personStat43('Follow-up',personDate43(x.nextFollowUp))}
-          </div>
-          <button type="button" class="v94-person-open" data-v43-record-open="people|${E(x.id)}">
-            <span>Open profile</span>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path><path d="m14 7 5 5-5 5"></path></svg>
-          </button>
+        </div>
+        <div class="v96-person-card-details">
+          <div><span>Birthday</span><strong>${E(personDate43(x.birthday))}</strong></div>
+          <div><span>Last contact</span><strong>${E(personDate43(x.lastContact))}</strong></div>
+          <div><span>Follow-up</span><strong>${E(personDate43(x.nextFollowUp))}</strong></div>
+        </div>
+        <div class="v96-person-card-footer">
+          <div class="v96-person-card-contacts">${personContact43(x)}</div>
+          <button type="button" class="v96-person-card-open" data-v43-record-open="people|${E(x.id)}"><span>View profile</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path><path d="m14 7 5 5-5 5"></path></svg></button>
         </div>
       </article>`).join('')||'<div class="v43-empty">No people records match this view.</div>'}</div>`
-    : `<div class="v43-record-grid">${records.map(x=>`<article class="v43-record" data-v35-record="${tab}|${E(x.id)}"><div class="v43-record-card-main"><div class="v43-record-top"><div class="v43-record-icon">${lifeIcon43(def.icon)}</div><div class="v43-record-main"><div class="v43-record-title">${E(recordTitle35(tab,x))}</div><div class="v43-record-meta">${E(lifeMeta43(tab,x)||'')}</div></div></div>${x.notes||x.body?`<div class="v43-record-note">${E(x.notes||x.body)}</div>`:''}</div><div class="v43-record-actions"><button type="button" class="btn btn-sm" data-v43-record-open="${tab}|${E(x.id)}">Open</button><button type="button" class="icon-btn" data-v43-record-edit="${tab}|${E(x.id)}" aria-label="Edit ${E(recordTitle35(tab,x))}">${lifeIcon43('edit')}</button><button type="button" class="icon-btn v43-life-delete" data-v43-record-delete="${tab}|${E(x.id)}" aria-label="Delete ${E(recordTitle35(tab,x))}">${lifeIcon43('delete')}</button></div></article>`).join('')||`<div class="v43-empty" style="grid-column:1/-1">No ${E(def.label.toLowerCase())} records match this view.</div>`}</div>`;
+    : `<div class="v43-record-grid">    : `<div class="v43-record-grid">${records.map(x=>`<article class="v43-record" data-v35-record="${tab}|${E(x.id)}"><div class="v43-record-card-main"><div class="v43-record-top"><div class="v43-record-icon">${lifeIcon43(def.icon)}</div><div class="v43-record-main"><div class="v43-record-title">${E(recordTitle35(tab,x))}</div><div class="v43-record-meta">${E(lifeMeta43(tab,x)||'')}</div></div></div>${x.notes||x.body?`<div class="v43-record-note">${E(x.notes||x.body)}</div>`:''}</div><div class="v43-record-actions"><button type="button" class="btn btn-sm" data-v43-record-open="${tab}|${E(x.id)}">Open</button><button type="button" class="icon-btn" data-v43-record-edit="${tab}|${E(x.id)}" aria-label="Edit ${E(recordTitle35(tab,x))}">${lifeIcon43('edit')}</button><button type="button" class="icon-btn v43-life-delete" data-v43-record-delete="${tab}|${E(x.id)}" aria-label="Delete ${E(recordTitle35(tab,x))}">${lifeIcon43('delete')}</button></div></article>`).join('')||`<div class="v43-empty" style="grid-column:1/-1">No ${E(def.label.toLowerCase())} records match this view.</div>`}</div>`;
 
   host.innerHTML=`${lead}<div class="v43-section-head"><div><div class="v43-section-title v95-life-title-icon">${lifeIcon43(def.icon)}<span>${E(def.label)}</span></div><div class="v43-section-copy">${E(def.copy)}</div></div><button class="btn btn-primary" id="v43-life-add">${lifeIcon43('plus')}<span>Add ${E(def.label.replace(/s$/,''))}</span></button></div>${recordsMarkup}`;
   host.querySelector('#v43-life-add').onclick=()=>openRecordModal35(tab);
@@ -1412,6 +1408,42 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+<style id="omnios-v96-people-cards-ui">
+#view-life-hub .v96-people-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
+#view-life-hub .v96-person-card{min-width:0;padding:13px;border:1px solid var(--border-color);border-radius:14px;background:var(--bg-surface);cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .15s ease}
+#view-life-hub .v96-person-card:hover{border-color:color-mix(in srgb,var(--accent-cyan) 42%,var(--border-color));background:color-mix(in srgb,var(--bg-surface) 94%,var(--accent-cyan) 6%);transform:translateY(-1px)}
+#view-life-hub .v96-person-card-main{display:flex;align-items:center;gap:11px;min-width:0}
+#view-life-hub .v43-person-avatar.v96-person-card-avatar{width:54px;height:54px;min-width:54px;flex:0 0 54px;border-radius:50%;box-shadow:none;border:1px solid color-mix(in srgb,var(--accent-cyan) 26%,var(--border-color));font-size:.84rem}
+#view-life-hub .v96-person-card-copy{min-width:0;flex:1}
+#view-life-hub .v96-person-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+#view-life-hub .v96-person-card-name{font-size:.86rem;font-weight:810;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#view-life-hub .v96-person-card-relation{margin-top:2px;color:var(--text-muted);font-size:.61rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#view-life-hub .v96-person-card-edit{width:30px;height:30px;min-width:30px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);color:var(--text-muted);display:grid;place-items:center;cursor:pointer}
+#view-life-hub .v96-person-card-edit:hover{color:var(--accent-cyan);border-color:color-mix(in srgb,var(--accent-cyan) 34%,var(--border-color))}
+#view-life-hub .v96-person-card-edit .v95-life-icon{width:14px;height:14px}
+#view-life-hub .v96-person-card-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+#view-life-hub .v96-person-card-meta span{max-width:100%;padding:3px 6px;border-radius:7px;background:var(--bg-base);border:1px solid var(--border-color);color:var(--text-muted);font-size:.56rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#view-life-hub .v96-person-card-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:12px;padding:10px 0;border-top:1px solid var(--border-color);border-bottom:1px solid var(--border-color)}
+#view-life-hub .v96-person-card-details>div{min-width:0;padding:0 8px}
+#view-life-hub .v96-person-card-details>div:first-child{padding-left:0}
+#view-life-hub .v96-person-card-details>div:last-child{padding-right:0}
+#view-life-hub .v96-person-card-details>div+div{border-left:1px solid var(--border-color)}
+#view-life-hub .v96-person-card-details span{display:block;color:var(--text-muted);font-size:.5rem;text-transform:uppercase;letter-spacing:.05em}
+#view-life-hub .v96-person-card-details strong{display:block;margin-top:3px;font-size:.66rem;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#view-life-hub .v96-person-card-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+#view-life-hub .v96-person-card-contacts{display:flex;gap:5px}
+#view-life-hub .v96-person-card-contacts .v94-person-contact{width:30px;height:30px;border-radius:9px}
+#view-life-hub .v96-person-card-open{margin-left:auto;display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:5px 9px;border:0;background:transparent;color:var(--text-secondary);font:inherit;font-size:.62rem;font-weight:760;cursor:pointer}
+#view-life-hub .v96-person-card-open:hover{color:var(--accent-cyan)}
+#view-life-hub .v96-person-card-open svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:1100px){#view-life-hub .v96-people-grid{grid-template-columns:1fr}}
+@media(max-width:760px){
+ #view-life-hub .v96-person-card{padding:11px;border-radius:12px}
+ #view-life-hub .v43-person-avatar.v96-person-card-avatar{width:50px;height:50px;min-width:50px;flex-basis:50px}
+ #view-life-hub .v96-person-card-details{margin-top:10px;padding:9px 0}
+ #view-life-hub .v96-person-card-details>div{padding-inline:6px}
+}
+</style>
 <style id="omnios-v95-lifehub-svg-icons">
 /* Life Hub — one SVG icon language for navigation, domains and actions */
 #view-life-hub .v95-life-icon{width:16px;height:16px;display:block;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}

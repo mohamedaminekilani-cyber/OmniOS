@@ -583,9 +583,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 (function(){
 'use strict';
 const V40='40';
-const ORG_VIEWS=['notes','grocery','wishlist','goals','pantry','reminders'];
+const ORG_VIEWS=['notes','grocery','wishlist','pantry','reminders'];
 const orgUI={
- notes:{q:'',scope:'all',sort:'updated'},grocery:{q:'',status:'active',category:'all',sort:'updated'},wishlist:{q:'',status:'open',category:'all',priority:'all',sort:'priority'},goals:{q:'',status:'active',sort:'date'},pantry:{q:'',status:'all',category:'all',sort:'name'},reminders:{q:'',scope:'attention'}
+ notes:{q:'',scope:'all',sort:'updated'},grocery:{q:'',status:'active',category:'all',sort:'updated'},wishlist:{q:'',status:'open',category:'all',priority:'all',sort:'priority'},pantry:{q:'',status:'all',category:'all',sort:'name'},reminders:{q:'',scope:'attention'}
 };
 const esc40=v=>escapeHtml(v??'');
 const money40=v=>currencyLocal(Number(v)||0);
@@ -598,7 +598,7 @@ function safeArray(v){return Array.isArray(v)?v:[]}
 function ensure40(){
  state.organizeV40=state.organizeV40&&typeof state.organizeV40==='object'?state.organizeV40:{};
  state.organizeV40.prefs=state.organizeV40.prefs||{};
- const defaults={notes:{view:'cards'},grocery:{view:'cards'},wishlist:{view:'cards'},goals:{view:'cards'},pantry:{view:'grid'},reminders:{view:'list'}};
+ const defaults={notes:{view:'cards'},grocery:{view:'cards'},wishlist:{view:'cards'},pantry:{view:'grid'},reminders:{view:'list'}};
  ORG_VIEWS.forEach(v=>state.organizeV40.prefs[v]={...defaults[v],...(state.organizeV40.prefs[v]||{})});
  state.organizeV40.manualReminders=safeArray(state.organizeV40.manualReminders);
  state.organizeV40.reminderState=state.organizeV40.reminderState&&typeof state.organizeV40.reminderState==='object'?state.organizeV40.reminderState:{};

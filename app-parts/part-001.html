@@ -1763,25 +1763,6 @@ img,svg{max-width:100%}
   #database-panel .db-panel-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:7px}
   #database-panel .db-panel-actions .btn{width:100%;min-width:0;justify-content:center;font-size:.68rem}
 
-  /* Tasks: every view/filter/group control is visible without hidden horizontal actions. */
-  #view-tasks>.toolbar{display:grid;grid-template-columns:1fr;gap:9px;overflow:visible}
-  #view-tasks>.toolbar>.toolbar-divider{display:none}
-  #view-tasks>.toolbar>.toolbar-group{overflow:visible!important;width:100%;gap:6px}
-  #view-tasks>.toolbar>.toolbar-group:nth-of-type(1){display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))}
-  #view-tasks>.toolbar>.toolbar-group:nth-of-type(1) .view-btn{width:100%;padding:8px 5px;font-size:.66rem;white-space:normal;text-align:center;justify-content:center}
-  #view-tasks>.toolbar>.toolbar-group:nth-of-type(2){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))}
-  #view-tasks>.toolbar>.toolbar-group:nth-of-type(2) .filter-select{width:100%;min-width:0}
-  #view-tasks>.toolbar>.toolbar-group:nth-of-type(3){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center}
-  #view-tasks>.toolbar>.toolbar-group:nth-of-type(3) #sort-by{width:100%;min-width:0}
-  #view-tasks>.toolbar>.toolbar-group:nth-of-type(3) #search-input{grid-column:1/-1;width:100%;min-width:0}
-  #view-tasks>.toolbar>.toolbar-group:nth-of-type(3) [data-v25-select="task"]{width:100%;justify-content:center;display:inline-flex!important}
-  #view-tasks>.toolbar>.task-view-group-v33{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible!important}
-  #view-tasks>.toolbar>.task-filter-group-v33{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible!important}
-  #view-tasks>.toolbar>.task-action-group-v33{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible!important}
-  #view-tasks>.toolbar>.task-action-group-v33 #sort-by{width:100%;min-width:0}
-  #view-tasks>.toolbar>.task-action-group-v33 #search-input{grid-column:1/-1;width:100%;min-width:0}
-  #view-tasks>.toolbar>.task-action-group-v33 [data-v25-select="task"]{width:100%;min-width:0;justify-content:center;display:inline-flex!important}
-
   /* Settings and Workout tabs must not hide half their destinations off-screen. */
   #settings-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible!important;gap:5px}
   #settings-tabs .view-btn{width:100%;padding:8px 4px;font-size:.64rem;white-space:normal;text-align:center}
@@ -1816,7 +1797,6 @@ img,svg{max-width:100%}
 
 @media(max-width:420px){
   #settings-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
-  #view-tasks>.toolbar>.toolbar-group:nth-of-type(1),#view-tasks>.toolbar>.task-view-group-v33{grid-template-columns:repeat(2,minmax(0,1fr))}
   #view-help .help-nav{grid-template-columns:1fr}
   #view-workout>.workout-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
   .v25-mobile-more-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}

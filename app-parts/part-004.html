@@ -547,6 +547,57 @@ window.OmniV34={openViewCustomizer:openViewCustomizerV34,applyViewOptions:applyV
 .v97-cover-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.v97-cover-color-wrap{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px 7px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-surface);font-size:.58rem;color:var(--text-muted)}.v97-cover-color-wrap input{width:24px;height:22px;padding:0;border:0;background:none}
 @media(max-width:620px){.v97-cover-editor{grid-template-columns:1fr}.v97-cover-preview{min-height:92px}}
 </style>
+<style id="omnios-v971-person-editor-scroll-fix">
+/* Person editor: header and footer stay fixed; only the form body scrolls. */
+.v97-person-editor-overlay{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important}
+.v97-person-editor-overlay>.v97-person-editor-modal{
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  max-height:min(92dvh,900px)!important;
+  padding:0!important;
+}
+.v97-person-editor-modal>.modal-header{
+  position:relative!important;
+  flex:0 0 auto!important;
+  z-index:5!important;
+  margin:0!important;
+  padding:18px 20px!important;
+  border-bottom:1px solid var(--border-color)!important;
+  background:var(--bg-surface)!important;
+}
+.v97-person-editor-modal>.v35-modal-body{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  padding:16px 20px 18px!important;
+  scrollbar-gutter:stable;
+}
+.v97-person-editor-modal>.modal-footer{
+  position:relative!important;
+  flex:0 0 auto!important;
+  z-index:5!important;
+  margin:0!important;
+  padding:12px 20px!important;
+  border-top:1px solid var(--border-color)!important;
+  background:var(--bg-surface)!important;
+}
+.v97-person-editor-modal .v97-cover-editor{margin-top:0}
+@media(max-width:760px){
+  .v97-person-editor-overlay{padding:0!important;align-items:flex-end!important}
+  .v97-person-editor-overlay>.v97-person-editor-modal{
+    max-height:94dvh!important;
+    border-radius:18px 18px 0 0!important;
+  }
+  .v97-person-editor-modal>.modal-header{padding:14px 14px 12px!important}
+  .v97-person-editor-modal>.v35-modal-body{padding:12px 14px 16px!important}
+  .v97-person-editor-modal>.modal-footer{
+    padding:10px 14px max(10px,env(safe-area-inset-bottom))!important;
+    flex-direction:row!important;
+  }
+}
+</style>
 <style id="omnios-v96-person-profile-ui">
 .v96-person-profile-overlay{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;margin:0!important;transform:none!important}
 .v96-person-profile-modal{max-width:620px!important}
@@ -1745,6 +1796,7 @@ function openRecordModal35(type,id){
     </div>
   </div>`:'';
   const m=modal35(x?`Edit ${s.title}`:`New ${s.title}`,avatarEditor+fields,`<button class="btn ${x?'btn-danger':''}" id="v35-rec-delete">${x?'Delete':'Cancel'}</button><button class="btn btn-primary" id="v35-rec-save">Save</button>`);
+  if(type==='people'){m.classList.add('v97-person-editor-overlay');m.querySelector('.modal')?.classList.add('v97-person-editor-modal')}
   if(type==='people'){
     const preview=m.querySelector('#v35-person-avatar-preview'),remove=m.querySelector('#v35-person-avatar-remove'),file=m.querySelector('#v35-person-avatar-file'),nameInput=m.querySelector('#v35-rec-name'),coverPreview=m.querySelector('#v97-person-cover-preview'),coverColorInput=m.querySelector('#v97-cover-color'),coverFile=m.querySelector('#v97-cover-file'),coverRemove=m.querySelector('#v97-cover-remove');
     const paint=()=>{const initials=avatarInitials35(nameInput?.value||x?.name||'Person');preview.innerHTML=avatar?`<img src="${esc(avatar)}" alt="">`:`<span>${esc(initials)}</span>`;remove.hidden=!avatar};

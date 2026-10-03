@@ -9629,20 +9629,37 @@ window.SecondBrainA11y={repair:repairLabels,syncDialog};
   padding:var(--v97-page-y) var(--v97-page-x) 20px!important;
 }
 .view.active{
-  animation:v97-enter .14s ease-out!important;
-}
-@keyframes v97-enter{
-  from{opacity:.72;transform:translateY(2px)}
-  to{opacity:1;transform:none}
+  animation:none!important;
 }
 
-/* Empty covers waste a full row. Real covers remain untouched. */
-.view > .v44-page-cover-shell:has(.v44-page-cover-empty),
-.view .v44-page-cover-shell:has(.v44-page-cover-empty){
-  display:none!important;
-}
-.v44-page-cover-shell:not(:has(.v44-page-cover-empty)){
+/* Page covers are a user-facing feature. Keep the Add cover affordance visible,
+   compact, and available on every page. */
+.v44-page-cover-shell{
+  display:block!important;
   margin-bottom:10px!important;
+}
+.v44-page-cover-empty{
+  min-height:32px!important;
+  display:flex!important;
+  align-items:center!important;
+}
+.v44-add-cover{
+  min-height:30px!important;
+  padding:5px 8px!important;
+  border:1px solid transparent!important;
+  color:var(--text-muted)!important;
+  background:transparent!important;
+}
+.v44-add-cover:hover{
+  color:var(--text-primary)!important;
+  border-color:var(--border-color)!important;
+  background:var(--bg-elevated)!important;
+}
+/* Override older mobile patches that hid empty cover shells. */
+html body #view-tasks > .v44-page-cover-shell:has(.v44-page-cover-empty),
+html body #view-master-calendar > .v44-page-cover-shell:has(.v44-page-cover-empty),
+html body .view > .v44-page-cover-shell:has(.v44-page-cover-empty){
+  display:block!important;
 }
 
 /* Calendar already has its own complete toolbar. Remove the duplicate legacy heading. */
@@ -9667,28 +9684,58 @@ window.SecondBrainA11y={repair:repairLabels,syncDialog};
   line-height:1.42!important;
 }
 
-/* ===== Controls ===== */
-.btn,.view-btn,.tab-btn,.icon-btn,
-.filter-select,.search-input,.form-input,.form-select{
-  min-height:var(--v97-control-h)!important;
+/* ===== Controls =====
+   Keep buttons visually solid and tappable. Avoid shrinking specialized controls. */
+.btn{
+  min-height:40px!important;
+  padding:8px 12px!important;
+  border:1px solid var(--border-light)!important;
   border-radius:10px!important;
+  background:var(--bg-elevated)!important;
+  color:var(--text-primary)!important;
+  font-size:.74rem!important;
+  font-weight:650!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
 }
-.btn,.view-btn,.tab-btn{
-  padding:8px 11px!important;
-  font-size:.72rem!important;
+.btn:hover{
+  background:var(--bg-hover)!important;
+  border-color:color-mix(in srgb,var(--border-light) 82%,var(--text-muted))!important;
+}
+.btn:active{transform:translateY(1px)!important}
+.btn.btn-primary{
+  border-color:var(--accent-cyan)!important;
+  background:var(--accent-cyan)!important;
+  color:#061015!important;
+  font-weight:750!important;
+}
+.btn.btn-danger{
+  border-color:var(--accent-red)!important;
+  background:var(--accent-red)!important;
+  color:#fff!important;
 }
 .btn-sm{
-  min-height:34px!important;
-  padding:6px 9px!important;
-  font-size:.67rem!important;
+  min-height:36px!important;
+  padding:7px 10px!important;
+  font-size:.68rem!important;
+}
+.view-btn,.tab-btn{
+  min-height:38px!important;
+  padding:8px 11px!important;
+  border-radius:9px!important;
+  font-size:.72rem!important;
 }
 .icon-btn{
-  min-width:var(--v97-control-h)!important;
-  width:var(--v97-control-h)!important;
+  min-width:40px!important;
+  width:40px!important;
+  min-height:40px!important;
+  height:40px!important;
   padding:0!important;
+  border-radius:10px!important;
 }
 .filter-select,.search-input,.form-input,.form-select{
+  min-height:40px!important;
   padding:8px 10px!important;
+  border-radius:10px!important;
   font-size:.78rem!important;
 }
 
@@ -9767,20 +9814,13 @@ window.SecondBrainA11y={repair:repairLabels,syncDialog};
 .stat-value{font-size:1.28rem!important}
 .grid-2{gap:11px!important}
 
-/* Secondary buttons inside content cards should be quiet. */
+/* Card actions remain clearly actionable; no transparent fragile buttons. */
 .card-header .btn:not(.btn-primary):not(.btn-danger),
 .v35-card-head .btn:not(.btn-primary):not(.btn-danger),
 .v43-card-head .btn:not(.btn-primary):not(.btn-danger){
-  background:transparent!important;
-  border-color:transparent!important;
-  color:var(--text-muted)!important;
-}
-.card-header .btn:not(.btn-primary):not(.btn-danger):hover,
-.v35-card-head .btn:not(.btn-primary):not(.btn-danger):hover,
-.v43-card-head .btn:not(.btn-primary):not(.btn-danger):hover{
   background:var(--bg-elevated)!important;
   border-color:var(--border-color)!important;
-  color:var(--text-primary)!important;
+  color:var(--text-secondary)!important;
 }
 
 /* ===== Forms ===== */
@@ -9860,6 +9900,10 @@ window.SecondBrainA11y={repair:repairLabels,syncDialog};
     padding:11px!important;
     border-radius:12px!important;
   }
+
+  .btn{min-height:44px!important}
+  .btn-sm{min-height:40px!important}
+  .icon-btn{width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important}
 
   .toolbar{
     padding:7px!important;
@@ -9974,14 +10018,10 @@ window.SecondBrainA11y={repair:repairLabels,syncDialog};
     });
   }
 
-  let frame=0;
-  function queue(){
-    if(frame)return;
-    frame=requestAnimationFrame(()=>{frame=0;clean()});
-  }
-  new MutationObserver(queue).observe(document.body,{childList:true,subtree:true});
-  window.addEventListener('resize',queue,{passive:true});
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',queue,{once:true});else queue();
+  /* Performance: this pass is static. A document-wide MutationObserver caused
+     repeated full-app scans during renders, so run it once instead. */
+  function runOnce(){requestAnimationFrame(clean)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',runOnce,{once:true});else runOnce();
 })();
 </script>
 

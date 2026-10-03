@@ -1,7 +1,7 @@
 (function(){'use strict';
 const C=window.SecondBrainCrypto,E=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let key=null,salt=null,items=[],busy=false,writeBusy=false,idle,generation=0;
-function lock(){generation++;busy=false;key=null;salt=null;items=[];document.querySelectorAll('[data-password-editor]').forEach(x=>x.remove());render()}
+function lock(){generation++;busy=false;clearTimeout(idle);key=null;salt=null;items=[];document.querySelectorAll('[data-password-editor]').forEach(x=>x.remove());render()}
 function touch(){clearTimeout(idle);if(key)idle=setTimeout(lock,5*60*1000)}
 async function persist(next){
  if(writeBusy)throw Error('Another vault change is already being saved.');

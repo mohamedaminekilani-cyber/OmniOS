@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "file": "app.2b5bd32fffade9d9f16f.html",
-  "sha256": "2b5bd32fffade9d9f16f6e14cf3982ab90e3657af7b300d8d50d828938c09269",
-  "bytes": 7194492,
+  "file": "app.6e3dec2f3463c1f1978f.html",
+  "sha256": "6e3dec2f3463c1f1978f4e50a83684b323edf5283b8b82723334440f3e192499",
+  "bytes": 7195552,
   "parts": [
     "app-parts/part-001.html",
     "app-parts/part-002.html",
@@ -41,5 +41,5 @@
     "js/password-vault.js",
     "js/ui-polish.js"
   ],
-  "subject": "Sync, vault and service-worker reliability fixes"
+  "subject": "Performance: stop full-app observer rescans and batch sync work"
 }

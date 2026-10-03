@@ -9,7 +9,7 @@ export function sourceRelease(){
     return '<script>\n'+modules[file].replace(/<\/script/gi,'<\\/script')+'\n</script>';
   });
   const sha256=createHash('sha256').update(html).digest('hex');
-  return {html,manifest:{version:1,file:`app.${sha256.slice(0,20)}.html`,sha256,bytes:Buffer.byteLength(html),parts,modules:Object.keys(modules),subject:'Sync, vault and service-worker reliability fixes'}};
+  return {html,manifest:{version:1,file:`app.${sha256.slice(0,20)}.html`,sha256,bytes:Buffer.byteLength(html),parts,modules:Object.keys(modules),subject:'Performance: stop full-app observer rescans and batch sync work'}};
 }
 if(process.argv.includes('--write'))fs.writeFileSync('source-release.json',JSON.stringify(sourceRelease().manifest,null,2)+'\n');
 if(process.argv.includes('--check')){

@@ -1696,7 +1696,7 @@ function bindAssistantFab(){
 }
 function init(){installHeader();bindAssistantFab()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,260));else setTimeout(init,260);
-let refreshTimer;new MutationObserver(()=>{clearTimeout(refreshTimer);refreshTimer=setTimeout(init,90)}).observe(document.body,{childList:true,subtree:true});
+let refreshTimer;new MutationObserver(ms=>{let relevant=false;for(const m of ms){const target=m.target instanceof Element?m.target:null;if(target?.closest?.('.topbar-actions')){relevant=true;break}for(const n of m.addedNodes){if(n.nodeType!==1)continue;if(n.matches?.('.topbar-actions,#omni-assistant-panel,#omni-assistant-backdrop')||n.querySelector?.('.topbar-actions,#omni-assistant-panel,#omni-assistant-backdrop')){relevant=true;break}}if(relevant)break}if(!relevant)return;clearTimeout(refreshTimer);refreshTimer=setTimeout(init,90)}).observe(document.body,{childList:true,subtree:true});
 document.addEventListener('click',e=>{if(menu?.classList.contains('open')&&!e.target.closest('#v432-header-menu,#v432-header-more'))closeMenu()},true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&menu?.classList.contains('open'))closeMenu()});window.addEventListener('resize',()=>{if(menu?.classList.contains('open'))positionMenu()});
 })();

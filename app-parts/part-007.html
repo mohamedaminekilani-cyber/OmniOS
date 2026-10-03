@@ -472,8 +472,11 @@ function decorateCards49(){
 }
 // Note autosave should carry the native photo draft too, just like text changes.
 try{const basePersist49=persistCurrentNote;if(typeof basePersist49==='function'){persistCurrentNote=function(){const ok=basePersist49.apply(this,arguments);if(ok){const m=q('#note-modal .modal'),d=m&&drafts49.get(m);if(d&&typeof editingNoteId!=='undefined'&&editingNoteId){const n=entity49('note',editingNoteId);if(n)n.images=[...d.draft.images]}}return ok}}}catch(e){console.warn('v49 note autosave hook',e)}
-let queued49=false;function refresh49(){if(queued49)return;queued49=true;requestAnimationFrame(()=>{queued49=false;try{normalizeNative49();decorateModals49();decorateCards49()}catch(e){console.warn('v49 refresh',e)}})}
-const mo49=new MutationObserver(ms=>{if(ms.some(m=>m.addedNodes.length||m.removedNodes.length))refresh49()});mo49.observe(document.body,{childList:true,subtree:true});
+const itemRefreshSelector49='#note-modal,#task-modal,#org-goal-modal,.modal-overlay.active,#view-notes,#view-goals,#view-projects,#view-tasks,.v43-note-reader';
+let queued49=false,mo49=null;
+function observe49(){mo49?.observe(document.body,{childList:true,subtree:true})}
+function refresh49(){if(queued49)return;queued49=true;requestAnimationFrame(()=>{queued49=false;mo49?.disconnect();try{normalizeNative49();decorateModals49();decorateCards49()}catch(e){console.warn('v49 refresh',e)}finally{observe49()}})}
+mo49=new MutationObserver(ms=>{const relevant=ms.some(m=>{const target=m.target instanceof Element?m.target:null;if(target?.closest?.(itemRefreshSelector49))return true;return [...m.addedNodes,...m.removedNodes].some(n=>n.nodeType===1&&(n.matches?.(itemRefreshSelector49)||n.querySelector?.(itemRefreshSelector49)))});if(relevant)refresh49()});observe49();
 normalizeNative49();if(migrateLegacyItemCovers49())persist49();
 window.OmniItemImages={refresh:refresh49,entity:entity49,migrate:migrateLegacyItemCovers49};
 refresh49();setTimeout(refresh49,250);

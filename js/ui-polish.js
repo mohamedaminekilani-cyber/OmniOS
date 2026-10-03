@@ -442,64 +442,59 @@ function observeCardLayouts(root=document){
   });
 }
 
+const selectHints=[[/sort/i,'Sort by'],[/status/i,'Filter by status'],[/cat/i,'Filter by category'],[/priority/i,'Filter by priority'],[/importance/i,'Filter by importance'],[/urgency/i,'Filter by urgency'],[/bucket/i,'Filter by bucket']];
+function inferredSelectLabel(select){
+  const key=(select.id||'')+' '+(select.className||'');
+  for(const [re,label] of selectHints)if(re.test(key))return label;
+  const first=select.options?.[0]?.text?.trim();
+  return first?'Filter: '+first.replace(/^all\s+/i,'').toLowerCase():'';
+}
 function polishSelect(select){
   if(!(select instanceof HTMLSelectElement)||select.multiple||select.size>1)return;
   select.classList.add('sb-select');
   if(select.classList.contains('filter-select')){
     select.classList.toggle('sb-select-active',select.selectedIndex>0&&select.value!=='');
   }
-  if(!select.getAttribute('aria-label')&&!select.getAttribute('aria-labelledby')&&!(select.labels&&select.labels.length)){
+  if(!select.getAttribute('aria-label')&&!select.getAttribute('aria-labelledby')&&!(select.labels&&select.labels.length)&&!select.closest('label')){
     const group=select.closest('.form-group,.settings-row,.toolbar-group,.list-controls');
     const label=group?.querySelector('label,.form-label,.settings-row-label');
-    const text=label?.textContent?.replace(/\s+/g,' ').trim();
+    const text=label?.textContent?.replace(/\s+/g,' ').trim()||inferredSelectLabel(select);
     if(text)select.setAttribute('aria-label',text.slice(0,80));
   }
 }
+const controlScopeSelector='.toolbar-group,.list-controls,.notes-toolbar,.dashboard-toolbar,.habit-toolbar,.v37-filter-row';
 function polishControlScope(root=document){
+  if(root instanceof HTMLSelectElement)polishSelect(root);
   root.querySelectorAll?.('select').forEach(polishSelect);
-  const scopes=root.querySelectorAll?.('.toolbar-group,.list-controls,.notes-toolbar,.dashboard-toolbar,.habit-toolbar,.v37-filter-row')||[];
+  const scopes=new Set(root.querySelectorAll?.(controlScopeSelector)||[]);
+  if(root instanceof Element){
+    if(root.matches?.(controlScopeSelector))scopes.add(root);
+    const parent=root.closest?.(controlScopeSelector);if(parent)scopes.add(parent);
+  }
   scopes.forEach(scope=>{
     const count=scope.querySelectorAll('select.filter-select,select.form-select').length;
     scope.classList.toggle('sb-filter-rail',count>=2);
   });
   observeCardLayouts(root);
 }
-let polishQueued=false;
-function queueControlPolish(){
+const pendingPolishRoots=new Set();let polishQueued=false;
+function queueControlPolish(root){
+  if(root instanceof Element)pendingPolishRoots.add(root);
   if(polishQueued)return;
   polishQueued=true;
-  requestAnimationFrame(()=>{polishQueued=false;polishControlScope(document)});
+  requestAnimationFrame(()=>{
+    polishQueued=false;
+    const roots=[...pendingPolishRoots];pendingPolishRoots.clear();
+    for(const node of roots)if(node.isConnected)polishControlScope(node);
+  });
 }
 document.addEventListener('change',e=>{if(e.target instanceof HTMLSelectElement)polishSelect(e.target)},true);
 const controlObserver=new MutationObserver(mutations=>{
-  if(mutations.some(m=>Array.from(m.addedNodes).some(n=>n.nodeType===1)))queueControlPolish();
+  for(const m of mutations)for(const n of m.addedNodes)if(n.nodeType===1)queueControlPolish(n);
 });
 controlObserver.observe(document.body||document.documentElement,{childList:true,subtree:true});
 polishControlScope(document);
-polishCardLayouts(document);
 
 document.addEventListener('secondbrain:transfer',e=>{const d=e.detail;document.querySelectorAll('[data-local-progress-text]').forEach(el=>el.textContent=`Receiving ${Math.round(d.received/1024)} / ${Math.round(d.total/1024)} KB`)});
 document.addEventListener('click',e=>{if(e.target.closest('[data-sb-disconnect]')){SecondBrainSync.disconnect();e.target.closest('.omni-sync-overlay')?.remove()}requestAnimationFrame(addTools)});addTools();
 })();
-
-/* Accessible names for dynamically rendered filter/sort selects. */
-(function(){'use strict';
-const HINTS=[[/sort/i,'Sort by'],[/status/i,'Filter by status'],[/cat/i,'Filter by category'],[/priority/i,'Filter by priority'],[/importance/i,'Filter by importance'],[/urgency/i,'Filter by urgency'],[/bucket/i,'Filter by bucket']];
-function nameFor(sel){
-  const key=(sel.id||'')+' '+(sel.className||'');
-  for(const [re,label] of HINTS)if(re.test(key))return label;
-  const first=sel.options&&sel.options[0]&&sel.options[0].text.trim();
-  return first?'Filter: '+first.replace(/^all\s+/i,'').toLowerCase():'';
-}
-function label(root){
-  (root||document).querySelectorAll('select:not([aria-label]):not([aria-labelledby]):not([title])').forEach(sel=>{
-    if(sel.closest('label')||(sel.id&&document.querySelector('label[for="'+CSS.escape(sel.id)+'"]')))return;
-    const n=nameFor(sel);if(n)sel.setAttribute('aria-label',n);
-  });
-}
-let queued=false;
-function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;label()})}
-function start(){label();new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true})}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-})();
-

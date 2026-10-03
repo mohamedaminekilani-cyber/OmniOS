@@ -1,11 +1,11 @@
 /* Protocol 2: field revisions, durable serial application, scope on both sides. */
 (function(){'use strict';
 const D=window.SecondBrainData,copy=D.copy;
-let previous=null,meta=null,tail=Promise.resolve(),applying=false;
+let previous=null,meta=null,tail=Promise.resolve(),applying=false,captureTimer=null;
 const id=()=>{let v=localStorage.getItem('omnios_sync_writer_v2');if(!v){v=crypto.randomUUID();localStorage.setItem('omnios_sync_writer_v2',v)}return v};
 const R=()=>window.OmniRecovery35;
 function doc(){const s=copy(state);delete s.core;delete s.passwords;delete s.passwordVault;if(s.settings)delete s.settings.notifications;if(s.v55){delete s.v55.privacy;delete s.v55.vault}const a=R()?.captureAux()||{};s.aux={};for(const[k,v]of Object.entries(a)){if(!D.userAux(k))continue;try{s.aux[k]={json:true,value:JSON.parse(v)}}catch(_){s.aux[k]={json:false,value:v}}}return s}
-function capture(){const value=doc();if(!meta){const saved=state.core?.syncV2;if(saved){try{const candidate=copy(saved),restored=D.materialize(candidate.entries||{});if(!restored||typeof restored!=='object'||Array.isArray(restored))throw Error('Invalid saved sync document');meta=candidate;previous=restored}catch(_){meta=D.initialize(value);previous=copy(value)}}else{meta=D.initialize(value);previous=copy(value)}}if(!applying)meta=D.capture(meta,previous,value,id());previous=copy(value);state.core=state.core||{};state.core.syncV2=meta;return meta}
+function capture(){if(captureTimer){clearTimeout(captureTimer);captureTimer=null}const value=doc();if(!meta){const saved=state.core?.syncV2;if(saved){try{const candidate=copy(saved),restored=D.materialize(candidate.entries||{});if(!restored||typeof restored!=='object'||Array.isArray(restored))throw Error('Invalid saved sync document');meta=candidate;previous=restored}catch(_){meta=D.initialize(value);previous=copy(value)}}else{meta=D.initialize(value);previous=copy(value)}}if(!applying)meta=D.capture(meta,previous,value,id());previous=copy(value);state.core=state.core||{};state.core.syncV2=meta;return meta}
 function group(p){if(p[0]==='aux')return /bible/i.test(p[1]||'')?'bible':'settings';const k=p[0]?.toLowerCase()||'';if(['entries','goals','notes','reminders'].includes(k)||/task|project|inbox/.test(k))return'planning';if(/calendar|event|timeblock/.test(k))return'calendar';if(/habit|routine|workout|focus/.test(k))return'habits';if(/transaction|finance|budget|expense|income|wishlist|pantry|grocery/.test(k))return'finance';if(k==='life'||/people|document/.test(k))return'life';if(/diet|nutrition|meal|hydration|food|recipe|prep/.test(k))return'nutrition';if(k==='settings'||/appearance|profile|preference/.test(k))return'settings';return'other'}
 function selection(){try{const value=JSON.parse(localStorage.getItem('omnios_sync_selection_v1')||'{}');return value&&typeof value==='object'&&!Array.isArray(value)?value:{}}catch(_){return{}}}
 function select(m,sel=selection()){
@@ -43,8 +43,10 @@ async function mergeNow(remote){
 }
 function merge(remote){return serial(()=>mergeNow(remote))}
 function disconnect(){window.OmniLocalWifiSync73?.disconnect?.();window.OmniDeviceSync?.disconnect?.()}
+function scheduleCapture(){if(applying)return;if(captureTimer)clearTimeout(captureTimer);captureTimer=setTimeout(()=>{captureTimer=null;if(!applying)capture()},140)}
 window.SecondBrainSync={capture,bundle,merge,disconnect,select,conflicts:()=>copy(capture().conflicts||[])};
-document.addEventListener('omnios:data-changed',()=>{if(!applying)capture()});
+document.addEventListener('omnios:data-changed',scheduleCapture);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&captureTimer)capture()});
 // Shared browser tabs use the same durable revisions, while maintaining their own
 // dirty edits. Suppression prevents echoes from creating another revision.
 let tabTimer;window.addEventListener('storage',e=>{if(e.key!=='omnios_v3_state'||!e.newValue||applying)return;clearTimeout(tabTimer);tabTimer=setTimeout(()=>{try{const saved=JSON.parse(e.newValue);if(saved.core?.syncV2)merge({protocol:2,meta:saved.core.syncV2}).catch(error=>window.toast?.('Other-tab changes could not be saved: '+error.message))}catch(_){}},200)});

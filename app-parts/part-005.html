@@ -389,7 +389,6 @@ function totals38(month=state.settings.finance.selectedMonth){const tx=cashTx38(
 function walletBalance38(w){return Number(w.openingBalance||0)+state.transactions.filter(t=>isCleared38(t)&&String(t.walletId)===String(w.id)).reduce((s,t)=>s+(t.type==='income'?1:-1)*Number(t.amount||0),0)}
 function totalAccounts38(){return state.wallets.filter(w=>w.includeInNetWorth!==false).reduce((s,w)=>s+walletBalance38(w),0)}
 function catExpense38(catId,month=state.settings.finance.selectedMonth){return cashTx38(month).filter(t=>t.type!=='income'&&String(t.categoryId)===String(catId)).reduce((s,t)=>s+Number(t.amount||0),0)}
-function catIncome38(catId,month=state.settings.finance.selectedMonth){return cashTx38(month).filter(t=>t.type==='income'&&String(t.categoryId)===String(catId)).reduce((s,t)=>s+Number(t.amount||0),0)}
 function expenseCats38(){return state.budgetCategories.filter(c=>(c.type||'expense')==='expense')}
 function totalBudget38(){return expenseCats38().reduce((s,c)=>s+Math.max(0,Number(c.limit)||0),0)}
 function avgCat38(id){let sum=0;for(let i=1;i<=3;i++)sum+=catExpense38(id,shiftMonth38(state.settings.finance.selectedMonth,-i));return sum/3}

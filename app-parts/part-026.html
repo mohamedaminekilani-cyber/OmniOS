@@ -43,10 +43,7 @@ function todayPlan(){return PLAN[Math.min(PLAN.length-1,dayOfYear()-1)]||PLAN[0]
 function completedCount(){return Object.values(B.planCompleted).filter(Boolean).length}
 function planPct(){return Math.round(completedCount()/365*100)}
 function streak(){let id=todayPlan().id,n=0;while(id>0&&B.planCompleted[id]){n++;id--}return n}
-function totalMinutes(){return B.sessions.reduce((s,x)=>s+(Number(x.minutes)||0),0)}
-function sizeLabel(n){n=Number(n)||0;return n>1048576?(n/1048576).toFixed(1)+' MB':n>1024?Math.round(n/1024)+' KB':n+' B'}
 function kpi(label,value,meta){return `<div class="bib-kpi"><div class="bib-kpi-label">${esc(label)}</div><div class="bib-kpi-value">${esc(value)}</div><div class="bib-kpi-meta">${esc(meta)}</div></div>`}
-function currentChapterKey(){return `${B.reader.book}:${B.reader.chapter}`}
 function currentRef(){return `${B.reader.book} ${B.reader.chapter}:${String(B.reader.verse||'1').trim()||'1'}`}
 const aliases={'Psalm':'Psalms','Psalms':'Psalms','Song of Songs':'Song of Solomon','1st Samuel':'1 Samuel','2nd Samuel':'2 Samuel','1st Kings':'1 Kings','2nd Kings':'2 Kings','1st Chronicles':'1 Chronicles','2nd Chronicles':'2 Chronicles','1st Corinthians':'1 Corinthians','2nd Corinthians':'2 Corinthians','1st Thessalonians':'1 Thessalonians','2nd Thessalonians':'2 Thessalonians','1st Timothy':'1 Timothy','2nd Timothy':'2 Timothy','1st Peter':'1 Peter','2nd Peter':'2 Peter','1st John':'1 John','2nd John':'2 John','3rd John':'3 John'};
 function normalizeBook(raw){raw=String(raw||'').trim().replace(/\s+/g,' ');if(aliases[raw])return aliases[raw];const exact=BOOKS.find(b=>b.name.toLowerCase()===raw.toLowerCase());return exact?.name||raw}
@@ -164,7 +161,6 @@ function selectionHighlights573(nums){return nums.map(v=>highlightMeta573(v)).fi
 function chapterSavedStats573(){const prefix=`${B.reader.book} ${B.reader.chapter}:`;return{highlights:Object.keys(B.highlights).filter(r=>r.startsWith(prefix)).length,notes:Object.keys(B.notes).filter(r=>r.startsWith(prefix)).length,bookmarks:Object.keys(B.bookmarks).filter(r=>r.startsWith(prefix)).length}}
 function removeSelectedHighlights573(nums){nums.forEach(v=>delete B.highlights[verseRef573(B.reader.book,B.reader.chapter,v)])}
 function applyHighlight573(nums,color,purpose,style){removeSelectedHighlights573(nums);const now=new Date().toISOString();nums.forEach(v=>{const ref=verseRef573(B.reader.book,B.reader.chapter,v),excerpt=selectedPassageText(ref);B.highlights[ref]={color,purpose,style,excerpt,updatedAt:now}});B.reader.color=color;B.ui.highlightPurpose=purpose;B.ui.highlightStyle=style;save()}
-function selectedRangeLabel573(nums){if(!nums.length)return'No verse selected';if(nums.length===1)return `${B.reader.book} ${B.reader.chapter}:${nums[0]}`;return `${B.reader.book} ${B.reader.chapter}:${nums[0]}-${nums[nums.length-1]}`}
 function recordRecent573(ref){const cur=B.study.recent[0];if(cur?.ref===ref)return;B.study.recent=[{ref,at:new Date().toISOString()},...B.study.recent.filter(x=>x.ref!==ref)].slice(0,16);save()}
 const STOP573=new Set('the a an and or but if then than that this these those to of in on at by for from with as is are was were be been being have has had do does did not no so it its he she they them his her their you your we our us i me my who whom whose what when where why how into over under through about after before between among up down out all any some each every more most other such only own same can will would should could may might must shall'.split(' '));
 function words573(text){return [...new Set(String(text||'').toLowerCase().replace(/[^a-z0-9' ]/g,' ').split(/\s+/).filter(w=>w.length>3&&!STOP573.has(w)))].slice(0,28)}
@@ -283,13 +279,6 @@ function resolveDailyVerse79(ref){const p=parseRef(ref);if(!p)return null;const 
 function dailyVerseToday79(d=new Date()){const date=dailyVerseKey79(d),seed=dailyVerseHash79(date+'|omnios-meaningful-v79');for(let step=0;step<DAILY_VERSE_POOL79.length;step++){const item=DAILY_VERSE_POOL79[(seed+step*37)%DAILY_VERSE_POOL79.length],verse=resolveDailyVerse79(item[0]);if(verse)return Object.assign(verse,{theme:item[1],date})}return null}
 window.OmniDailyVerse79={today:dailyVerseToday79,read(ref){const v=ref||dailyVerseToday79()?.ref;if(v)setRef(v,'read')},meditate(ref){const v=ref||dailyVerseToday79()?.ref;if(v)startMeditation(v)},poolSize:DAILY_VERSE_POOL79.length};
 
-function todayPassageHtml583(ref){
-  const p=parseRef(ref);if(!p)return'';
-  const ch=nivChapter(p.book,p.chapter);if(!ch)return'';
-  const hasColon=String(ref).includes(':');
-  const nums=hasColon?verseNums(p.verse,ch.verses.length):ch.verses.map((_,i)=>i+1);
-  return nums.filter(v=>ch.verses[v-1]).map(v=>`<span class="bib-today-verse-v583"><sup class="bib-today-verse-num-v583">${v}</sup><span>${esc(ch.verses[v-1])}</span></span>`).join(' ');
-}
 function todayPreviewHtml67(ref,limit=4){
   const p=parseRef(ref);if(!p)return'';
   const ch=nivChapter(p.book,p.chapter);if(!ch)return'';

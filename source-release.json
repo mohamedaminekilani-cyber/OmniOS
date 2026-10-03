@@ -25,5 +25,5 @@
     "js/password-vault.js",
     "js/ui-polish.js"
   ],
-  "subject": "UI cleanup: canonical Tasks and Universal Goals"
+  "subject": "Performance: curated startup, lifecycle observers and lazy Bible data"
 }

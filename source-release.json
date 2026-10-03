@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "file": "app.6e3dec2f3463c1f1978f.html",
-  "sha256": "6e3dec2f3463c1f1978f4e50a83684b323edf5283b8b82723334440f3e192499",
-  "bytes": 7195552,
+  "file": "app.141564d924b6b5be1faf.html",
+  "sha256": "141564d924b6b5be1faf2a1307c81e0610f2e9bcfecfebc20b3b6147f7b473b1",
+  "bytes": 7195493,
   "parts": [
     "app-parts/part-001.html",
     "app-parts/part-002.html",
@@ -41,5 +41,5 @@
     "js/password-vault.js",
     "js/ui-polish.js"
   ],
-  "subject": "Performance: stop full-app observer rescans and batch sync work"
+  "subject": "Life Hub: keep only the current v43 interface"
 }

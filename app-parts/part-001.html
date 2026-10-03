@@ -1994,22 +1994,7 @@ img,svg{max-width:100%}
 #view-bible .bib-med-verse-text-v633{font-family:Georgia,'Times New Roman',serif;font-size:.93rem;line-height:1.72;color:var(--text-primary)}
 @media(max-width:760px){#view-bible .bib-med-passage-v633{max-height:220px;padding:11px 12px}#view-bible .bib-med-verse-v633{grid-template-columns:22px minmax(0,1fr);gap:8px}#view-bible .bib-med-verse-text-v633{font-size:.9rem}}
 
-#view-life-hub .v35-life-sectionbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:10px 12px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-surface);font-size:.72rem;color:var(--text-muted)}
-#view-life-hub .v35-life-sectionbar strong{color:var(--text-primary)}
-#view-life-hub .v35-record-card{display:flex;flex-direction:column;gap:12px;min-width:0}
-#view-life-hub .v35-record-card-main{min-width:0;flex:1}
-#view-life-hub .v35-record-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:auto;padding-top:10px;border-top:1px solid var(--border-color)}
-#view-life-hub .v35-record-actions .btn{min-height:34px}
-#view-life-hub .v35-life-delete{color:var(--accent-red)}
-#view-life-hub .v35-life-delete:hover{border-color:color-mix(in srgb,var(--accent-red) 55%,var(--border-color));background:color-mix(in srgb,var(--accent-red) 10%,var(--bg-elevated));color:var(--accent-red)}
-#view-life-hub .v35-admin-group{margin-bottom:12px}
-#view-life-hub .v35-admin-row{gap:10px;align-items:center}
-#view-life-hub .v35-admin-row .v35-record-actions{border-top:0;padding-top:0;margin-top:0;flex:none}
-#view-life-hub .v35-auto-row{gap:10px;align-items:center}
-#view-life-hub .v35-auto-row .v35-record-actions{border-top:0;padding-top:0;margin-top:0;flex:none}
-#view-life-hub .v35-auto-state{padding:3px 7px;border-radius:999px;font-size:.6rem;font-weight:700;white-space:nowrap}
-#view-life-hub .v35-auto-state.on{background:rgba(16,185,129,.13);color:var(--accent-green)}
-#view-life-hub .v35-auto-state.off{background:var(--bg-elevated);color:var(--text-muted)}
+/* Life Hub page styling is owned exclusively by the newer v43 UI. */
 .v35-life-detail-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-color)}
 .v35-life-detail-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--bg-elevated);font-size:1.2rem;flex:none}
 .v35-life-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -2017,15 +2002,7 @@ img,svg{max-width:100%}
 .v35-life-detail-field.wide{grid-column:1/-1}
 .v35-life-detail-field>span{display:block;margin-bottom:5px;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)}
 .v35-life-detail-field>div{font-size:.8rem;line-height:1.5;color:var(--text-primary);overflow-wrap:anywhere}
-@media(max-width:760px){
-  #view-life-hub .v35-life-sectionbar{align-items:stretch;flex-direction:column}
-  #view-life-hub .v35-life-sectionbar .btn{width:100%;justify-content:center}
-  #view-life-hub .v35-record-actions{justify-content:stretch}
-  #view-life-hub .v35-record-actions .btn{flex:1;justify-content:center}
-  #view-life-hub .v35-admin-row,#view-life-hub .v35-auto-row{align-items:flex-start;flex-wrap:wrap}
-  #view-life-hub .v35-admin-row .v35-record-actions,#view-life-hub .v35-auto-row .v35-record-actions{width:100%}
-  .v35-life-detail-grid{grid-template-columns:1fr}.v35-life-detail-field.wide{grid-column:auto}
-}
+@media(max-width:760px){.v35-life-detail-grid{grid-template-columns:1fr}.v35-life-detail-field.wide{grid-column:auto}}
 </style>
 
 

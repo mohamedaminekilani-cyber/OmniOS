@@ -443,11 +443,7 @@ window.OmniV34={openViewCustomizer:openViewCustomizerV34,applyViewOptions:applyV
 .v35-week-toolbar-head{align-items:center}.v35-week-nav{display:flex;gap:5px}.v35-day-add{width:100%;margin-top:6px}
 .v35-review-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v35-review-grid .full{grid-column:1/-1}
 
-/* Life Hub */
-.v35-life-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px}.v35-life-tabs{display:flex;gap:4px;overflow:auto;scrollbar-width:none;flex:1}.v35-life-tabs::-webkit-scrollbar{display:none}.v35-life-tabs button{flex:none;border:1px solid transparent;background:transparent;color:var(--text-muted);padding:7px 10px;border-radius:8px;font:inherit;font-size:.67rem;font-weight:650;cursor:pointer}.v35-life-tabs button.active{background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.25);color:var(--accent-cyan)}
-#v35-life-select{display:none}
-.v35-record-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.v35-record-card{border:1px solid var(--border-color);border-radius:12px;background:var(--bg-surface);padding:13px;cursor:pointer;min-width:0}.v35-record-card:hover{border-color:var(--accent-cyan)}.v35-record-title{font-size:.8rem;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v35-record-meta{font-size:.62rem;color:var(--text-muted);line-height:1.45;margin-top:5px}.v35-record-note{font-size:.68rem;color:var(--text-secondary);line-height:1.45;margin-top:8px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.v35-networth{font-size:2rem;font-weight:850;letter-spacing:-.04em}.v35-networth.negative{color:var(--accent-red)}
+/* Legacy Life Hub page layout retired. The v43 renderer is the sole visual authority. */
 
 /* Drawer / history / context */
 #v35-drawer-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:1700;display:none}#v35-drawer-backdrop.open{display:block}
@@ -500,7 +496,6 @@ window.OmniV34={openViewCustomizer:openViewCustomizerV34,applyViewOptions:applyV
   #view-planner .v35-block-time{font-size:.56rem}
   #view-planner .v35-block-title{font-size:.69rem;line-height:1.35}
   #view-planner .v35-day-add{min-height:38px;margin-top:7px}
-  .v35-life-tabs{display:none}#v35-life-select{display:block;width:100%}.v35-life-toolbar{display:block}
   #v35-drawer{width:100%;top:0}.v35-drawer-body{padding:13px}
   .v35-context-btn{min-height:42px}
   .v35-db-hero{padding:14px}
@@ -1508,7 +1503,7 @@ function refreshLifeHub35(){
   try{const current=window.renderLife35;if(typeof current==='function'&&current!==renderLife35)return current()}catch(_){}
   return renderLife35();
 }
-function renderLife35(){const el=root('life-hub');if(!el)return;const tab=state.settings.v35.lifeTab||'people';el.innerHTML=`<div class="v35-page-head"><div><div class="v35-kicker">PERSONAL OPERATING SYSTEM</div><h3>Life Hub</h3><div class="text-muted text-sm">Relationships, home, health, learning, travel, money and administration—organized without crowding the main navigation.</div></div><div class="v35-page-actions"><button class="btn btn-primary" id="v35-life-add">+ Add</button></div></div><div class="v35-life-toolbar"><div class="v35-life-tabs">${LIFE_TABS.map(([k,l])=>`<button class="${k===tab?'active':''}" data-life-tab="${k}">${l}</button>`).join('')}</div><select class="form-select" id="v35-life-select">${LIFE_TABS.map(([k,l])=>`<option value="${k}" ${k===tab?'selected':''}>${l}</option>`).join('')}</select></div><div id="v35-life-body"></div>`;el.querySelectorAll('[data-life-tab]').forEach(b=>b.onclick=()=>{state.settings.v35.lifeTab=b.dataset.lifeTab;renderLife35()});el.querySelector('#v35-life-select').onchange=e=>{state.settings.v35.lifeTab=e.target.value;renderLife35()};el.querySelector('#v35-life-add').onclick=()=>lifeAdd35(tab);renderLifeTab35(tab)}
+function renderLife35(){const recent=window.__secondBrainRenderLifeHub;if(typeof recent==='function')return recent()}
 function lifeAdd35(tab){if(SCHEMA35[tab])return openRecordModal35(tab);if(tab==='admin')return openAdminChooser35();if(tab==='automations')return openLifeAutomationModal35()}
 function renderLifeTab35(tab){const b=document.getElementById('v35-life-body');if(!b)return;if(SCHEMA35[tab])return renderRecords35(tab,b);if(tab==='admin')return renderAdmin35(b);if(tab==='automations')return renderAutomations35(b)}
 function recordTitle35(type,x){return x.name||x.title||(type==='health'?dateLabel(x.date):SCHEMA35[type].title)}

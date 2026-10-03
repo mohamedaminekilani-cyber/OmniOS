@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "file": "app.a00aef119c2b25616cb6.html",
-  "sha256": "a00aef119c2b25616cb6b8b68d591affcdbd65d866e8f00798b8d2082699b50b",
-  "bytes": 3254899,
+  "file": "app.eb77be6dc78f73dfa545.html",
+  "sha256": "eb77be6dc78f73dfa5457092849ab8f1bb2a60ede82d5e5949d2ebe2aefcc3f8",
+  "bytes": 3231809,
   "parts": [
     "app-parts/part-001.html",
     "app-parts/part-002.html",
@@ -25,5 +25,5 @@
     "js/password-vault.js",
     "js/ui-polish.js"
   ],
-  "subject": "Performance: curated startup, lifecycle observers and lazy Bible data"
+  "subject": "UI cleanup: canonical Tasks and Universal Goals"
 }

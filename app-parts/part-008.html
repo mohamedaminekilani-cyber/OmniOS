@@ -59,21 +59,10 @@ button:disabled,.btn.is-busy,.icon-btn.is-busy{opacity:.55!important;cursor:wait
 .modal-overlay .modal-footer{position:sticky;bottom:-1px;z-index:5;background:linear-gradient(180deg,color-mix(in srgb,var(--bg-surface) 0%,transparent),var(--bg-surface) 18%);padding-top:12px;padding-bottom:var(--v56-safe-bottom)}
 .modal-overlay .modal-header{position:sticky;top:-1px;z-index:6;background:var(--bg-surface);padding-bottom:10px}
 .form-input,.form-select,.form-textarea{max-width:100%}
-.v56-daily{margin-bottom:12px;border:1px solid var(--border-color);border-radius:15px;background:var(--bg-surface);overflow:hidden}
-.v56-daily-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 15px;border-bottom:1px solid var(--border-color)}
-.v56-daily-title{font-size:.9rem;font-weight:820}.v56-daily-sub{font-size:.62rem;color:var(--text-muted);margin-top:3px}
-.v56-daily-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-.v56-daily-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:12px}
-.v56-daily-card{padding:10px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base);min-width:0}
-.v56-daily-card.clickable{cursor:pointer}.v56-daily-card.clickable:hover{border-color:var(--accent-cyan);background:var(--bg-elevated)}
-.v56-daily-l{font-size:.56rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted)}.v56-daily-v{font-size:1.04rem;font-weight:820;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v56-daily-m{font-size:.58rem;color:var(--text-muted);margin-top:2px;line-height:1.35}
-.v56-daily-bottom{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(240px,.75fr);gap:10px;padding:0 12px 12px}
-.v56-note{width:100%;min-height:72px;resize:vertical}.v56-water{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.v56-water strong{font-size:1.1rem}
 .v56-health{margin-top:14px;border:1px solid var(--border-color);border-radius:14px;background:var(--bg-surface);padding:14px}
 .v56-health-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}.v56-health-title{font-size:.84rem;font-weight:800}.v56-health-sub{font-size:.62rem;color:var(--text-muted);margin-top:2px}.v56-health-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.v56-health-stat{padding:9px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base)}.v56-health-stat span{display:block;font-size:.55rem;color:var(--text-muted);text-transform:uppercase}.v56-health-stat strong{display:block;font-size:1rem;margin-top:3px}.v56-health-list{margin-top:9px;font-size:.65rem;color:var(--text-secondary);line-height:1.55}.v56-health-list .bad{color:var(--accent-red)}.v56-health-list .warn{color:var(--accent-yellow)}
 .v56-skip-link{position:fixed;left:10px;top:-60px;z-index:9999;padding:8px 10px;border-radius:8px;background:var(--bg-surface);border:1px solid var(--accent-cyan);color:var(--text-primary)}.v56-skip-link:focus{top:10px}
-@media(max-width:1050px){.v56-daily-grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:760px){.v56-daily-head{flex-direction:column}.v56-daily-actions{width:100%;justify-content:stretch}.v56-daily-actions .btn{flex:1}.v56-daily-grid{grid-template-columns:repeat(2,1fr);padding:9px}.v56-daily-bottom{grid-template-columns:1fr;padding:0 9px 9px}.v56-health-grid{grid-template-columns:repeat(2,1fr)}.modal-overlay{padding:8px!important;align-items:flex-end!important}.modal-overlay .modal{max-height:94dvh!important;width:100%!important;border-radius:16px 16px 10px 10px!important}.modal-overlay .form-grid,.modal-overlay .form-row{grid-template-columns:1fr!important}.modal-footer .btn{min-height:42px}.org-shop-item{grid-template-columns:auto minmax(0,1fr)!important}.org-shop-item .form-input{grid-column:2/-1}}
+@media(max-width:760px){.v56-health-grid{grid-template-columns:repeat(2,1fr)}.modal-overlay{padding:8px!important;align-items:flex-end!important}.modal-overlay .modal{max-height:94dvh!important;width:100%!important;border-radius:16px 16px 10px 10px!important}.modal-overlay .form-grid,.modal-overlay .form-row{grid-template-columns:1fr!important}.modal-footer .btn{min-height:42px}.org-shop-item{grid-template-columns:auto minmax(0,1fr)!important}.org-shop-item .form-input{grid-column:2/-1}}
 </style>
 <script id="omnios-v56-audit-js">
 (function(){
@@ -84,7 +73,6 @@ const arr=x=>Array.isArray(x)?x:[];
 const num=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d;
 const nonneg=(v,d=0)=>Math.max(0,num(v,d));
 const today=()=>window.localDateString?localDateString():new Date().toISOString().slice(0,10);
-const money=v=>window.currencyLocal?currencyLocal(num(v)):num(v).toFixed(2);
 const esc=v=>window.escapeHtml?escapeHtml(v??''):String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 function ensure56(){
  state.v56=state.v56&&typeof state.v56==='object'?state.v56:{};
@@ -132,24 +120,6 @@ const saveBase56=window.saveState;
 if(typeof saveBase56==='function'&&!saveBase56.__v56){const wrapped=function(){normalize56();return saveBase56.apply(this,arguments)};wrapped.__v56=true;window.saveState=wrapped}
 normalize56();
 
-function clearedExpenses(date=today()){return arr(state.transactions).filter(t=>t.type==='expense'&&t.status!=='pending'&&!t.isTransfer&&t.date===date)}
-function dailyStats56(){
- const k=today(),tasks=arr(state.entries),openToday=tasks.filter(t=>t.status!=='completed'&&t.date===k),over=tasks.filter(t=>t.status!=='completed'&&t.date&&t.date<k),events=arr(state.calendarEvents).filter(e=>e.date===k),spend=clearedExpenses(k).reduce((s,t)=>s+num(t.amount),0),low=arr(state.pantry).filter(p=>!p.archived&&num(p.minQty)>0&&num(p.qty)<=num(p.minQty)),habits=arr(state.habits),habitDone=habits.filter(h=>h.log?.[k]).length;return {openToday,over,events,spend,low,habits,habitDone};
-}
-function openQuick(type){
- if(type==='task')return window.openTaskModal?openTaskModal():window.OmniV55?.capture?.();
- if(type==='event')return window.openCalendarEventModal?openCalendarEventModal():window.OmniV55?.capture?.();
- if(type==='expense')return window.openFinanceTransactionV38?openFinanceTransactionV38(null,'expense'):window.openTxnModal?.();
- if(type==='grocery')return window.openGroceryModal?.();
- if(type==='note')return window.openNoteModal?.();
- if(type==='capture')return window.OmniV55?.capture?.();
-}
-function renderDaily56(){
- ensure56();
- const old=document.getElementById('v56-daily');
- if(old)old.remove();
-}
-
 function renderHealth56(){
  const settings=document.getElementById('view-settings');if(!settings||!settings.classList.contains('active'))return;let host=document.getElementById('v56-health');if(!host){host=document.createElement('section');host.id='v56-health';host.className='v56-health';(document.getElementById('settings-content')||settings).appendChild(host)}const h=health56();
  host.innerHTML=`<div class="v56-health-head"><div><div class="v56-health-title">System Health & daily defaults</div><div class="v56-health-sub">Checks data links and calculation inputs. Repair normalizes invalid numeric/status fields without deleting valid records.</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-sm" id="v56-health-check">Recheck</button><button class="btn btn-sm btn-primary" id="v56-health-repair">Repair data</button></div></div><div class="v56-health-grid"><div class="v56-health-stat"><span>Tracked records</span><strong>${h.records}</strong></div><div class="v56-health-stat"><span>Issues</span><strong>${h.issues.length}</strong></div><div class="v56-health-stat"><span>Pending finance</span><strong>${h.pending}</strong></div><div class="v56-health-stat"><span>Transfer rows</span><strong>${h.transfers}</strong></div></div><div class="settings-row" style="margin-top:10px"><div><div class="settings-row-label">Hydration</div><div class="settings-row-desc">Today and Nutrition now use one shared millilitre record. Set the optional target in Nutrition → Targets.</div></div><button type="button" class="btn btn-sm" id="v56-open-hydration">Open Nutrition</button></div><div class="v56-health-list">${h.issues.length?h.issues.map(x=>`<div class="${x.tone}">• ${esc(x.text)}</div>`).join(''):'<div>✓ No structural data-link problems detected by the local audit.</div>'}</div>`;
@@ -161,11 +131,11 @@ window.addEventListener('keydown',e=>{if(e.key!=='Escape'||e.defaultPrevented)re
 const mo=new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes){if(!(n instanceof Element))continue;if(n.matches?.('.modal-overlay.active')){requestAnimationFrame(()=>{n.querySelector('input:not([type=hidden]):not([disabled]),textarea:not([disabled]),select:not([disabled])')?.focus({preventScroll:true})})}}});mo.observe(document.body,{childList:true,subtree:true});
 // Accessibility/basic semantics for dynamically-created controls.
 function semanticPass56(root=document){root.querySelectorAll('button').forEach(b=>{if(!b.hasAttribute('type'))b.type='button';if(!b.getAttribute('aria-label')&&!b.textContent.trim()&&b.title)b.setAttribute('aria-label',b.title)});root.querySelectorAll('img:not([alt])').forEach(i=>i.alt='')};
-function post56(){ensure56();semanticPass56();renderDaily56();renderHealth56()}
+function post56(){ensure56();semanticPass56();renderHealth56()}
 const baseSwitch56=window.switchView;if(typeof baseSwitch56==='function'&&!baseSwitch56.__v56){const f=function(){const r=baseSwitch56.apply(this,arguments);setTimeout(post56,0);return r};f.__v56=true;window.switchView=f}
 const baseRenderSettings56=window.renderSettings;if(typeof baseRenderSettings56==='function'&&!baseRenderSettings56.__v56){const f=function(){const r=baseRenderSettings56.apply(this,arguments);setTimeout(renderHealth56,0);return r};f.__v56=true;window.renderSettings=f}
-// Keep health/daily panels refreshed after meaningful saves without entering a render loop.
-const savePost56=window.saveState;if(typeof savePost56==='function'&&!savePost56.__v56post){const f=function(){const r=savePost56.apply(this,arguments);setTimeout(()=>{if(document.getElementById('view-today')?.classList.contains('active'))renderDaily56();if(document.getElementById('view-settings')?.classList.contains('active'))renderHealth56()},0);return r};f.__v56post=true;window.saveState=f}
+// Keep System Health refreshed after meaningful saves without entering a render loop.
+const savePost56=window.saveState;if(typeof savePost56==='function'&&!savePost56.__v56post){const f=function(){const r=savePost56.apply(this,arguments);setTimeout(()=>{if(document.getElementById('view-settings')?.classList.contains('active'))renderHealth56()},0);return r};f.__v56post=true;window.saveState=f}
 let skip=document.querySelector('.v56-skip-link');if(!skip){skip=document.createElement('button');skip.className='v56-skip-link';skip.textContent='Skip to main content';skip.onclick=()=>{const v=document.querySelector('.view.active');if(v){v.tabIndex=-1;v.focus()}};document.body.prepend(skip)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(post56,0),{once:true});else setTimeout(post56,0);
 })();
@@ -429,8 +399,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   let queued=false;
 
   function eq(a,b){return String(a)===String(b)}
-  function activeKanban(){return typeof currentTaskView!=='undefined'&&currentTaskView==='kanban'&&document.getElementById('view-tasks')?.classList.contains('active')}
-  function getTask(id){return (state.entries||[]).find(t=>eq(t.id,id))}
+    function getTask(id){return (state.entries||[]).find(t=>eq(t.id,id))}
   function colStatus(col,index){return col.dataset.taskStatus||STATUSES[index]||''}
 
   function addHint(){

@@ -589,14 +589,7 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
     }catch(e){return false}
   }
   function saveDatabase(){download(DB_TXT,databaseText(),'text/plain;charset=utf-8');download(DB_CSV,historyCsv(),'text/csv;charset=utf-8');setStatus('Database exported as TXT + CSV');}
-  function databasePanel(){
-    if(document.getElementById('database-panel'))return;
-    const sec=document.createElement('section');sec.id='database-panel';sec.className='card';sec.style='margin:0 0 14px;padding:14px';
-    sec.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between"><div><strong>Local Database</strong><div class="text-muted text-sm">Human-readable TXT contains all Second Brain data + history. CSV contains the activity history log.</div><div id="db-status" class="text-muted text-sm" style="margin-top:4px">Not connected to an auto-save folder</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-sm" id="db-connect">Connect / Load Folder</button><button class="btn btn-sm btn-primary" id="db-save">Save Database</button></div></div>';
-    const target=document.getElementById('view-dashboard')||document.querySelector('.view-container');if(target)target.prepend(sec);
-    sec.querySelector('#db-connect').onclick=connect;sec.querySelector('#db-save').onclick=saveDatabase;
-  }
-  const oldSave=window.saveState;
+    const oldSave=window.saveState;
   if(typeof oldSave==='function'&&!oldSave.__dbWrapped){
     const wrapped=function(){const r=oldSave.apply(this,arguments);setTimeout(()=>sync(),50);return r};wrapped.__dbWrapped=true;window.saveState=wrapped;
   }
@@ -942,7 +935,6 @@ function sim(a,b){a=norm(a);b=norm(b);if(!a||!b)return 0;if(a===b)return 1;if(a.
 function fmtDate(k){try{return new Date(k+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}catch{return k}}
 function addMsg(role,html){const el=document.createElement('div');el.className='omni-msg '+role;el.innerHTML=html;messages.appendChild(el);messages.scrollTop=messages.scrollHeight;return el}
 function assistantText(text){return addMsg('assistant','<div class="omni-msg-meta">Second Brain</div>'+esc(text).replace(/\n/g,'<br>'))}
-function assistantHtml(html){return addMsg('assistant','<div class="omni-msg-meta">Second Brain</div>'+html)}
 function userText(text){return addMsg('user','<div class="omni-msg-meta">You</div>'+esc(text).replace(/\n/g,'<br>'))}
 function setStatus(t){if(statusEl)statusEl.textContent=t||''}
 function open(){panel.classList.add('open');backdrop.classList.add('open');panel.setAttribute('aria-hidden','false');backdrop.setAttribute('aria-hidden','false');setTimeout(()=>input.focus(),40)}
@@ -1226,7 +1218,6 @@ function normalizeGroupsV25(){
 }
 function groupingEnabledV25(){return getSetting('groups.enabled',true)!==false}
 function groupsForTypeV25(type){return groupsV25().filter(g=>g&&g.type===type)}
-function groupForItemV25(type,id){id=String(id);return groupsForTypeV25(type).find(g=>g.itemIds.includes(id))||null}
 function persistGroupsV25(){normalizeGroupsV25();saveState();refreshGroupingV25();setTimeout(refreshGroupingV25,0)}
 function selectedSetV25(type){return V25.selected[type]||new Set()}
 function clearSelectionV25(type){selectedSetV25(type).clear();updateSelectionBarV25();syncSelectionControlsV25(type)}

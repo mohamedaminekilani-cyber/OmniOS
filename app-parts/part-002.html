@@ -361,12 +361,6 @@ function calculateStreak(entry) {
 
 
 // ================= DASHBOARD =================
-let dashPeriod='week', dashDomain='all';
-document.getElementById('dash-period').addEventListener('change',e=>{dashPeriod=e.target.value;renderDashboard()});
-document.getElementById('dash-domain').addEventListener('change',e=>{dashDomain=e.target.value;renderDashboard()});
-function applyDashboardDomain(){ const d=dashDomain; const map={tasks:['dash-progress','dash-priorities'],habits:['dash-habits'],focus:['dash-focus'],finance:['dash-finance']}; document.querySelectorAll('#view-dashboard .analytics-grid').forEach(g=>g.style.display=''); if(d==='all') return; document.querySelectorAll('#view-dashboard .analytics-grid').forEach(g=>{const has=map[d]?.some(id=>g.querySelector('#'+id)); if(!has) g.style.display='none';}); }
-document.getElementById('dash-refresh').addEventListener('click',renderDashboard);
-function periodDates(period){const now=new Date();now.setHours(0,0,0,0);if(period==='today')return {start:new Date(now),end:new Date(now)};if(period==='month')return {start:new Date(now.getFullYear(),now.getMonth(),1),end:new Date(now.getFullYear(),now.getMonth()+1,0)};if(period==='week'){const s=new Date(now);const offset=getSetting('calendar.weekStart','sunday')==='monday'?((now.getDay()+6)%7):now.getDay();s.setDate(now.getDate()-offset);const e=new Date(s);e.setDate(s.getDate()+6);return {start:s,end:e};}return {start:null,end:null};}
 function renderDashboard(){const recent=window.__secondBrainRenderDashboard;if(typeof recent==='function')return recent()}
 
 // ================= BUDGET =================
@@ -1044,7 +1038,6 @@ if (!activeWorkoutId) { const open = state.workouts.find(w => w.status === 'acti
 function workoutExercise(id){ return state.workoutExercises.find(e=>e.id===id) || defaultWorkoutExercises.find(e=>e.id===id); }
 function workoutTemplate(id){ return state.workoutTemplates.find(t=>t.id===id); }
 function workoutDate(){ return localDateString(); }
-function workoutWeekStart(){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-d.getDay()); return d; }
 function workoutWeekKey(d){ const ws=new Date(d); ws.setHours(0,0,0,0); ws.setDate(ws.getDate()-ws.getDay()); return localDateString(ws); }
 function workoutVolume(session){ return (session.exercises||[]).reduce((sum,e)=>(sum+(e.sets||[]).reduce((x,set)=>x+(Number(set.weight)||0)*(Number(set.reps)||0),0)),0); }
 function workoutCompletedSets(session){ return (session.exercises||[]).reduce((sum,e)=>sum+(e.sets||[]).filter(s=>s.done).length,0); }
@@ -2452,8 +2445,7 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalon
     content.innerHTML=`<h2 style="font-size:1.2rem;padding-right:30px">${escapeHtml(title)}</h2><div class="text-muted text-sm" style="margin:5px 0 14px">${escapeHtml(typeLabel)}</div>${images.length?`<div class="image-strip">${imgTags(images)}</div>`:''}<div class="inspector-section"><div class="inspector-section-title">Details</div>${details}</div>${groceryExtra}${extra}<div style="display:flex;gap:7px;margin-top:20px;flex-wrap:wrap"><button type="button" class="btn btn-primary" id="ext-edit">✏️ Edit</button>${kind==='bill'&&!(obj.frequency==='once'&&obj.active===false)?`<button type="button" class="btn" id="ext-pay">✓ Mark paid</button>`:''}${kind==='plan'&&!obj.completed?`<button type="button" class="btn" id="ext-pay">✓ Paid + next</button>`:''}${kind==='goal'?`<button type="button" class="btn" id="ext-contrib">+ Contribution</button>`:''}<button type="button" class="btn btn-danger" id="ext-delete">🗑️ Delete</button></div>`;
     panel.classList.add('open');back.classList.add('active');content.querySelector('#ext-edit').onclick=()=>{closeInspector();editFn();};content.querySelector('#ext-delete').onclick=()=>deleteFn();content.querySelector('#ext-pay')?.addEventListener('click',()=>{closeInspector();kind==='bill'?markBillPaid(id):markPaymentPlanPaid(id)});content.querySelector('#ext-contrib')?.addEventListener('click',()=>{closeInspector();addGoalContribution(id)});content.querySelectorAll('[data-image-view]').forEach(im=>im.onclick=()=>openImageViewer(im.dataset.imageView));
       }
-  function stripLargeImages(o){const c=JSON.parse(JSON.stringify(o||{}));if(c.images)c.images=c.images.map((x,i)=>`[image ${i+1}, stored locally]`);return c;}
-  window.openUniversalExtensionItem=quickSidebar;
+    window.openUniversalExtensionItem=quickSidebar;
   window.openImageViewer=function(src){const ov=document.createElement('div');ov.className='modal-overlay active';ov.style.zIndex='1300';ov.innerHTML=`<div class="modal" style="max-width:900px;text-align:center"><div class="modal-header"><h3 class="modal-title">Attachment</h3><button type="button" class="icon-btn" aria-label="Close">✕</button></div><img src="${src}" style="max-width:100%;max-height:75vh;border-radius:10px;border:1px solid var(--border-color);object-fit:contain"><div style="margin-top:12px"><button type="button" class="btn">Close</button></div></div>`;ov.querySelectorAll('button').forEach(b=>b.onclick=()=>ov.remove());document.body.appendChild(ov);}
 
   function renderFinanceExtension(){

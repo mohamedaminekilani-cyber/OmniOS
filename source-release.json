@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "file": "app.82700ab22778a1f12be6.html",
-  "sha256": "82700ab22778a1f12be6ee82f6300d1f51ec36979bcbd11e9ac10d80ee6fddf6",
-  "bytes": 7156455,
+  "file": "app.a00aef119c2b25616cb6.html",
+  "sha256": "a00aef119c2b25616cb6b8b68d591affcdbd65d866e8f00798b8d2082699b50b",
+  "bytes": 3254899,
   "parts": [
     "app-parts/part-001.html",
     "app-parts/part-002.html",
@@ -12,22 +12,6 @@
     "app-parts/part-006.html",
     "app-parts/part-007.html",
     "app-parts/part-008.html",
-    "app-parts/part-009.html",
-    "app-parts/part-010.html",
-    "app-parts/part-011.html",
-    "app-parts/part-012.html",
-    "app-parts/part-013.html",
-    "app-parts/part-014.html",
-    "app-parts/part-015.html",
-    "app-parts/part-016.html",
-    "app-parts/part-017.html",
-    "app-parts/part-018.html",
-    "app-parts/part-019.html",
-    "app-parts/part-020.html",
-    "app-parts/part-021.html",
-    "app-parts/part-022.html",
-    "app-parts/part-023.html",
-    "app-parts/part-024.html",
     "app-parts/part-025.html",
     "app-parts/part-026.html",
     "app-parts/part-027.html",
@@ -41,5 +25,5 @@
     "js/password-vault.js",
     "js/ui-polish.js"
   ],
-  "subject": "Dashboard: keep only the current v431 interface"
+  "subject": "Performance: curated startup, lifecycle observers and lazy Bible data"
 }

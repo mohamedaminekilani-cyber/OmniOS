@@ -945,7 +945,7 @@ function applyAuxDurably35(changes){
   }
 }
 async function mirrorBackupFolder35(){if(!backupDir35||mirrorBusy35)return false;mirrorBusy35=true;try{if(!(await folderPermission35(backupDir35))){backupDir35=null;return false}const payload=await backupPayload35('mirror');await writeFolderFile35('SecondBrain_Latest.json',JSON.stringify(payload,null,2));await writeFolderFile35('SecondBrain_Activity.csv',activityCsv35(),'text/csv;charset=utf-8');return true}catch(e){console.warn('Folder mirror failed',e);return false}finally{mirrorBusy35=false}}
-async let persistTimer35;
+let persistTimer35;
 const AUTO_SNAPSHOT_DELAY35=1200,MAX_AUTO_SNAPS35=80,MAX_MANUAL_SNAPS35=20,MAX_PRESYNC_SNAPS35=20;
 let autoSnapshotTimer35=null,autoSnapshotPending35=new Set(),autoSnapshotBase35=null,autoSnapshotLastFP35='';
 

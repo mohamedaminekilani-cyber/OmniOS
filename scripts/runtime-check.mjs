@@ -30,8 +30,10 @@ const search=w.document.getElementById('org-note-search');search.focus();search.
 const restored=w.document.getElementById('org-note-search');
 if(w.document.activeElement!==restored||restored.selectionStart!==2||restored.selectionEnd!==4)throw Error('Search redraw lost focus/caret');
 console.log('Note ID lookup, close-time save, metadata isolation, metadata autosave and search focus passed.');
-const screens=[...w.document.querySelectorAll('.view[id^="view-"]')].map(el=>el.id.slice(5)).filter(Boolean);
-if(screens.length<30)throw Error('Expected at least 30 application screens, found '+screens.length);
-for(const screen of screens){w.switchView(screen);await new Promise(r=>setTimeout(r,15));if(!w.document.getElementById('view-'+screen)?.classList.contains('active'))throw Error('Navigation failed for '+screen)}
-console.log('Navigation passed for '+screens.length+' screens.');
-dom.window.close();if(errors.length)process.exitCode=1;
+try{
+ const screens=[...w.document.querySelectorAll('.view[id^="view-"]')].map(el=>el.id.slice(5)).filter(Boolean);
+ if(screens.length<30)throw Error('Expected at least 30 application screens, found '+screens.length);
+ for(const screen of screens){w.switchView(screen);await new Promise(r=>setTimeout(r,15));if(!w.document.getElementById('view-'+screen)?.classList.contains('active'))throw Error('Navigation failed for '+screen)}
+ console.log('Navigation passed for '+screens.length+' screens.');
+}finally{dom.window.close()}
+if(errors.length)process.exitCode=1;

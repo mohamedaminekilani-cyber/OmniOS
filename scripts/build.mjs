@@ -7,5 +7,5 @@ fs.writeFileSync('dist/'+file,html);
 const commit=(process.env.GITHUB_SHA||process.env.COMMIT_SHA||'').trim()||null;
 const subject=(process.env.RELEASE_SUBJECT||'').trim().replace(/\s+/g,' ').slice(0,180)||'Second Brain update';
 fs.writeFileSync('dist/release.json',JSON.stringify({version:1,file,sha256:hash,bytes:Buffer.byteLength(html),commit,subject,builtAt:new Date().toISOString()}));
-for(const name of ['index.html','sw.js','manifest.webmanifest','pwa-personalization.js','icons'])fs.cpSync(name,'dist/'+name,{recursive:true});
+for(const name of ['index.html','sw.js','manifest.webmanifest','pwa-personalization.js','icons','data'])fs.cpSync(name,'dist/'+name,{recursive:true});
 console.log(`Built ${file} (${Buffer.byteLength(html)} bytes); application scripts are release-atomic.`);

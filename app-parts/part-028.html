@@ -1703,9 +1703,11 @@ function openLinked611(rid,iid){const r=getRoutine(rid),i=getStep(r,iid);if(!i)r
   else if(t==='pantry')window.switchView?.('pantry');
 }
 
+function renderDashboardRoutine611(){document.getElementById('routine-dashboard-v611')?.remove();document.querySelector('#v55-dashboard-widgets [data-v55-widget="routines"]')?.remove()}
+
 /* ---------- hooks ---------- */
 normalize();
-const prevSwitch=window.switchView;window.switchView=function(target){const r=prevSwitch?.apply(this,arguments);if(target==='routine')requestAnimationFrame(()=>{renderRoutinePage();const t=document.getElementById('view-title');if(t)t.textContent='Routine'});return r};
+const prevSwitch=window.switchView;window.switchView=function(target){const r=prevSwitch?.apply(this,arguments);if(target==='routine')requestAnimationFrame(()=>{renderRoutinePage();const t=document.getElementById('view-title');if(t)t.textContent='Routine'});if(target==='dashboard')requestAnimationFrame(renderDashboardRoutine611);return r};
 const prevRenderAll=window.renderAll;if(typeof prevRenderAll==='function')window.renderAll=function(){const r=prevRenderAll.apply(this,arguments);if(document.getElementById('view-routine')?.classList.contains('active'))requestAnimationFrame(renderRoutinePage);return r};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{if(document.getElementById('view-routine')?.classList.contains('active'))renderRoutinePage()},{once:true});else if(document.getElementById('view-routine')?.classList.contains('active'))renderRoutinePage()
 

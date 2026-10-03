@@ -1133,6 +1133,18 @@ function personContact43(x){
   const email=String(x?.email||'').trim(),phone=String(x?.phone||'').trim();
   return `${email?`<a class="v94-person-contact" href="mailto:${E(email)}" aria-label="Email ${E(x?.name||'person')}" title="${E(email)}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path></svg></a>`:''}${phone?`<a class="v94-person-contact" href="tel:${E(phone)}" aria-label="Call ${E(x?.name||'person')}" title="${E(phone)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h3l1.5 4-2 1.5a15 15 0 0 0 6 6l1.5-2L21 14v3c0 2-1 4-4 4C9.3 21 3 14.7 3 7c0-3 2-4 4-4Z"></path></svg></a>`:''}`;
 }
+function personCoverStyle43(x){
+  const image=String(x?.coverImage||'').trim(),preset=String(x?.coverPreset||'aurora'),accent=String(x?.coverColor||'#06b6d4');
+  if(image)return `background-image:url("${E(image).replace(/&quot;/g,'%22')}");background-size:cover;background-position:center;`;
+  const presets={
+    aurora:`linear-gradient(135deg,${accent},#7c3aed 58%,#111827)`,
+    ocean:`linear-gradient(135deg,#0ea5e9,${accent},#0f172a)`,
+    sunset:`linear-gradient(135deg,#fb7185,#f59e0b,${accent})`,
+    forest:`linear-gradient(135deg,#14532d,#16a34a,${accent})`,
+    graphite:`linear-gradient(135deg,#111827,#334155,${accent})`
+  };
+  return `background:${presets[preset]||presets.aurora};`;
+}
 function personStat43(label,value){
   return `<div class="v94-person-stat"><strong>${E(value||'—')}</strong><span>${E(label)}</span></div>`;
 }
@@ -1355,33 +1367,32 @@ function renderLifeSection43(host,tab){
   }
 
   const recordsMarkup=tab==='people'
-    ? `<div class="v96-people-grid">${records.map(x=>`<article class="v96-person-card" data-v35-record="people|${E(x.id)}">
-        <div class="v96-person-card-main">
-          ${personAvatar43(x,'v96-person-card-avatar')}
-          <div class="v96-person-card-copy">
-            <div class="v96-person-card-top">
-              <div>
-                <div class="v96-person-card-name">${E(recordTitle35('people',x))}</div>
-                <div class="v96-person-card-relation">${E(x.relation||'Person')}</div>
-              </div>
-              <button type="button" class="v96-person-card-edit" data-v43-record-edit="people|${E(x.id)}" aria-label="Edit ${E(recordTitle35('people',x))}" title="Edit">
-                ${lifeIcon43('edit')}
-              </button>
+    ? `<div class="v97-people-grid">${records.map(x=>`<article class="v97-person-card" data-v35-record="people|${E(x.id)}">
+        <div class="v97-person-cover" style="${personCoverStyle43(x)}">
+          <div class="v97-person-cover-shade"></div>
+          <button type="button" class="v97-person-edit" data-v43-record-edit="people|${E(x.id)}" aria-label="Edit ${E(recordTitle35('people',x))}" title="Edit person">
+            ${lifeIcon43('edit')}
+          </button>
+        </div>
+        <div class="v97-person-avatar-wrap">${personAvatar43(x,'v97-person-avatar')}</div>
+        <div class="v97-person-body">
+          <div class="v97-person-heading">
+            <div class="v97-person-heading-copy">
+              <div class="v97-person-name">${E(recordTitle35('people',x))}</div>
+              <div class="v97-person-relation">${E(x.relation||'Person')}</div>
             </div>
-            <div class="v96-person-card-meta">
-              ${x.email?`<span title="${E(x.email)}">${E(x.email)}</span>`:''}
-              ${x.phone?`<span title="${E(x.phone)}">${E(x.phone)}</span>`:''}
-            </div>
+            <div class="v97-person-contacts">${personContact43(x)}</div>
           </div>
-        </div>
-        <div class="v96-person-card-details">
-          <div><span>Birthday</span><strong>${E(personDate43(x.birthday))}</strong></div>
-          <div><span>Last contact</span><strong>${E(personDate43(x.lastContact))}</strong></div>
-          <div><span>Follow-up</span><strong>${E(personDate43(x.nextFollowUp))}</strong></div>
-        </div>
-        <div class="v96-person-card-footer">
-          <div class="v96-person-card-contacts">${personContact43(x)}</div>
-          <button type="button" class="v96-person-card-open" data-v43-record-open="people|${E(x.id)}"><span>View profile</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path><path d="m14 7 5 5-5 5"></path></svg></button>
+          <div class="v97-person-meta">
+            ${x.email?`<span title="${E(x.email)}">${E(x.email)}</span>`:''}
+            ${x.phone?`<span title="${E(x.phone)}">${E(x.phone)}</span>`:''}
+          </div>
+          <div class="v97-person-stats">
+            ${personStat43('Birthday',personDate43(x.birthday))}
+            ${personStat43('Last contact',personDate43(x.lastContact))}
+            ${personStat43('Follow-up',personDate43(x.nextFollowUp))}
+          </div>
+          <button type="button" class="v97-person-open" data-v43-record-open="people|${E(x.id)}"><span>Open profile</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path><path d="m14 7 5 5-5 5"></path></svg></button>
         </div>
       </article>`).join('')||'<div class="v43-empty">No people records match this view.</div>'}</div>`
     : `<div class="v43-record-grid">${records.map(x=>`<article class="v43-record" data-v35-record="${tab}|${E(x.id)}"><div class="v43-record-card-main"><div class="v43-record-top"><div class="v43-record-icon">${lifeIcon43(def.icon)}</div><div class="v43-record-main"><div class="v43-record-title">${E(recordTitle35(tab,x))}</div><div class="v43-record-meta">${E(lifeMeta43(tab,x)||'')}</div></div></div>${x.notes||x.body?`<div class="v43-record-note">${E(x.notes||x.body)}</div>`:''}</div><div class="v43-record-actions"><button type="button" class="btn btn-sm" data-v43-record-open="${tab}|${E(x.id)}">Open</button><button type="button" class="icon-btn" data-v43-record-edit="${tab}|${E(x.id)}" aria-label="Edit ${E(recordTitle35(tab,x))}">${lifeIcon43('edit')}</button><button type="button" class="icon-btn v43-life-delete" data-v43-record-delete="${tab}|${E(x.id)}" aria-label="Delete ${E(recordTitle35(tab,x))}">${lifeIcon43('delete')}</button></div></article>`).join('')||`<div class="v43-empty" style="grid-column:1/-1">No ${E(def.label.toLowerCase())} records match this view.</div>`}</div>`;
@@ -1408,6 +1419,43 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+<style id="omnios-v97-custom-person-cards-ui">
+#view-life-hub .v97-people-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+#view-life-hub .v97-person-card{position:relative;overflow:hidden;border:1px solid var(--border-color);border-radius:16px;background:var(--bg-surface);cursor:pointer;min-width:0;transition:border-color .15s ease,transform .15s ease,box-shadow .15s ease}
+#view-life-hub .v97-person-card:hover{border-color:color-mix(in srgb,var(--accent-cyan) 45%,var(--border-color));transform:translateY(-1px);box-shadow:0 10px 28px rgba(0,0,0,.14)}
+#view-life-hub .v97-person-cover{position:relative;height:88px;overflow:hidden;border-bottom:1px solid color-mix(in srgb,var(--border-color) 70%,transparent);background-size:cover!important;background-position:center!important}
+#view-life-hub .v97-person-cover-shade{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.02),rgba(0,0,0,.14))}
+#view-life-hub .v97-person-edit{position:absolute;z-index:3;right:10px;top:10px;width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(10,12,18,.38);color:#fff;display:grid;place-items:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer}
+#view-life-hub .v97-person-edit:hover{background:rgba(10,12,18,.58)}
+#view-life-hub .v97-person-edit .v95-life-icon{width:15px;height:15px}
+#view-life-hub .v97-person-avatar-wrap{position:absolute;z-index:4;left:16px;top:53px;width:70px;height:70px;padding:3px;border-radius:50%;background:var(--bg-surface);box-shadow:0 5px 16px rgba(0,0,0,.22)}
+#view-life-hub .v43-person-avatar.v97-person-avatar{width:64px;height:64px;min-width:64px;flex-basis:64px;border:2px solid var(--bg-surface);box-shadow:none;font-size:.95rem}
+#view-life-hub .v97-person-body{padding:37px 16px 14px;min-width:0}
+#view-life-hub .v97-person-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-width:0}
+#view-life-hub .v97-person-heading-copy{min-width:0}
+#view-life-hub .v97-person-name{font-size:.95rem;font-weight:820;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#view-life-hub .v97-person-relation{font-size:.64rem;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#view-life-hub .v97-person-contacts{display:flex;gap:5px;flex:none}
+#view-life-hub .v97-person-contacts .v94-person-contact{width:31px;height:31px;border-radius:9px}
+#view-life-hub .v97-person-meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px;min-height:0}
+#view-life-hub .v97-person-meta span{max-width:100%;padding:3px 6px;border-radius:7px;background:var(--bg-base);border:1px solid var(--border-color);color:var(--text-muted);font-size:.55rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#view-life-hub .v97-person-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:13px 0 12px;border-top:1px solid var(--border-color);border-bottom:1px solid var(--border-color);padding:10px 0}
+#view-life-hub .v97-person-stats .v94-person-stat{padding:0 6px}
+#view-life-hub .v97-person-stats .v94-person-stat:first-child{padding-left:0}
+#view-life-hub .v97-person-stats .v94-person-stat:last-child{padding-right:0}
+#view-life-hub .v97-person-open{width:100%;height:38px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-base);color:var(--text-secondary);font:inherit;font-size:.67rem;font-weight:760;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+#view-life-hub .v97-person-open:hover{color:var(--accent-cyan);border-color:color-mix(in srgb,var(--accent-cyan) 38%,var(--border-color));background:var(--bg-elevated)}
+#view-life-hub .v97-person-open svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:1100px){#view-life-hub .v97-people-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){
+ #view-life-hub .v97-people-grid{grid-template-columns:1fr;gap:9px}
+ #view-life-hub .v97-person-card{border-radius:14px}
+ #view-life-hub .v97-person-cover{height:82px}
+ #view-life-hub .v97-person-avatar-wrap{left:14px;top:49px;width:66px;height:66px}
+ #view-life-hub .v43-person-avatar.v97-person-avatar{width:60px;height:60px;min-width:60px;flex-basis:60px}
+ #view-life-hub .v97-person-body{padding:34px 14px 12px}
+}
+</style>
 <style id="omnios-v96-people-cards-ui">
 #view-life-hub .v96-people-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
 #view-life-hub .v96-person-card{min-width:0;padding:13px;border:1px solid var(--border-color);border-radius:14px;background:var(--bg-surface);cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .15s ease}

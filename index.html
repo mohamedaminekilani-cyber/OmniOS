@@ -270,9 +270,10 @@ function carryLoaderIntoApp(html){
   const hasIcon=document.documentElement.classList.contains('omnios-has-boot-icon');
   const rootClasses='omnios-startup-gate'+(hasIcon?' omnios-has-boot-icon':'');
   const gateCss='\n<style id="omnios-startup-gate-css">\n'+baseStyle.textContent+'\nhtml.omnios-startup-gate body{overflow:hidden!important}\nhtml.omnios-startup-gate body>*:not(#omnios-boot-screen){visibility:hidden!important;pointer-events:none!important}\n#omnios-boot-screen{background:var(--bg-base,#0f0f11);opacity:1;transition:opacity .18s ease}\n#omnios-boot-screen.is-leaving{opacity:0;pointer-events:none}\n</style>';
+  const todayAuthorityCss='\n<style id="second-brain-today-authority">\n/* Today has one visual authority: the current v58/v88 experience. */\n#view-today>.v35-page-head,#view-today>.v35-stat-grid,#view-today>.v35-card,#view-today>.v35-grid,#view-today>.v56-daily{display:none!important}\n#view-today>#v58-attention,#view-today>#v58-today-intelligence{display:grid}\n#view-today>#v58-attention{display:flex}\n</style>';
   const bootHtml=boot.outerHTML;
   let out=addRootClass(html,rootClasses);
-  out=out.replace(/<\/head>/i,gateCss+'\n</head>');
+  out=out.replace(/<\/head>/i,gateCss+todayAuthorityCss+'\n</head>');
   out=out.replace(/<body([^>]*)>/i,function(m,attrs){return '<body'+attrs+'>\n'+bootHtml});
   return out;
 }

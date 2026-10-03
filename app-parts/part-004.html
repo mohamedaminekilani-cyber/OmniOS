@@ -538,6 +538,44 @@ window.OmniV34={openViewCustomizer:openViewCustomizerV34,applyViewOptions:applyV
 @media(min-width:560px) and (max-width:760px){.v35-launcher-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:390px){.v35-launcher-sheet{border-radius:20px 20px 0 0}.v35-launcher-grid{gap:4px}.v35-launcher-item{min-height:52px;padding:7px 8px}.v35-launcher-icon{width:32px;height:32px;min-width:32px}.v35-launcher-label{font-size:.68rem}}
 </style>
+<style id="omnios-v96-person-profile-ui">
+.v96-person-profile-modal{max-width:620px!important}
+.v96-person-profile-modal .modal-header{padding-bottom:10px!important}
+.v96-person-profile{display:grid;gap:14px}
+.v96-person-profile-head{display:flex;align-items:center;gap:14px;padding:4px 2px 15px;border-bottom:1px solid var(--border-color)}
+.v35-person-avatar.v96-person-profile-avatar{width:72px;height:72px;min-width:72px;flex:0 0 72px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:color-mix(in srgb,var(--accent-cyan) 14%,var(--bg-elevated));border:1px solid color-mix(in srgb,var(--accent-cyan) 30%,var(--border-color));font-size:1rem;font-weight:800}
+.v35-person-avatar.v96-person-profile-avatar img{width:100%;height:100%;object-fit:cover}
+.v96-person-profile-copy{min-width:0;flex:1}
+.v96-person-profile-name{font-size:1.14rem;font-weight:820;letter-spacing:-.025em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v96-person-profile-relation{margin-top:3px;color:var(--text-muted);font-size:.7rem}
+.v96-person-contact-actions{display:flex;gap:6px;margin-top:11px;flex-wrap:wrap}
+.v96-person-contact-action{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:6px 10px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-base);color:var(--text-secondary);font-size:.68rem;font-weight:720;text-decoration:none}
+.v96-person-contact-action:hover{color:var(--accent-cyan);border-color:color-mix(in srgb,var(--accent-cyan) 38%,var(--border-color))}
+.v96-person-contact-action svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.v96-person-info-list{border:1px solid var(--border-color);border-radius:12px;overflow:hidden;background:var(--bg-base)}
+.v96-person-info-row{display:grid;grid-template-columns:130px minmax(0,1fr);align-items:center;gap:12px;min-height:48px;padding:9px 12px}
+.v96-person-info-row+.v96-person-info-row{border-top:1px solid var(--border-color)}
+.v96-person-info-row>span{font-size:.58rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted)}
+.v96-person-info-row strong,.v96-person-info-row a{min-width:0;color:var(--text-primary);font-size:.73rem;font-weight:680;text-decoration:none;overflow-wrap:anywhere}
+.v96-person-info-row a:hover{color:var(--accent-cyan)}
+.v96-person-info-row .muted{color:var(--text-muted);font-weight:600}
+.v96-person-notes{padding:12px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-base)}
+.v96-person-notes-label{font-size:.58rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px}
+.v96-person-notes-copy{font-size:.73rem;line-height:1.55;color:var(--text-secondary)}
+.v96-person-profile-modal .modal-footer{gap:7px}
+@media(max-width:760px){
+ .v96-person-profile-modal{max-width:none!important}
+ .v96-person-profile-head{align-items:flex-start}
+ .v35-person-avatar.v96-person-profile-avatar{width:62px;height:62px;min-width:62px;flex-basis:62px}
+ .v96-person-info-row{grid-template-columns:105px minmax(0,1fr);min-height:46px;padding:8px 10px}
+ .v96-person-profile-modal .modal-footer .btn{min-height:42px}
+}
+@media(max-width:420px){
+ .v96-person-profile-head{gap:11px}
+ .v96-person-contact-actions{margin-top:8px}
+ .v96-person-info-row{grid-template-columns:1fr;gap:3px;padding:10px}
+}
+</style>
 <script id="omnios-v35-lifeos-js">
 (function(){
 'use strict';
@@ -1592,8 +1630,36 @@ function deleteLifeRecord35(type,id){
 }
 function openRecordDetail35(type,id){
   const s=SCHEMA35[type],arr=state.life[type],x=Array.isArray(arr)?arr.find(y=>String(y.id)===String(id)):null;if(!s||!x)return;
+  if(type==='people'){
+    const name=recordTitle35(type,x),relation=String(x.relation||'').trim(),email=String(x.email||'').trim(),phone=String(x.phone||'').trim();
+    const birthday=x.birthday?dateLabel(String(x.birthday)):'Not added',last=x.lastContact?dateLabel(String(x.lastContact)):'Not recorded',follow=x.nextFollowUp?dateLabel(String(x.nextFollowUp)):'None scheduled',notes=String(x.notes||'').trim();
+    const contactActions=`${email?`<a class="v96-person-contact-action" href="mailto:${esc(email)}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path></svg><span>Email</span></a>`:''}${phone?`<a class="v96-person-contact-action" href="tel:${esc(phone)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h3l1.5 4-2 1.5a15 15 0 0 0 6 6l1.5-2L21 14v3c0 2-1 4-4 4C9.3 21 3 14.7 3 7c0-3 2-4 4-4Z"></path></svg><span>Call</span></a>`:''}`;
+    const body=`<div class="v96-person-profile">
+      <section class="v96-person-profile-head">
+        ${personAvatar35(x,'v96-person-profile-avatar')}
+        <div class="v96-person-profile-copy">
+          <div class="v96-person-profile-name">${esc(name)}</div>
+          <div class="v96-person-profile-relation">${esc(relation||'Person')}</div>
+          ${contactActions?`<div class="v96-person-contact-actions">${contactActions}</div>`:''}
+        </div>
+      </section>
+      <section class="v96-person-info-list">
+        ${email?`<div class="v96-person-info-row"><span>Email</span><a href="mailto:${esc(email)}">${esc(email)}</a></div>`:''}
+        ${phone?`<div class="v96-person-info-row"><span>Phone</span><a href="tel:${esc(phone)}">${esc(phone)}</a></div>`:''}
+        <div class="v96-person-info-row"><span>Birthday</span><strong>${esc(birthday)}</strong></div>
+        <div class="v96-person-info-row"><span>Last contact</span><strong class="${x.lastContact?'':'muted'}">${esc(last)}</strong></div>
+        <div class="v96-person-info-row"><span>Next follow-up</span><strong class="${x.nextFollowUp?'':'muted'}">${esc(follow)}</strong></div>
+      </section>
+      ${notes?`<section class="v96-person-notes"><div class="v96-person-notes-label">Notes</div><div class="v96-person-notes-copy">${esc(notes).replace(/\n/g,'<br>')}</div></section>`:''}
+    </div>`;
+    const m=modal35(name,body,`<button class="btn" data-v35-close>Close</button><button class="btn btn-danger" id="v35-detail-delete">Delete</button><button class="btn btn-primary" id="v35-detail-edit">Edit person</button>`);
+    m.classList.add('v96-person-profile-modal');
+    m.querySelector('#v35-detail-edit').onclick=()=>{m.remove();openRecordModal35(type,id)};
+    m.querySelector('#v35-detail-delete').onclick=()=>{m.remove();deleteLifeRecord35(type,id)};
+    return;
+  }
   const rows=s.fields.map(([k,l,t])=>{const raw=lifeRecordValue35(type,k,x[k],t),display=esc(raw).replace(/\n/g,'<br>');return `<div class="v35-life-detail-field ${t==='textarea'?'wide':''}"><span>${esc(l)}</span><div>${display}</div></div>`}).join('');
-  const identity=type==='people'?personAvatar35(x,'v35-person-avatar-detail'):`<span class="v35-life-detail-icon">${s.icon}</span>`;
+  const identity=`<span class="v35-life-detail-icon">${s.icon}</span>`;
   const m=modal35(recordTitle35(type,x),`<div class="v35-life-detail-head">${identity}<div><div class="v35-card-title">${esc(recordTitle35(type,x))}</div><div class="v35-card-sub">${esc(s.title)} · Life Hub</div></div></div><div class="v35-life-detail-grid">${rows}</div>`,`<button class="btn" data-v35-close>Close</button><button class="btn btn-danger" id="v35-detail-delete">Delete</button><button class="btn btn-primary" id="v35-detail-edit">Edit</button>`);
   m.querySelector('#v35-detail-edit').onclick=()=>{m.remove();openRecordModal35(type,id)};
   m.querySelector('#v35-detail-delete').onclick=()=>{m.remove();deleteLifeRecord35(type,id)};

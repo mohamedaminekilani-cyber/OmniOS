@@ -2335,7 +2335,8 @@ function renderAll() {
 normalizeState();
 applyAppearance();
 applyFocusDefaultsToTimer();
-renderAll();
+// Performance: render only the active core page at startup. Other pages render on navigation.
+if (!renderActiveCoreView()) applyCustomIcons();
 
 // iPhone helper: Safari users can install this file from Share -> Add to Home Screen.
 // Keep the hint inside the app so the workflow remains self-contained.
@@ -2398,7 +2399,7 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalon
   };
   normalizeState();
   const oldSaveState=saveState;
-  saveState=function(){oldSaveState(); try{renderFinanceExtension();renderWishlist();renderGrocery();}catch(e){console.warn('Extension render:',e)}};
+  saveState=function(){oldSaveState();try{const active=document.querySelector('.view.active')?.id;if(active==='view-budget')renderFinanceExtension();else if(active==='view-wishlist')renderWishlist();else if(active==='view-grocery')renderGrocery();}catch(e){console.warn('Extension render:',e)}};
 
   function currency(n){const cur=getSetting('finance.currency','$');return `${cur}${Number(n||0).toFixed(2)}`;}
   function dayStart(k){return new Date(k+'T00:00:00');}
@@ -2410,7 +2411,7 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalon
   function imgTags(images){return (images||[]).map(src=>`<img class="image-thumb" src="${src}" alt="Attachment" data-image-view="${src}">`).join('');}
   function compressImage(file){return new Promise((resolve,reject)=>{if(!file||!file.type.startsWith('image/'))return reject(new Error('Not an image'));const r=new FileReader();r.onload=e=>{const im=new Image();im.onload=()=>{const max=1100,s=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*s));c.height=Math.max(1,Math.round(im.height*s));c.getContext('2d').drawImage(im,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.72));};im.onerror=reject;im.src=e.target.result;};r.onerror=reject;r.readAsDataURL(file);});}
   async function handleImageFiles(input,target){const files=[...input.files].filter(f=>f.type.startsWith('image/')).slice(0,6);for(const f of files){try{target.images=target.images||[];target.images.push(await compressImage(f));}catch(e){}}input.value='';renderRelevantAfterChange();}
-  function renderRelevantAfterChange(){renderFinanceExtension();renderWishlist();renderGrocery();saveState();}
+  function renderRelevantAfterChange(){saveState();}
   function addView(id,title,toolbarHtml){if(document.getElementById(id))return;const container=document.querySelector('.view-container');const sec=document.createElement('section');sec.id=id;sec.className='view';sec.innerHTML=`<div class="dashboard-toolbar"><div><h3 style="margin:0 0 3px">${title}</h3><div class="text-muted text-sm">Editable anytime. Click any item to open its full details in the sidebar.</div></div>${toolbarHtml||''}</div><div id="${id}-content"></div>`;container.appendChild(sec);}
   addView('view-wishlist','Wishlist',`<div class="toolbar-group"><button type="button" class="btn" onclick="openWishlistCategoryManager()">⚙ Categories</button><button type="button" class="btn btn-primary" onclick="openWishlistModal()">+ Add item</button></div>`);
   addView('view-grocery','Grocery Lists',`<div class="toolbar-group"><button type="button" class="btn" onclick="openGroceryCategoryManager()">⚙ Categories</button><button type="button" class="btn btn-primary" onclick="openGroceryModal()">+ Add list</button></div>`);
@@ -2581,7 +2582,7 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalon
   };
   normalizeState();
   const oldSaveState=saveState;
-  saveState=function(){oldSaveState();try{renderDiet();renderDietProfileSettings();}catch(e){console.warn('Diet render:',e)}};
+  saveState=function(){oldSaveState();try{const active=document.querySelector('.view.active')?.id;if(active==='view-diet')renderDiet();else if(active==='view-settings')renderDietProfileSettings();}catch(e){console.warn('Diet render:',e)}};
 
   let dietDate=new Date(); dietDate.setDate(1); let dietSelected=localDateString(new Date()); let dietTab='calendar';
   const daySlots=()=>state.settings.diet.mealSlots;

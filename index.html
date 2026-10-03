@@ -318,8 +318,12 @@ function carryLoaderIntoApp(html){
     async function sourceText(m){
       // Branch-based Pages serves source files. Validate the assembled result with
       // the SAME checksum as the atomic Actions build before executing anything.
-      const parts=Array.from({length:28},(_,i)=>`app-parts/part-${String(i+1).padStart(3,'0')}.html`);
-      if(JSON.stringify(m.parts)!==JSON.stringify(parts)||!Array.isArray(m.modules)||m.modules.length>20||
+      const allParts=Array.from({length:28},(_,i)=>`app-parts/part-${String(i+1).padStart(3,'0')}.html`);
+      const parts=Array.isArray(m.parts)?m.parts:[];
+      const validParts=parts.length>0&&parts.length<=allParts.length&&new Set(parts).size===parts.length&&
+        parts.every(p=>/^app-parts\/part-\d{3}\.html$/.test(p)&&allParts.includes(p))&&
+        JSON.stringify(parts)===JSON.stringify(allParts.filter(p=>parts.includes(p)));
+      if(!validParts||!Array.isArray(m.modules)||m.modules.length>20||
         m.modules.some(p=>! /^(?:js\/[a-z0-9-]+\.js|pwa-personalization\.js)$/.test(p)))throw Error('Invalid source release');
       const paths=[...parts,...new Set(m.modules)],files=new Map();let next=0,done=0;
       await Promise.all(Array.from({length:6},async()=>{

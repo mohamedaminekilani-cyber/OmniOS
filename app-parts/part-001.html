@@ -8,6 +8,148 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Second Brain">
 <link id="omnios-apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="./icons/icon-192.png">
+<script id="omnios-performance-runtime-v100">
+(function(){
+'use strict';
+if(window.__omniPerformanceRuntime100)return;
+window.__omniPerformanceRuntime100=true;
+
+const NativeMutationObserver100=window.MutationObserver;
+const nativeDocumentAdd100=document.addEventListener;
+const nativeDocumentRemove100=document.removeEventListener;
+let readyFired100=document.readyState!=='loading';
+let readyQueue100=[];
+
+function callReady100(listener,event){
+  try{
+    if(typeof listener==='function')listener.call(document,event);
+    else listener?.handleEvent?.call(listener,event);
+  }catch(err){setTimeout(()=>{throw err},0)}
+}
+function flushReady100(event){
+  if(readyFired100)return;
+  readyFired100=true;
+  try{delete document.addEventListener;delete document.removeEventListener}catch(_){}
+  const queue=readyQueue100;readyQueue100=[];
+  for(const item of queue)callReady100(item.listener,event);
+  startPageLifecycle100();
+}
+if(!readyFired100){
+  document.addEventListener=function(type,listener,options){
+    if(type==='DOMContentLoaded'&&listener){
+      if(!readyQueue100.some(x=>x.listener===listener))readyQueue100.push({listener,options});
+      return;
+    }
+    return nativeDocumentAdd100.call(this,type,listener,options);
+  };
+  document.removeEventListener=function(type,listener,options){
+    if(type==='DOMContentLoaded'){
+      readyQueue100=readyQueue100.filter(x=>x.listener!==listener);
+      return;
+    }
+    return nativeDocumentRemove100.call(this,type,listener,options);
+  };
+  nativeDocumentAdd100.call(document,'DOMContentLoaded',flushReady100,{once:true});
+}
+
+const pageObservers100=new Set();
+let activePage100=null,pageRefreshFrame100=0;
+const pagePool100=NativeMutationObserver100?new NativeMutationObserver100(records=>{
+  for(const observer of [...pageObservers100]){
+    if(observer._disconnected||!observer._pageTargets.length)continue;
+    const matched=records.filter(record=>observer._pageTargets.some(reg=>{
+      if(reg.view!==activePage100)return false;
+      const target=reg.target,opts=reg.options||{};
+      const inScope=record.target===target||(opts.subtree&&target?.contains?.(record.target));
+      if(!inScope)return false;
+      if(record.type==='childList'&&!opts.childList)return false;
+      if(record.type==='attributes'&&!opts.attributes)return false;
+      if(record.type==='characterData'&&!opts.characterData)return false;
+      if(record.type==='attributes'&&Array.isArray(opts.attributeFilter)&&!opts.attributeFilter.includes(record.attributeName))return false;
+      return true;
+    }));
+    if(matched.length)try{observer._callback(matched,observer)}catch(err){setTimeout(()=>{throw err},0)}
+  }
+}):null;
+
+function refreshPagePool100(){
+  pageRefreshFrame100=0;
+  activePage100=document.querySelector('.view.active');
+  pagePool100?.disconnect();
+  if(activePage100&&[...pageObservers100].some(o=>o._pageTargets.some(r=>r.view===activePage100))){
+    pagePool100.observe(activePage100,{subtree:true,childList:true,attributes:true,characterData:true,attributeOldValue:true,characterDataOldValue:true});
+  }
+}
+function schedulePageRefresh100(){
+  if(!pageRefreshFrame100)pageRefreshFrame100=requestAnimationFrame(refreshPagePool100);
+}
+function viewForTarget100(target){
+  if(!target||target.nodeType!==1)return null;
+  if(target.matches?.('.view[id^="view-"]'))return target;
+  return target.closest?.('.view[id^="view-"]')||null;
+}
+
+class ManagedMutationObserver100{
+  constructor(callback){
+    if(typeof callback!=='function')throw new TypeError('MutationObserver callback must be a function');
+    this._callback=callback;this._native=null;this._pageTargets=[];this._disconnected=false;
+  }
+  observe(target,options){
+    const view=viewForTarget100(target);
+    this._disconnected=false;
+    if(view&&pagePool100){
+      const i=this._pageTargets.findIndex(x=>x.target===target);
+      const reg={target,view,options:{...(options||{})}};
+      if(i>=0)this._pageTargets[i]=reg;else this._pageTargets.push(reg);
+      pageObservers100.add(this);schedulePageRefresh100();return;
+    }
+    if(!this._native)this._native=new NativeMutationObserver100((records)=>this._callback(records,this));
+    this._native.observe(target,options);
+  }
+  disconnect(){
+    this._native?.disconnect();this._pageTargets=[];this._disconnected=true;pageObservers100.delete(this);schedulePageRefresh100();
+  }
+  takeRecords(){return this._native?.takeRecords?.()||[]}
+}
+if(NativeMutationObserver100)window.MutationObserver=ManagedMutationObserver100;
+
+let lifecycleObserver100=null;
+function startPageLifecycle100(){
+  if(!NativeMutationObserver100||lifecycleObserver100)return;
+  const host=document.querySelector('.view-container');
+  if(!host){requestAnimationFrame(startPageLifecycle100);return}
+  lifecycleObserver100=new NativeMutationObserver100(records=>{
+    let changed=false;
+    for(const record of records){
+      if(record.type==='childList'){
+        for(const node of record.addedNodes||[])if(node.nodeType===1&&node.matches?.('.view[id^="view-"]'))lifecycleObserver100.observe(node,{attributes:true,attributeFilter:['class']});
+        changed=true;
+      }else if(record.type==='attributes')changed=true;
+    }
+    if(changed)schedulePageRefresh100();
+  });
+  lifecycleObserver100.observe(host,{childList:true});
+  host.querySelectorAll(':scope > .view[id^="view-"]').forEach(view=>lifecycleObserver100.observe(view,{attributes:true,attributeFilter:['class']}));
+  refreshPagePool100();
+}
+if(readyFired100)startPageLifecycle100();
+
+window.OmniPerformanceRuntime={
+  refreshPageObservers:schedulePageRefresh100,
+  get activeView(){return activePage100?.id?.replace(/^view-/,'')||''},
+  get queuedReadyCallbacks(){return readyQueue100.length},
+  get pageObserverCount(){return pageObservers100.size}
+};
+})();
+</script>
+<style id="omnios-mobile-performance-v100">
+@media(max-width:760px){
+  .modal-overlay,.inspector-backdrop,.shortcuts-overlay,.omni-assistant-backdrop,.omni-sync-overlay,
+  #v95-habit-detail,#view-bible .bib-mobile-tools-backdrop-v67{
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+  }
+}
+</style>
 <script id="omnios-pwa-icon-final-head">
 (function(){
   try{

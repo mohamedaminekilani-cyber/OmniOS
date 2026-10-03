@@ -619,7 +619,6 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
     u.viewPrefs.masterCalendar={date:iso(masterCalendarDate),mode:masterCalendarMode,filters:{...(masterCalendarFilters||{})}};
     u.viewPrefs.tasks={view:currentTaskView};
     u.viewPrefs.calendar={mode:calMode,date:iso(calendarDate)};
-    u.viewPrefs.dashboard={period:dashPeriod,domain:typeof dashDomain==='undefined'?'all':dashDomain};
     u.viewPrefs.budget={transactionFilter:txnFilter};
     u.viewPrefs.habits={month:habitMonth,year:habitYear,weekStart:iso(habitWeekStart),view:habitView};
     u.viewPrefs.workout={tab:workoutTab,activeWorkoutId:activeWorkoutId,historySearch:workoutHistorySearch};
@@ -640,7 +639,6 @@ drawRef();ov.querySelector('#diet-entry-type').onchange=drawRef;ov.querySelector
     if(p.tasks?.view)currentTaskView=p.tasks.view;
     if(p.calendar?.mode)calMode=p.calendar.mode;
     if(p.calendar?.date){const d=new Date(p.calendar.date);if(!isNaN(d))calendarDate=d;}
-    if(p.dashboard){if(p.dashboard.period)dashPeriod=p.dashboard.period;if(typeof p.dashboard.domain==='string')dashDomain=p.dashboard.domain;}
     if(p.budget?.transactionFilter)txnFilter=p.budget.transactionFilter;
     if(p.habits){if(Number.isInteger(p.habits.month))habitMonth=p.habits.month;if(Number.isInteger(p.habits.year))habitYear=p.habits.year;if(p.habits.weekStart){const d=new Date(p.habits.weekStart);if(!isNaN(d))habitWeekStart=d;}if(p.habits.view)habitView=p.habits.view;}
     if(p.workout){if(p.workout.tab)workoutTab=p.workout.tab;activeWorkoutId=p.workout.activeWorkoutId??activeWorkoutId;workoutHistorySearch=p.workout.historySearch??workoutHistorySearch;}

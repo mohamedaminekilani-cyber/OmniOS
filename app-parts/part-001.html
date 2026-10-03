@@ -2094,43 +2094,9 @@ img,svg{max-width:100%}
     <div class="view-container">
 
         <!-- DASHBOARD -->
-        <section id="view-dashboard" class="view active">
-            <div class="dashboard-toolbar">
-                <div>
-                    <h3 style="margin:0 0 3px;">Command Center</h3>
-                    <div class="text-muted text-sm">One view for tasks, habits, focus and finances.</div>
-                </div>
-                <div class="toolbar-group">
-                    <select class="filter-select" id="dash-period">
-                        <option value="today">Today</option><option value="week" selected>This Week</option><option value="month">This Month</option><option value="all">All Time</option>
-                    </select>
-                    <select class="filter-select" id="dash-domain">
-                        <option value="all">All Areas</option><option value="tasks">Tasks</option><option value="habits">Habits</option><option value="focus">Focus</option><option value="finance">Finance</option>
-                    </select>
-                    <button type="button" class="btn btn-sm" id="dash-refresh">↻ Refresh</button>
-                </div>
-            </div>
-            <div id="dash-kpis" class="kpi-grid"></div>
-            <div id="dash-attention"></div>
-            <div class="analytics-grid">
-                <div class="card" data-widget="progress"><div class="card-header"><h3 class="card-title">📈 Progress Overview</h3></div><div id="dash-progress"></div></div>
-                <div class="card" data-widget="priorities"><div class="card-header"><h3 class="card-title">🎯 Today's Priorities</h3></div><div id="dash-priorities" class="mini-list"></div></div>
-                <div class="card" data-widget="insights"><div class="card-header"><h3 class="card-title">💡 Insights</h3></div><div id="dash-insights"></div></div>
-            </div>
-            <div class="analytics-grid">
-                <div class="card" data-widget="habits"><div class="card-header"><h3 class="card-title">⚡ Habit Performance</h3><button type="button" class="btn btn-sm" onclick="document.querySelector('[data-view=habits]').click()">Open Habits</button></div><div id="dash-habits"></div></div>
-                <div class="card" data-widget="focus"><div class="card-header"><h3 class="card-title">⏱ Focus</h3><button type="button" class="btn btn-sm" onclick="document.querySelector('[data-view=focus]').click()">Focus</button></div><div id="dash-focus"></div></div>
-                <div class="card" data-widget="finance"><div class="card-header"><h3 class="card-title">💰 Finance Snapshot</h3><button type="button" class="btn btn-sm" onclick="document.querySelector('[data-view=budget]').click()">Open Budget</button></div><div id="dash-finance"></div></div>
-            </div>
-            <div class="grid-2">
-                <div class="card"><div class="card-header"><h3 class="card-title">🔥 Q1: Do First</h3></div><div id="dash-q1" class="eq-box-content"></div></div>
-                <div class="card"><div class="card-header"><h3 class="card-title">📅 Q2: Schedule</h3></div><div id="dash-q2" class="eq-box-content"></div></div>
-                <div class="card"><div class="card-header"><h3 class="card-title">⚡ Q3: Delegate</h3></div><div id="dash-q3" class="eq-box-content"></div></div>
-                <div class="card"><div class="card-header"><h3 class="card-title">📥 Q4: Eliminate</h3></div><div id="dash-q4" class="eq-box-content"></div></div>
-            </div>
-        </section>
+        <section id="view-dashboard" class="view active"></section>
 
-        <!-- ROUTINE -->
+                <!-- ROUTINE -->
         <section id="view-routine" class="view" aria-labelledby="view-title">
             <div class="rt611-shell">
                 <div class="rt-empty">Loading routines…</div>
@@ -2138,15 +2104,9 @@ img,svg{max-width:100%}
         </section>
 
         <!-- MASTER CALENDAR -->
-        <section id="view-master-calendar" class="view">
-            <div class="flex-between mb-6">
-                <div><h3 style="margin-bottom:4px;">Calendar</h3><div class="text-muted text-sm">Everything in your planner, organized by date. Tap any item to jump straight to it.</div></div>
-                <button type="button" class="btn btn-primary" id="master-calendar-quick-add">+ Add</button>
-            </div>
-            <div id="master-calendar-content"></div>
-        </section>
+        <section id="view-master-calendar" class="view"><div id="master-calendar-content"></div></section>
 
-        <!-- TASKS -->
+                <!-- TASKS -->
         <section id="view-tasks" class="view">
             <div class="toolbar">
                 <div class="toolbar-group">
@@ -3232,11 +3192,6 @@ const MASTER_CAL_TYPES = [
 function dateAtNoon(key){ return new Date(key+'T12:00:00'); }
 function daysInMonth(year, month){ return new Date(year, month+1, 0).getDate(); }
 function addDaysKey(key,n){ const d=dateAtNoon(key); d.setDate(d.getDate()+n); return localDateString(d); }
-function isoWeekday(key){ const d=dateAtNoon(key); return d.getDay(); }
-function nthWeekdayOfMonth(year,month,weekday,n){
-    const first=new Date(year,month,1,12); const offset=(weekday-first.getDay()+7)%7; const day=1+offset+(n-1)*7;
-    return day<=daysInMonth(year,month)?localDateString(new Date(year,month,day,12)):null;
-}
 function recurrenceLabel(r){
     if(!r) return 'One-time';
     if(r.freq==='daily') return `Every ${r.interval||1} day${(r.interval||1)>1?'s':''}`;
@@ -3347,7 +3302,6 @@ function bindMasterCalendar(){
     document.querySelectorAll('[data-master-more]').forEach(el=>el.addEventListener('click',ev=>{ev.stopPropagation();masterCalendarDate=dateAtNoon(el.dataset.masterMore);masterCalendarMode='agenda';renderMasterCalendar()}));
     document.querySelectorAll('[data-master-date]').forEach(el=>el.addEventListener('click',e=>{if(e.target.closest('[data-master-event]')||e.target.closest('[data-master-more]'))return;masterCalendarDate=dateAtNoon(el.dataset.masterDate);masterCalendarMode='agenda';renderMasterCalendar()}));
 }
-document.getElementById('master-calendar-quick-add')?.addEventListener('click',()=>openCalendarEventModal());
 
 function calendarEventDefault(date){return {title:'',date:date||localDateString(masterCalendarDate),startTime:'',duration:Number(getSetting('calendar.defaultDuration',60))||60,reminder:Number(getSetting('calendar.defaultReminder',15))||0,description:'',icon:'●',recurrence:null};}
 function openCalendarEventModal(id){

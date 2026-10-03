@@ -284,6 +284,92 @@ select.sb-select,.form-select.sb-select,.filter-select.sb-select{
     max-width:78vw!important;
   }
 }
+
+
+/* Second Brain UI audit integration — targeted fixes, kept in the canonical polish layer. */
+html:not([data-theme="light"]) body .btn.btn-primary{color:#fff!important}
+
+/* Readable text floor for labels and compact metadata. */
+html body .nav-label,
+html body .mobile-nav button .nav-label{font-size:11px!important;letter-spacing:0!important}
+html body :is(.nav-section,.v35-kicker,.v35-stat-label,.v43-kpi-label,.v43-kpi-meta,.workout-kpi-label,.workout-kpi-meta,.power-kicker,.org-kicker,.org-count,.v38-bars-label,.omni-msg-meta,.help-group,.v65-week-dow,.v65-week-empty,.v35-nutrition-values small){font-size:11px!important}
+html body :is(.btn.btn-sm,.focus-preset,.v38-fin-tab,.view-btn,.omni-assistant-suggestion){font-size:12px!important}
+html body :is(.v43-metric span,.v431-area-head span,.omni-msg-meta,.v65-week-dow,.v65-week-date span,.v65-week-empty,.v38-fin-card-sub,.v95-habit-pill,.v431-area-meta,.v38-summary-sub,.v38-summary-metric span,.v38-fin-kpi .l,.habit-summary-label,.nut-meal-card-total-v94,.nut-meal-empty-v94,.v56-health-stat span,.org-kpi .l,.org-kpi .m,.v95-habit-goal,.nut-macro-ring-v94 b,.nut-macro-ring-wrap-v94 span,.nut-activity-card-v94 p,.nut-activity-stat-v94,.v38-summary-label){font-size:11px!important}
+html body :is(.view-btn,.workout-tabs .view-btn,.v43-tab,.rd611-tab,.v36-cal-preset){font-size:12px!important}
+
+/* Small controls that were below the app's interaction target floor. */
+html body .inspector-close{width:36px;height:36px}
+html body .omni-assistant-suggestion{min-height:36px}
+@media(pointer:coarse){
+  html body input[type="checkbox"],
+  html body input[type="radio"]{width:22px;height:22px}
+}
+
+/* Avoid duplicate creation affordances where the page already exposes an Add/Capture action. */
+html body:has(#view-dashboard.active) #v55-capture-fab,
+html body:has(#view-master-calendar.active) #v55-capture-fab{display:none!important}
+
+/* Calendar: prevent controls/search from competing for impossible widths. */
+@media(min-width:1041px) and (max-width:1280px){
+  html body #view-master-calendar .v36-cal-toolbar{
+    grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-areas:"nav actions" "center center"!important
+  }
+  html body #view-master-calendar .v36-cal-nav{grid-area:nav!important}
+  html body #view-master-calendar .v36-cal-actions{grid-area:actions!important;min-width:0!important}
+  html body #view-master-calendar .v36-cal-center{grid-area:center!important}
+}
+@media(min-width:1281px) and (max-width:1440px){
+  html body #view-master-calendar .v36-cal-toolbar{
+    grid-template-columns:auto max-content minmax(0,1fr)!important
+  }
+  html body #view-master-calendar .v36-cal-toolbar .v36-cal-actions{
+    grid-template-columns:minmax(72px,1fr) auto auto!important;
+    min-width:0!important
+  }
+  html body #view-master-calendar .v36-cal-search{
+    min-width:0!important;
+    width:100%!important
+  }
+}
+
+/* Focus fields should align with the rest of the app instead of floating at 60% width. */
+html body #view-focus .form-group{width:100%!important;max-width:none!important;align-self:stretch}
+html body #view-focus .form-label{text-align:left}
+
+@media(max-width:760px){
+  html body #view-master-calendar .v36-cal-toolbar{
+    grid-template-columns:minmax(0,1fr)!important
+  }
+  html body #view-master-calendar .v36-cal-toolbar>.v36-cal-center{display:none!important}
+  html body #view-master-calendar .v36-cal-nav{
+    grid-template-columns:40px auto 40px minmax(0,1fr)!important
+  }
+  html body #view-master-calendar .v36-cal-toolbar .v36-cal-actions{
+    grid-template-columns:minmax(0,1fr) 44px 44px 44px!important;
+    width:100%!important;
+    max-width:100%!important
+  }
+  html body #view-master-calendar .v36-cal-toolbar .v36-cal-actions>.btn-primary{
+    grid-column:auto!important
+  }
+
+  /* Workout KPIs become a stable 2-column grid instead of a clipped horizontal strip. */
+  html body .workout-kpi-grid{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    overflow:visible!important
+  }
+  html body .workout-kpi{min-width:0!important}
+
+  /* Finance actions wrap in-place instead of pushing content off-screen. */
+  html body .v38-finance-head-actions{
+    flex-wrap:wrap!important;
+    overflow-x:visible!important;
+    overflow-y:visible!important
+  }
+}
+
 `;document.head.append(style);
 const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function download(name,value){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
@@ -395,3 +481,25 @@ polishCardLayouts(document);
 document.addEventListener('secondbrain:transfer',e=>{const d=e.detail;document.querySelectorAll('[data-local-progress-text]').forEach(el=>el.textContent=`Receiving ${Math.round(d.received/1024)} / ${Math.round(d.total/1024)} KB`)});
 document.addEventListener('click',e=>{if(e.target.closest('[data-sb-disconnect]')){SecondBrainSync.disconnect();e.target.closest('.omni-sync-overlay')?.remove()}requestAnimationFrame(addTools)});addTools();
 })();
+
+/* Accessible names for dynamically rendered filter/sort selects. */
+(function(){'use strict';
+const HINTS=[[/sort/i,'Sort by'],[/status/i,'Filter by status'],[/cat/i,'Filter by category'],[/priority/i,'Filter by priority'],[/importance/i,'Filter by importance'],[/urgency/i,'Filter by urgency'],[/bucket/i,'Filter by bucket']];
+function nameFor(sel){
+  const key=(sel.id||'')+' '+(sel.className||'');
+  for(const [re,label] of HINTS)if(re.test(key))return label;
+  const first=sel.options&&sel.options[0]&&sel.options[0].text.trim();
+  return first?'Filter: '+first.replace(/^all\s+/i,'').toLowerCase():'';
+}
+function label(root){
+  (root||document).querySelectorAll('select:not([aria-label]):not([aria-labelledby]):not([title])').forEach(sel=>{
+    if(sel.closest('label')||(sel.id&&document.querySelector('label[for="'+CSS.escape(sel.id)+'"]')))return;
+    const n=nameFor(sel);if(n)sel.setAttribute('aria-label',n);
+  });
+}
+let queued=false;
+function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;label()})}
+function start(){label();new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true})}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+

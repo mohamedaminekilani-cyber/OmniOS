@@ -31,6 +31,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Refresh derived release manifest
+        run: npm run release:source
       - name: Regression checks
         run: npm test && npm run test:runtime
 

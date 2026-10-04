@@ -10658,3 +10658,416 @@ html body .view > .v44-page-cover-shell:has(.v44-page-cover-empty){
   .w93-welcome-avatar{width:52px;height:52px;margin:10px 0 7px}
 }
 </style>
+
+
+<style id="omnios-v101-reference-sidebar-css">
+/* ===== Second Brain v101 — reference-style desktop sidebar ===== */
+@media(min-width:761px){
+  .sidebar.v101-sidebar{
+    width:268px!important;
+    padding:12px!important;
+    gap:10px!important;
+    border-right:1px solid var(--border-color)!important;
+    background:color-mix(in srgb,var(--bg-base) 94%,#111827 6%)!important;
+    overflow:hidden!important;
+  }
+
+  .sidebar.v101-sidebar>.logo{
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+  }
+
+  .v101-sidebar-profile{
+    display:grid;
+    grid-template-columns:40px minmax(0,1fr) 34px;
+    gap:9px;
+    align-items:center;
+    min-height:62px;
+    padding:9px;
+    border:1px solid var(--border-color);
+    border-radius:13px;
+    background:var(--bg-surface);
+    box-shadow:0 8px 24px rgba(0,0,0,.08);
+  }
+  .v101-sidebar-avatar{
+    width:40px;height:40px;border-radius:11px;overflow:hidden;
+    display:grid;place-items:center;flex:none;
+    border:1px solid var(--border-light);
+    background:linear-gradient(135deg,color-mix(in srgb,var(--accent-cyan) 20%,var(--bg-elevated)),var(--bg-elevated));
+    color:var(--text-primary);
+  }
+  .v101-sidebar-avatar img{width:100%;height:100%;display:block;object-fit:cover}
+  .v101-sidebar-avatar svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .v101-sidebar-profile-copy{min-width:0}
+  .v101-sidebar-profile-copy strong{
+    display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    font-size:.72rem;line-height:1.2;font-weight:790;color:var(--text-primary)
+  }
+  .v101-sidebar-profile-copy span{
+    display:block;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    font-size:.53rem;color:var(--text-muted)
+  }
+  .v101-sidebar-search-toggle{
+    width:34px;height:34px;border:0;border-radius:9px;
+    display:grid;place-items:center;cursor:pointer;
+    background:transparent;color:var(--text-secondary)
+  }
+  .v101-sidebar-search-toggle:hover{background:var(--bg-elevated);color:var(--text-primary)}
+  .v101-sidebar-search-toggle svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+  .v101-sidebar-search{
+    display:none;
+    align-items:center;
+    gap:7px;
+    margin-top:7px;
+    padding:7px 9px;
+    border:1px solid var(--border-color);
+    border-radius:11px;
+    background:var(--bg-surface)
+  }
+  .v101-sidebar-search.open{display:flex}
+  .v101-sidebar-search svg{width:14px;height:14px;flex:none;fill:none;stroke:var(--text-muted);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .v101-sidebar-search input{
+    flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--text-primary);
+    font:inherit;font-size:.63rem
+  }
+  .v101-sidebar-search input::placeholder{color:var(--text-muted)}
+  .v101-sidebar-search-clear{
+    border:0;background:transparent;color:var(--text-muted);cursor:pointer;
+    width:24px;height:24px;display:grid;place-items:center;border-radius:7px
+  }
+  .v101-sidebar-search-clear:hover{background:var(--bg-elevated);color:var(--text-primary)}
+
+  .sidebar.v101-sidebar .nav-menu{
+    flex:1!important;
+    min-height:0!important;
+    padding:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    gap:8px!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain;
+    scrollbar-width:none;
+  }
+  .sidebar.v101-sidebar .nav-menu::-webkit-scrollbar{display:none}
+
+  .v101-nav-group{
+    flex:0 0 auto;
+    overflow:hidden;
+    border:1px solid var(--border-color);
+    border-radius:13px;
+    background:var(--bg-surface);
+    box-shadow:0 5px 18px rgba(0,0,0,.045);
+  }
+  .v101-nav-group-head{
+    min-height:34px!important;
+    padding:7px 10px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:8px!important;
+    cursor:pointer;
+    user-select:none;
+    text-transform:none!important;
+    letter-spacing:0!important;
+    font-size:.58rem!important;
+    font-weight:680!important;
+    color:var(--text-muted)!important;
+  }
+  .v101-nav-group-head:hover{color:var(--text-secondary)!important}
+  .v101-nav-group-head-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .v101-nav-group-chevron{
+    width:16px;height:16px;flex:none;
+    display:grid;place-items:center;
+    transition:transform .16s ease;
+  }
+  .v101-nav-group-chevron svg{
+    width:13px;height:13px;display:block;fill:none;stroke:currentColor;
+    stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round
+  }
+  .v101-nav-group.collapsed .v101-nav-group-chevron{transform:rotate(-90deg)}
+  .v101-nav-group-body{
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+    padding:0 6px 6px;
+  }
+  .v101-nav-group.collapsed .v101-nav-group-body{display:none}
+
+  .sidebar.v101-sidebar .nav-item{
+    width:100%!important;
+    min-height:34px!important;
+    margin:0!important;
+    padding:6px 7px!important;
+    border:0!important;
+    border-radius:9px!important;
+    display:grid!important;
+    grid-template-columns:22px minmax(0,1fr) auto!important;
+    gap:7px!important;
+    align-items:center!important;
+    background:transparent!important;
+    color:var(--text-secondary)!important;
+    font-size:.64rem!important;
+    font-weight:590!important;
+    text-align:left!important;
+    box-shadow:none!important;
+  }
+  .sidebar.v101-sidebar .nav-item:hover{
+    background:var(--bg-elevated)!important;
+    color:var(--text-primary)!important;
+  }
+  .sidebar.v101-sidebar .nav-item.active{
+    background:color-mix(in srgb,var(--accent-cyan) 12%,var(--bg-elevated))!important;
+    color:var(--text-primary)!important;
+    font-weight:720!important;
+  }
+  .v101-nav-icon-wrap{
+    width:22px;height:22px;display:grid;place-items:center;position:relative;flex:none;
+    color:var(--text-muted)
+  }
+  .nav-item:hover .v101-nav-icon-wrap{color:var(--text-secondary)}
+  .nav-item.active .v101-nav-icon-wrap{color:var(--accent-cyan)}
+  .v101-nav-icon-wrap svg{
+    width:15px!important;height:15px!important;display:block!important;
+    fill:none!important;stroke:currentColor!important;
+    stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important
+  }
+  .v101-nav-icon-wrap .nav-icon-img{
+    width:17px!important;height:17px!important;object-fit:contain!important;
+    border-radius:4px!important
+  }
+  .v101-nav-label{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .v101-nav-badge{
+    display:none;
+    min-width:20px;height:20px;padding:0 5px;border-radius:999px;
+    place-items:center;background:var(--bg-elevated);
+    color:var(--text-muted);font-size:.5rem;font-weight:760;
+    font-variant-numeric:tabular-nums
+  }
+  .v101-nav-badge.has-value{display:grid}
+  .nav-item.active .v101-nav-badge{color:var(--accent-cyan)}
+
+  .v101-nav-group.v101-group-system{margin-bottom:2px}
+  .sidebar.v101-sidebar>#import-file{display:none!important}
+}
+
+@media(max-width:760px){
+  /* Mobile keeps the existing bottom-nav experience. */
+  .sidebar.v101-sidebar .v101-sidebar-search{display:none!important}
+}
+</style>
+
+<script id="omnios-v101-reference-sidebar-js">
+(function(){
+'use strict';
+if(window.__omniSidebar101)return;
+window.__omniSidebar101=true;
+
+const GROUP_KEY='omnios_sidebar_groups_v101';
+const labels={
+  today:'Today',dashboard:'Dashboard',inbox:'Inbox',planner:'Planner',projects:'Projects',routine:'Routine',
+  'master-calendar':'Calendar',tasks:'Tasks',habits:'Habits',bible:'Bible',workout:'Workout',diet:'Nutrition',
+  focus:'Focus',budget:'Finance','life-hub':'Life Hub',notes:'Notes',grocery:'Grocery',wishlist:'Wishlist',
+  goals:'Goals',pantry:'Pantry',reminders:'Reminders','data-center':'Data Center',activity:'Activity',
+  templates:'Templates',relations:'Relations',automations:'Automations',studio:'Studio',passwords:'Passwords',
+  settings:'Settings',help:'Help'
+};
+const files={
+  today:'Today.png',dashboard:'Dashboard.png',inbox:'Inbox.png',planner:'Planner.png',projects:'Projects.png',
+  routine:'Routine.png','master-calendar':'Calendar.png',tasks:'Tasks.png',habits:'Habits.png',bible:'Bible.png',
+  workout:'Workout.png',diet:'Nutrition.png',focus:'Focus.png',budget:'Budget.png','life-hub':'LifeHub.png',
+  notes:'Notes.png',grocery:'Grocery.png',wishlist:'Wishlist.png',goals:'Goals.png',pantry:'Pantry.png',
+  reminders:'Reminders.png','data-center':'DataCenter.png',activity:'Activity.png',templates:'Templates.png',
+  relations:'Relations.png',automations:'Automations.png',studio:'Studio.png',passwords:'Passwords.png',
+  settings:'Settings.png',help:'Help.png'
+};
+const paths={
+  today:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  dashboard:'<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
+  inbox:'<path d="M4 5h16v14H4z"/><path d="M4 14h5l2 2h2l2-2h5"/>',
+  planner:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M8 14h3M13 14h3M8 18h3"/>',
+  projects:'<path d="M3 7h7l2 2h9v10H3z"/><path d="M3 7V5h7l2 2"/>',
+  routine:'<path d="M20 7h-6V1M4 17h6v6"/><path d="M20 7a8 8 0 0 0-13.7-3.7L4 5.6M4 17a8 8 0 0 0 13.7 3.7L20 18.4"/>',
+  'master-calendar':'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+  tasks:'<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m8 12 2.5 2.5L16 9"/>',
+  habits:'<path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5l3 2M16 3h5v5"/>',
+  bible:'<path d="M4 4h6a3 3 0 0 1 3 3v13a3 3 0 0 0-3-3H4z"/><path d="M20 4h-6a3 3 0 0 0-3 3v13a3 3 0 0 1 3-3h6z"/>',
+  workout:'<path d="M5 9v6M8 7v10M16 7v10M19 9v6M8 12h8M3 10v4M21 10v4"/>',
+  diet:'<path d="M20 4C12 4 6 8 6 15c0 3 2 5 5 5 7 0 9-8 9-16Z"/><path d="M5 21c3-7 7-10 13-14"/>',
+  focus:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
+  budget:'<path d="M3 6h15a3 3 0 0 1 3 3v9H3z"/><path d="M3 6V4h13v2M16 11h5M16 14h2"/>',
+  'life-hub':'<path d="M12 21s-8-4.7-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6.3-8 11-8 11Z"/>',
+  notes:'<path d="M5 3h14v18H5z"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+  grocery:'<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M3 4h2l2 11h11l2-7H6"/>',
+  wishlist:'<path d="M12 21s-8-4.7-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6.3-8 11-8 11Z"/>',
+  goals:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="m14 10 6-6M16 4h4v4"/>',
+  pantry:'<path d="M5 4h14v17H5z"/><path d="M8 4V2h8v2M8 9h8M8 13h8M8 17h5"/>',
+  reminders:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
+  'data-center':'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/>',
+  activity:'<path d="M3 12h4l2-6 4 12 2-6h6"/>',
+  templates:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/>',
+  relations:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20a6 6 0 0 1 12 0M14 16a5 5 0 0 1 7 4"/>',
+  automations:'<path d="M4 7h10M4 17h16M14 7l3-3m-3 3 3 3M10 17l-3-3m3 3-3 3"/>',
+  studio:'<path d="m12 3 8 4-8 4-8-4 8-4Z"/><path d="m4 12 8 4 8-4M4 17l8 4 8-4"/>',
+  passwords:'<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a7 7 0 0 0-1.7-1L14.5 3h-5l-.4 3.1a7 7 0 0 0-1.7 1L5 6.1 3 9.5 5.1 11a7 7 0 0 0 0 2L3 14.5 5 18l2.4-1a7 7 0 0 0 1.7 1l.4 3h5l.4-3a7 7 0 0 0 1.7-1l2.4 1 2-3.5-2.1-1.5a7 7 0 0 0 .1-1Z"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.7 2.7 0 1 1 4.5 2c-1.3 1-2 1.4-2 3M12 18h.01"/>'
+};
+const svg=(view)=>'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(paths[view]||paths.dashboard)+'</svg>';
+const profileSvg=()=>'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
+const searchSvg=()=>'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>';
+const chevronSvg=()=>'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>';
+
+function readCollapsed(){
+  try{return JSON.parse(localStorage.getItem(GROUP_KEY)||'{}')||{}}catch(_){return{}}
+}
+function writeCollapsed(x){try{localStorage.setItem(GROUP_KEY,JSON.stringify(x||{}))}catch(_){}}
+
+function profileData(){
+  let name='Second Brain',avatar='';
+  try{
+    name=String(state?.settings?.profile?.name||'').trim()||'Second Brain';
+    avatar=String(state?.settings?.profile?.avatar||'').trim();
+  }catch(_){}
+  return{name,avatar}
+}
+
+function renderProfile(sidebar){
+  const logo=sidebar.querySelector(':scope > .logo');if(!logo)return;
+  const p=profileData();
+  logo.innerHTML='<div class="v101-sidebar-profile">'+
+    '<div class="v101-sidebar-avatar">'+(p.avatar?'<img src="'+p.avatar.replace(/"/g,'&quot;')+'" alt="">':profileSvg())+'</div>'+
+    '<div class="v101-sidebar-profile-copy"><strong></strong><span>Personal OS</span></div>'+
+    '<button type="button" class="v101-sidebar-search-toggle" aria-label="Search sidebar" title="Search">'+searchSvg()+'</button>'+
+    '</div>'+
+    '<div class="v101-sidebar-search">'+searchSvg()+'<input type="search" placeholder="Search pages…" aria-label="Search sidebar pages"><button type="button" class="v101-sidebar-search-clear" aria-label="Clear search">×</button></div>';
+  logo.querySelector('.v101-sidebar-profile-copy strong').textContent=p.name;
+  const toggle=logo.querySelector('.v101-sidebar-search-toggle'),box=logo.querySelector('.v101-sidebar-search'),input=box.querySelector('input'),clear=box.querySelector('.v101-sidebar-search-clear');
+  const filter=()=>{
+    const q=input.value.trim().toLowerCase();
+    sidebar.querySelectorAll('.v101-nav-group').forEach(group=>{
+      let shown=0;
+      group.querySelectorAll('.nav-item[data-view]').forEach(item=>{
+        const match=!q||(item.querySelector('.v101-nav-label')?.textContent||'').toLowerCase().includes(q);
+        item.style.display=match?'':'none';if(match)shown++;
+      });
+      group.style.display=shown?'':'none';
+      if(q&&shown)group.classList.remove('collapsed');
+    });
+  };
+  toggle.onclick=()=>{box.classList.toggle('open');if(box.classList.contains('open'))setTimeout(()=>input.focus(),0);else{input.value='';filter()}};
+  input.addEventListener('input',filter);
+  clear.onclick=()=>{input.value='';filter();input.focus()};
+}
+
+function decorateItem(btn){
+  const view=btn.dataset.view;if(!view)return;
+  const label=labels[view]||btn.textContent.trim()||view;
+  const file=files[view]||'Dashboard.png';
+  btn.innerHTML='<span class="v101-nav-icon-wrap"><img class="nav-icon-img v101-nav-custom" data-icon-file="'+file+'" alt=""><span class="v101-nav-svg">'+svg(view)+'</span></span><span class="v101-nav-label"></span><span class="v101-nav-badge"></span>';
+  btn.querySelector('.v101-nav-label').textContent=label;
+}
+
+function groupNav(nav){
+  if(nav.dataset.v101Grouped==='1')return;
+  const nodes=[...nav.children],groups=[];
+  let group=null;
+  for(const node of nodes){
+    if(node.classList?.contains('nav-section')){
+      group=document.createElement('section');
+      group.className='v101-nav-group v101-group-'+String(node.dataset.v35Section||node.textContent||'group').toLowerCase().replace(/[^a-z0-9]+/g,'-');
+      const body=document.createElement('div');body.className='v101-nav-group-body';
+      nav.insertBefore(group,node);group.append(node,body);
+      const title=String(node.dataset.v35Section||node.textContent||'Section').trim();
+      node.classList.add('v101-nav-group-head');
+      node.setAttribute('role','button');node.tabIndex=0;node.setAttribute('aria-expanded','true');
+      node.innerHTML='<span class="v101-nav-group-head-title"></span><span class="v101-nav-group-chevron">'+chevronSvg()+'</span>';
+      node.querySelector('.v101-nav-group-head-title').textContent=title;
+      group.dataset.group=title;
+      groups.push(group);
+    }else if(node.matches?.('.nav-item[data-view]')){
+      if(!group){
+        group=document.createElement('section');group.className='v101-nav-group';group.dataset.group='Navigation';
+        const body=document.createElement('div');body.className='v101-nav-group-body';nav.insertBefore(group,node);group.append(body);groups.push(group)
+      }
+      group.querySelector('.v101-nav-group-body').appendChild(node);
+    }
+  }
+  nav.dataset.v101Grouped='1';
+
+  const saved=readCollapsed();
+  groups.forEach((g,index)=>{
+    const head=g.querySelector('.v101-nav-group-head');if(!head)return;
+    const key=g.dataset.group;
+    const active=!!g.querySelector('.nav-item.active');
+    const collapsed=active?false:(saved[key]!==undefined?!!saved[key]:index>0);
+    g.classList.toggle('collapsed',collapsed);head.setAttribute('aria-expanded',collapsed?'false':'true');
+    const toggle=()=>{
+      const next=!g.classList.contains('collapsed');
+      g.classList.toggle('collapsed',next);head.setAttribute('aria-expanded',next?'false':'true');
+      const state=readCollapsed();state[key]=next;writeCollapsed(state)
+    };
+    head.addEventListener('click',toggle);
+    head.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}});
+  });
+}
+
+function countFor(view){
+  try{
+    if(view==='tasks')return (state.entries||[]).filter(x=>x.status!=='completed').length;
+    if(view==='inbox')return (state.life?.inbox||[]).length;
+    if(view==='projects')return (state.projects||[]).filter(x=>!x.archived).length;
+    if(view==='reminders')return (state.reminders||[]).filter(x=>!x.completed).length;
+  }catch(_){}
+  return 0
+}
+function refreshCounts(sidebar){
+  ['tasks','inbox','projects','reminders'].forEach(view=>{
+    const badge=sidebar.querySelector('.nav-item[data-view="'+view+'"] .v101-nav-badge');if(!badge)return;
+    const n=countFor(view);badge.textContent=n>99?'99+':String(n);badge.classList.toggle('has-value',n>0)
+  })
+}
+
+function keepActiveVisible(sidebar){
+  sidebar.querySelectorAll('.v101-nav-group').forEach(g=>{
+    const active=!!g.querySelector('.nav-item.active'),head=g.querySelector('.v101-nav-group-head');
+    if(active&&g.classList.contains('collapsed')){g.classList.remove('collapsed');head?.setAttribute('aria-expanded','true')}
+  })
+}
+
+function init(){
+  const sidebar=document.querySelector('.sidebar'),nav=sidebar?.querySelector('.nav-menu');if(!sidebar||!nav)return;
+  sidebar.classList.add('v101-sidebar');
+  renderProfile(sidebar);
+  nav.querySelectorAll('.nav-item[data-view]').forEach(decorateItem);
+  groupNav(nav);
+  refreshCounts(sidebar);
+  keepActiveVisible(sidebar);
+  try{window.applyCustomIcons?.()}catch(_){}
+
+  let frame=0;
+  const obs=new MutationObserver(records=>{
+    let activeChanged=false,newItems=false;
+    for(const r of records){
+      if(r.type==='attributes'&&r.target.classList?.contains('nav-item'))activeChanged=true;
+      if(r.type==='childList'&&r.addedNodes?.length)newItems=true;
+    }
+    if(frame)return;
+    frame=requestAnimationFrame(()=>{
+      frame=0;
+      if(newItems){
+        nav.querySelectorAll('.nav-item[data-view]').forEach(b=>{if(!b.querySelector('.v101-nav-label'))decorateItem(b)});
+      }
+      keepActiveVisible(sidebar);refreshCounts(sidebar);
+      try{window.applyCustomIcons?.()}catch(_){}
+    })
+  });
+  obs.observe(nav,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+  sidebar.addEventListener('click',e=>{if(e.target.closest('.nav-item[data-view]'))setTimeout(()=>{keepActiveVisible(sidebar);refreshCounts(sidebar)},30)},true);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
+

@@ -128,6 +128,7 @@ export default async (req: Request, _context: Context) => {
     if (action === "unsubscribe") {
       if (!existing) return json(req,{ok:true});
       await store.delete(key);
+      await store.delete(`sent/${deviceId}`);
       return json(req,{ ok: true });
     }
 

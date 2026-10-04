@@ -785,6 +785,7 @@ function loadImage53(img,host,src){
   }
 }
 function ensureDesktopSlot53(item){
+  if(item?.closest?.('.sidebar.v101-sidebar'))return;
   const key=item?.dataset?.view;if(!key)return;
   const entry=entryFor53(key);if(!entry)return;
   let img=item.querySelector(':scope > .nav-icon-img');
@@ -838,7 +839,7 @@ function ensureMoreSlot53(button){
 }
 function applyCustomIcons53(){
   ensureLogo53();
-  document.querySelectorAll('.nav-menu .nav-item[data-view]').forEach(ensureDesktopSlot53);
+  if(!document.querySelector('.sidebar.v101-sidebar')) document.querySelectorAll('.nav-menu .nav-item[data-view]').forEach(ensureDesktopSlot53);
   document.querySelectorAll('.mobile-nav button[data-v35-mobile-view],.mobile-nav button[data-mobile-view]').forEach(ensureMobileSlot53);
   document.querySelectorAll('[data-v35-more]').forEach(ensureMoreSlot53);
 }

@@ -478,6 +478,70 @@ window.renderOrganizeV40=renderOrganize40;window.openGroceryShopV40=openGroceryS
   #view-diet .nut-activity-card-v94:last-child{min-height:66px!important}
 }
 </style>
+
+<style id="omnios-v981-nutrition-summary-inline">
+/* Compact Today summary: energy and macro rings share one horizontal row. */
+#view-diet .nut-body-overview-v94{
+  min-height:150px!important;
+  padding:13px 16px!important;
+  display:grid!important;
+  grid-template-columns:minmax(220px,.78fr) minmax(330px,1.22fr)!important;
+  grid-template-rows:auto 1fr!important;
+  column-gap:22px!important;
+  row-gap:8px!important;
+  align-items:center!important;
+}
+#view-diet .nut-body-overview-copy-v94{
+  grid-column:1/-1!important;
+  grid-row:1!important;
+  align-self:start!important;
+}
+#view-diet .nut-body-energy-v94{
+  grid-column:1!important;
+  grid-row:2!important;
+  margin:0!important;
+  align-self:center!important;
+}
+#view-diet .nut-body-energy-v94 strong{
+  font-size:1.58rem!important;
+  line-height:1!important;
+}
+#view-diet .nut-macro-rings-v94{
+  grid-column:2!important;
+  grid-row:2!important;
+  align-self:center!important;
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(76px,1fr))!important;
+  gap:14px!important;
+}
+#view-diet .nut-macro-ring-v94{
+  width:54px!important;
+  height:54px!important;
+  margin-bottom:5px!important;
+}
+#view-diet .nut-macro-ring-v94:after{inset:6px!important}
+#view-diet .nut-target-card-v94{min-height:150px!important}
+
+@media(max-width:900px){
+  #view-diet .nut-body-overview-v94{
+    grid-template-columns:minmax(190px,.72fr) minmax(280px,1.28fr)!important;
+    column-gap:14px!important;
+  }
+  #view-diet .nut-macro-rings-v94{gap:8px!important}
+}
+@media(max-width:650px){
+  #view-diet .nut-body-overview-v94{
+    min-height:0!important;
+    grid-template-columns:1fr!important;
+    grid-template-rows:auto auto auto!important;
+    row-gap:11px!important;
+  }
+  #view-diet .nut-body-overview-copy-v94{grid-column:1!important}
+  #view-diet .nut-body-energy-v94{grid-column:1!important;grid-row:2!important}
+  #view-diet .nut-macro-rings-v94{grid-column:1!important;grid-row:3!important}
+  #view-diet .nut-target-card-v94{min-height:104px!important}
+}
+</style>
 <script id="omnios-v41-nutrition-js">
 (function(){
 'use strict';

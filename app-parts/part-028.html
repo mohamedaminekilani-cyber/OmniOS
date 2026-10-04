@@ -10680,6 +10680,11 @@ html body .view > .v44-page-cover-shell:has(.v44-page-cover-empty){
     border:0!important;
     background:transparent!important;
   }
+  /* v101 is the single sidebar branding authority. Older branding helpers may
+     append a title/tagline later; keep them out of the rendered sidebar. */
+  .sidebar.v101-sidebar>.logo > :not(.v101-sidebar-profile):not(.v101-sidebar-search){
+    display:none!important;
+  }
 
   .v101-sidebar-profile{
     display:grid;
@@ -10831,8 +10836,11 @@ html body .view > .v44-page-cover-shell:has(.v44-page-cover-empty){
   .v101-nav-group.collapsed .v101-nav-group-chevron{transform:rotate(-90deg)}
   .v101-nav-group-body{
     display:flex;
+    flex:none!important;
     flex-direction:column;
     gap:1px;
+    height:auto!important;
+    min-height:0!important;
     padding:5px 6px 6px;
     border-top:1px solid color-mix(in srgb,var(--v101-group-accent) 10%,var(--border-color));
     background:var(--bg-surface);
@@ -11096,13 +11104,14 @@ function refreshCounts(sidebar){
 }
 
 function cleanupLegacySidebar(sidebar){
-  const logo=sidebar.querySelector(':scope > .logo');
-  if(logo){
-    [...logo.children].forEach(el=>{
-      if(!el.classList.contains('v101-sidebar-profile')&&!el.classList.contains('v101-sidebar-search'))el.remove()
-    });
-  }
+  /* Legacy icon/branding runtimes can fire after v101 and replace a nav item's
+     children. Rebuild the v101 item instead of merely hiding the legacy markup. */
   sidebar.querySelectorAll('.nav-item[data-view]').forEach(btn=>{
+    const healthy=
+      btn.querySelector(':scope > .v101-nav-icon-wrap')&&
+      btn.querySelector(':scope > .v101-nav-label')&&
+      btn.querySelector(':scope > .v101-nav-badge');
+    if(!healthy)decorateItem(btn);
     btn.classList.remove('v35-section-hidden');
     [...btn.children].forEach(el=>{
       if(!el.classList.contains('v101-nav-icon-wrap')&&!el.classList.contains('v101-nav-label')&&!el.classList.contains('v101-nav-badge'))el.remove()
@@ -11120,23 +11129,24 @@ function init(){
   refreshCounts(sidebar);
   let frame=0;
   const obs=new MutationObserver(records=>{
-    let activeChanged=false,newItems=false;
+    let activeChanged=false,newItems=false,itemMarkupChanged=false;
     for(const r of records){
       if(r.type==='attributes'&&r.target.classList?.contains('nav-item')){
         const wasActive=(r.oldValue||'').split(/\s+/).includes('active');
         const isActive=r.target.classList.contains('active');
         if(wasActive!==isActive)activeChanged=true;
       }
-      if(r.type==='childList'&&[...r.addedNodes].some(n=>n.nodeType===1&&((n.matches?.('.nav-item[data-view]'))||n.querySelector?.('.nav-item[data-view]'))))newItems=true;
+      if(r.type==='childList'){
+        if(r.target?.nodeType===1&&r.target.closest?.('.nav-item[data-view]'))itemMarkupChanged=true;
+        if([...r.addedNodes].some(n=>n.nodeType===1&&((n.matches?.('.nav-item[data-view]'))||n.querySelector?.('.nav-item[data-view]'))))newItems=true;
+      }
     }
-    if(!activeChanged&&!newItems)return;
+    if(!activeChanged&&!newItems&&!itemMarkupChanged)return;
     if(frame)return;
     frame=requestAnimationFrame(()=>{
       frame=0;
-      if(newItems){
-        nav.querySelectorAll('.nav-item[data-view]').forEach(b=>{if(!b.querySelector('.v101-nav-label'))decorateItem(b)});
-      }
-      refreshCounts(sidebar);cleanupLegacySidebar(sidebar)
+      refreshCounts(sidebar);
+      cleanupLegacySidebar(sidebar);
     })
   });
   obs.observe(nav,{subtree:true,childList:true,attributes:true,attributeFilter:['class'],attributeOldValue:true});

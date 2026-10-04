@@ -347,12 +347,19 @@ function paintNavIcon48(item,key,cls){
   icon.innerHTML=custom?`<img src="${custom}" alt="" style="width:100%;height:100%;display:block;object-fit:contain;border-radius:4px">`:`<svg viewBox="0 0 24 24">${p}</svg>`;
 }
 function decorateNavIcons(){
-  document.querySelectorAll('.nav-menu .nav-item[data-view]').forEach(item=>paintNavIcon48(item,item.dataset.view,'v48-nav-icon'));
+  /* Desktop sidebar icons are owned exclusively by v101. Keep v48 limited to
+     mobile navigation / More so it cannot rewrite the canonical sidebar. */
+  if(!window.__omniSidebar101&&!document.querySelector('.sidebar.v101-sidebar')){
+    document.querySelectorAll('.nav-menu .nav-item[data-view]').forEach(item=>paintNavIcon48(item,item.dataset.view,'v48-nav-icon'));
+  }
   document.querySelectorAll('.mobile-nav button[data-v35-mobile-view]').forEach(item=>paintNavIcon48(item,item.dataset.v35MobileView,'v48-mobile-icon'));
   paintNavIcon48(document.getElementById('v35-mobile-more'),'menu','v48-mobile-icon');
   document.querySelectorAll('[data-v35-more]').forEach(item=>paintNavIcon48(item,item.dataset.v35More,'v48-more-icon'));
 }
-let queued=false;function refresh(){if(queued)return;queued=true;queueMicrotask(()=>{queued=false;decorateNavIcons()})}const navObs48=new MutationObserver(refresh);const side48=document.querySelector('.nav-menu'),mob48=document.querySelector('.mobile-nav');if(side48)navObs48.observe(side48,{childList:true,subtree:true});if(mob48)navObs48.observe(mob48,{childList:true,subtree:true});decorateNavIcons();window.OmniIcons={refresh,decorate:decorateNavIcons,paint:paintNavIcon48};
+let queued=false;function refresh(){if(queued)return;queued=true;queueMicrotask(()=>{queued=false;decorateNavIcons()})}
+const navObs48=new MutationObserver(refresh),mob48=document.querySelector('.mobile-nav');
+if(mob48)navObs48.observe(mob48,{childList:true,subtree:true});
+decorateNavIcons();window.OmniIcons={refresh,decorate:decorateNavIcons,paint:paintNavIcon48};
 })();
 </script>
 

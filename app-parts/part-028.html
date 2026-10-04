@@ -10999,17 +10999,30 @@ function renderProfile(sidebar){
     '<div class="v101-sidebar-search">'+searchSvg()+'<input type="search" placeholder="Search pages…" aria-label="Search sidebar pages"><button type="button" class="v101-sidebar-search-clear" aria-label="Clear search">×</button></div>';
   logo.querySelector('.v101-sidebar-profile-copy strong').textContent=p.name;
   const toggle=logo.querySelector('.v101-sidebar-search-toggle'),box=logo.querySelector('.v101-sidebar-search'),input=box.querySelector('input'),clear=box.querySelector('.v101-sidebar-search-clear');
+  let searchCollapsed=null;
+  const setCollapsed=(group,collapsed)=>{
+    group.classList.toggle('collapsed',collapsed);
+    group.querySelector('.v101-nav-group-head')?.setAttribute('aria-expanded',collapsed?'false':'true');
+  };
   const filter=()=>{
-    const q=input.value.trim().toLowerCase();
-    sidebar.querySelectorAll('.v101-nav-group').forEach(group=>{
+    const q=input.value.trim().toLowerCase(),groups=[...sidebar.querySelectorAll('.v101-nav-group')];
+    if(q&&searchCollapsed===null){
+      searchCollapsed={};
+      groups.forEach(group=>{searchCollapsed[group.dataset.group||'Navigation']=group.classList.contains('collapsed')});
+    }
+    groups.forEach(group=>{
       let shown=0;
       group.querySelectorAll('.nav-item[data-view]').forEach(item=>{
         const match=!q||(item.querySelector('.v101-nav-label')?.textContent||'').toLowerCase().includes(q);
         item.style.display=match?'':'none';if(match)shown++;
       });
       group.style.display=shown?'':'none';
-      if(q&&shown)group.classList.remove('collapsed');
+      if(q&&shown)setCollapsed(group,false);
     });
+    if(!q&&searchCollapsed!==null){
+      groups.forEach(group=>setCollapsed(group,!!searchCollapsed[group.dataset.group||'Navigation']));
+      searchCollapsed=null;
+    }
   };
   toggle.onclick=()=>{box.classList.toggle('open');if(box.classList.contains('open'))setTimeout(()=>input.focus(),0);else{input.value='';filter()}};
   input.addEventListener('input',filter);
@@ -11091,7 +11104,7 @@ function countFor(view){
   try{
     if(view==='tasks')return (state.entries||[]).filter(x=>x.status!=='completed').length;
     if(view==='inbox')return (state.life?.inbox||[]).length;
-    if(view==='projects')return (state.projects||[]).filter(x=>!x.archived).length;
+    if(view==='projects')return (state.life?.projects||[]).filter(x=>!x.archived&&x.status!=='completed').length;
     if(view==='reminders')return (state.reminders||[]).filter(x=>!x.completed).length;
   }catch(_){}
   return 0
@@ -11104,14 +11117,10 @@ function refreshCounts(sidebar){
 }
 
 function cleanupLegacySidebar(sidebar){
-  /* Legacy icon/branding runtimes can fire after v101 and replace a nav item's
-     children. Rebuild the v101 item instead of merely hiding the legacy markup. */
+  /* One-time migration cleanup only. Legacy runtimes no longer observe the
+     desktop nav after v101 takes ownership. */
   sidebar.querySelectorAll('.nav-item[data-view]').forEach(btn=>{
-    const healthy=
-      btn.querySelector(':scope > .v101-nav-icon-wrap')&&
-      btn.querySelector(':scope > .v101-nav-label')&&
-      btn.querySelector(':scope > .v101-nav-badge');
-    if(!healthy)decorateItem(btn);
+    if(!btn.querySelector(':scope > .v101-nav-icon-wrap'))decorateItem(btn);
     btn.classList.remove('v35-section-hidden');
     [...btn.children].forEach(el=>{
       if(!el.classList.contains('v101-nav-icon-wrap')&&!el.classList.contains('v101-nav-label')&&!el.classList.contains('v101-nav-badge'))el.remove()
@@ -11129,24 +11138,21 @@ function init(){
   refreshCounts(sidebar);
   let frame=0;
   const obs=new MutationObserver(records=>{
-    let activeChanged=false,newItems=false,itemMarkupChanged=false;
+    let activeChanged=false,newItems=false;
     for(const r of records){
       if(r.type==='attributes'&&r.target.classList?.contains('nav-item')){
         const wasActive=(r.oldValue||'').split(/\s+/).includes('active');
         const isActive=r.target.classList.contains('active');
         if(wasActive!==isActive)activeChanged=true;
       }
-      if(r.type==='childList'){
-        if(r.target?.nodeType===1&&r.target.closest?.('.nav-item[data-view]'))itemMarkupChanged=true;
-        if([...r.addedNodes].some(n=>n.nodeType===1&&((n.matches?.('.nav-item[data-view]'))||n.querySelector?.('.nav-item[data-view]'))))newItems=true;
-      }
+      if(r.type==='childList'&&[...r.addedNodes].some(n=>n.nodeType===1&&((n.matches?.('.nav-item[data-view]'))||n.querySelector?.('.nav-item[data-view]'))))newItems=true;
     }
-    if(!activeChanged&&!newItems&&!itemMarkupChanged)return;
+    if(!activeChanged&&!newItems)return;
     if(frame)return;
     frame=requestAnimationFrame(()=>{
       frame=0;
+      if(newItems)cleanupLegacySidebar(sidebar);
       refreshCounts(sidebar);
-      cleanupLegacySidebar(sidebar);
     })
   });
   obs.observe(nav,{subtree:true,childList:true,attributes:true,attributeFilter:['class'],attributeOldValue:true});

@@ -11225,3 +11225,66 @@ window.OmniDialog={confirm:(message,opts={})=>open('confirm',message,opts),alert
   #v35-page-launcher .v35-launcher-section-title{font-size:11px!important}
 }
 </style>
+
+
+<style id="omnios-v104-sidebar-stability">
+/* v104 — harden grouped sidebar against legacy flex/layout rules */
+.sidebar.v101-sidebar .nav-menu{
+  align-content:flex-start!important;
+  justify-content:flex-start!important;
+}
+.sidebar.v101-sidebar .v101-nav-group{
+  flex:0 0 auto!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+}
+.sidebar.v101-sidebar .v101-nav-group-body{
+  flex:0 0 auto!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow:visible!important;
+}
+.sidebar.v101-sidebar .v101-nav-group.collapsed .v101-nav-group-body{
+  display:none!important;
+}
+.sidebar.v101-sidebar .v101-nav-group:not(.collapsed) .v101-nav-group-body{
+  display:flex!important;
+}
+.sidebar.v101-sidebar .nav-item[data-view]{
+  flex:0 0 auto!important;
+  height:auto!important;
+  min-height:36px!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+.sidebar.v101-sidebar .nav-item[data-view] .v101-nav-label,
+.sidebar.v101-sidebar .nav-item[data-view] .v101-nav-icon-wrap{
+  visibility:visible!important;
+  opacity:1!important;
+}
+</style>
+<script id="omnios-v104-sidebar-stability-js">
+(function(){
+  'use strict';
+  function repairSidebar(){
+    const sidebar=document.querySelector('.sidebar.v101-sidebar');
+    if(!sidebar)return;
+    sidebar.querySelectorAll('.nav-item[data-view]').forEach(btn=>{
+      const view=btn.dataset.view;
+      if(!view)return;
+      const label=window.__omniSidebarLabels?.[view] || btn.getAttribute('aria-label') || '';
+      const hasIcon=btn.querySelector(':scope > .v101-nav-icon-wrap');
+      const hasLabel=btn.querySelector(':scope > .v101-nav-label');
+      if((!hasIcon||!hasLabel) && typeof window.__omniSidebarRepairItem==='function'){
+        window.__omniSidebarRepairItem(btn);
+      }
+      const finalLabel=btn.querySelector(':scope > .v101-nav-label');
+      if(finalLabel && !finalLabel.textContent.trim() && label) finalLabel.textContent=label;
+    });
+  }
+  const start=()=>{repairSidebar();setTimeout(repairSidebar,80);setTimeout(repairSidebar,350)};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>

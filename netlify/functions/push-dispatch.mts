@@ -51,7 +51,13 @@ export default async () => {
     const record = await store.get(blob.key, { type: "json" }) as DeviceRecord | null;
     if (!record?.subscription) continue;
 
-    const sent = record.sent && typeof record.sent === "object" ? record.sent : {};
+    // Keep dispatch acknowledgements separate from the mutable device record.
+    // push-register may replace schedules/subscription while notification sends are
+    // in flight; writing only this key prevents dispatch from restoring stale data.
+    const sentKey = `sent/${record.deviceId}`;
+    const persistedSent = await store.get(sentKey, { type: "json" }) as Record<string,string> | null;
+    const legacySent = record.sent && typeof record.sent === "object" ? record.sent : {};
+    const sent = { ...legacySent, ...(persistedSent || {}) };
     const schedules = Array.isArray(record.schedules) ? record.schedules : [];
     let changed = false;
     let invalid = false;
@@ -78,17 +84,25 @@ export default async () => {
 
     if (invalid) {
       await store.delete(blob.key);
+      await store.delete(sentKey);
       continue;
     }
 
     if (changed) {
-      const recent = Object.entries(sent)
+      // Re-read only the acknowledgement key before committing. This merges any
+      // acknowledgements written by an overlapping dispatch without touching the
+      // latest schedules, subscription, timezone, owner, or other device fields.
+      const latestSent = await store.get(sentKey, { type: "json" }) as Record<string,string> | null;
+      const mergedSent: Record<string,string> = { ...(latestSent || {}) };
+      for (const [id, at] of Object.entries(sent)) {
+        const current = mergedSent[id];
+        if (!current || Date.parse(at) > Date.parse(current)) mergedSent[id] = at;
+      }
+      const recent = Object.entries(mergedSent)
         .filter(([,at]) => Date.parse(at)>now-48*60*60*1000)
         .sort((a,b) => String(b[1]).localeCompare(String(a[1])))
         .slice(0, 2000);
-      record.sent = Object.fromEntries(recent);
-      record.updatedAt = new Date().toISOString();
-      await store.setJSON(blob.key, record);
+      await store.setJSON(sentKey, Object.fromEntries(recent));
     }
   }
 };

@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "file": "app.eb77be6dc78f73dfa545.html",
-  "sha256": "eb77be6dc78f73dfa5457092849ab8f1bb2a60ede82d5e5949d2ebe2aefcc3f8",
-  "bytes": 3231809,
+  "file": "app.2c7c91e4c6e59ecda719.html",
+  "sha256": "2c7c91e4c6e59ecda71965bd24729fec3474378e996149dd2da95f93f25dc958",
+  "bytes": 3311514,
   "parts": [
     "app-parts/part-001.html",
     "app-parts/part-002.html",
@@ -25,5 +25,5 @@
     "js/password-vault.js",
     "js/ui-polish.js"
   ],
-  "subject": "Performance: curated startup, lifecycle observers and lazy Bible data"
+  "subject": "Improve contrast, touch targets, and safer dialogs"
 }

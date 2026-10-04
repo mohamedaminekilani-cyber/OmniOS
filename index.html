@@ -292,7 +292,7 @@ function carryLoaderIntoApp(html){
     }
     const activeKey=new URL('./__active_release__',location.href).href;
     const dismissedKey='omnios_update_dismissed_v1';
-    let currentManifest=null,checkingUpdate=false,promptingSha='';
+    let currentManifest=null,checkingUpdate=false,promptingSha='',updatePromptTimer=0;
 
     async function installed(){
       const pointer=await releaseCache.match(activeKey);if(!pointer)return null;
@@ -371,29 +371,35 @@ function carryLoaderIntoApp(html){
       if(document.getElementById('omnios-update-prompt-style'))return;
       const st=document.createElement('style');st.id='omnios-update-prompt-style';
       st.textContent=
-        '#omnios-update-prompt{position:fixed;z-index:2147483000;right:18px;bottom:18px;width:min(390px,calc(100vw - 24px));font-family:inherit;color:var(--text-primary,#f4f4f5);background:color-mix(in srgb,var(--bg-surface,#18181b) 94%,#000 6%);border:1px solid var(--border-light,#3f3f46);border-radius:18px;box-shadow:0 22px 64px rgba(0,0,0,.44);padding:14px;display:grid;grid-template-columns:42px minmax(0,1fr);gap:11px;animation:omniosUpdateIn .22s ease both;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}'+
+        '#omnios-update-prompt{position:fixed;z-index:2147483500;right:18px;bottom:18px;width:min(390px,calc(100vw - 24px));max-height:calc(100dvh - 36px);overflow:auto;overscroll-behavior:contain;isolation:isolate;pointer-events:auto;touch-action:manipulation;-webkit-text-size-adjust:100%;font-family:inherit;font-size:16px;color:var(--text-primary,#f4f4f5);background:color-mix(in srgb,var(--bg-surface,#18181b) 96%,#000 4%);border:1px solid var(--border-light,#3f3f46);border-radius:18px;box-shadow:0 22px 64px rgba(0,0,0,.44);padding:14px;display:grid;grid-template-columns:42px minmax(0,1fr);gap:11px;animation:omniosUpdateIn .22s ease both;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}'+
         '#omnios-update-prompt .oup-icon{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent-cyan,#06b6d4) 15%,var(--bg-elevated,#27272a));color:var(--accent-cyan,#06b6d4);border:1px solid color-mix(in srgb,var(--accent-cyan,#06b6d4) 28%,var(--border-color,#27272a))}'+
         '#omnios-update-prompt .oup-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}'+
-        '#omnios-update-prompt .oup-main{min-width:0}#omnios-update-prompt .oup-kicker{font-size:.58rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-cyan,#06b6d4)}'+
-        '#omnios-update-prompt .oup-title{font-size:.88rem;font-weight:800;margin-top:3px}#omnios-update-prompt .oup-subject{font-size:.72rem;line-height:1.45;color:var(--text-secondary,#a1a1aa);margin-top:4px;overflow-wrap:anywhere}'+
-        '#omnios-update-prompt .oup-meta{font-size:.56rem;color:var(--text-muted,#71717a);margin-top:5px}#omnios-update-prompt .oup-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:11px}'+
-        '#omnios-update-prompt .oup-btn{min-height:38px;border-radius:10px;border:1px solid var(--border-color,#27272a);background:var(--bg-elevated,#27272a);color:var(--text-primary,#f4f4f5);font:inherit;font-size:.68rem;font-weight:750;padding:0 12px;cursor:pointer}'+
+        '#omnios-update-prompt .oup-main{min-width:0}#omnios-update-prompt .oup-kicker{font-size:10px;line-height:1.2;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-cyan,#06b6d4)}'+
+        '#omnios-update-prompt .oup-title{font-size:15px;line-height:1.25;font-weight:800;margin-top:3px}#omnios-update-prompt .oup-subject{font-size:12px;line-height:1.4;color:var(--text-secondary,#a1a1aa);margin-top:4px;overflow-wrap:anywhere}'+
+        '#omnios-update-prompt .oup-meta{font-size:10px;line-height:1.3;color:var(--text-muted,#71717a);margin-top:5px}#omnios-update-prompt .oup-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:11px}'+
+        '#omnios-update-prompt .oup-btn{min-height:38px;border-radius:10px;border:1px solid var(--border-color,#27272a);background:var(--bg-elevated,#27272a);color:var(--text-primary,#f4f4f5);font:inherit;font-size:13px;font-weight:750;padding:0 12px;cursor:pointer;pointer-events:auto;touch-action:manipulation}'+
         '#omnios-update-prompt .oup-btn.primary{background:var(--accent-cyan,#06b6d4);border-color:var(--accent-cyan,#06b6d4);color:#001014}#omnios-update-prompt .oup-btn:disabled{opacity:.58;cursor:wait}'+
         '@keyframes omniosUpdateIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}'+
-        '@media(max-width:760px){#omnios-update-prompt{left:10px;right:10px;bottom:calc(72px + env(safe-area-inset-bottom));width:auto;border-radius:16px;padding:12px;grid-template-columns:38px minmax(0,1fr)}#omnios-update-prompt .oup-icon{width:38px;height:38px;border-radius:11px}#omnios-update-prompt .oup-actions{display:grid;grid-template-columns:1fr 1fr}#omnios-update-prompt .oup-btn{width:100%;min-height:42px}}';
+        '@media(max-width:760px){#omnios-update-prompt{left:8px;right:8px;bottom:calc(var(--ux-bottomnav-h,72px) + 8px);width:auto;max-height:min(220px,calc(100dvh - var(--ux-bottomnav-h,72px) - env(safe-area-inset-top) - 24px));padding:10px 11px;border-radius:14px;grid-template-columns:34px minmax(0,1fr);gap:9px}#omnios-update-prompt .oup-icon{width:34px;height:34px;border-radius:10px}#omnios-update-prompt .oup-icon svg{width:18px;height:18px}#omnios-update-prompt .oup-title{font-size:14px}#omnios-update-prompt .oup-subject{font-size:11px;line-height:1.35;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}#omnios-update-prompt .oup-meta{font-size:9px;margin-top:3px}#omnios-update-prompt .oup-actions{display:grid;grid-template-columns:1fr 1.15fr;gap:6px;margin-top:8px}#omnios-update-prompt .oup-btn{width:100%;min-height:38px;font-size:12px;padding:0 8px}}';
       document.head.appendChild(st);
     }
 
-    function showUpdatePrompt(m){
+    function showUpdatePrompt(m,text){
       if(!m||m.sha256===currentManifest?.sha256)return;
+      const busy=!!document.querySelector('#v35-page-launcher.open,.modal-overlay.active,.omni-sync-overlay,.omni-assistant-panel.open,#welcome63.open');
+      if(busy){
+        clearTimeout(updatePromptTimer);
+        updatePromptTimer=setTimeout(()=>showUpdatePrompt(m,text),500);
+        return;
+      }
       try{if(sessionStorage.getItem(dismissedKey)===m.sha256)return}catch(_){}
       if(promptingSha===m.sha256&&document.getElementById('omnios-update-prompt'))return;
       promptingSha=m.sha256;
       ensureUpdateStyle();
       document.getElementById('omnios-update-prompt')?.remove();
-      const card=document.createElement('aside');card.id='omnios-update-prompt';card.setAttribute('role','status');card.setAttribute('aria-live','polite');
+      const card=document.createElement('aside');card.id='omnios-update-prompt';card.setAttribute('role','dialog');card.setAttribute('aria-modal','false');card.setAttribute('aria-labelledby','omnios-update-title');
       const shortCommit=String(m.commit||'').slice(0,7);
-      card.innerHTML='<div class="oup-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path></svg></div><div class="oup-main"><div class="oup-kicker">New update available</div><div class="oup-title">Second Brain is ready to update</div><div class="oup-subject"></div><div class="oup-meta"></div><div class="oup-actions"><button type="button" class="oup-btn" data-update-later>Later</button><button type="button" class="oup-btn primary" data-update-now>Update now</button></div></div>';
+      card.innerHTML='<div class="oup-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path></svg></div><div class="oup-main"><div class="oup-kicker">New update available</div><div class="oup-title" id="omnios-update-title">Second Brain is ready to update</div><div class="oup-subject"></div><div class="oup-meta"></div><div class="oup-actions"><button type="button" class="oup-btn" data-update-later>Later</button><button type="button" class="oup-btn primary" data-update-now>Update now</button></div></div>';
       card.querySelector('.oup-subject').textContent=updateSubject(m);
       card.querySelector('.oup-meta').textContent=shortCommit?'Build '+shortCommit:'A newer build is ready';
       card.querySelector('[data-update-later]').onclick=()=>{
@@ -404,9 +410,18 @@ function carryLoaderIntoApp(html){
         const btn=e.currentTarget,later=card.querySelector('[data-update-later]');
         btn.disabled=true;later.disabled=true;btn.textContent='Updating…';
         try{
-          await releaseCache.put(activeKey,new Response(JSON.stringify(m),{headers:{'Content-Type':'application/json'}}));
+          if(!text||!await verified(m,text))throw Error('Update payload could not be verified');
+          const releaseUrl=new URL(m.file,location.href).href;
+          await cacheRelease(releaseUrl,new Response(text,{headers:{'Content-Type':'text/html'}}));
+          await cacheRelease(activeKey,new Response(JSON.stringify(m),{headers:{'Content-Type':'application/json'}}));
+          currentManifest=m;promptingSha='';
+          try{sessionStorage.removeItem(dismissedKey)}catch(_){}
           try{const reg=await navigator.serviceWorker?.getRegistration?.();await reg?.update?.()}catch(_){}
-          location.reload();
+          card.remove();
+          const nextHtml=carryLoaderIntoApp(text);
+          document.open();
+          document.write(nextHtml);
+          document.close();
         }catch(err){
           btn.disabled=false;later.disabled=false;btn.textContent='Update now';
           console.warn('Could not activate update',err);
@@ -420,7 +435,7 @@ function carryLoaderIntoApp(html){
       checkingUpdate=true;
       try{
         const next=await fetchLatest();
-        if(next.m.sha256!==currentManifest.sha256)showUpdatePrompt(next.m);
+        if(next.m.sha256!==currentManifest.sha256)showUpdatePrompt(next.m,next.text);
       }catch(e){
         console.info('Update check skipped',e.message);
       }finally{

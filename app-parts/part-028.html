@@ -11594,10 +11594,8 @@ window.OmniDialog={confirm:(message,opts={})=>open('confirm',message,opts),alert
         setTimeout(syncTitle,40);
       }
     },true);
-    const host=document.querySelector('.view-container');
-    if(host && window.MutationObserver){
+    if(window.MutationObserver){
       const mo=new MutationObserver(syncTitle);
-      mo.observe(host,{subtree:false,childList:false,attributes:false});
       document.querySelectorAll('.view').forEach(v=>mo.observe(v,{attributes:true,attributeFilter:['class']}));
     }
   }

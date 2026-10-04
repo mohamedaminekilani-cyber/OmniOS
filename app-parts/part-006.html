@@ -338,6 +338,146 @@ window.renderOrganizeV40=renderOrganize40;window.openGroceryShopV40=openGroceryS
 @media(max-width:820px){.nut-hero,.nut-today-grid,.nut-insights-grid{grid-template-columns:1fr}.nut-library-grid{grid-template-columns:repeat(2,1fr)}.nut-library-toolbar{grid-template-columns:1fr 1fr}.nut-library-toolbar .search-input{grid-column:1/-1;width:100%}.nut-slot-columns{grid-template-columns:1fr}.nut-slot-col+ .nut-slot-col{border-left:0;border-top:1px solid var(--border-color)}.nut-week{grid-template-columns:repeat(7,minmax(120px,1fr))}}
 @media(max-width:520px){.nut-surface{padding:13px}.nut-kpis{grid-template-columns:repeat(2,1fr)}.nut-library-grid{grid-template-columns:1fr}.nut-prep-grid{grid-template-columns:1fr}.nut-library-toolbar{grid-template-columns:1fr}.nut-form-grid{grid-template-columns:1fr}.nut-form-grid .full{grid-column:auto}.nut-tabs{width:100%}.nut-tab{flex:1;padding-inline:8px}.nut-hero-actions .btn{flex:1}.nut-water{align-items:flex-start}.nut-bar-row{grid-template-columns:72px 1fr 50px}.nut-ingredient-row{grid-template-columns:minmax(0,1fr) 90px 36px}}
 </style>
+
+<style id="omnios-v98-nutrition-today-organization">
+/* Nutrition Today hierarchy: summary across top, logging primary, tools secondary. */
+#view-diet .nut-dashboard-v94{
+  display:grid!important;
+  grid-template-columns:minmax(0,2.15fr) minmax(230px,.72fr)!important;
+  grid-template-areas:
+    "summary summary"
+    "logged tools"!important;
+  gap:12px!important;
+  align-items:start!important;
+}
+#view-diet .nut-dashboard-main-v94{display:contents!important}
+#view-diet .nut-body-targets-v94{
+  grid-area:summary!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1.55fr) minmax(300px,.85fr)!important;
+  gap:12px!important;
+  align-items:stretch!important;
+}
+#view-diet .nut-body-overview-v94{
+  min-height:210px!important;
+  padding:15px!important;
+}
+#view-diet .nut-body-energy-v94{margin:7px 0 10px!important}
+#view-diet .nut-body-energy-v94 strong{font-size:1.55rem!important}
+#view-diet .nut-macro-ring-v94{width:54px!important;height:54px!important}
+#view-diet .nut-macro-ring-v94:after{inset:6px!important}
+#view-diet .nut-target-grid-v94{
+  grid-template-columns:1fr 1fr!important;
+  gap:8px!important;
+}
+#view-diet .nut-target-card-v94{
+  min-height:0!important;
+  height:100%!important;
+  padding:11px!important;
+}
+#view-diet .nut-meal-rail-v94{
+  grid-area:logged!important;
+  display:block!important;
+  min-width:0!important;
+  padding:14px!important;
+}
+#view-diet .nut-meal-rail-head-v94{
+  padding-bottom:10px!important;
+  margin-bottom:0!important;
+  border-bottom:1px solid var(--border-color);
+}
+#view-diet .nut-meal-rail-v94{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px 12px!important;
+}
+#view-diet .nut-meal-rail-head-v94{grid-column:1/-1!important}
+#view-diet .nut-meal-card-v94{
+  margin:0!important;
+  padding:11px!important;
+  border:1px solid var(--border-color)!important;
+  border-radius:12px!important;
+  background:var(--bg-base)!important;
+}
+#view-diet .nut-meal-card-v94:first-of-type{border-top:1px solid var(--border-color)!important}
+#view-diet .nut-dashboard-main-v94>section:last-child{
+  grid-area:tools!important;
+  min-width:0!important;
+}
+#view-diet .nut-dashboard-main-v94>section:last-child .nut-v94-section-head{
+  margin-bottom:8px!important;
+}
+#view-diet .nut-activity-grid-v94{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:7px!important;
+}
+#view-diet .nut-activity-card-v94,
+#view-diet .nut-activity-card-v94:last-child{
+  grid-column:auto!important;
+  min-height:76px!important;
+  padding:11px!important;
+  border-radius:12px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:10px!important;
+}
+#view-diet .nut-activity-card-v94:after{display:none!important}
+#view-diet .nut-activity-card-v94 h5{
+  font-size:.76rem!important;
+  max-width:none!important;
+}
+#view-diet .nut-activity-card-v94 p{
+  margin-top:4px!important;
+  font-size:.54rem!important;
+  max-width:none!important;
+}
+#view-diet .nut-activity-stat-v94{
+  font-size:.62rem!important;
+  white-space:nowrap!important;
+  padding:6px 8px!important;
+  border-radius:9px!important;
+  background:var(--bg-elevated)!important;
+}
+@media(max-width:1100px){
+  #view-diet .nut-dashboard-v94{
+    grid-template-columns:1fr!important;
+    grid-template-areas:
+      "summary"
+      "logged"
+      "tools"!important;
+  }
+  #view-diet .nut-dashboard-main-v94>section:last-child .nut-activity-grid-v94{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  #view-diet .nut-activity-card-v94,
+  #view-diet .nut-activity-card-v94:last-child{
+    grid-template-columns:1fr!important;
+    align-content:space-between!important;
+    min-height:104px!important;
+  }
+  #view-diet .nut-activity-stat-v94{justify-self:start!important}
+}
+@media(max-width:820px){
+  #view-diet .nut-body-targets-v94{grid-template-columns:1fr!important}
+  #view-diet .nut-body-overview-v94{min-height:220px!important}
+  #view-diet .nut-target-grid-v94{grid-template-columns:1fr 1fr!important}
+  #view-diet .nut-meal-rail-v94{grid-template-columns:1fr!important}
+  #view-diet .nut-dashboard-main-v94>section:last-child .nut-activity-grid-v94{grid-template-columns:1fr!important}
+  #view-diet .nut-activity-card-v94,
+  #view-diet .nut-activity-card-v94:last-child{
+    grid-template-columns:minmax(0,1fr) auto!important;
+    min-height:70px!important;
+  }
+}
+@media(max-width:520px){
+  #view-diet .nut-target-grid-v94{grid-template-columns:1fr!important}
+  #view-diet .nut-body-overview-v94{min-height:205px!important}
+  #view-diet .nut-activity-card-v94,
+  #view-diet .nut-activity-card-v94:last-child{min-height:66px!important}
+}
+</style>
 <script id="omnios-v41-nutrition-js">
 (function(){
 'use strict';

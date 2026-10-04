@@ -292,7 +292,7 @@ function carryLoaderIntoApp(html){
     }
     const activeKey=new URL('./__active_release__',location.href).href;
     const dismissedKey='omnios_update_dismissed_v1';
-    let currentManifest=null,checkingUpdate=false,promptingSha='';
+    let currentManifest=null,checkingUpdate=false,promptingSha='',updatePromptTimer=0;
 
     async function installed(){
       const pointer=await releaseCache.match(activeKey);if(!pointer)return null;
@@ -386,6 +386,12 @@ function carryLoaderIntoApp(html){
 
     function showUpdatePrompt(m,text){
       if(!m||m.sha256===currentManifest?.sha256)return;
+      const busy=!!document.querySelector('#v35-page-launcher.open,.modal-overlay.active,.omni-sync-overlay,.omni-assistant-panel.open,#welcome63.open');
+      if(busy){
+        clearTimeout(updatePromptTimer);
+        updatePromptTimer=setTimeout(()=>showUpdatePrompt(m,text),500);
+        return;
+      }
       try{if(sessionStorage.getItem(dismissedKey)===m.sha256)return}catch(_){}
       if(promptingSha===m.sha256&&document.getElementById('omnios-update-prompt'))return;
       promptingSha=m.sha256;

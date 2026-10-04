@@ -34,6 +34,7 @@ test('update prompt is mobile-safe and applies the verified build without relyin
   const source=fs.readFileSync('index.html','utf8');
   assert.match(source,/bottom:calc\(var\(--ux-bottomnav-h,72px\) \+ 8px\)/);
   assert.match(source,/showUpdatePrompt\(next\.m,next\.text\)/);
+  assert.match(source,/#v35-page-launcher\.open/);
   assert.match(source,/if\(!text\|\|!await verified\(m,text\)\)throw Error/);
   assert.match(source,/const nextHtml=carryLoaderIntoApp\(text\)/);
   assert.match(source,/document\.write\(nextHtml\)/);

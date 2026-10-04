@@ -29,3 +29,13 @@ test('atomic deployment loads the verified application',async()=>{const r=await 
 test('source-hosted Pages assembles exactly the same verified application',async()=>{const r=await launch({source:true});assert.ok(r.written.includes('function saveState()'));assert.equal(r.failure,'');assert.ok(manifest.parts.every(p=>r.requests.includes(p)));assert.ok(manifest.modules.every(p=>r.requests.includes(p)))});
 test('a corrupted release never executes in either deployment format',async()=>{for(const source of [false,true]){const r=await launch({source,corrupt:true});assert.equal(r.written,'');assert.match(r.failure,/checksum/i)}});
 test('disabled cache and malformed offline pointer do not block online startup',async()=>{for(const options of [{cacheFailure:true},{badPointer:true}]){const r=await launch(options);assert.ok(r.written.includes('function saveState()'));assert.equal(r.failure,'')}});
+
+test('update prompt is mobile-safe and applies the verified build without relying on reload',()=>{
+  const source=fs.readFileSync('index.html','utf8');
+  assert.match(source,/bottom:calc\(var\(--ux-bottomnav-h,72px\) \+ 8px\)/);
+  assert.match(source,/showUpdatePrompt\(next\.m,next\.text\)/);
+  assert.match(source,/if\(!text\|\|!await verified\(m,text\)\)throw Error/);
+  assert.match(source,/const nextHtml=carryLoaderIntoApp\(text\)/);
+  assert.match(source,/document\.write\(nextHtml\)/);
+  assert.doesNotMatch(source,/data-update-now[^]*?location\.reload\(\)/);
+});

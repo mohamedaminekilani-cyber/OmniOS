@@ -1719,27 +1719,7 @@ document.documentElement.dataset.omniosVersion=VERSION;window.OmniBuild={version
 
 <!-- Second Brain v62.2: canonical state + one Routine runtime + controlled first paint. -->
 
-<script id="omnios-v62-canonical-nav-js">
-(function(){
-'use strict';
-const VERSION='62.2';
-function initDesktop(){
-  const nav=document.querySelector('.nav-menu');if(!nav||nav.dataset.v62Bound==='1')return;nav.dataset.v62Bound='1';
-  const heads=[...nav.querySelectorAll(':scope > .nav-section')];
-  heads.forEach(h=>{
-    h.classList.add('v35-nav-section');h.setAttribute('role','button');h.tabIndex=0;
-    const key='v62_nav_'+(h.dataset.v35Section||h.textContent.trim());const members=[];let n=h.nextElementSibling;
-    while(n&&!n.classList.contains('nav-section')){if(n.classList.contains('nav-item'))members.push(n);n=n.nextElementSibling}
-    const apply=collapsed=>{h.classList.toggle('is-collapsed',collapsed);members.forEach(x=>x.classList.toggle('v35-section-hidden',collapsed));try{localStorage.setItem(key,collapsed?'0':'1')}catch(_){}};
-    let collapsed=false;try{collapsed=localStorage.getItem(key)==='0'}catch(_){}apply(collapsed);
-    const toggle=()=>apply(!h.classList.contains('is-collapsed'));h.addEventListener('click',toggle);h.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}});
-  });
-}
-function stamp(){document.documentElement.dataset.omniosVersion=VERSION;window.OmniBuild={version:VERSION,name:'Unified Core — Clean Startup + Routine Persistence'};document.title='Second Brain v62.2 — Clean Startup'}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{initDesktop();stamp();setTimeout(stamp,400)},{once:true});else{initDesktop();stamp();setTimeout(stamp,400)}
-window.addEventListener('pageshow',stamp);
-})();
-</script>
+<script id="omnios-v62-canonical-nav-js">/* Legacy sidebar accordion disabled: v101 is the sole sidebar authority. */</script>
 
 <script id="omnios-v624-stable-startup">
 (function(){
@@ -10922,7 +10902,8 @@ html body .view > .v44-page-cover-shell:has(.v44-page-cover-empty){
 <script id="omnios-v101-reference-sidebar-js">
 (function(){
 'use strict';
-if(window.__omniSidebar101)return;
+if(document.documentElement.dataset.omniSidebar101==='1')return;
+document.documentElement.dataset.omniSidebar101='1';
 window.__omniSidebar101=true;
 
 const GROUP_KEY='omnios_sidebar_groups_v101';
@@ -11503,3 +11484,125 @@ window.OmniDialog={confirm:(message,opts={})=>open('confirm',message,opts),alert
   .sidebar.v101-sidebar .v101-nav-badge{font-size:10px!important}
 }
 </style>
+
+
+<style id="omnios-v106-sidebar-title-authority">
+/* v106 — one sidebar system + guaranteed visible page titles */
+.sidebar.v101-sidebar .logo > h1,
+.sidebar.v101-sidebar .logo > p,
+.sidebar.v101-sidebar .nav-menu > .nav-section{
+  display:none!important;
+}
+
+/* Never allow legacy mobile rules or theme overrides to erase the current page title. */
+#view-title.topbar-title,
+.topbar #view-title{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  color:var(--text-primary)!important;
+  -webkit-text-fill-color:var(--text-primary)!important;
+  font-size:.92rem!important;
+  font-weight:780!important;
+  line-height:1.2!important;
+  min-width:0!important;
+}
+
+/* Page-local headings stay visible even when older module CSS is still present. */
+.view.active :is(
+  .v35-page-head h3,.v43-page-head h3,.v55-page-head h3,.v58-page-head h3,
+  .dashboard-toolbar h3,.habit-toolbar h3,.notes-toolbar h3,
+  .finance-hero h3,.workout-hero h3,.org-hero h3
+){
+  visibility:visible!important;
+  opacity:1!important;
+  color:var(--text-primary)!important;
+  -webkit-text-fill-color:var(--text-primary)!important;
+}
+
+@media(max-width:760px){
+  #view-title.topbar-title,
+  .topbar #view-title{
+    flex:1 1 auto!important;
+    width:auto!important;
+    max-width:none!important;
+    padding-inline:4px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  /* The new grouped drawer owns all sidebar presentation on phones. */
+  .sidebar.v101-sidebar .nav-menu > .nav-section,
+  .sidebar.v101-sidebar .nav-item > .v35-nav-emoji,
+  .sidebar.v101-sidebar .nav-item > .v48-nav-icon,
+  .sidebar.v101-sidebar .nav-item > .v58-nav-icon,
+  .sidebar.v101-sidebar .nav-item > .nav-icon,
+  .sidebar.v101-sidebar .nav-item > .icon-fallback{
+    display:none!important;
+  }
+}
+</style>
+
+<script id="omnios-v106-sidebar-title-authority-js">
+(function(){
+  'use strict';
+
+  const titles={
+    today:'Today',dashboard:'Dashboard',inbox:'Inbox',planner:'Planner',projects:'Projects',
+    routine:'Routine','master-calendar':'Calendar',tasks:'Tasks',habits:'Habits',bible:'Bible',
+    workout:'Workout',diet:'Nutrition',focus:'Focus',budget:'Finance','life-hub':'Life Hub',
+    notes:'Notes',grocery:'Grocery',wishlist:'Wishlist',goals:'Goals',pantry:'Pantry',
+    reminders:'Reminders','data-center':'Data Center',activity:'Activity',templates:'Templates',
+    relations:'Relations',automations:'Automations',studio:'Studio',passwords:'Passwords',
+    settings:'Settings',help:'Help'
+  };
+
+  function syncTitle(){
+    const title=document.getElementById('view-title');
+    if(!title)return;
+    const active=document.querySelector('.view.active')?.id?.replace(/^view-/,'');
+    if(active && titles[active] && title.textContent.trim()!==titles[active]){
+      title.textContent=titles[active];
+    }
+  }
+
+  function ensureModernSidebar(){
+    const sidebar=document.querySelector('.sidebar');
+    if(!sidebar)return;
+    /* If a release was hot-swapped in the same Window, stale global guards can
+       survive document.write. Re-run the current document's sidebar authority. */
+    if(!sidebar.classList.contains('v101-sidebar')){
+      document.documentElement.dataset.omniSidebar101='';
+      window.__omniSidebar101=false;
+      const script=document.getElementById('omnios-v101-reference-sidebar-js');
+      if(script && !document.getElementById('omnios-v106-sidebar-reloader')){
+        const clone=document.createElement('script');
+        clone.id='omnios-v106-sidebar-reloader';
+        clone.textContent=script.textContent;
+        document.body.appendChild(clone);
+      }
+    }
+  }
+
+  function start(){
+    ensureModernSidebar();
+    syncTitle();
+    document.addEventListener('click',e=>{
+      if(e.target.closest('.nav-item[data-view],.mobile-nav [data-mobile-view],[data-v35-more]')){
+        requestAnimationFrame(syncTitle);
+        setTimeout(syncTitle,40);
+      }
+    },true);
+    const host=document.querySelector('.view-container');
+    if(host && window.MutationObserver){
+      const mo=new MutationObserver(syncTitle);
+      mo.observe(host,{subtree:false,childList:false,attributes:false});
+      document.querySelectorAll('.view').forEach(v=>mo.observe(v,{attributes:true,attributeFilter:['class']}));
+    }
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();
+</script>

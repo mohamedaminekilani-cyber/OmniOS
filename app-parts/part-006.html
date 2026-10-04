@@ -557,6 +557,9 @@ window.renderOrganizeV40=renderOrganize40;window.openGroceryShopV40=openGroceryS
   pointer-events:auto!important;
 }
 </style>
+<style id="omnios-v99-nutrition-icons">
+#view-diet .nut-icon-v99,.modal-overlay .nut-icon-v99{width:16px;height:16px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+</style>
 <script id="omnios-v41-nutrition-js">
 (function(){
 'use strict';
@@ -565,6 +568,13 @@ let tab='today', selected=localDateString(), weekAnchor=new Date();
 let libraryType='foods', libraryLayout='cards', insightRange=14;
 const clone=o=>JSON.parse(JSON.stringify(o));
 const esc=v=>escapeHtml(v==null?'':v);
+const nutritionIconV99=(name,cls='nut-icon-v99')=>{
+  const paths={
+    close:'<path d="m7 7 10 10M17 7 7 17"/>',
+    edit:'<path d="M4 20h4l11-11-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>'
+  };
+  return '<svg class="'+cls+'" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(paths[name]||paths.close)+'</svg>';
+};
 const uid=p=>`${p||'nut'}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
 
 const TUNISIA_FOODS_V3=[
@@ -827,7 +837,7 @@ function entryThumb(it,cls='nut-item-thumb'){return thumbHtml(entryEntity(it),cl
 
 function targetProgress(value,target){if(!target)return '';const pct=Math.max(0,Math.min(130,value/target*100));return `<div class="nut-track ${pct>105?'over':''}"><div style="width:${Math.min(100,pct)}%"></div></div>`}
 function persistWorkspace(){state.settings.diet.workspace={...(state.settings.diet.workspace||{}),tab,libraryLayout,insightRange};try{storage.setItem('omnios_v3_state',JSON.stringify(state))}catch(e){}}
-function modal(id,title,body,wide=false){document.getElementById(id)?.remove();const o=document.createElement('div');o.className='modal-overlay active';o.id=id;o.innerHTML=`<div class="modal ${wide?'nut-modal-wide':''}"><div class="modal-header"><h3 class="modal-title">${esc(title)}</h3><button type="button" class="icon-btn" data-close>${lifeIcon43('delete')}</button></div>${body}</div>`;document.body.appendChild(o);o.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>o.remove());o.onclick=e=>{if(e.target===o)o.remove()};return o}
+function modal(id,title,body,wide=false){document.getElementById(id)?.remove();const o=document.createElement('div');o.className='modal-overlay active';o.id=id;o.innerHTML=`<div class="modal ${wide?'nut-modal-wide':''}"><div class="modal-header"><h3 class="modal-title">${esc(title)}</h3><button type="button" class="icon-btn" data-close>${nutritionIconV99('close')}</button></div>${body}</div>`;document.body.appendChild(o);o.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>o.remove());o.onclick=e=>{if(e.target===o)o.remove()};return o}
 function readImages(files){return Promise.all([...files].filter(f=>f.type.startsWith('image/')).slice(0,4).map(f=>new Promise(res=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=()=>res(null);r.readAsDataURL(f)}))).then(a=>a.filter(Boolean))}
 function nutritionKpis(d){const t=targets();return [['Calories',d.calories,'kcal',t.calories],['Protein',d.protein,'g',t.protein],['Carbs',d.carbs,'g',t.carbs],['Fat',d.fat,'g',t.fat],['Fiber',d.fiber,'g',t.fiber],['Cost',d.cost,state.settings?.diet?.currency||'$ ',null]].map(([label,v,u,target])=>`<div class="nut-kpi"><div class="nut-kpi-label">${label}</div><div class="nut-kpi-value">${label==='Cost'?`${u}${v.toFixed(2)}`:`${label==='Calories'?Math.round(v):v.toFixed(1)}${label==='Calories'?'':' '+u}`}</div><div class="nut-kpi-meta">${target?`target ${Math.round(target)} ${u}`:label==='Cost'?'logged estimate':'no target set'}</div>${target?targetProgress(v,target):''}</div>`).join('')}
 function installNutritionPrimaryClickRouter(sec){
@@ -943,7 +953,7 @@ function renderToday(host){
   host.querySelector('#nut-v94-log')?.addEventListener('click',()=>openEntry('log',selected));
   bindSlotActions(host);
 }
-function renderItem(it,kind,slot,index){const already=kind==='plan'&&(state.dietLog[selected]?.[slot]||[]).some(x=>x.sourcePlanId&&String(x.sourcePlanId)===String(it.id));return `<div class="nut-item">${entryThumb(it)}<div class="nut-item-main"><div class="nut-item-name">${esc(entryName(it))}</div><div class="nut-item-meta">${entryMeta(it)}${already?' · logged':''}</div></div><div class="nut-item-actions">${kind==='plan'?`<button class="nut-mini-btn" title="Log this planned item" data-log-plan="${slot}|${index}">✓</button>`:''}<button class="nut-mini-btn" title="Edit" data-edit-entry="${kind}|${slot}|${index}">${lifeIcon43('edit')}</button><button class="nut-mini-btn" title="Delete" data-del-entry="${kind}|${slot}|${index}">×</button></div></div>`}
+function renderItem(it,kind,slot,index){const already=kind==='plan'&&(state.dietLog[selected]?.[slot]||[]).some(x=>x.sourcePlanId&&String(x.sourcePlanId)===String(it.id));return `<div class="nut-item">${entryThumb(it)}<div class="nut-item-main"><div class="nut-item-name">${esc(entryName(it))}</div><div class="nut-item-meta">${entryMeta(it)}${already?' · logged':''}</div></div><div class="nut-item-actions">${kind==='plan'?`<button class="nut-mini-btn" title="Log this planned item" data-log-plan="${slot}|${index}">✓</button>`:''}<button class="nut-mini-btn" title="Edit" data-edit-entry="${kind}|${slot}|${index}">${nutritionIconV99('edit')}</button><button class="nut-mini-btn" title="Delete" data-del-entry="${kind}|${slot}|${index}">×</button></div></div>`}
 function bindSlotActions(host){host.querySelectorAll('[data-add-plan]').forEach(b=>b.onclick=()=>openEntry('plan',selected,b.dataset.addPlan));host.querySelectorAll('[data-add-log]').forEach(b=>b.onclick=()=>openEntry('log',selected,b.dataset.addLog));host.querySelectorAll('[data-edit-entry]').forEach(b=>{b.onclick=()=>{const [kind,slot,index]=b.dataset.editEntry.split('|');openEntry(kind,selected,slot,Number(index))}});host.querySelectorAll('[data-del-entry]').forEach(b=>{b.onclick=()=>{const [kind,slot,index]=b.dataset.delEntry.split('|'),store=kind==='plan'?state.dietPlan:state.dietLog;if(store[selected]?.[slot])store[selected][slot].splice(Number(index),1);saveState()}});host.querySelectorAll('[data-log-plan]').forEach(b=>b.onclick=()=>{const [slot,index]=b.dataset.logPlan.split('|');logPlanned(selected,slot,Number(index))})}
 function copyPlan(from,to){const src=state.dietPlan[from];if(!src){window.toast?.('No plan to copy from the previous day.');return}state.dietPlan[to]=clone(src);Object.values(state.dietPlan[to]).forEach(items=>(items||[]).forEach(i=>i.id=uid('entry')));saveState();window.toast?.('Plan copied')}
 function logPlanned(k,slot,index){const it=state.dietPlan[k]?.[slot]?.[index];if(!it)return;state.dietLog[k]=state.dietLog[k]||{};state.dietLog[k][slot]=state.dietLog[k][slot]||[];if(state.dietLog[k][slot].some(x=>x.sourcePlanId&&String(x.sourcePlanId)===String(it.id))){window.toast?.('Already logged from this planned item.');return}state.dietLog[k][slot].push({...clone(it),id:uid('log'),sourcePlanId:it.id,loggedAt:new Date().toISOString()});saveState()}

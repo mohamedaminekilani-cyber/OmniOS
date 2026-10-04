@@ -11036,6 +11036,9 @@ function decorateItem(btn){
   btn.querySelector('.v101-nav-label').textContent=label;
 }
 
+window.__omniSidebarRepairItem=decorateItem;
+window.__omniSidebarLabels=labels;
+
 function groupNav(nav){
   if(nav.dataset.v102Grouped==='1')return;
   const nodes=[...nav.children],groups=[];
@@ -11096,6 +11099,14 @@ function groupNav(nav){
       head.setAttribute('aria-expanded',next?'false':'true');
       const state=readCollapsed();
       state[key]=next;
+      if(!next && window.matchMedia?.('(max-width:760px)').matches){
+        groups.forEach(other=>{
+          if(other===g)return;
+          other.classList.add('collapsed');
+          other.querySelector('.v101-nav-group-head')?.setAttribute('aria-expanded','false');
+          state[other.dataset.group||'Navigation']=true;
+        });
+      }
       writeCollapsed(state);
     });
   });
@@ -11309,3 +11320,186 @@ window.OmniDialog={confirm:(message,opts={})=>open('confirm',message,opts),alert
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
+
+
+<style id="omnios-v105-mobile-sidebar-authority">
+@media(max-width:760px){
+  /* The grouped sidebar is also used as the mobile drawer. Override the old
+     icon-only 64px sidebar rules instead of letting them hide every label. */
+  .sidebar.v101-sidebar{
+    width:min(92vw,320px)!important;
+    max-width:320px!important;
+    padding:10px!important;
+    gap:9px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    overflow:hidden!important;
+    background:var(--bg-base)!important;
+  }
+  .sidebar.v101-sidebar>.logo{
+    margin:0!important;
+    padding:0!important;
+    text-align:left!important;
+  }
+  .sidebar.v101-sidebar>.logo > :not(.v101-sidebar-profile):not(.v101-sidebar-search){
+    display:none!important;
+  }
+  .sidebar.v101-sidebar .v101-sidebar-profile{
+    display:grid!important;
+    grid-template-columns:48px minmax(0,1fr) 38px!important;
+    align-items:center!important;
+    gap:10px!important;
+    min-height:72px!important;
+    padding:10px!important;
+    border:1px solid var(--border-color)!important;
+    border-radius:16px!important;
+    background:var(--bg-surface)!important;
+  }
+  .sidebar.v101-sidebar .v101-sidebar-avatar{
+    width:48px!important;height:48px!important;border-radius:13px!important;
+    overflow:hidden!important;display:grid!important;place-items:center!important;
+  }
+  .sidebar.v101-sidebar .v101-sidebar-avatar img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
+  .sidebar.v101-sidebar .v101-sidebar-profile-copy strong{
+    display:block!important;font-size:14px!important;line-height:1.2!important;
+    color:var(--text-primary)!important;font-weight:800!important
+  }
+  .sidebar.v101-sidebar .v101-sidebar-profile-copy span{
+    display:block!important;margin-top:4px!important;font-size:11px!important;line-height:1.2!important;
+    color:var(--text-muted)!important
+  }
+  .sidebar.v101-sidebar .v101-sidebar-search-toggle{
+    width:38px!important;height:38px!important;display:grid!important;place-items:center!important;
+    border:0!important;background:transparent!important;color:var(--text-secondary)!important
+  }
+  .sidebar.v101-sidebar .v101-sidebar-search-toggle svg{width:19px!important;height:19px!important}
+
+  .sidebar.v101-sidebar .nav-menu{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    padding:0 2px 4px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    gap:8px!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+  }
+  .sidebar.v101-sidebar .v101-nav-group{
+    width:100%!important;
+    flex:0 0 auto!important;
+    height:auto!important;
+    min-height:0!important;
+    overflow:hidden!important;
+    border:1px solid color-mix(in srgb,var(--v101-group-accent) 20%,var(--border-color))!important;
+    border-radius:15px!important;
+    background:var(--bg-surface)!important;
+  }
+  .sidebar.v101-sidebar .v101-nav-group-head{
+    width:100%!important;
+    min-height:54px!important;
+    padding:9px 12px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+    border:0!important;
+    background:color-mix(in srgb,var(--v101-group-accent) 13%,var(--bg-surface))!important;
+    color:var(--text-primary)!important;
+    font-size:13px!important;
+    text-align:left!important;
+  }
+  .sidebar.v101-sidebar .v101-nav-group-head-main{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important}
+  .sidebar.v101-sidebar .v101-nav-group-icon{
+    width:32px!important;height:32px!important;flex:0 0 32px!important;
+    display:grid!important;place-items:center!important;border-radius:10px!important;
+    color:var(--v101-group-accent)!important;
+  }
+  .sidebar.v101-sidebar .v101-nav-group-icon svg{
+    width:17px!important;height:17px!important;display:block!important;
+    fill:none!important;stroke:currentColor!important
+  }
+  .sidebar.v101-sidebar .v101-nav-group-head-title{
+    display:block!important;
+    font-size:13px!important;line-height:1.2!important;font-weight:760!important;
+    color:var(--text-primary)!important;
+  }
+  .sidebar.v101-sidebar .v101-nav-group-chevron{
+    width:20px!important;height:20px!important;display:grid!important;place-items:center!important;
+    color:var(--text-secondary)!important
+  }
+  .sidebar.v101-sidebar .v101-nav-group-chevron svg{width:15px!important;height:15px!important;display:block!important}
+
+  .sidebar.v101-sidebar .v101-nav-group-body{
+    display:flex!important;
+    flex:0 0 auto!important;
+    flex-direction:column!important;
+    gap:2px!important;
+    height:auto!important;
+    min-height:0!important;
+    padding:6px!important;
+    overflow:visible!important;
+    border-top:1px solid color-mix(in srgb,var(--v101-group-accent) 12%,var(--border-color))!important;
+    background:var(--bg-base)!important;
+  }
+  .sidebar.v101-sidebar .v101-nav-group.collapsed .v101-nav-group-body{display:none!important}
+
+  .sidebar.v101-sidebar .nav-item[data-view]{
+    width:100%!important;
+    height:auto!important;
+    min-height:40px!important;
+    margin:0!important;
+    padding:7px 9px!important;
+    display:grid!important;
+    grid-template-columns:26px minmax(0,1fr) auto!important;
+    align-items:center!important;
+    justify-content:initial!important;
+    gap:9px!important;
+    border:0!important;
+    border-radius:10px!important;
+    background:transparent!important;
+    color:var(--text-secondary)!important;
+    font-size:12px!important;
+    line-height:1.2!important;
+    font-weight:600!important;
+    text-align:left!important;
+    visibility:visible!important;
+    opacity:1!important;
+  }
+  .sidebar.v101-sidebar .nav-item[data-view].active{
+    background:color-mix(in srgb,var(--v101-group-accent) 17%,var(--bg-elevated))!important;
+    color:var(--text-primary)!important;
+    box-shadow:inset 2px 0 0 var(--v101-group-accent)!important;
+    font-weight:760!important;
+  }
+  .sidebar.v101-sidebar .nav-item[data-view] .v101-nav-label{
+    display:block!important;
+    min-width:0!important;
+    visibility:visible!important;
+    opacity:1!important;
+    color:inherit!important;
+    -webkit-text-fill-color:currentColor!important;
+    font-size:12px!important;
+    line-height:1.2!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .sidebar.v101-sidebar .nav-item[data-view] .v101-nav-icon-wrap,
+  .sidebar.v101-sidebar .nav-item[data-view] .v101-nav-svg{
+    width:26px!important;height:26px!important;
+    display:grid!important;place-items:center!important;
+    visibility:visible!important;opacity:1!important;
+    color:var(--text-muted)!important;
+  }
+  .sidebar.v101-sidebar .nav-item[data-view].active .v101-nav-icon-wrap{color:var(--v101-group-accent)!important}
+  .sidebar.v101-sidebar .nav-item[data-view] .v101-nav-icon-wrap svg{
+    width:16px!important;height:16px!important;display:block!important;
+    fill:none!important;stroke:currentColor!important;
+    stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important;
+  }
+  .sidebar.v101-sidebar .v101-nav-badge{font-size:10px!important}
+}
+</style>

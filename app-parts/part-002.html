@@ -515,7 +515,6 @@ document.getElementById('bcat-save-btn').addEventListener('click', () => {
 
 document.getElementById('bcat-delete-btn').addEventListener('click', () => {
     if (!editingBudgetCatId) return;
-    if (!confirm('Delete this category?')) return;
     state.budgetCategories = state.budgetCategories.filter(c => String(c.id) !== String(editingBudgetCatId));
     closeModal('budget-cat-modal');
     saveState();
@@ -556,7 +555,6 @@ document.getElementById('edit-txn-save-btn').addEventListener('click', () => {
 });
 
 document.getElementById('edit-txn-delete-btn').addEventListener('click', () => {
-    if (!confirm('Delete this transaction?')) return;
     state.transactions = state.transactions.filter(t => String(t.id) !== String(editingTxnId));
     closeModal('edit-txn-modal');
     saveState();
@@ -607,7 +605,6 @@ function openWalletModal(walletId = null) {
     };
     if (w) {
         ov.querySelector('#wallet-delete').onclick = () => {
-            if (!confirm(`Delete the "${w.name}" wallet? Transactions logged against it keep their history, they just won't show a wallet tag anymore.`)) return;
             state.wallets = state.wallets.filter(x => String(x.id) !== String(w.id));
             ov.remove(); saveState();
             window.toastUndo && window.toastUndo('Wallet deleted');
@@ -868,7 +865,6 @@ document.getElementById('habit-save-btn').addEventListener('click', () => {
 
 document.getElementById('habit-delete-btn').addEventListener('click', () => {
     if (!editingHabitId) return;
-    if (!confirm('Delete this habit?')) return;
     state.habits = state.habits.filter(h => String(h.id) !== String(editingHabitId));
     closeModal('habit-modal');
     saveState();
@@ -1562,7 +1558,7 @@ async function focusStartGuard(){
 async function focusStopGuard(){
   ensureFocusGuard();
   if(!focusGuardActive())return;
-  if(!confirm("End Focus Guard early?"))return;
+  if(!await window.OmniDialog.confirm("Ending Focus Guard early will remove the active block.",{title:"End Focus Guard?",confirmLabel:"End guard",destructive:true}))return;
   state.focusGuard.blockedUntil=null;
   saveState();renderFocusGuard();
   await focusNativeStop();
@@ -1791,7 +1787,6 @@ document.getElementById('notes-search').addEventListener('input', renderNotes);
 document.getElementById('notes-sort').addEventListener('change', renderNotes);
 
 function deleteNote(id) {
-    if (!confirm('Delete this note?')) return;
     clearTimeout(noteSaveTimer);window.cancelNoteAutosave?.();
     state.notes = state.notes.filter(n => n.id !== id);
     saveState();

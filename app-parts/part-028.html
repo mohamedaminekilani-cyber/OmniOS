@@ -373,7 +373,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       let saved=existing;if(saved)Object.assign(saved,data);else{saved={id:uid(),...data};state.pantry=Array.isArray(state.pantry)?state.pantry:[];state.pantry.push(saved)}
       delete draftStore[draftKey];ov.remove();persist();scheduleThumbPositions();toast(existing?'Pantry item updated.':'Pantry item added.');
     };
-    ov.querySelector('#pf-delete')?.addEventListener('click',()=>{if(!confirm('Delete this pantry item?'))return;state.pantry=(state.pantry||[]).filter(x=>String(x.id)!==String(existing.id));(state.groceryLists||[]).forEach(l=>(l.items||[]).forEach(i=>{if(String(i.pantryItemId||'')===String(existing.id))i.pantryItemId=null}));delete draftStore[key];ov.remove();persist();toast('Pantry item deleted.')});
+    ov.querySelector('#pf-delete')?.addEventListener('click',()=>{state.pantry=(state.pantry||[]).filter(x=>String(x.id)!==String(existing.id));(state.groceryLists||[]).forEach(l=>(l.items||[]).forEach(i=>{if(String(i.pantryItemId||'')===String(existing.id))i.pantryItemId=null}));delete draftStore[key];ov.remove();persist();if(window.toastUndo)window.toastUndo('Pantry item deleted');else toast('Pantry item deleted.')});
     ['#pf-name','#pf-cat','#pf-qty','#pf-unit','#pf-min','#pf-cost','#pf-loc','#pf-exp','#pf-purchase','#pf-opened','#pf-notes'].forEach(sel=>ov.querySelector(sel)?.addEventListener('input',rememberDraft));
     return ov;
   };
@@ -747,7 +747,7 @@ function openGoalModal(id=null){normalizeAll();const g=id!=null?state.goals.find
     const data={name:q('g586-name').value.trim()||'Goal',goalCategory:cat,customCategory:q('g586-custom').value.trim(),progressMode:mode,progressDirection:q('g586-direction').value,startValue:start,currentValue:cur,targetValue:target,unit,status:q('g586-status').value,priority:q('g586-priority').value,targetDate:q('g586-date').value,confidence:clamp(q('g586-confidence').value),lifeAreaId:q('g586-area').value||null,projectId:q('g586-project').value||null,nextAction:q('g586-next').value.trim(),notes:q('g586-notes').value.trim(),milestones:milestones.filter(m=>m.title.trim()),financialSubtype:mode==='currency'||cat==='finance'?q('g586-fin-sub').value:null,categoryId:mode==='currency'||cat==='finance'?(q('g586-budget').value||null):null,linkedWishlistId:mode==='currency'||cat==='finance'?(q('g586-wish').value||null):null,updatedAt:now,createdAt:g?.createdAt||d.createdAt||now,archived:g?.archived||false,images:A(g?.images)};
     if(mode==='milestones'&&data.milestones.length&&data.milestones.every(m=>m.done))data.status='completed';if(mode==='binary'&&data.status==='completed')data.currentValue=1;const temp={...(g||{}),...data};syncLegacy(temp);if(progress(temp)>=100&&mode!=='binary'&&mode!=='milestones'&&target!==start&&data.status==='active')data.status='completed';if(g)Object.assign(g,data);else state.goals.push({id:d.id||uid(),...data});const saved=g||state.goals[state.goals.length-1];syncLegacy(saved);
     A(state.wishlist).forEach(w=>{if(String(w.linkedGoalId||'')===String(saved.id)&&String(w.id)!==String(saved.linkedWishlistId||''))w.linkedGoalId=null});const wish=A(state.wishlist).find(w=>String(w.id)===String(saved.linkedWishlistId||''));if(wish)wish.linkedGoalId=saved.id;closeModal586(ov);saveState();setTimeout(()=>{renderGoalsPage();renderBudgetGoals()},0)};
-  q('g586-delete')?.addEventListener('click',()=>{if(!confirm('Delete this goal?'))return;state.goals=state.goals.filter(x=>String(x.id)!==String(g.id));A(state.wishlist).forEach(w=>{if(String(w.linkedGoalId||'')===String(g.id))w.linkedGoalId=null});closeModal586(ov);saveState();setTimeout(()=>{renderGoalsPage();renderBudgetGoals()},0)});
+  q('g586-delete')?.addEventListener('click',()=>{state.goals=state.goals.filter(x=>String(x.id)!==String(g.id));A(state.wishlist).forEach(w=>{if(String(w.linkedGoalId||'')===String(g.id))w.linkedGoalId=null});closeModal586(ov);saveState();window.toastUndo?.('Goal deleted');setTimeout(()=>{renderGoalsPage();renderBudgetGoals()},0)});
 }
 function updateProgress(id){normalizeAll();const g=state.goals.find(x=>String(x.id)===String(id));if(!g)return;const mode=g.progressMode;let body='';if(mode==='milestones'){body=`<div class="goal586-section"><div class="goal586-section-title">Milestones</div>${A(g.milestones).length?A(g.milestones).map((m,i)=>`<label style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border-color)"><input type="checkbox" data-g586-progress-ms="${i}" ${m.done?'checked':''}><span>${E(m.title)}</span></label>`).join(''):'<div class="goal586-help">Add milestones in Edit Goal first.</div>'}</div>`}else if(mode==='binary'){body=`<label style="display:flex;align-items:center;gap:8px;padding:10px 0"><input type="checkbox" id="g586-progress-done" ${g.status==='completed'?'checked':''}><span>Goal completed</span></label>`}else if(mode==='percent'){body=`<div class="form-group"><label class="form-label">Current progress (%)</label><input type="number" min="0" max="100" class="form-input" id="g586-progress-value" value="${clamp(g.currentValue)}"></div>`}else{body=`<div class="form-group"><label class="form-label">Current value</label><input type="number" step="any" class="form-input" id="g586-progress-value" value="${fmtNum(g.currentValue)}"><div class="goal586-help">Target: ${E(progressText({...g,currentValue:g.targetValue,targetValue:g.targetValue}))}</div></div>`}
   const ov=modal('Update Goal Progress',`${body}<div class="form-group"><label class="form-label">Next action</label><input class="form-input" id="g586-progress-next" value="${E(g.nextAction||'')}"></div><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="g586-progress-status"><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed</option></select></div><div class="modal-footer"><button class="btn" data-close>Cancel</button><button class="btn btn-primary" id="g586-progress-save">Update</button></div>`,false);ov.querySelector('#g586-progress-status').value=g.status||'active';ov.querySelector('#g586-progress-save').onclick=()=>{if(mode==='milestones')ov.querySelectorAll('[data-g586-progress-ms]').forEach(x=>g.milestones[Number(x.dataset.g586ProgressMs)].done=x.checked);else if(mode==='binary')g.status=ov.querySelector('#g586-progress-done').checked?'completed':'active';else g.currentValue=mode==='percent'?clamp(ov.querySelector('#g586-progress-value').value):num(ov.querySelector('#g586-progress-value').value);g.nextAction=ov.querySelector('#g586-progress-next').value.trim();if(mode!=='binary')g.status=ov.querySelector('#g586-progress-status').value;if(mode==='milestones'&&g.milestones.length&&g.milestones.every(m=>m.done))g.status='completed';if(mode!=='milestones'&&mode!=='binary'&&progress(g)>=100)g.status='completed';g.updatedAt=new Date().toISOString();syncLegacy(g);closeModal586(ov);saveState();setTimeout(()=>{renderGoalsPage();renderBudgetGoals()},0)}}
@@ -1687,7 +1687,7 @@ function openEditor611(id=''){
     save();ov.remove();renderRoutinePage();toast(existing?'Routine updated.':'Routine created.');
   };
 }
-function deleteRoutine611(id){const r=getRoutine(id);if(!r)return;if(!confirm(`Delete “${r.name}”? Linked records will remain in their original modules.`))return;const s=stateRef();s.routines=A(s.routines).filter(x=>String(x.id)!==String(id));save();renderRoutinePage()}
+function deleteRoutine611(id){const r=getRoutine(id);if(!r)return;const s=stateRef();s.routines=A(s.routines).filter(x=>String(x.id)!==String(id));save();window.toastUndo?.('Routine deleted');renderRoutinePage()}
 function resetRoutine611(id){const r=getRoutine(id);if(!r)return;delete r.log[cycleKey(r)];save();renderRoutinePage();toast('Current routine cycle reset.')}
 function toggleStep611(rid,iid){const r=getRoutine(rid),i=getStep(r,iid);if(!r||!i)return;const m=cycleMap(r);m[i.id]=!m[i.id];save();if(document.getElementById('view-routine')?.classList.contains('active'))renderRoutinePage()}
 function makeTask611(rid,iid){const r=getRoutine(rid),i=getStep(r,iid);if(!r||!i)return;const s=stateRef();s.entries=A(s.entries);const task={id:Date.now()+Math.random(),title:i.title,category:'routine',status:'todo',importance:'medium',urgency:'not-urgent',date:localKey(),notes:`From routine: ${r.name}${i.notes?'\n'+i.notes:''}`,subtasks:[],linkedIds:[],createdAt:new Date().toISOString(),routineRef:{routineId:r.id,itemId:i.id}};s.entries.push(task);i.linkType='task';i.linkId=task.id;save();renderRoutinePage();toast('Task created and linked to this routine step.')}
@@ -4957,7 +4957,7 @@ window.OmniLocalWifiSync73={disconnect:()=>{stopRelaySession();liveConn?.close()
   --ux-radius:14px;
   --ux-radius-lg:18px;
   --ux-shadow:0 12px 36px rgba(0,0,0,.16);
-  --ux-muted:#92929c;
+  --ux-muted:#a7afbc;
   --ux-divider:color-mix(in srgb,var(--border-light,#3f3f46) 72%,transparent);
   --ux-control-bg:color-mix(in srgb,var(--bg-elevated,#27272a) 78%,var(--bg-base,#0f0f11));
 }
@@ -4967,7 +4967,7 @@ html:not([data-theme="light"]){
   --border-light:#45454f!important;
 }
 html[data-theme="light"]{
-  --text-muted:#626c7b!important;
+  --text-muted:#596474!important;
   --border-color:#d8dde5!important;
   --border-light:#b9c2cf!important;
   --ux-divider:#d8dde5;
@@ -5241,7 +5241,7 @@ th,td{vertical-align:middle}
     box-shadow:none!important;
   }
   .mobile-nav button .nav-label{
-    font-size:.63rem!important;line-height:1.12!important;white-space:nowrap!important;
+    font-size:11px!important;line-height:1.15!important;white-space:nowrap!important;
     overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important;
   }
   .mobile-nav :is(.v48-mobile-icon,.nav-icon){width:20px!important;height:20px!important}
@@ -5255,7 +5255,7 @@ th,td{vertical-align:middle}
   .v35-page-head .text-muted,.v43-page-head .text-muted,.v35-page-head .text-sm,.v43-page-head .text-sm{
     font-size:.75rem!important;line-height:1.48!important;
   }
-  .v35-kicker{font-size:.62rem!important}
+  .v35-kicker{font-size:11px!important}
   .v35-page-actions,.toolbar-group,.dashboard-toolbar,.habit-toolbar,.notes-toolbar{
     width:100%!important;max-width:100%!important;display:flex!important;flex-wrap:nowrap!important;
     overflow-x:auto!important;-webkit-overflow-scrolling:touch;scrollbar-width:none!important;gap:6px!important;
@@ -11162,3 +11162,37 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+
+<style id="omnios-v103-accessibility-authority">
+html:not([data-theme="light"]){--text-muted:#a7afbc!important}
+html[data-theme="light"]{--text-muted:#596474!important}
+@media(pointer:coarse){:root{--ux-touch:44px}}
+@media(max-width:760px){
+  .mobile-nav button .nav-label{font-size:11px!important;line-height:1.15!important}
+  .nav-section,.v35-kicker,.omni-sync-kicker,.bib-atlas-kicker{font-size:11px!important}
+  .text-muted,.settings-row-desc,.mini-item-meta,.list-item-date,.v35-card-sub,.v43-card-sub,.v55-card-sub,.v35-row-meta,.v43-row-meta,.v55-row-meta{font-size:max(11px,.72rem)}
+}
+@media(prefers-contrast:more){
+  html:not([data-theme="light"]){--text-muted:#c2c8d2!important;--border-color:#667085!important;--border-light:#87909f!important}
+  html[data-theme="light"]{--text-muted:#3f4856!important;--border-color:#7c8798!important;--border-light:#667085!important}
+}
+@media(forced-colors:active){.btn,.icon-btn,.nav-item,.card,.modal,.form-input,.form-select,.form-textarea{forced-color-adjust:auto}}
+</style>
+<script id="omnios-v103-dialog-system">
+(function(){
+'use strict';
+if(window.OmniDialog)return;
+let active=null,lastFocus=null,oldOverflow='';
+function closeDialog(value){if(!active)return;const {overlay,resolve}=active;active=null;document.removeEventListener('keydown',onKey,true);document.body.style.overflow=oldOverflow;overlay.remove();try{lastFocus?.focus?.()}catch(_){}resolve(value)}
+function onKey(e){if(!active)return;if(e.key==='Escape'){e.preventDefault();closeDialog(active.kind==='prompt'?null:false);return}if(e.key!=='Tab')return;const items=[...active.overlay.querySelectorAll('button,input,select,textarea,[href],[tabindex]:not([tabindex="-1"])')].filter(x=>!x.disabled&&x.offsetParent!==null);if(!items.length)return;const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}
+function open(kind,message,opts={}){if(active)closeDialog(active.kind==='prompt'?null:false);lastFocus=document.activeElement;oldOverflow=document.body.style.overflow;document.body.style.overflow='hidden';return new Promise(resolve=>{const overlay=document.createElement('div');overlay.className='omni-dialog-overlay';overlay.innerHTML='<section class="omni-dialog" role="dialog" aria-modal="true" aria-labelledby="omni-dialog-title"><div class="omni-dialog-grab" aria-hidden="true"></div><div class="omni-dialog-head"><div><div class="omni-dialog-kicker"></div><h3 id="omni-dialog-title"></h3></div><button type="button" class="icon-btn" data-od-close aria-label="Close">×</button></div><div class="omni-dialog-copy"></div><div class="omni-dialog-field"></div><div class="omni-dialog-actions"></div></section>';const panel=overlay.querySelector('.omni-dialog'),field=overlay.querySelector('.omni-dialog-field'),actions=overlay.querySelector('.omni-dialog-actions');overlay.querySelector('.omni-dialog-kicker').textContent=opts.kicker||'Second Brain';overlay.querySelector('#omni-dialog-title').textContent=opts.title||(kind==='alert'?'Notice':kind==='prompt'?'Enter a value':'Confirm action');overlay.querySelector('.omni-dialog-copy').textContent=String(message||'');let input=null;if(kind==='prompt'){input=document.createElement(opts.multiline?'textarea':'input');input.className=opts.multiline?'form-textarea':'form-input';input.dir='auto';input.value=String(opts.value??'');input.placeholder=String(opts.placeholder||'');field.appendChild(input)}else field.remove();if(kind!=='alert'){const cancel=document.createElement('button');cancel.type='button';cancel.className='btn';cancel.textContent=opts.cancelLabel||'Cancel';cancel.onclick=()=>closeDialog(kind==='prompt'?null:false);actions.appendChild(cancel)}const ok=document.createElement('button');ok.type='button';ok.className=opts.destructive?'btn btn-danger':'btn btn-primary';ok.textContent=opts.confirmLabel||(kind==='alert'?'OK':'Confirm');ok.onclick=()=>closeDialog(kind==='prompt'?input.value:true);actions.appendChild(ok);overlay.querySelector('[data-od-close]').onclick=()=>closeDialog(kind==='prompt'?null:false);overlay.onclick=e=>{if(e.target===overlay)closeDialog(kind==='prompt'?null:false)};let sy=0;panel.addEventListener('touchstart',e=>{sy=e.touches?.[0]?.clientY||0},{passive:true});panel.addEventListener('touchend',e=>{const ey=e.changedTouches?.[0]?.clientY||0;if(ey-sy>90)closeDialog(kind==='prompt'?null:false)},{passive:true});document.body.appendChild(overlay);active={overlay,resolve,kind};document.addEventListener('keydown',onKey,true);requestAnimationFrame(()=>{(input||ok).focus()})})}
+window.OmniDialog={confirm:(message,opts={})=>open('confirm',message,opts),alert:(message,opts={})=>open('alert',message,opts),prompt:(message,opts={})=>open('prompt',message,opts)};
+})();
+</script>
+<style id="omnios-v103-dialog-css">
+.omni-dialog-overlay{position:fixed;inset:0;z-index:2147483550;display:grid;place-items:center;padding:18px;background:rgba(2,6,12,.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.omni-dialog{width:min(460px,100%);max-height:min(90dvh,720px);overflow:auto;border:1px solid var(--border-light);border-radius:20px;background:var(--bg-surface);box-shadow:0 28px 90px rgba(0,0,0,.5);padding:16px}
+.omni-dialog-grab{display:none}.omni-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.omni-dialog-head h3{margin:3px 0 0;font-size:1.05rem}.omni-dialog-kicker{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-cyan)}
+.omni-dialog-copy{margin-top:12px;color:var(--text-secondary);font-size:.86rem;line-height:1.55}.omni-dialog-field{margin-top:12px}.omni-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.omni-dialog-actions .btn{min-width:96px}
+@media(max-width:760px){.omni-dialog-overlay{align-items:end;padding:0}.omni-dialog{width:100%;max-height:82dvh;border-radius:22px 22px 0 0;padding:10px 14px max(14px,env(safe-area-inset-bottom))}.omni-dialog-grab{display:block;width:38px;height:4px;margin:0 auto 10px;border-radius:99px;background:var(--border-light)}.omni-dialog-actions{display:grid;grid-template-columns:1fr 1fr}.omni-dialog-actions .btn{width:100%;min-height:44px}}
+</style>

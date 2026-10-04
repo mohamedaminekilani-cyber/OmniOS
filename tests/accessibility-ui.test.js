@@ -39,3 +39,12 @@ test('high-impact irreversible actions use themed dialog instead of native dialo
   assert.match(p4,/Restore this backup\?[^]{0,220}confirmLabel:'Restore'/);
   assert.match(p4,/OmniDialog\.alert\('Could not import backup:/);
 });
+
+test('mobile page launcher labels remain visible above legacy icon layers',()=>{
+  assert.match(p28,/omnios-v104-mobile-page-labels/);
+  assert.match(p28,/#v35-page-launcher \[data-v35-more\] > \.v35-launcher-label\{/);
+  assert.match(p28,/display:block!important/);
+  assert.match(p28,/visibility:visible!important/);
+  assert.match(p28,/color:var\(--text-primary\)!important/);
+  assert.match(p28,/font-size:11px!important/);
+});

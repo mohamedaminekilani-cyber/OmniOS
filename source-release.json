@@ -25,5 +25,5 @@
     "js/password-vault.js",
     "js/ui-polish.js"
   ],
-  "subject": "Improve contrast, touch targets, and safer dialogs"
+  "subject": "Performance: curated startup, lifecycle observers and lazy Bible data"
 }

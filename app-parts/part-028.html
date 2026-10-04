@@ -11268,20 +11268,41 @@ window.OmniDialog={confirm:(message,opts={})=>open('confirm',message,opts),alert
 <script id="omnios-v104-sidebar-stability-js">
 (function(){
   'use strict';
+  const labels={
+    today:'Today',dashboard:'Dashboard',inbox:'Inbox',planner:'Planner',projects:'Projects',routine:'Routine',
+    'master-calendar':'Calendar',tasks:'Tasks',habits:'Habits',bible:'Bible',workout:'Workout',diet:'Nutrition',
+    focus:'Focus',budget:'Finance','life-hub':'Life Hub',notes:'Notes',grocery:'Grocery',wishlist:'Wishlist',
+    goals:'Goals',pantry:'Pantry',reminders:'Reminders','data-center':'Data Center',activity:'Activity',
+    templates:'Templates',relations:'Relations',automations:'Automations',studio:'Studio',passwords:'Passwords',
+    settings:'Settings',help:'Help'
+  };
+  const fallbackIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"></rect></svg>';
   function repairSidebar(){
     const sidebar=document.querySelector('.sidebar.v101-sidebar');
     if(!sidebar)return;
     sidebar.querySelectorAll('.nav-item[data-view]').forEach(btn=>{
       const view=btn.dataset.view;
       if(!view)return;
-      const label=window.__omniSidebarLabels?.[view] || btn.getAttribute('aria-label') || '';
-      const hasIcon=btn.querySelector(':scope > .v101-nav-icon-wrap');
-      const hasLabel=btn.querySelector(':scope > .v101-nav-label');
-      if((!hasIcon||!hasLabel) && typeof window.__omniSidebarRepairItem==='function'){
-        window.__omniSidebarRepairItem(btn);
+      let icon=btn.querySelector(':scope > .v101-nav-icon-wrap');
+      let label=btn.querySelector(':scope > .v101-nav-label');
+      let badge=btn.querySelector(':scope > .v101-nav-badge');
+      if(!icon){
+        icon=document.createElement('span');
+        icon.className='v101-nav-icon-wrap';
+        icon.innerHTML='<span class="v101-nav-svg">'+fallbackIcon+'</span>';
+        btn.prepend(icon);
       }
-      const finalLabel=btn.querySelector(':scope > .v101-nav-label');
-      if(finalLabel && !finalLabel.textContent.trim() && label) finalLabel.textContent=label;
+      if(!label){
+        label=document.createElement('span');
+        label.className='v101-nav-label';
+        icon.after(label);
+      }
+      if(!label.textContent.trim()) label.textContent=labels[view]||view.replace(/-/g,' ');
+      if(!badge){
+        badge=document.createElement('span');
+        badge.className='v101-nav-badge';
+        btn.appendChild(badge);
+      }
     });
   }
   const start=()=>{repairSidebar();setTimeout(repairSidebar,80);setTimeout(repairSidebar,350)};

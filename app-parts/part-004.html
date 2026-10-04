@@ -2085,6 +2085,114 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 @media(max-width:760px){#view-master-calendar .v36-cal-toolbar{padding:8px}#view-master-calendar .v36-cal-actions{grid-template-columns:minmax(0,1fr) 38px auto}#view-master-calendar .v603-calendar-stage-head{display:none}#view-master-calendar .v603-calendar-rail{gap:10px}}
 @media(max-width:460px){#view-master-calendar .v36-cal-actions{grid-template-columns:minmax(0,1fr) 38px 42px}}
 </style>
+<style id="omnios-v606-calendar-visible-items-css">
+/* Calendar visible-items menu — calm rows, icon-led labels, one switch. */
+#view-master-calendar .v606-visible-items{gap:7px!important}
+#view-master-calendar .v606-visible-items .v603-rail-title{padding:0 3px!important}
+#view-master-calendar .v606-visible-items .v602-cal-list{
+  gap:3px!important;
+  padding:2px 0 0;
+}
+#view-master-calendar .v606-visible-items .v602-cal-list-row{
+  display:grid!important;
+  grid-template-columns:28px minmax(0,1fr) 34px!important;
+  align-items:center!important;
+  gap:8px!important;
+  min-height:38px!important;
+  padding:5px 6px!important;
+  border:1px solid transparent;
+  border-radius:10px!important;
+  background:transparent;
+  color:var(--text-secondary);
+}
+#view-master-calendar .v606-visible-items .v602-cal-list-row:hover{
+  background:var(--bg-elevated)!important;
+  border-color:color-mix(in srgb,var(--border-color) 78%,transparent);
+}
+#view-master-calendar .v606-visible-items .v602-cal-list-row.is-on{
+  color:var(--text-primary);
+}
+#view-master-calendar .v606-visible-items .v602-cal-list-row.is-off{
+  color:var(--text-muted);
+}
+#view-master-calendar .v606-visible-items .v602-cal-list-icon{
+  width:28px!important;
+  height:28px!important;
+  border-radius:8px;
+  background:color-mix(in srgb,var(--v602-item) 10%,var(--bg-elevated));
+  color:color-mix(in srgb,var(--v602-item) 78%,var(--text-secondary));
+  display:grid!important;
+  place-items:center;
+}
+#view-master-calendar .v606-visible-items .v602-cal-list-icon .v604-cal-type-icon{
+  width:14px!important;
+  height:14px!important;
+}
+#view-master-calendar .v606-visible-items .v602-cal-list-label{
+  min-width:0;
+  font-size:.65rem;
+  font-weight:650;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#view-master-calendar .v606-visible-items .v602-cal-list-dot{display:none!important}
+#view-master-calendar .v606-visible-items .v606-filter-switch{
+  position:relative;
+  width:34px;
+  height:20px;
+  justify-self:end;
+  display:block;
+}
+#view-master-calendar .v606-visible-items .v606-filter-switch input{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  margin:0!important;
+  opacity:0!important;
+  cursor:pointer;
+  z-index:2;
+}
+#view-master-calendar .v606-visible-items .v606-filter-switch>span{
+  position:absolute;
+  inset:0;
+  border-radius:999px;
+  border:1px solid var(--border-light);
+  background:var(--bg-base);
+  transition:background .15s,border-color .15s;
+}
+#view-master-calendar .v606-visible-items .v606-filter-switch>span:after{
+  content:"";
+  position:absolute;
+  width:12px;
+  height:12px;
+  left:3px;
+  top:3px;
+  border-radius:50%;
+  background:var(--text-muted);
+  transition:transform .15s,background .15s;
+}
+#view-master-calendar .v606-visible-items .v606-filter-switch input:checked+span{
+  background:color-mix(in srgb,var(--v602-item) 22%,var(--bg-elevated));
+  border-color:color-mix(in srgb,var(--v602-item) 52%,var(--border-light));
+}
+#view-master-calendar .v606-visible-items .v606-filter-switch input:checked+span:after{
+  transform:translateX(14px);
+  background:var(--v602-item);
+}
+#view-master-calendar .v606-visible-items .v606-filter-switch input:focus-visible+span{
+  outline:2px solid color-mix(in srgb,var(--accent-cyan) 34%,transparent);
+  outline-offset:2px;
+}
+@media(max-width:760px){
+  #view-master-calendar .v606-visible-items .v602-cal-list-row{
+    min-height:42px!important;
+    padding:6px 7px!important;
+  }
+  #view-master-calendar .v606-visible-items .v602-cal-list-label{font-size:.69rem}
+}
+</style>
 <style id="omnios-v603-compact-persistent-calendar-css">
 /* ===== Second Brain v60.3 — tighter page gutters + persistent Calendar rail ===== */
 :root{--v603-page-x:14px;--v603-page-y:12px;--v603-page-bottom:22px}
@@ -2297,7 +2405,7 @@ function workspaceMiniMonthHTMLV602(){
   while(cells.length%7)cells.push('<span class="v602-mini-blank" aria-hidden="true"></span>');
   return `<div class="v602-mini"><div class="v602-mini-head"><button type="button" class="v602-mini-arrow" data-v602-mini-nav="-1" aria-label="Previous month">${calIconV604('chevronLeft')}</button><strong>${escapeHtml(anchor.toLocaleDateString(undefined,{month:'long',year:'numeric'}))}</strong><button type="button" class="v602-mini-arrow" data-v602-mini-nav="1" aria-label="Next month">${calIconV604('chevronRight')}</button></div><div class="v602-mini-weekdays">${labels.map(x=>`<span>${escapeHtml(x.slice(0,1))}</span>`).join('')}</div><div class="v602-mini-grid">${cells.join('')}</div></div>`;
 }
-function workspaceFilterRowsV602(keys){return keys.map(k=>{const d=TYPE_DEFS_V36.find(x=>x[0]===k);if(!d)return'';const [key,label,icon,color]=d;return `<label class="v602-cal-list-row"><input type="checkbox" data-v36-filter="${key}" ${masterCalendarFilters[key]!==false?'checked':''}><span class="v602-cal-list-dot" style="--v602-dot:${color}"></span><span class="v602-cal-list-icon">${calendarTypeIconV604(key)}</span><span>${escapeHtml(label)}</span></label>`}).join('')}
+function workspaceFilterRowsV602(keys){return keys.map(k=>{const d=TYPE_DEFS_V36.find(x=>x[0]===k);if(!d)return'';const [key,label,icon,color]=d,checked=masterCalendarFilters[key]!==false;return `<label class="v602-cal-list-row ${checked?'is-on':'is-off'}" style="--v602-item:${color}"><span class="v602-cal-list-icon">${calendarTypeIconV604(key)}</span><span class="v602-cal-list-label">${escapeHtml(label)}</span><span class="v606-filter-switch" aria-hidden="true"><input type="checkbox" data-v36-filter="${key}" ${checked?'checked':''}><span></span></span></label>`}).join('')}
 function calendarRailHTMLV603(events){
   const ws=wsV36(),today=localDateString(),todayItems=events.filter(e=>e.date===today).length,openTasks=events.filter(e=>(e.type==='task'||e.type==='deadline')&&!e.completed).length,hours=Math.round(scheduledMinutesV36(events)/6)/10;
   return `<aside class="v603-calendar-rail" aria-label="Calendar tools">
@@ -2306,7 +2414,7 @@ function calendarRailHTMLV603(events){
     ${workspaceMiniMonthHTMLV602()}
     <div class="v603-rail-stats"><div class="v603-rail-stat"><strong>${todayItems}</strong><span>Today</span></div><div class="v603-rail-stat"><strong>${openTasks}</strong><span>Due</span></div><div class="v603-rail-stat"><strong>${hours}h</strong><span>Scheduled</span></div></div>
     <div class="v603-rail-section"><div class="v603-rail-title"><span>View</span></div><div class="v603-preset-grid"><button type="button" class="v603-preset ${ws.preset==='planning'?'active':''}" data-v603-preset="planning">Planning</button><button type="button" class="v603-preset ${ws.preset==='life'?'active':''}" data-v603-preset="life">Life</button><button type="button" class="v603-preset ${ws.preset==='activity'?'active':''}" data-v603-preset="activity">All</button></div></div>
-    <div class="v603-rail-section"><div class="v603-rail-title"><span>Visible items</span><small>show / hide</small></div><div class="v602-cal-list">${workspaceFilterRowsV602(['event','timeblock','task','deadline','workout','habit','focus','finance','note'])}</div></div>
+    <div class="v603-rail-section v606-visible-items"><div class="v603-rail-title"><span>Visible items</span></div><div class="v602-cal-list">${workspaceFilterRowsV602(['event','timeblock','task','deadline','workout','habit','focus','finance','note'])}</div></div>
     <details class="v605-rail-details"><summary>${calIconV604('settings')}<span>Display options</span></summary><div class="v603-display-grid"><div class="v603-display-row"><label for="v603-weekends">Show weekends</label><input type="checkbox" id="v603-weekends" ${ws.showWeekends?'checked':''}></div><div class="v603-display-row"><label for="v603-completed">Completed tasks</label><input type="checkbox" id="v603-completed" ${ws.showCompletedTasks?'checked':''}></div><div class="v603-display-row"><label for="v603-density">Density</label><select class="form-select" id="v603-density"><option value="comfortable" ${ws.density==='comfortable'?'selected':''}>Comfort</option><option value="compact" ${ws.density==='compact'?'selected':''}>Compact</option></select></div><div class="v603-display-row"><label for="v603-agenda-days">Agenda range</label><select class="form-select" id="v603-agenda-days"><option value="14" ${Number(ws.agendaDays)===14?'selected':''}>14 days</option><option value="30" ${Number(ws.agendaDays)===30?'selected':''}>30 days</option><option value="60" ${Number(ws.agendaDays)===60?'selected':''}>60 days</option><option value="90" ${Number(ws.agendaDays)===90?'selected':''}>90 days</option></select></div><button type="button" class="btn btn-sm v605-settings-link" data-v603-open="settings">${calIconV604('settings')}<span>Calendar settings</span></button></div></details>
   </aside>`;
 }

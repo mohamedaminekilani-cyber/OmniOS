@@ -11896,3 +11896,33 @@ window.OmniDialog={confirm:(message,opts={})=>open('confirm',message,opts),alert
   }
 }
 </style>
+
+
+<style id="omnios-v103-habit-year-heatmap">
+/* v103 — full-year habit heatmap */
+#view-habits .v103-year-heatmap{
+  grid-template-rows:repeat(7,6px)!important;
+  grid-auto-columns:6px!important;
+  gap:2px!important;
+  width:100%!important;
+  max-width:100%!important;
+  overflow:visible!important;
+}
+#view-habits .v103-year-heatmap .v95-heat-cell{
+  width:6px!important;
+  height:6px!important;
+  border-radius:2px!important;
+}
+@media(max-width:760px){
+  #view-habits .v103-year-heatmap{
+    grid-template-rows:repeat(7,5px)!important;
+    grid-auto-columns:5px!important;
+    gap:1px!important;
+  }
+  #view-habits .v103-year-heatmap .v95-heat-cell{
+    width:5px!important;
+    height:5px!important;
+    border-radius:1.5px!important;
+  }
+}
+</style>

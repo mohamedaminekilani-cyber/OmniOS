@@ -11818,3 +11818,81 @@ window.OmniDialog={confirm:(message,opts={})=>open('confirm',message,opts),alert
   .mobile-nav button .nav-label{font-size:10.5px!important}
 }
 </style>
+
+
+<style id="omnios-v102-habits-desktop-layout-fix">
+/* v102 — Habits desktop density and balance.
+   Keep the v95 interaction model, but remove the oversized two-column cards
+   and the orphaned third card visible on wide screens. */
+#view-habits .habit-summary-grid{
+  width:100%!important;
+  max-width:none!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+#view-habits .habit-summary{
+  min-width:0!important;
+  padding:12px 13px!important;
+}
+#view-habits .v95-habit-list{
+  width:100%!important;
+  max-width:none!important;
+  align-items:start!important;
+  grid-auto-rows:auto!important;
+}
+#view-habits .v95-habit-card{
+  min-height:0!important;
+  height:auto!important;
+  padding:13px!important;
+}
+@media(min-width:1180px){
+  #view-habits .v95-habit-list{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:11px!important;
+  }
+  #view-habits .v95-habit-card{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-areas:
+      "head head"
+      "heat footer"!important;
+    column-gap:14px!important;
+    row-gap:10px!important;
+  }
+  #view-habits .v95-habit-head{
+    grid-area:head!important;
+    margin:0!important;
+  }
+  #view-habits .v95-heatmap{
+    grid-area:heat!important;
+    align-self:center!important;
+  }
+  #view-habits .v95-habit-footer{
+    grid-area:footer!important;
+    align-self:end!important;
+    justify-self:end!important;
+    display:grid!important;
+    gap:5px!important;
+    margin:0!important;
+    min-width:max-content!important;
+  }
+  #view-habits .v95-habit-pill{
+    justify-content:center!important;
+    min-height:24px!important;
+    padding:3px 7px!important;
+  }
+}
+@media(min-width:761px) and (max-width:1179px){
+  #view-habits .v95-habit-list{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+@media(max-width:760px){
+  #view-habits .habit-summary-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  #view-habits .v95-habit-card{
+    display:block!important;
+  }
+}
+</style>

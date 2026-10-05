@@ -12451,3 +12451,123 @@ window.OmniDialog={confirm:(message,opts={})=>open('confirm',message,opts),alert
   }
 }
 </style>
+
+
+<style id="omnios-v108-habit-month-mobile-compact">
+/* v108 — compact mobile monthly habits */
+@media(max-width:760px){
+  #view-habits .v105-month-shell{gap:8px!important}
+
+  #view-habits .v105-month-toolbar{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-areas:
+      "title nav"
+      "hint hint"!important;
+    align-items:center!important;
+    gap:5px 8px!important;
+    padding:8px 9px!important;
+    border-radius:13px!important;
+  }
+  #view-habits .v105-month-title{
+    grid-area:title!important;
+    text-align:left!important;
+    font-size:.9rem!important;
+    font-weight:800!important;
+    line-height:1.2!important;
+    text-transform:none!important;
+  }
+  #view-habits .v105-month-nav{
+    grid-area:nav!important;
+    gap:4px!important;
+  }
+  #view-habits .v105-month-nav .btn{
+    min-height:34px!important;
+    height:34px!important;
+    padding:0 9px!important;
+    border-radius:9px!important;
+    font-size:.62rem!important;
+  }
+  #view-habits .v105-month-hint{
+    grid-area:hint!important;
+    font-size:.56rem!important;
+    line-height:1.25!important;
+  }
+
+  #view-habits .v105-month-grid{
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+  }
+  #view-habits .v105-month-card{
+    padding:9px!important;
+    border-radius:13px!important;
+    overflow:hidden!important;
+  }
+  #view-habits .v105-month-card-head{
+    grid-template-columns:auto minmax(0,1fr) auto!important;
+    gap:7px!important;
+    margin-bottom:7px!important;
+  }
+  #view-habits .v105-month-icon{
+    width:34px!important;
+    height:34px!important;
+    border-radius:9px!important;
+  }
+  #view-habits .v105-month-copy strong{
+    font-size:.75rem!important;
+    line-height:1.2!important;
+  }
+  #view-habits .v105-month-copy span{
+    font-size:.54rem!important;
+  }
+  #view-habits .v105-month-stat strong{font-size:.82rem!important}
+  #view-habits .v105-month-stat span{font-size:.48rem!important}
+
+  /* Keep the calendar dense instead of scaling each day to a huge square. */
+  #view-habits .v105-month-weekdays,
+  #view-habits .v105-month-days{
+    width:100%!important;
+    max-width:360px!important;
+    margin-inline:auto!important;
+    grid-template-columns:repeat(7,minmax(0,1fr))!important;
+    gap:3px!important;
+  }
+  #view-habits .v105-month-weekdays{
+    margin-bottom:3px!important;
+  }
+  #view-habits .v105-month-weekdays span{
+    font-size:.48rem!important;
+    line-height:1!important;
+    padding:1px 0 3px!important;
+  }
+  #view-habits .v105-month-blank{
+    aspect-ratio:auto!important;
+    height:34px!important;
+  }
+  #view-habits .v105-month-day{
+    aspect-ratio:auto!important;
+    width:100%!important;
+    height:34px!important;
+    min-height:34px!important;
+    border-radius:8px!important;
+    font-size:.58rem!important;
+  }
+
+  #view-habits .v105-month-foot{
+    margin-top:7px!important;
+    min-height:24px!important;
+    font-size:.52rem!important;
+  }
+  #view-habits .v105-month-open{
+    min-height:24px!important;
+    padding:2px 4px!important;
+    font-size:.52rem!important;
+  }
+}
+@media(max-width:390px){
+  #view-habits .v105-month-weekdays,
+  #view-habits .v105-month-days{max-width:330px!important}
+  #view-habits .v105-month-blank,
+  #view-habits .v105-month-day{height:31px!important;min-height:31px!important}
+}
+</style>

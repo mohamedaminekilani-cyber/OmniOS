@@ -2469,33 +2469,3 @@ function renderWorkspaceV602(host,events){host.innerHTML=`<div class="v603-calen
 function renderCalendarModeV603(body,events){body.innerHTML=`<div class="v603-calendar-layout"><button type="button" class="v603-mobile-sheet-backdrop" data-v603-sheet-close aria-label="Close calendar tools"></button>${calendarRailHTMLV603(events)}<section class="v603-calendar-stage"><div class="v603-calendar-stage-inner" id="v603-mode-host"></div></section></div>`;const host=body.querySelector('#v603-mode-host');if(masterCalendarMode==='workspace')renderWorkspaceV602(host,events);else if(masterCalendarMode==='month')renderMonthV36(host,events);else if(masterCalendarMode==='agenda')renderAgendaV36(host,events);else renderTimeViewV36(host,events,masterCalendarMode)}
 function renderMasterCalendarV36(){document.documentElement.classList.remove('v603-tools-open');ensureCalendarV36();const c=document.getElementById('master-calendar-content');if(!c)return;const ws=wsV36(),events=filteredCalendarEventsV36();c.innerHTML=`<div class="v36-cal-shell ${masterCalendarMode==='workspace'?'v602-workspace-shell':''}"><div class="v36-cal-toolbar"><div class="v36-cal-nav"><button class="btn btn-sm" id="v36-cal-prev" aria-label="Previous">${calIconV604('chevronLeft')}</button><button class="btn btn-sm" id="v36-cal-today">Today</button><button class="btn btn-sm" id="v36-cal-next" aria-label="Next">${calIconV604('chevronRight')}</button><div class="v36-cal-period">${escapeHtml(periodTitleV36())}</div></div><div class="v36-cal-center"><div class="v36-cal-modes">${[['workspace','Workspace'],['week','Week'],['month','Month'],['day','Day'],['agenda','Agenda']].map(([k,l])=>`<button class="v36-cal-mode ${masterCalendarMode===k?'active':''}" data-v36-mode="${k}">${l}</button>`).join('')}</div></div><div class="v36-cal-actions"><input type="search" class="search-input v36-cal-search" id="v36-cal-search" value="${escapeHtml(ws.search||'')}" placeholder="Search…"><button type="button" class="btn btn-sm v603-mobile-rail-toggle" id="v603-rail-toggle" title="Calendar tools" aria-label="Calendar tools" aria-expanded="false"><svg class="v603-hamburger-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><button class="btn btn-primary btn-sm" id="v36-cal-add">${calIconV604('plus')}<span>Schedule</span></button></div></div><div class="v36-cal-body" id="v36-cal-body"></div></div>`;const sec=document.getElementById('view-master-calendar');sec?.classList.toggle('v36-cal-compact',ws.density==='compact');const body=document.getElementById('v36-cal-body');renderCalendarModeV603(body,events);bindCalendarV36();bindCalendarRailV603(body)}
 
-
-
-<style id="omnios-v103-habit-year-heatmap">
-/* v103 — full-year habit heatmap */
-#view-habits .v103-year-heatmap{
-  grid-template-rows:repeat(7,6px)!important;
-  grid-auto-columns:6px!important;
-  gap:2px!important;
-  width:100%!important;
-  max-width:100%!important;
-  overflow:visible!important;
-}
-#view-habits .v103-year-heatmap .v95-heat-cell{
-  width:6px!important;
-  height:6px!important;
-  border-radius:2px!important;
-}
-@media(max-width:760px){
-  #view-habits .v103-year-heatmap{
-    grid-template-rows:repeat(7,5px)!important;
-    grid-auto-columns:5px!important;
-    gap:1px!important;
-  }
-  #view-habits .v103-year-heatmap .v95-heat-cell{
-    width:5px!important;
-    height:5px!important;
-    border-radius:1.5px!important;
-  }
-}
-</style>

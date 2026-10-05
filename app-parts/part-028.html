@@ -12571,3 +12571,173 @@ window.OmniDialog={confirm:(message,opts={})=>open('confirm',message,opts),alert
   #view-habits .v105-month-day{height:31px!important;min-height:31px!important}
 }
 </style>
+
+
+<style id="omnios-v109-mobile-calendar-visible">
+/* v109 — make the mobile Calendar reliably visible and reference-like. */
+@media(max-width:760px){
+  #view-master-calendar .v36-cal-body,
+  #view-master-calendar .v603-calendar-stage,
+  #view-master-calendar .v603-calendar-stage-inner{
+    min-height:0!important;
+    background:transparent!important;
+  }
+
+  #view-master-calendar .v36-month-grid{
+    display:grid!important;
+    grid-template-columns:repeat(7,minmax(0,1fr))!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    gap:2px!important;
+    padding:6px 2px 10px!important;
+    background:transparent!important;
+  }
+
+  #view-master-calendar .v36-month-weekday{
+    display:block!important;
+    min-width:0!important;
+    padding:5px 0 7px!important;
+    border:0!important;
+    background:transparent!important;
+    text-align:center!important;
+    font-size:.58rem!important;
+    font-weight:700!important;
+    letter-spacing:0!important;
+    text-transform:none!important;
+    color:var(--text-muted)!important;
+  }
+
+  #view-master-calendar .v36-month-day{
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:48px!important;
+    height:48px!important;
+    aspect-ratio:auto!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:10px!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+    opacity:1!important;
+  }
+  #view-master-calendar .v36-month-day.other-month{
+    opacity:.28!important;
+    background:transparent!important;
+  }
+
+  #view-master-calendar .v36-month-day-head{
+    position:absolute!important;
+    inset:0!important;
+    display:grid!important;
+    place-items:center!important;
+    min-height:0!important;
+    margin:0!important;
+    pointer-events:none!important;
+  }
+  #view-master-calendar .v36-month-date{
+    pointer-events:auto!important;
+    width:34px!important;
+    height:34px!important;
+    min-width:34px!important;
+    min-height:34px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    border:0!important;
+    border-radius:50%!important;
+    background:transparent!important;
+    color:var(--text-primary)!important;
+    font-size:.76rem!important;
+    font-weight:650!important;
+    line-height:1!important;
+  }
+  #view-master-calendar .v36-month-day.today .v36-month-date{
+    color:#fff!important;
+    background:linear-gradient(135deg,#5868ff,#8a4dff)!important;
+    box-shadow:0 6px 16px rgba(91,99,255,.30)!important;
+  }
+  #view-master-calendar .v36-day-add{display:none!important}
+
+  #view-master-calendar .v36-month-events{
+    position:absolute!important;
+    left:50%!important;
+    bottom:2px!important;
+    transform:translateX(-50%)!important;
+    width:26px!important;
+    height:5px!important;
+    display:flex!important;
+    flex-direction:row!important;
+    justify-content:center!important;
+    align-items:center!important;
+    gap:2px!important;
+    overflow:visible!important;
+    pointer-events:none!important;
+  }
+  #view-master-calendar .v36-month-event{
+    position:static!important;
+    transform:none!important;
+    flex:0 0 4px!important;
+    width:4px!important;
+    height:4px!important;
+    min-width:4px!important;
+    min-height:4px!important;
+    max-width:4px!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:50%!important;
+    background:var(--event-color,var(--accent-cyan))!important;
+    font-size:0!important;
+    overflow:hidden!important;
+    pointer-events:auto!important;
+  }
+  #view-master-calendar .v36-month-event>*{display:none!important}
+  #view-master-calendar .v36-month-event:nth-child(n+4){display:none!important}
+  #view-master-calendar .v36-more{
+    display:none!important;
+  }
+
+  /* Keep the month itself visually primary like the supplied reference. */
+  #view-master-calendar .v36-cal-center,
+  #view-master-calendar .v36-cal-actions{
+    margin-top:1px!important;
+  }
+}
+</style>
+
+<script id="omnios-v109-mobile-calendar-visible-js">
+(function(){
+  'use strict';
+  if(window.__omniMobileCalendar109)return;
+  window.__omniMobileCalendar109=true;
+
+  function forceMobileMonth(){
+    if(!matchMedia('(max-width:760px)').matches)return;
+    const view=document.getElementById('view-master-calendar');
+    if(!view || !view.classList.contains('active'))return;
+    try{
+      if(typeof masterCalendarMode!=='undefined' && masterCalendarMode!=='month'){
+        masterCalendarMode='month';
+      }
+      if(typeof renderMasterCalendarV36==='function') renderMasterCalendarV36();
+    }catch(err){ console.warn('Mobile calendar month fallback',err); }
+  }
+
+  document.addEventListener('click',e=>{
+    const nav=e.target.closest?.('[data-view="master-calendar"],[data-v43-go="master-calendar"],[data-w63go="master-calendar"]');
+    if(nav) setTimeout(forceMobileMonth,60);
+  },true);
+
+  window.addEventListener('resize',()=>{
+    if(matchMedia('(max-width:760px)').matches) setTimeout(forceMobileMonth,40);
+  },{passive:true});
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',()=>setTimeout(forceMobileMonth,120),{once:true});
+  }else setTimeout(forceMobileMonth,120);
+})();
+</script>

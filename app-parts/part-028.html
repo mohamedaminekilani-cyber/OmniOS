@@ -11926,3 +11926,69 @@ window.OmniDialog={confirm:(message,opts={})=>open('confirm',message,opts),alert
   }
 }
 </style>
+
+
+<style id="omnios-v104-habit-year-grid-polish">
+/* v104 — keep the full-year habit view readable and prevent footer overlap. */
+@media(min-width:1180px){
+  #view-habits .v95-habit-card{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-areas:
+      "head"
+      "heat"
+      "footer"!important;
+    row-gap:10px!important;
+  }
+  #view-habits .v95-habit-head{grid-area:head!important;margin:0!important}
+  #view-habits .v103-year-heatmap{
+    grid-area:heat!important;
+    width:100%!important;
+    min-width:0!important;
+    height:54px!important;
+    display:grid!important;
+    grid-template-rows:repeat(7,minmax(0,1fr))!important;
+    grid-auto-flow:column!important;
+    grid-auto-columns:minmax(0,1fr)!important;
+    gap:2px!important;
+    overflow:hidden!important;
+  }
+  #view-habits .v103-year-heatmap .v95-heat-cell{
+    width:100%!important;
+    height:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    border-radius:2px!important;
+  }
+  #view-habits .v95-habit-footer{
+    grid-area:footer!important;
+    display:flex!important;
+    justify-content:flex-start!important;
+    align-items:center!important;
+    flex-wrap:wrap!important;
+    gap:6px!important;
+    margin:0!important;
+    min-width:0!important;
+  }
+  #view-habits .v95-habit-pill{
+    min-width:0!important;
+    min-height:25px!important;
+    padding:4px 8px!important;
+  }
+}
+@media(min-width:761px) and (max-width:1179px){
+  #view-habits .v103-year-heatmap{
+    width:100%!important;
+    height:58px!important;
+    grid-template-rows:repeat(7,minmax(0,1fr))!important;
+    grid-auto-flow:column!important;
+    grid-auto-columns:minmax(0,1fr)!important;
+    gap:2px!important;
+    overflow:hidden!important;
+  }
+  #view-habits .v103-year-heatmap .v95-heat-cell{
+    width:100%!important;
+    height:100%!important;
+  }
+}
+</style>

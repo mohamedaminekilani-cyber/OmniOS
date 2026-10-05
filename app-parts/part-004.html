@@ -138,7 +138,46 @@ function renderHabitMonthCardsV34(container){
 function renderHabitMonthMatrixV34(container){
   const days=new Date(habitYear,habitMonth+1,0).getDate(),today=localDateString();let html=`<div class="v34-habit-month-shell">${habitMonthHeaderV34()}<div class="v34-habit-matrix-wrap"><div class="v34-habit-matrix" style="grid-template-columns:180px repeat(${days},35px)"><div class="v34-habit-matrix-cell v34-habit-matrix-head v34-habit-matrix-name">Habit</div>`;for(let d=1;d<=days;d++){const dt=new Date(habitYear,habitMonth,d);html+=`<div class="v34-habit-matrix-cell v34-habit-matrix-head" title="${dt.toLocaleDateString()}">${d}<br><span style="font-size:.5rem">${dt.toLocaleDateString(undefined,{weekday:'narrow'})}</span></div>`}state.habits.forEach(h=>{html+=`<div class="v34-habit-matrix-cell v34-habit-matrix-name" data-habit-id="${escapeHtml(String(h.id))}">${escapeHtml(h.icon||'✨')} ${escapeHtml(h.name||'Habit')}</div>`;for(let d=1;d<=days;d++){const k=`${habitYear}-${String(habitMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,done=!!h.log?.[k];html+=`<button type="button" class="v34-habit-matrix-cell ${done?'is-done':''} ${k===today?'is-today':''}" data-habit-day="${escapeHtml(String(h.id))}|${k}" title="${escapeHtml(h.name)} · ${k}">${done?'✓':'·'}</button>`}});html+='</div></div></div>';container.innerHTML=html;bindHabitMonthNavV34()
 }
-window.renderHabitCalendar=function(container){const layout=optsV34('habits').monthLayout||'cards';layout==='matrix'?renderHabitMonthMatrixV34(container):renderHabitMonthCardsV34(container)};
+function renderHabitMonthlyV105(container){
+  const days=new Date(habitYear,habitMonth+1,0).getDate(),offset=monthOffsetV34(habitYear,habitMonth),labels=weekdayLabelsV34(),today=localDateString();
+  const monthLabel=new Date(habitYear,habitMonth,1).toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  let html=`<div class="v105-month-shell">
+    <div class="v105-month-toolbar">
+      <div class="v105-month-nav">
+        <button type="button" class="btn btn-sm" data-v105-month="-1" aria-label="Previous month">‹</button>
+        <button type="button" class="btn btn-sm" data-v105-today>Today</button>
+        <button type="button" class="btn btn-sm" data-v105-month="1" aria-label="Next month">›</button>
+      </div>
+      <div class="v105-month-title">${escapeHtml(monthLabel)}</div>
+      <div class="v105-month-hint">Tap a day to mark it done</div>
+    </div>
+    <div class="v105-month-grid">`;
+  state.habits.forEach(h=>{
+    const accent=habitAccentV95(h);
+    const completed=Array.from({length:days},(_,i)=>`${habitYear}-${String(habitMonth+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`).filter(k=>h.log?.[k]).length;
+    const target=habitTargetV95(h);
+    html+=`<section class="v105-month-card" style="--habit-accent:${accent}">
+      <div class="v105-month-card-head">
+        <div class="v105-month-icon">${escapeHtml(h.icon||'✨')}</div>
+        <div class="v105-month-copy"><strong>${escapeHtml(h.name||'Habit')}</strong><span>${escapeHtml(h.goal||target+'x per week')}</span></div>
+        <div class="v105-month-stat"><strong>${completed}</strong><span>/ ${days}</span></div>
+      </div>
+      <div class="v105-month-weekdays">${labels.map(x=>`<span>${x.slice(0,1)}</span>`).join('')}</div>
+      <div class="v105-month-days">${'<span class="v105-month-blank"></span>'.repeat(offset)}`;
+    for(let day=1;day<=days;day++){
+      const k=`${habitYear}-${String(habitMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`,done=!!h.log?.[k];
+      html+=`<button type="button" class="v105-month-day ${done?'done':''} ${k===today?'today':''}" data-habit-day="${escapeHtml(String(h.id))}|${k}" title="${escapeHtml(h.name||'Habit')} · ${k}">${day}</button>`;
+    }
+    html+=`</div><div class="v105-month-foot"><span>🔥 ${getStreak(h)}d streak</span><button type="button" class="v105-month-open" data-v105-open="${escapeHtml(String(h.id))}">Details</button></div></section>`;
+  });
+  html+='</div></div>';
+  container.innerHTML=html;
+  container.querySelectorAll('[data-v105-month]').forEach(b=>b.onclick=()=>{const d=Number(b.dataset.v105Month)||0;habitMonth+=d;if(habitMonth<0){habitMonth=11;habitYear--}if(habitMonth>11){habitMonth=0;habitYear++}renderHabits()});
+  container.querySelector('[data-v105-today]')?.addEventListener('click',()=>{const d=new Date();habitMonth=d.getMonth();habitYear=d.getFullYear();renderHabits()});
+  container.querySelectorAll('[data-habit-day]').forEach(b=>b.onclick=()=>{const [id,date]=b.dataset.habitDay.split('|');toggleHabitDay(id,date);renderHabits()});
+  container.querySelectorAll('[data-v105-open]').forEach(b=>b.onclick=()=>openHabitDetailV95(b.dataset.v105Open));
+}
+window.renderHabitCalendar=renderHabitMonthlyV105;
 window.goToHabitToday=function(){const today=new Date();habitMonth=today.getMonth();habitYear=today.getFullYear();habitWeekStart=new Date(today);habitWeekStart.setHours(0,0,0,0);const dow=habitWeekStart.getDay();habitWeekStart.setDate(habitWeekStart.getDate()-(weekStartIndexV34()===1?(dow+6)%7:dow));renderHabits()};
 const habitBtn=document.querySelector('[data-habitview="calendar"]');if(habitBtn)habitBtn.innerHTML='▦ Monthly';
 const habitOverviewBtnV95=document.querySelector('[data-habitview="week"]');if(habitOverviewBtnV95)habitOverviewBtnV95.innerHTML='▦ Overview';
@@ -2469,3 +2508,15 @@ function renderWorkspaceV602(host,events){host.innerHTML=`<div class="v603-calen
 function renderCalendarModeV603(body,events){body.innerHTML=`<div class="v603-calendar-layout"><button type="button" class="v603-mobile-sheet-backdrop" data-v603-sheet-close aria-label="Close calendar tools"></button>${calendarRailHTMLV603(events)}<section class="v603-calendar-stage"><div class="v603-calendar-stage-inner" id="v603-mode-host"></div></section></div>`;const host=body.querySelector('#v603-mode-host');if(masterCalendarMode==='workspace')renderWorkspaceV602(host,events);else if(masterCalendarMode==='month')renderMonthV36(host,events);else if(masterCalendarMode==='agenda')renderAgendaV36(host,events);else renderTimeViewV36(host,events,masterCalendarMode)}
 function renderMasterCalendarV36(){document.documentElement.classList.remove('v603-tools-open');ensureCalendarV36();const c=document.getElementById('master-calendar-content');if(!c)return;const ws=wsV36(),events=filteredCalendarEventsV36();c.innerHTML=`<div class="v36-cal-shell ${masterCalendarMode==='workspace'?'v602-workspace-shell':''}"><div class="v36-cal-toolbar"><div class="v36-cal-nav"><button class="btn btn-sm" id="v36-cal-prev" aria-label="Previous">${calIconV604('chevronLeft')}</button><button class="btn btn-sm" id="v36-cal-today">Today</button><button class="btn btn-sm" id="v36-cal-next" aria-label="Next">${calIconV604('chevronRight')}</button><div class="v36-cal-period">${escapeHtml(periodTitleV36())}</div></div><div class="v36-cal-center"><div class="v36-cal-modes">${[['workspace','Workspace'],['week','Week'],['month','Month'],['day','Day'],['agenda','Agenda']].map(([k,l])=>`<button class="v36-cal-mode ${masterCalendarMode===k?'active':''}" data-v36-mode="${k}">${l}</button>`).join('')}</div></div><div class="v36-cal-actions"><input type="search" class="search-input v36-cal-search" id="v36-cal-search" value="${escapeHtml(ws.search||'')}" placeholder="Search…"><button type="button" class="btn btn-sm v603-mobile-rail-toggle" id="v603-rail-toggle" title="Calendar tools" aria-label="Calendar tools" aria-expanded="false"><svg class="v603-hamburger-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><button class="btn btn-primary btn-sm" id="v36-cal-add">${calIconV604('plus')}<span>Schedule</span></button></div></div><div class="v36-cal-body" id="v36-cal-body"></div></div>`;const sec=document.getElementById('view-master-calendar');sec?.classList.toggle('v36-cal-compact',ws.density==='compact');const body=document.getElementById('v36-cal-body');renderCalendarModeV603(body,events);bindCalendarV36();bindCalendarRailV603(body)}
 
+
+
+(function(){
+  if(window.__habitTabsV105)return;window.__habitTabsV105=true;
+  document.addEventListener('click',e=>{
+    const btn=e.target.closest?.('#view-habits [data-habitview]');
+    if(!btn)return;
+    habitView=btn.dataset.habitview==='calendar'?'calendar':'week';
+    document.querySelectorAll('#view-habits [data-habitview]').forEach(b=>b.classList.toggle('active',b===btn));
+    renderHabits();
+  },true);
+})();

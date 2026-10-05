@@ -12301,3 +12301,153 @@ window.OmniDialog={confirm:(message,opts={})=>open('confirm',message,opts),alert
   }
 }
 </style>
+
+
+<style id="omnios-v107-mobile-tasks-cleanup">
+/* v107 — Tasks mobile cleanup: no clipped filters, cleaner hierarchy, no duplicate add FAB. */
+@media(max-width:760px){
+  #view-tasks{
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:hidden!important;
+  }
+
+  #view-tasks>.toolbar{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    padding:7px!important;
+    gap:7px!important;
+    border-radius:14px!important;
+    overflow:hidden!important;
+  }
+
+  /* View modes: one clean horizontal strip. */
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(1),
+  #view-tasks>.toolbar>.task-view-group-v33{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    gap:5px!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    scrollbar-width:none!important;
+    padding:0 0 1px!important;
+  }
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(1)::-webkit-scrollbar,
+  #view-tasks>.toolbar>.task-view-group-v33::-webkit-scrollbar{display:none!important}
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(1) .view-btn,
+  #view-tasks>.toolbar>.task-view-group-v33 .view-btn{
+    flex:0 0 auto!important;
+    min-width:max-content!important;
+    min-height:38px!important;
+    height:38px!important;
+    padding:7px 10px!important;
+    font-size:.66rem!important;
+    border-radius:10px!important;
+  }
+
+  /* Filters: full-width 2-column grid that never exceeds the card. */
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(2),
+  #view-tasks>.toolbar>.task-filter-group-v33{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    gap:6px!important;
+    overflow:hidden!important;
+  }
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(2)>*,
+  #view-tasks>.toolbar>.task-filter-group-v33>*{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(2) select,
+  #view-tasks>.toolbar>.task-filter-group-v33 select{
+    min-height:42px!important;
+    height:42px!important;
+    padding:7px 10px!important;
+    font-size:.72rem!important;
+    text-overflow:ellipsis!important;
+  }
+
+  /* Search + sort + selection tools. */
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(3),
+  #view-tasks>.toolbar>.task-action-group-v33{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    width:100%!important;
+    min-width:0!important;
+    gap:6px!important;
+    overflow:hidden!important;
+    align-items:stretch!important;
+  }
+  #view-tasks #search-input{
+    grid-column:1/-1!important;
+    grid-row:1!important;
+    width:100%!important;
+    min-width:0!important;
+    height:42px!important;
+    min-height:42px!important;
+    box-sizing:border-box!important;
+  }
+  #view-tasks #sort-by{
+    grid-column:1!important;
+    grid-row:2!important;
+    width:100%!important;
+    min-width:0!important;
+    height:42px!important;
+    min-height:42px!important;
+  }
+  #view-tasks [data-v25-select="task"]{
+    grid-column:2!important;
+    grid-row:2!important;
+    width:48px!important;
+    min-width:48px!important;
+    height:42px!important;
+    min-height:42px!important;
+    padding:0 5px!important;
+    font-size:.58rem!important;
+    line-height:1.05!important;
+    border-radius:10px!important;
+  }
+
+  /* Save-view controls stay readable and balanced. */
+  #view-tasks :is([data-save-view],[data-task-save-view],.task-save-view-btn){
+    width:100%!important;
+    min-width:0!important;
+    min-height:42px!important;
+    justify-content:center!important;
+  }
+  #view-tasks :is([data-saved-views],[data-task-saved-views],.task-saved-views-btn){
+    min-width:64px!important;
+    min-height:42px!important;
+  }
+
+  /* Empty state is compact and aligned with the toolbar. */
+  #view-tasks :is(.empty-state,.v35-empty,.task-empty-state){
+    min-height:96px!important;
+    padding:18px 14px!important;
+    margin-top:8px!important;
+    border-radius:14px!important;
+    font-size:.75rem!important;
+  }
+
+  /* The top bar already has + Add; remove duplicate task-only floating action on phones. */
+  #view-tasks :is(.fab,.floating-add,.task-fab,[data-task-fab],[data-add-task-fab]){
+    display:none!important;
+  }
+}
+@media(max-width:390px){
+  #view-tasks>.toolbar>.toolbar-group:nth-of-type(2),
+  #view-tasks>.toolbar>.task-filter-group-v33{
+    grid-template-columns:1fr!important;
+  }
+}
+</style>

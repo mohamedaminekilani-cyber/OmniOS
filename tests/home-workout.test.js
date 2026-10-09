@@ -12,7 +12,7 @@ function fixture(){
  return {w,dom,click(selector){const el=w.document.querySelector(selector);assert.ok(el,'missing '+selector);el.dispatchEvent(new w.MouseEvent('click',{bubbles:true,cancelable:true}));return el},get store(){return w.OmniHomeWorkout.getState()}};
 }
 test('21 exercises remain usable without image markup or external image requests',()=>{
- assert.doesNotMatch(script, /@bryllim|cdn\\.jsdelivr|function figure\\(|<img|hw-figure|hw-credits/);
+ assert.ok(!['@bryllim','cdn.jsdelivr','function figure(','<img','hw-figure','hw-credits'].some(token=>script.includes(token)));
  const f=fixture();assert.equal(f.w.OmniHomeWorkout.catalog.length,21);assert.ok(f.w.OmniHomeWorkout.catalog.find(e=>e.id==='chin-up'));
  f.w.OmniHomeWorkout.open();
  assert.equal(f.w.document.querySelectorAll('#hw-panel img').length,0);

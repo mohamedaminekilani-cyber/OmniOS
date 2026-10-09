@@ -1,0 +1,202 @@
+
+<!-- OmniOS interaction refinement inspired by dqnamo Kitchen. No third-party runtime or data model changes. -->
+<style id="omnios-kitchen-interactions-css">
+:where(.btn,.icon-btn,.view-btn,.tab-btn,.nav-item,button[data-view]){
+  -webkit-tap-highlight-color:transparent;
+  transition:filter .16s ease,translate .16s ease,box-shadow .18s ease;
+}
+@media(hover:hover) and (pointer:fine){
+  :where(.btn,.icon-btn,.view-btn,.tab-btn,.nav-item,button[data-view]):not(:disabled):hover{filter:brightness(1.045)}
+}
+:where(.btn,.icon-btn,.view-btn,.tab-btn,.nav-item,button[data-view]):not(:disabled):active{
+  translate:0 1px;filter:brightness(1.085);
+}
+@keyframes omniKitchenTap{0%{filter:brightness(1)}45%{filter:brightness(1.14)}100%{filter:brightness(1)}}
+button.omni-kitchen-tap{animation:omniKitchenTap .3s ease-out}
+[data-omni-kitchen-fade="left"]{
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 18px,#000 100%);
+  mask-image:linear-gradient(90deg,transparent,#000 18px,#000 100%);
+}
+[data-omni-kitchen-fade="right"]{
+  -webkit-mask-image:linear-gradient(90deg,#000 0%,#000 calc(100% - 18px),transparent);
+  mask-image:linear-gradient(90deg,#000 0%,#000 calc(100% - 18px),transparent);
+}
+[data-omni-kitchen-fade="both"]{
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 18px,#000 calc(100% - 18px),transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 18px,#000 calc(100% - 18px),transparent);
+}
+:is(#v97-person-cover-preview,#v35-person-avatar-preview).omni-kitchen-drop{
+  position:relative!important;isolation:isolate;outline:2px dashed var(--accent-cyan,#06b6d4)!important;outline-offset:-5px;
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--accent-cyan,#06b6d4) 16%,transparent)!important;
+  translate:var(--omni-kitchen-pull-x,0px) var(--omni-kitchen-pull-y,0px);
+  transition:translate .1s ease,box-shadow .15s ease;
+}
+:is(#v97-person-cover-preview,#v35-person-avatar-preview).omni-kitchen-drop::after{
+  content:"Drop image to update";position:absolute;inset:0;z-index:5;pointer-events:none;
+  display:grid;place-items:center;padding:14px;text-align:center;color:var(--text-primary,#fff);
+  background:color-mix(in srgb,var(--bg-surface,#18181b) 86%,transparent);
+  font-size:.82rem;font-weight:700;letter-spacing:.01em;
+}
+#v35-db-clear-snaps{
+  position:relative;isolation:isolate;overflow:hidden;
+  touch-action:manipulation;-webkit-touch-callout:none;
+}
+#v35-db-clear-snaps::before{
+  content:"";position:absolute;inset:0;z-index:-1;width:0;
+  background:color-mix(in srgb,var(--accent-cyan,#06b6d4) 24%,transparent);
+  pointer-events:none;
+}
+#v35-db-clear-snaps.omni-kitchen-holding::before{animation:omniKitchenHold .9s linear forwards}
+@keyframes omniKitchenHold{from{width:0}to{width:100%}}
+#v35-db-clear-snaps.omni-kitchen-holding{border-color:var(--accent-cyan,#06b6d4)!important}
+@media(prefers-reduced-motion:reduce){
+  :where(.btn,.icon-btn,.view-btn,.tab-btn,.nav-item,button[data-view]){transition:none!important}
+  button.omni-kitchen-tap{animation:none!important}
+  #v35-db-clear-snaps.omni-kitchen-holding::before{animation:none;width:100%}
+  :is(#v97-person-cover-preview,#v35-person-avatar-preview).omni-kitchen-drop{translate:0 0}
+}
+</style>
+<script id="omnios-kitchen-interactions-js">
+(function(){
+  'use strict';
+  if(window.__omniosKitchenInteractions)return;
+  window.__omniosKitchenInteractions=true;
+  var scrollSelector='.v38-fin-tabs,.workout-tabs,.tab-btns,.v35-segmented,.v43-life-tabs,.rt-tabs,.v58-seg,.v431-tabs,.org-seg,.help-nav,#settings-tabs,.sb-filter-rail';
+  var refreshFrame=0;
+  function fade(el){
+    if(!el || !el.isConnected)return;
+    var overflow=el.scrollWidth-el.clientWidth;
+    if(overflow<10){el.removeAttribute('data-omni-kitchen-fade');return}
+    var left=el.scrollLeft>8;
+    var right=el.scrollLeft<overflow-8;
+    if(!left&&!right){el.removeAttribute('data-omni-kitchen-fade');return}
+    el.dataset.omniKitchenFade=left&&right?'both':left?'left':'right';
+  }
+  function decorateHold(){
+    var btn=document.getElementById('v35-db-clear-snaps');
+    if(btn&&!btn.dataset.omniKitchenReady){
+      btn.dataset.omniKitchenReady='1';
+      btn.textContent='Hold to clear restore points';
+      btn.setAttribute('aria-label','Hold to clear restore points, or activate with keyboard for confirmation');
+      btn.title='Hold for 0.9 seconds to clear all recovery snapshots. Your current data is not deleted.';
+    }
+  }
+  function refresh(){
+    refreshFrame=0;
+    document.querySelectorAll(scrollSelector).forEach(fade);
+    decorateHold();
+  }
+  function queueRefresh(){
+    if(refreshFrame)return;
+    refreshFrame=requestAnimationFrame(refresh);
+  }
+  document.addEventListener('scroll',function(e){
+    if(e.target&&e.target.matches&&e.target.matches(scrollSelector))fade(e.target);
+  },{capture:true,passive:true});
+  document.addEventListener('pointerover',function(e){
+    var tab=e.target.closest&&e.target.closest(scrollSelector);
+    if(tab)fade(tab);
+  },{passive:true});
+  document.addEventListener('focusin',function(e){
+    var tab=e.target.closest&&e.target.closest(scrollSelector);
+    if(tab)fade(tab);
+  });
+  window.addEventListener('resize',queueRefresh,{passive:true});
+  document.addEventListener('click',function(e){
+    var btn=e.target.closest&&e.target.closest('button.btn,button.btn-primary,button.view-btn,button.icon-btn');
+    if(btn&&!btn.disabled&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+      btn.classList.remove('omni-kitchen-tap');
+      requestAnimationFrame(function(){
+        if(!btn.isConnected)return;
+        btn.classList.add('omni-kitchen-tap');
+        setTimeout(function(){btn.classList.remove('omni-kitchen-tap')},350);
+      });
+    }
+    if(e.target.closest&&e.target.closest('[data-view],[data-v35-life-tab],[data-v43-go],[data-w63go],.tab-btn,.view-btn,.nav-item')) {
+      queueRefresh();
+      setTimeout(queueRefresh,110);
+    }
+  },{capture:true,passive:true});
+  function dropZone(node){return node&&node.closest&&node.closest('#v97-person-cover-preview,#v35-person-avatar-preview')}
+  function fileInput(zone){return document.getElementById(zone.id==='v35-person-avatar-preview'?'v35-person-avatar-file':'v97-cover-file')}
+  function clearDrop(){
+    document.querySelectorAll('.omni-kitchen-drop').forEach(function(el){
+      el.classList.remove('omni-kitchen-drop');
+      el.style.removeProperty('--omni-kitchen-pull-x');
+      el.style.removeProperty('--omni-kitchen-pull-y');
+    });
+  }
+  document.addEventListener('dragover',function(e){
+    var zone=dropZone(e.target),input=zone&&fileInput(zone);
+    if(!input||!e.dataTransfer||!Array.from(e.dataTransfer.types||[]).includes('Files'))return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect='copy';
+    clearDrop();
+    zone.classList.add('omni-kitchen-drop');
+    var rect=zone.getBoundingClientRect();
+    zone.style.setProperty('--omni-kitchen-pull-x',Math.max(-4,Math.min(4,(e.clientX-rect.left-rect.width/2)*.025))+'px');
+    zone.style.setProperty('--omni-kitchen-pull-y',Math.max(-4,Math.min(4,(e.clientY-rect.top-rect.height/2)*.025))+'px');
+  },true);
+  document.addEventListener('dragleave',function(e){
+    var zone=dropZone(e.target);
+    if(zone&&(!e.relatedTarget||!zone.contains(e.relatedTarget)))clearDrop();
+  },true);
+  document.addEventListener('dragend',clearDrop,true);
+  document.addEventListener('drop',function(e){
+    var zone=dropZone(e.target),input=zone&&fileInput(zone);
+    if(!input||!e.dataTransfer)return;
+    e.preventDefault();e.stopPropagation();clearDrop();
+    var file=Array.from(e.dataTransfer.files||[])[0];
+    if(!file)return;
+    if(!file.type.startsWith('image/')){
+      window.toast&&window.toast('Drop an image file (PNG, JPG or WebP).');return;
+    }
+    try{
+      var dt=new DataTransfer();dt.items.add(file);
+      input.files=dt.files;
+      input.dispatchEvent(new Event('change',{bubbles:true}));
+    }catch(err){
+      window.toast&&window.toast('Drag and drop is unavailable here. Use Choose image instead.');
+    }
+  },true);
+  var activeHold=null,authorized=new WeakSet();
+  function cancelHold(){
+    if(!activeHold)return;
+    clearTimeout(activeHold.timer);
+    activeHold.btn.classList.remove('omni-kitchen-holding');
+    activeHold=null;
+  }
+  document.addEventListener('pointerdown',function(e){
+    var btn=e.target.closest&&e.target.closest('#v35-db-clear-snaps');
+    if(!btn||btn.disabled||e.button!==0)return;
+    cancelHold();decorateHold();
+    var current={btn:btn,timer:0};
+    activeHold=current;btn.classList.add('omni-kitchen-holding');
+    current.timer=setTimeout(function(){
+      if(activeHold!==current||!btn.isConnected)return;
+      authorized.add(btn);
+      btn.classList.remove('omni-kitchen-holding');
+      activeHold=null;
+      btn.click();
+    },900);
+  },true);
+  document.addEventListener('pointerup',cancelHold,true);
+  document.addEventListener('pointercancel',cancelHold,true);
+  document.addEventListener('contextmenu',function(e){
+    if(e.target.closest&&e.target.closest('#v35-db-clear-snaps'))e.preventDefault();
+  },true);
+  document.addEventListener('click',function(e){
+    var btn=e.target.closest&&e.target.closest('#v35-db-clear-snaps');
+    if(!btn)return;
+    if(authorized.has(btn)){authorized.delete(btn);return}
+    e.preventDefault();e.stopImmediatePropagation();
+    if(e.detail===0&&window.confirm('Delete all recovery snapshots? Current Second Brain data stays intact.')){
+      authorized.add(btn);
+      btn.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
+    }
+  },true);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',queueRefresh,{once:true});
+  else queueRefresh();
+  window.OmniKitchen={refresh:queueRefresh};
+})();
+</script>

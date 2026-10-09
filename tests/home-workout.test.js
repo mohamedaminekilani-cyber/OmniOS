@@ -11,16 +11,25 @@ function fixture(){
  w.eval(script);w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
  return {w,dom,click(selector){const el=w.document.querySelector(selector);assert.ok(el,'missing '+selector);el.dispatchEvent(new w.MouseEvent('click',{bubbles:true,cancelable:true}));return el},get store(){return w.OmniHomeWorkout.getState()}};
 }
-test('21 exercise illustrations have consistent pinned open-license asset URLs',()=>{
- assert.match(script,/@bryllim\/workout-guide@1\.0\.0\/assets/);
+test('21 exercises remain usable without image markup or external image requests',()=>{
+ assert.doesNotMatch(script, /@bryllim|cdn\\.jsdelivr|function figure\\(|<img|hw-figure|hw-credits/);
  const f=fixture();assert.equal(f.w.OmniHomeWorkout.catalog.length,21);assert.ok(f.w.OmniHomeWorkout.catalog.find(e=>e.id==='chin-up'));
- f.w.OmniHomeWorkout.open();assert.ok(f.w.document.querySelector('img[src*="/push-up/frame-"]'));assert.ok(f.w.document.querySelector('.hw-credits a[href*="creativecommons"]'));
+ f.w.OmniHomeWorkout.open();
+ assert.equal(f.w.document.querySelectorAll('#hw-panel img').length,0);
+ assert.ok(f.w.document.querySelector('.hw-plan-exercises'));
+ f.click('[data-hw-page="library"]');
+ assert.equal(f.w.document.querySelectorAll('.hw-ex-card').length,21);
+ assert.equal(f.w.document.querySelectorAll('#hw-panel img').length,0);
+ f.click('[data-hw-add-ex="push-up"]');
+ assert.ok(f.w.document.querySelector('#hw-builder .hw-builder-row'));
+ assert.equal(f.w.document.querySelectorAll('#hw-builder img').length,0);
  f.dom.window.close();
 });
 test('plans, set progression, timing controls and completed history survive state saves',()=>{
  const f=fixture();f.w.OmniHomeWorkout.open();
  f.click('[data-hw-start="starter-full"]');assert.ok(f.store.active);
  assert.equal(f.store.active.entries[0].sets.length,3);
+ assert.equal(f.w.document.querySelectorAll('#hw-panel img').length,0);
  assert.equal(f.w.document.getElementById('hw-actual').value,'10');
  f.w.document.getElementById('hw-actual').value='15';
  f.click('[data-hw-action="complete-set"]');

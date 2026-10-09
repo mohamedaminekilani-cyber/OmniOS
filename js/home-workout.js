@@ -248,6 +248,7 @@ function install(){
  if(b.dataset.workoutTab==='home'){e.preventDefault();e.stopImmediatePropagation();workoutTab='home';syncView()}
  else if(v){v.classList.remove('hw-active')}
  },true);
+ document.addEventListener('click',function(e){if(e.target.closest?.('#workout-start-btn,#workout-open-history-btn'))document.getElementById('view-workout')?.classList.remove('hw-active')},true);
  document.addEventListener('click',function(e){if(e.target.closest?.('#hw-panel,#hw-builder'))handle(e)});
  document.addEventListener('input',function(e){if(e.target.closest?.('#hw-panel,#hw-builder'))change(e)});
  document.addEventListener('change',function(e){if(e.target.closest?.('#hw-panel,#hw-builder'))change(e)});

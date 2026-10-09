@@ -191,7 +191,8 @@ button.omni-kitchen-tap{animation:omniKitchenTap .3s ease-out}
     if(authorized.has(btn)){authorized.delete(btn);return}
     e.preventDefault();e.stopImmediatePropagation();
     if(e.detail===0&&window.confirm('Delete all recovery snapshots? Current Second Brain data stays intact.')){
-      authorized.add(btn);btn.click();
+      authorized.add(btn);
+      btn.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
     }
   },true);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',queueRefresh,{once:true});

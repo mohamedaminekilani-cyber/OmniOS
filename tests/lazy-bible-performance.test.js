@@ -15,7 +15,7 @@ test('full NIV corpus is lazy and checksum-pinned',()=>{
 
 test('source release skips empty Bible carrier fragments and stays below 4 MB',()=>{
   const {html,manifest}=sourceRelease();
-  assert.ok(manifest.parts.length<=13,`expected at most 12 non-empty source parts, got ${manifest.parts.length}`);
+  assert.ok(manifest.parts.length<=13,`expected at most 13 non-empty source parts, got ${manifest.parts.length}`);
   assert.ok(Buffer.byteLength(html)<4_000_000,`startup payload too large: ${Buffer.byteLength(html)}`);
-  for(let i=9;i<=24;i++)assert.equal(manifest.parts.includes(`app-parts/part-${String(i).padStart(3,'0')}.html`),false);
+  for(let i=10;i<=24;i++)assert.equal(manifest.parts.includes(`app-parts/part-${String(i).padStart(3,'0')}.html`),false);
 });

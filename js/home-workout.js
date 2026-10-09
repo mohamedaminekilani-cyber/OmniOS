@@ -1,7 +1,4 @@
-/* OmniOS Home Workout — local-first bodyweight plan, session and progress module.
- * Artwork: Bryl Lim / Everkinetic, CC BY-SA 4.0, Workout Guide v1.0.0.
- * Image requests are optional: workouts function offline without third-party API calls.
- */
+/* OmniOS Home Workout — lightweight, text-first bodyweight plans, session and progress tracking. */
 (function(){
 'use strict';
 if(window.OmniHomeWorkout)return;
@@ -29,7 +26,6 @@ var CATALOG=[
  ['jumping-jack','Jumping jacks','Full body','Full body · cardio','None','time',60,'Beginner']
 ].map(function(a){return {id:a[0],name:a[1],group:a[2],muscle:a[3],equipment:a[4],mode:a[5],target:a[6],difficulty:a[7]};});
 var EXERCISES=Object.fromEntries(CATALOG.map(function(e){return [e.id,e]}));
-var ART='https://cdn.jsdelivr.net/npm/@bryllim/workout-guide@1.0.0/assets/';
 var BUILTINS=[
  {id:'starter-full',name:'Full body · 25 min',note:'Balanced home training',items:[['push-up',3,10,60],['bodyweight-squat',3,16,45],['reverse-lunge',3,10,45],['plank',3,40,45]]},
  {id:'starter-upper',name:'Upper body strength',note:'Push and pull movements',items:[['push-up',4,12,75],['pull-up',3,6,90],['diamond-push-up',3,8,75],['chin-up',3,6,90]]},
@@ -46,11 +42,6 @@ function note(m){if(typeof window.toast==='function')window.toast(m)}
 function getExercise(id){return EXERCISES[id]||null}
 function plan(id){return store().routines.find(function(p){return p.id===id})||BUILTINS.find(function(p){return p.id===id})}
 function allPlans(){return BUILTINS.concat(store().routines)}
-function img(ex,frame){return ART+encodeURIComponent(ex.id)+'/frame-'+(frame||2)+'.svg'}
-function figure(ex,frame,klass){
- var src=img(ex,frame);
- return '<div class="hw-figure '+(klass||'')+'"><img src="'+esc(src)+'" loading="lazy" alt="'+esc(ex.name)+' exercise position '+(frame||2)+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="hw-figure-fallback" hidden aria-hidden="true">Exercise illustration unavailable offline</span></div>';
-}
 function itemDefaults(id){var x=getExercise(id);return {id:id,sets:3,target:x?x.target:10,rest:60}}
 function safeItems(items){return (Array.isArray(items)?items:[]).filter(function(it){return it&&getExercise(it.id)}).slice(0,30).map(function(it){var e=getExercise(it.id);return {id:e.id,sets:clamp(it.sets,1,12,3),target:clamp(it.target,1,e.mode==='time'?1800:300,e.target),rest:clamp(it.rest,0,900,60)}})}
 function stats(){
@@ -85,8 +76,7 @@ function render(){
  var d=store(),s=stats(),a=d.active;
  var header='<div class="hw-top"><div><div class="hw-kicker">BODYWEIGHT TRAINING</div><h3>Home workout</h3><p>Your plans, timed sets and progress in one place. No gym required.</p></div><div class="hw-top-actions">'+(a?cardButton('resume','Resume session','btn-primary'):cardButton('new-plan','Build a plan','btn-primary'))+'</div></div>';
  var kpis='<div class="hw-kpis"><div><small>Sessions · 7 days</small><strong>'+s.week+'</strong></div><div><small>Completed sets</small><strong>'+s.sets+'</strong></div><div><small>Bodyweight reps</small><strong>'+s.reps+'</strong></div><div><small>Training time</small><strong>'+s.minutes+' min</strong></div></div>';
- root.innerHTML=header+kpis+(a?sessionView(a):nav()+(page==='plans'?plansView():page==='library'?libraryView():page==='progress'?progressView():historyView()))+
- '<div class="hw-credits">Exercise illustrations: <a href="https://github.com/bryllim/workout-guide" target="_blank" rel="noopener noreferrer">Bryl Lim / Everkinetic</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Images load online; tracking works offline.</div>';
+ root.innerHTML=header+kpis+(a?sessionView(a):nav()+(page==='plans'?plansView():page==='library'?libraryView():page==='progress'?progressView():historyView()));
  updateClock();
 }
 function plansView(){
@@ -94,15 +84,14 @@ function plansView(){
  return '<div class="hw-heading"><div><h4>Training plans</h4><p>Choose a starter or create your own sequence.</p></div>'+cardButton('new-plan','+ New plan')+'</div><div class="hw-plans">'+plans.map(function(p){
  var count=p.items.reduce(function(n,i){return n+i.sets},0);
  var last=history.find(function(s){return s.routineId===p.id});
- var first=getExercise(p.items[0]?.id)||CATALOG[0];
- return '<article class="hw-plan"><div class="hw-plan-image">'+figure(first,2)+'</div><div class="hw-plan-content"><div class="hw-overline">'+(p.builtin?'STARTER PLAN':'MY PLAN')+'</div><h4>'+esc(p.name)+'</h4><p>'+esc(p.note||'Custom home workout')+'</p><div class="hw-plan-chips"><span>'+p.items.length+' exercises</span><span>'+count+' sets</span>'+(last?'<span>Last done '+esc(dateKey(last.endedAt))+'</span>':'')+'</div><div class="hw-plan-actions"><button type="button" class="btn btn-primary" data-hw-start="'+esc(p.id)+'">Start</button><button type="button" class="btn" data-hw-edit="'+esc(p.id)+'">'+(p.builtin?'Customize':'Edit')+'</button>'+(p.builtin?'':'<button type="button" class="btn hw-danger" data-hw-delete="'+esc(p.id)+'">Delete</button>')+'</div></div></article>'
+ return '<article class="hw-plan"><div class="hw-plan-content"><div class="hw-overline">'+(p.builtin?'STARTER PLAN':'MY PLAN')+'</div><h4>'+esc(p.name)+'</h4><p>'+esc(p.note||'Custom home workout')+'</p><div class="hw-plan-exercises">'+p.items.slice(0,3).map(function(it){return esc(getExercise(it.id)?.name||it.id)}).join(' · ')+(p.items.length>3?' · +'+(p.items.length-3)+' more':'')+'</div><div class="hw-plan-chips"><span>'+p.items.length+' exercises</span><span>'+count+' sets</span>'+(last?'<span>Last done '+esc(dateKey(last.endedAt))+'</span>':'')+'</div><div class="hw-plan-actions"><button type="button" class="btn btn-primary" data-hw-start="'+esc(p.id)+'">Start</button><button type="button" class="btn" data-hw-edit="'+esc(p.id)+'">'+(p.builtin?'Customize':'Edit')+'</button>'+(p.builtin?'':'<button type="button" class="btn hw-danger" data-hw-delete="'+esc(p.id)+'">Delete</button>')+'</div></div></article>'
  }).join('')+'</div>';
 }
 function libraryView(){
  var list=CATALOG.filter(function(e){return (category==='All'||e.group===category)&&(!query||[e.name,e.muscle,e.equipment].join(' ').toLowerCase().includes(query.toLowerCase()))});
- return '<div class="hw-heading"><div><h4>Exercise library</h4><p>Consistent illustrations for every movement.</p></div><label class="hw-search"><span class="sr-only">Find an exercise</span><input id="hw-search" type="search" placeholder="Search exercises…" value="'+esc(query)+'"></label></div>'+
+ return '<div class="hw-heading"><div><h4>Exercise library</h4><p>Build a routine from 21 bodyweight exercises.</p></div><label class="hw-search"><span class="sr-only">Find an exercise</span><input id="hw-search" type="search" placeholder="Search exercises…" value="'+esc(query)+'"></label></div>'+
  '<div class="hw-filters">'+['All','Push','Pull','Legs','Core','Full body'].map(function(g){return '<button type="button" class="hw-chip '+(g===category?'active':'')+'" data-hw-category="'+esc(g)+'">'+esc(g)+'</button>'}).join('')+'</div>'+
- '<div class="hw-library">'+list.map(function(e){return '<article class="hw-ex-card">'+figure(e,2)+'<div class="hw-ex-info"><div class="hw-overline">'+esc(e.group)+' · '+esc(e.difficulty)+'</div><h5>'+esc(e.name)+'</h5><p>'+esc(e.muscle)+'</p><small>'+esc(e.equipment)+' · '+(e.mode==='time'?'Timed':'Repetitions')+'</small><button type="button" class="hw-mini-action" data-hw-add-ex="'+esc(e.id)+'">+ Build with this exercise</button></div></article>'}).join('')+'</div>'+(list.length?'':'<div class="hw-empty">No exercises match your search.</div>');
+ '<div class="hw-library">'+list.map(function(e){return '<article class="hw-ex-card"><div class="hw-ex-info"><div class="hw-overline">'+esc(e.group)+' · '+esc(e.difficulty)+'</div><h5>'+esc(e.name)+'</h5><p>'+esc(e.muscle)+'</p><small>'+esc(e.equipment)+' · '+(e.mode==='time'?'Timed':'Repetitions')+'</small><button type="button" class="hw-mini-action" data-hw-add-ex="'+esc(e.id)+'">+ Build with this exercise</button></div></article>'}).join('')+'</div>'+(list.length?'':'<div class="hw-empty">No exercises match your search.</div>');
 }
 function historyView(){
  var sessions=store().sessions;
@@ -132,22 +121,21 @@ function sessionView(a){
  var c=a.clock,idx=activePosition(a),done=0,total=0;
  a.entries.forEach(function(it){it.sets.forEach(function(st){total++;if(st.done)done++})});
  var i=idx?idx.exercise:Math.max(0,a.entries.length-1),j=idx?idx.set:0,item=a.entries[i],e=getExercise(item.id)||CATALOG[0],set=item.sets[j],remain=clockRemaining(a);
- var visual='<div class="hw-session-figure">'+figure(e,1)+figure(e,3)+'</div>';
  var complete=done===total;
  var meta='<div class="hw-session-status"><span>'+done+' / '+total+' sets</span><span>'+Math.round(done/Math.max(1,total)*100)+'% complete</span></div><div class="hw-progress-track"><i style="width:'+Math.round(done/Math.max(1,total)*100)+'%"></i></div>';
  return '<div class="hw-session"><div class="hw-session-header"><div><div class="hw-overline">ACTIVE WORKOUT</div><h4>'+esc(a.name)+'</h4><p>Started '+esc(new Date(a.startedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</p></div><div class="hw-session-tools">'+cardButton('finish','Finish session','btn-primary')+cardButton('discard','Discard','hw-danger')+'</div></div>'+meta+
- '<div class="hw-session-layout"><div class="hw-main-card">'+visual+'<div class="hw-overline">'+esc(e.group)+' · '+esc(e.muscle)+'</div><h3>'+(complete?'All sets completed':esc(e.name))+'</h3><p class="hw-session-sub">'+(complete?'You can finish and save your results.':'Set '+(j+1)+' of '+item.sets.length+' · '+esc(e.equipment))+'</p>'+
+ '<div class="hw-session-layout"><div class="hw-main-card"><div class="hw-overline">'+esc(e.group)+' · '+esc(e.muscle)+'</div><h3>'+(complete?'All sets completed':esc(e.name))+'</h3><p class="hw-session-sub">'+(complete?'You can finish and save your results.':'Set '+(j+1)+' of '+item.sets.length+' · '+esc(e.equipment))+'</p>'+
  (complete?'<div class="hw-empty">Great work — save this session to update your progress charts.</div>':'<div class="hw-actual"><label>Actual '+(e.mode==='time'?'seconds':'reps')+'<input id="hw-actual" type="number" inputmode="numeric" min="0" max="1800" value="'+esc(set.actual==null?item.target:set.actual)+'"></label>'+cardButton('complete-set','✓ Complete set','btn-primary')+'</div>')+
  (complete?'':(e.mode==='time'?'<div class="hw-timed-tools">'+cardButton('exercise-clock',(c&&c.kind==='exercise'?'Pause / resume':'Start set timer'))+ '<strong id="hw-work-timer">'+(c&&c.kind==='exercise'?fmt(remain):fmt(item.target))+'</strong></div>':''))+
  '<div class="hw-rest"><div><small>REST TIMER</small><strong id="hw-rest-timer">'+(c&&c.kind==='rest'?fmt(remain):fmt(item.rest))+'</strong><p>'+(c&&c.kind==='rest'?'Rest until your next set':'Rest after each set · '+item.rest+' sec')+'</p></div><div class="hw-rest-actions">'+cardButton('rest-toggle',c&&c.kind==='rest'&&c.until?'Pause':c&&c.kind==='rest'?'Resume':'Start rest')+cardButton('rest-minus','−15s')+cardButton('rest-plus','+15s')+cardButton('rest-skip','Skip')+'</div></div></div>'+
  '<aside class="hw-queue"><div class="hw-heading"><div><h4>Workout queue</h4><p>Each set saved as you go.</p></div></div>'+
- a.entries.map(function(it,n){var x=getExercise(it.id)||CATALOG[0],d=it.sets.filter(function(st){return st.done}).length;return '<div class="hw-queue-row '+(n===i?'current':'')+'">'+figure(x,2)+'<div><strong>'+esc(x.name)+'</strong><small>'+d+'/'+it.sets.length+' sets · '+esc(x.mode==='time'?'seconds':'reps')+'</small><div class="hw-set-dots">'+it.sets.map(function(st,k){return '<span title="Set '+(k+1)+(st.done?': complete':': pending')+'" class="'+(st.done?'done':'')+'"></span>'}).join('')+'</div></div></div>'}).join('')+'</aside></div></div>';
+ a.entries.map(function(it,n){var x=getExercise(it.id)||CATALOG[0],d=it.sets.filter(function(st){return st.done}).length;return '<div class="hw-queue-row '+(n===i?'current':'')+'"><span class="hw-queue-index" aria-hidden="true">'+(n+1)+'</span><div><strong>'+esc(x.name)+'</strong><small>'+d+'/'+it.sets.length+' sets · '+esc(x.mode==='time'?'seconds':'reps')+'</small><div class="hw-set-dots">'+it.sets.map(function(st,k){return '<span title="Set '+(k+1)+(st.done?': complete':': pending')+'" class="'+(st.done?'done':'')+'"></span>'}).join('')+'</div></div></div>'}).join('')+'</aside></div></div>';
 }
 function renderEditor(){
  var previous=document.getElementById('hw-builder');if(previous)previous.remove();
  if(!draft)return;
  var overlay=document.createElement('div');overlay.id='hw-builder';overlay.className='hw-modal-backdrop';overlay.setAttribute('role','presentation');
- var rows=draft.items.map(function(it,i){var ex=getExercise(it.id)||CATALOG[0];return '<div class="hw-builder-row"><div class="hw-builder-image">'+figure(ex,2)+'</div><div class="hw-builder-fields"><strong>'+esc(ex.name)+'</strong><div class="hw-builder-grid"><label>Sets<input type="number" data-hw-field="sets" data-hw-row="'+i+'" min="1" max="12" value="'+it.sets+'"></label><label>'+(ex.mode==='time'?'Seconds':'Reps')+'<input type="number" data-hw-field="target" data-hw-row="'+i+'" min="1" max="1800" value="'+it.target+'"></label><label>Rest (sec)<input type="number" data-hw-field="rest" data-hw-row="'+i+'" min="0" max="900" value="'+it.rest+'"></label></div></div><div class="hw-builder-actions"><button type="button" data-hw-move="'+i+'" data-direction="-1" aria-label="Move exercise up">↑</button><button type="button" data-hw-move="'+i+'" data-direction="1" aria-label="Move exercise down">↓</button><button type="button" data-hw-remove="'+i+'" aria-label="Remove exercise">×</button></div></div>'}).join('');
+ var rows=draft.items.map(function(it,i){var ex=getExercise(it.id)||CATALOG[0];return '<div class="hw-builder-row"><div class="hw-builder-fields"><strong>'+esc(ex.name)+'</strong><div class="hw-builder-grid"><label>Sets<input type="number" data-hw-field="sets" data-hw-row="'+i+'" min="1" max="12" value="'+it.sets+'"></label><label>'+(ex.mode==='time'?'Seconds':'Reps')+'<input type="number" data-hw-field="target" data-hw-row="'+i+'" min="1" max="1800" value="'+it.target+'"></label><label>Rest (sec)<input type="number" data-hw-field="rest" data-hw-row="'+i+'" min="0" max="900" value="'+it.rest+'"></label></div></div><div class="hw-builder-actions"><button type="button" data-hw-move="'+i+'" data-direction="-1" aria-label="Move exercise up">↑</button><button type="button" data-hw-move="'+i+'" data-direction="1" aria-label="Move exercise down">↓</button><button type="button" data-hw-remove="'+i+'" aria-label="Remove exercise">×</button></div></div>'}).join('');
  overlay.innerHTML='<div class="hw-modal" role="dialog" aria-modal="true" aria-labelledby="hw-builder-title"><div class="hw-modal-head"><div><div class="hw-kicker">YOUR HOME TRAINING</div><h3 id="hw-builder-title">'+(draft.id?'Edit plan':'Build a workout plan')+'</h3></div><button type="button" class="btn" data-hw-action="close-editor" aria-label="Close workout builder">✕</button></div><div class="hw-modal-body"><label class="hw-field">Plan name<input id="hw-plan-name" maxlength="70" placeholder="e.g. Full body morning" value="'+esc(draft.name)+'"></label><label class="hw-field">Description<input id="hw-plan-note" maxlength="140" placeholder="Optional note" value="'+esc(draft.note||'')+'"></label><h4>Exercise sequence</h4><div class="hw-builder-list">'+(rows||'<div class="hw-empty">Choose an exercise below to begin.</div>')+'</div><div class="hw-add-row"><label>Add exercise<select id="hw-ex-picker">'+CATALOG.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+' · '+esc(x.group)+'</option>'}).join('')+'</select></label>'+cardButton('append-ex','+ Add exercise')+'</div></div><div class="hw-modal-footer">'+cardButton('close-editor','Cancel')+cardButton('save-plan','Save plan','btn-primary')+'</div></div>';
  document.body.appendChild(overlay);
  overlay.addEventListener('click',function(evt){if(evt.target===overlay)closeEditor()});

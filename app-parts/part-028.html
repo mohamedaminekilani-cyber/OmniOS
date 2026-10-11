@@ -1624,12 +1624,12 @@ function routineView62(){return document.getElementById('view-routine')}
 let pageTab='today';
 function pageFilter(r){if(pageTab==='today')return dueToday(r);if(['daily','weekly','monthly'].includes(pageTab))return r.frequency===pageTab;return true}
 function routineCard(r){
-  const p=cycleProgress(r);return `<article class="rt-card ${p.total&&p.done===p.total?'done':''}"><div class="rt-card-head"><div class="rt-card-icon">${E(r.icon||'↻')}</div><div class="rt-card-main"><div class="rt-card-title">${E(r.name)}</div><div class="rt-card-meta">${E(freqLabel(r))}${r.time?' · '+E(r.time):''} · ${p.done}/${p.total} steps</div><div class="rt611-card-reset">${E(resetText(r))}</div></div><div class="rt-card-actions"><button type="button" class="btn btn-sm" data-rt611-edit="${E(r.id)}">Edit</button><button type="button" class="btn btn-sm" data-rt611-reset="${E(r.id)}">Reset now</button><button type="button" class="btn btn-sm" data-rt611-delete="${E(r.id)}">Delete</button></div></div><div class="rt-progress"><i style="width:${p.pct}%"></i></div><div class="rt-items">${A(r.items).length?A(r.items).map(i=>{const linked=i.linkType&&i.linkType!=='none',tn=targetName(i);return `<div class="rt-item"><button type="button" class="rt-check ${p.map[i.id]?'done':''}" data-rt611-check="${E(r.id)}|${E(i.id)}" aria-label="Toggle ${E(i.title)}">✓</button><div><div class="rt-item-title">${E(i.title)}</div>${i.notes?`<div class="rt-item-note">${E(i.notes)}</div>`:''}${linked?`<span class="rt-link">${E(linkLabels[i.linkType]||i.linkType)}${tn?' · '+E(tn):''}</span>`:''}</div><div class="rt-item-actions">${linked?`<button type="button" class="btn btn-sm" data-rt611-open="${E(r.id)}|${E(i.id)}">Open</button>`:`<button type="button" class="btn btn-sm" data-rt611-task="${E(r.id)}|${E(i.id)}">Make task</button>`}</div></div>`}).join(''):'<div class="rt-empty">No steps yet.</div>'}</div></article>`;
+  const p=cycleProgress(r);return `<article class="rt-card ${p.total&&p.done===p.total?'done':''}"><div class="rt-card-head"><div class="rt-card-icon">${E(r.icon||'↻')}</div><div class="rt-card-main"><div class="rt-card-title">${E(r.name)}</div><div class="rt-card-meta">${E(freqLabel(r))}${r.time?' · '+E(r.time):''} · ${p.done}/${p.total} steps</div><div class="rt611-card-reset">${E(resetText(r))}</div></div><div class="rt-card-actions"><button type="button" class="btn btn-sm" data-rt611-edit="${E(r.id)}">Edit</button><button type="button" class="btn btn-sm" data-rt611-reset="${E(r.id)}">Reset now</button><button type="button" class="btn btn-sm" data-rt611-delete="${E(r.id)}">Delete</button></div></div><div class="rt-progress" role="progressbar" aria-label="${E(r.name)} completion" aria-valuenow="${p.pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${p.pct}%"></i></div><div class="rt-items">${A(r.items).length?A(r.items).map(i=>{const linked=i.linkType&&i.linkType!=='none',tn=targetName(i);return `<div class="rt-item"><button type="button" class="rt-check ${p.map[i.id]?'done':''}" data-rt611-check="${E(r.id)}|${E(i.id)}" aria-label="${p.map[i.id]?'Mark incomplete':'Complete'} ${E(i.title)}" aria-pressed="${!!p.map[i.id]}">✓</button><div><div class="rt-item-title">${E(i.title)}</div>${i.notes?`<div class="rt-item-note">${E(i.notes)}</div>`:''}${linked?`<span class="rt-link">${E(linkLabels[i.linkType]||i.linkType)}${tn?' · '+E(tn):''}</span>`:''}</div><div class="rt-item-actions">${linked?`<button type="button" class="btn btn-sm" data-rt611-open="${E(r.id)}|${E(i.id)}">Open</button>`:`<button type="button" class="btn btn-sm" data-rt611-task="${E(r.id)}|${E(i.id)}">Make task</button>`}</div></div>`}).join(''):'<div class="rt-empty">No steps yet.</div>'}</div></article>`;
 }
 function renderRoutinePage(){
   normalize();const v=routineView62();if(!v){console.error('Routine page missing from canonical DOM');return;}
   const active=normalize().filter(r=>!r.archived),shown=active.filter(pageFilter),totalSteps=shown.reduce((n,r)=>n+A(r.items).length,0),doneSteps=shown.reduce((n,r)=>n+cycleProgress(r).done,0),finished=shown.filter(r=>{const p=cycleProgress(r);return p.total&&p.done===p.total}).length;
-  v.innerHTML=`<div class="rt611-shell"><div class="rt-hero"><div class="rt-hero-main"><div class="rt-kicker">CONNECTED ROUTINES</div><h3>Routine</h3><p>Create repeatable routines whose completion automatically starts fresh on the correct cycle: every day, every week, or every month. Steps can connect directly to Tasks, Finance, Shopping, Meditation, Workout, Notes, Calendar, Habits and Pantry.</p></div><div class="rt-hero-actions"><button type="button" class="btn" data-rt611-tab-jump="all">All routines</button><button type="button" class="btn btn-primary" data-rt611-new>+ New routine</button></div></div><div class="rt611-tabs" aria-label="Routine views">${[['today','Today'],['daily','Daily'],['weekly','Weekly'],['monthly','Monthly'],['all','All']].map(([k,l])=>`<button type="button" class="rt611-tab ${pageTab===k?'active':''}" data-rt611-tab="${k}">${l}</button>`).join('')}</div><div class="rt-kpis"><div class="rt-kpi"><span>Routines</span><strong>${shown.length}</strong></div><div class="rt-kpi"><span>Steps done</span><strong>${doneSteps}/${totalSteps}</strong></div><div class="rt-kpi"><span>Finished</span><strong>${finished}</strong></div><div class="rt-kpi"><span>Completion</span><strong>${totalSteps?Math.round(doneSteps/totalSteps*100):0}%</strong></div></div><div class="rt-list">${shown.length?shown.map(routineCard).join(''):`<div class="rt-empty">${pageTab==='today'?'No routines are scheduled for today.':'No routines in this view yet.'}</div>`}</div></div>`;
+  v.innerHTML=`<div class="rt611-shell"><div class="rt-hero"><div class="rt-hero-main"><div class="rt-kicker">YOUR DAILY RHYTHM</div><h3>Routine</h3><p>Small, repeatable steps that reset on schedule. Keep today in motion.</p></div><div class="rt-hero-actions"><button type="button" class="btn" data-rt611-tab-jump="all">All routines</button><button type="button" class="btn btn-primary" data-rt611-new>+ New routine</button></div></div><div class="rt611-tabs" role="group" aria-label="Routine views">${[['today','Today'],['daily','Daily'],['weekly','Weekly'],['monthly','Monthly'],['all','All']].map(([k,l])=>`<button type="button" class="rt611-tab ${pageTab===k?'active':''}" data-rt611-tab="${k}" aria-pressed="${pageTab===k}">${l}</button>`).join('')}</div><div class="rt-kpis"><div class="rt-kpi"><span>Routines</span><strong>${shown.length}</strong></div><div class="rt-kpi"><span>Steps done</span><strong>${doneSteps}/${totalSteps}</strong></div><div class="rt-kpi"><span>Finished</span><strong>${finished}</strong></div><div class="rt-kpi"><span>Completion</span><strong>${totalSteps?Math.round(doneSteps/totalSteps*100):0}%</strong></div></div><div class="om5-routine-overview"><span>Cycle progress</span><strong>${totalSteps?Math.round(doneSteps/totalSteps*100):0}%</strong><div class="om5-routine-progress" role="progressbar" aria-label="Routine steps completed in the selected view" aria-valuenow="${totalSteps?Math.round(doneSteps/totalSteps*100):0}" aria-valuemin="0" aria-valuemax="100"><i style="width:${totalSteps?Math.round(doneSteps/totalSteps*100):0}%"></i></div></div><div class="rt-list">${shown.length?shown.map(routineCard).join(''):`<div class="rt-empty">${pageTab==='today'?'No routines are scheduled for today.':'No routines in this view yet.'}</div>`}</div></div>`;
   v.querySelectorAll('[data-rt611-tab]').forEach(b=>b.onclick=()=>{pageTab=b.dataset.rt611Tab;renderRoutinePage()});
   v.querySelector('[data-rt611-tab-jump]')?.addEventListener('click',()=>{pageTab='all';renderRoutinePage()});
   v.querySelector('[data-rt611-new]')?.addEventListener('click',()=>openEditor611());
@@ -2181,7 +2181,7 @@ function hideWelcomeUntilTomorrow(){
   try{localStorage.setItem(WELCOME_HIDE_DAY_KEY,welcomeDayKey())}catch(_){}
   close()
 }
-function show(){document.getElementById('welcome63')?.remove();const x=data(),o=document.createElement('div'),dv=window.OmniDailyVerse79?.today?.()||null,profileName=String(x.s?.settings?.profile?.name||'').trim(),profileAvatar=String(x.s?.settings?.profile?.avatar||''),logo=x.s?.brandingLogo||x.s?.customIcons?.logo||'',sum=[x.agenda.length?x.agenda.length+' scheduled':'',x.tasks.length?x.tasks.length+' tasks due':'',x.routines.length?x.routines.length+' routines':''].filter(Boolean).join(' · ')||'Your day is open';o.id='welcome63';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');o.setAttribute('aria-label','Today briefing');o.innerHTML=`<div class="w63-shell"><div class="w63-top"><div class="w63-brand"><div class="w63-mark">${logo?`<img src="${E(logo)}" alt="">`:'✦'}</div><span>Second Brain</span></div><button type="button" class="w63-x" data-w63close aria-label="Close welcome screen">✕</button></div><main class="w63-main"><section class="w63-hero"><div class="w63-intro"><div class="w63-date">${E(x.d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}))}</div>${profileAvatar?`<img class="w93-welcome-avatar" src="${E(profileAvatar)}" alt="">`:''}<h1>${g(x.d.getHours())}${profileName?', '+E(profileName):''}.</h1><div class="w63-summary">${E(sum)}. Here is your day at a glance.</div><div class="w63-actions"><button class="w63-btn primary" data-w63go="today">Start with Today</button><button class="w63-btn" data-w63close>Enter workspace</button><button class="w63-btn w63-btn-later" data-w63tomorrow>Hide until tomorrow</button></div></div><aside class="w63-next"><div><div class="w63-label">Next on your schedule</div><div class="w63-time">${x.next?E(tm(x.next.time)):x.agenda.length?'Done for now':'Open day'}</div><div class="w63-next-title">${x.next?E(x.next.t):x.agenda.length?'No more timed items today.':'Nothing scheduled today.'}</div>${x.next?`<div class="w63-muted">${E(x.next.k)}${x.next.dur?' · '+E(x.next.dur+' min'):''}</div>`:''}</div><button class="w63-link" data-w63go="master-calendar">View calendar →</button></aside></section>${dv?`<section class="w80-welcome-verse" aria-label="Verse of the day"><div class="w80-welcome-verse-main"><div class="w80-welcome-verse-kicker">Verse of the day · ${E(dv.theme)}</div><blockquote>${E(dv.text)}</blockquote><div class="w80-welcome-verse-ref">${E(dv.ref)}</div></div><div class="w80-welcome-verse-actions"><button type="button" class="w63-btn" data-w80verse="read">Read in Bible</button><button type="button" class="w63-btn" data-w80verse="meditate">Meditate</button></div></section>`:''}<section class="w63-stats"><div class="w63-stat"><span>Schedule</span><strong>${x.agenda.length}</strong></div><div class="w63-stat"><span>Tasks due</span><strong>${x.tasks.length}</strong></div><div class="w63-stat"><span>Habits</span><strong>${x.hd}/${x.habits.length}</strong></div><div class="w63-stat"><span>Focus today</span><strong>${Math.round(x.focus)}m</strong></div></section><section class="w63-grid"><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Today’s agenda</div><div class="w63-sub">Events and time blocks</div></div><button class="w63-link" data-w63go="master-calendar">Calendar</button></div>${rowsAgenda(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Priority tasks</div><div class="w63-sub">Pinned, urgent and due first</div></div><button class="w63-link" data-w63go="tasks">Tasks</button></div>${rowsTasks(x)}</div></div><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Routines</div><div class="w63-sub">Today’s progress</div></div><button class="w63-link" data-w63go="routine">Routine</button></div>${rowsR(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Habits</div><div class="w63-sub">${x.hd} completed today</div></div><button class="w63-link" data-w63go="habits">Habits</button></div>${rowsH(x)}</div></div></section></main></div>`;document.body.appendChild(o);o.addEventListener('click',e=>{if(e.target===o)close()});o.querySelectorAll('[data-w63close]').forEach(b=>b.onclick=close);o.querySelectorAll('[data-w63tomorrow]').forEach(b=>b.onclick=hideWelcomeUntilTomorrow);o.querySelectorAll('[data-w63go]').forEach(b=>b.onclick=()=>go(b.dataset.w63go));o.querySelectorAll('[data-w80verse]').forEach(b=>b.onclick=()=>{const mode=b.dataset.w80verse;close();setTimeout(()=>{if(mode==='meditate')window.OmniDailyVerse79?.meditate?.(dv?.ref);else window.OmniDailyVerse79?.read?.(dv?.ref)},100)});requestAnimationFrame(()=>requestAnimationFrame(()=>o.classList.add('open')))}
+function show(){document.getElementById('welcome63')?.remove();const x=data(),o=document.createElement('div'),dv=window.OmniDailyVerse79?.today?.()||null,profileName=String(x.s?.settings?.profile?.name||'').trim(),profileAvatar=String(x.s?.settings?.profile?.avatar||''),logo=x.s?.brandingLogo||x.s?.customIcons?.logo||'',sum=[x.agenda.length?x.agenda.length+' scheduled':'',x.tasks.length?x.tasks.length+' tasks due':'',x.routines.length?x.routines.length+' routines':''].filter(Boolean).join(' · ')||'Your day is open';o.id='welcome63';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');o.setAttribute('aria-label','Today briefing');o.innerHTML=`<div class="w63-shell"><div class="w63-top"><div class="w63-brand"><div class="w63-mark">${logo?`<img src="${E(logo)}" alt="">`:'✦'}</div><span>${E((x.s?.settings?.appearance?.branding?.title==='Second Brain'?'OmniOS':x.s?.settings?.appearance?.branding?.title)||'OmniOS')}</span></div><button type="button" class="w63-x" data-w63close aria-label="Close welcome screen">✕</button></div><main class="w63-main"><section class="w63-hero"><div class="w63-intro"><div class="w63-date">${E(x.d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}))}</div>${profileAvatar?`<img class="w93-welcome-avatar" src="${E(profileAvatar)}" alt="">`:''}<h1>${g(x.d.getHours())}${profileName?', '+E(profileName):''}.</h1><div class="w63-summary">${E(sum)}. Here is your day at a glance.</div><div class="w63-actions"><button class="w63-btn primary" data-w63go="today">Start with Today</button><button class="w63-btn" data-w63close>Enter workspace</button><button class="w63-btn w63-btn-later" data-w63tomorrow>Hide until tomorrow</button></div></div><aside class="w63-next"><div><div class="w63-label">Next on your schedule</div><div class="w63-time">${x.next?E(tm(x.next.time)):x.agenda.length?'Done for now':'Open day'}</div><div class="w63-next-title">${x.next?E(x.next.t):x.agenda.length?'No more timed items today.':'Nothing scheduled today.'}</div>${x.next?`<div class="w63-muted">${E(x.next.k)}${x.next.dur?' · '+E(x.next.dur+' min'):''}</div>`:''}</div><button class="w63-link" data-w63go="master-calendar">View calendar →</button></aside></section>${dv?`<section class="w80-welcome-verse" aria-label="Verse of the day"><div class="w80-welcome-verse-main"><div class="w80-welcome-verse-kicker">Verse of the day · ${E(dv.theme)}</div><blockquote>${E(dv.text)}</blockquote><div class="w80-welcome-verse-ref">${E(dv.ref)}</div></div><div class="w80-welcome-verse-actions"><button type="button" class="w63-btn" data-w80verse="read">Read in Bible</button><button type="button" class="w63-btn" data-w80verse="meditate">Meditate</button></div></section>`:''}<section class="w63-stats"><div class="w63-stat"><span>Schedule</span><strong>${x.agenda.length}</strong></div><div class="w63-stat"><span>Tasks due</span><strong>${x.tasks.length}</strong></div><div class="w63-stat"><span>Habits</span><strong>${x.hd}/${x.habits.length}</strong></div><div class="w63-stat"><span>Focus today</span><strong>${Math.round(x.focus)}m</strong></div></section><section class="w63-grid"><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Today’s agenda</div><div class="w63-sub">Events and time blocks</div></div><button class="w63-link" data-w63go="master-calendar">Calendar</button></div>${rowsAgenda(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Priority tasks</div><div class="w63-sub">Pinned, urgent and due first</div></div><button class="w63-link" data-w63go="tasks">Tasks</button></div>${rowsTasks(x)}</div></div><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Routines</div><div class="w63-sub">Today’s progress</div></div><button class="w63-link" data-w63go="routine">Routine</button></div>${rowsR(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Habits</div><div class="w63-sub">${x.hd} completed today</div></div><button class="w63-link" data-w63go="habits">Habits</button></div>${rowsH(x)}</div></div></section></main></div>`;document.body.appendChild(o);o.addEventListener('click',e=>{if(e.target===o)close()});o.querySelectorAll('[data-w63close]').forEach(b=>b.onclick=close);o.querySelectorAll('[data-w63tomorrow]').forEach(b=>b.onclick=hideWelcomeUntilTomorrow);o.querySelectorAll('[data-w63go]').forEach(b=>b.onclick=()=>go(b.dataset.w63go));o.querySelectorAll('[data-w80verse]').forEach(b=>b.onclick=()=>{const mode=b.dataset.w80verse;close();setTimeout(()=>{if(mode==='meditate')window.OmniDailyVerse79?.meditate?.(dv?.ref);else window.OmniDailyVerse79?.read?.(dv?.ref)},100)});requestAnimationFrame(()=>requestAnimationFrame(()=>o.classList.add('open')))}
 function close(){const o=document.getElementById('welcome63');if(o){o.classList.remove('open');setTimeout(()=>o.remove(),250)}}function go(v){close();setTimeout(()=>window.switchView?.(v),100)}function ready(){if(window.__welcome63Shown)return;if(welcomeHiddenToday()){window.__welcome63Shown=1;return}let n=0;const q=()=>{n++;if((document.documentElement.classList.contains('omnios-ready')&&!document.getElementById('omnios-boot-screen'))||n>70){window.__welcome63Shown=1;if(!welcomeHiddenToday())setTimeout(show,100)}else setTimeout(q,80)};q()}window.OmniWelcome={open:show,close,refresh:show};document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
 })();
 </script>
@@ -10961,9 +10961,13 @@ function readCollapsed(){
 function writeCollapsed(x){try{localStorage.setItem(GROUP_KEY,JSON.stringify(x||{}))}catch(_){}}
 
 function profileData(){
-  let name='Second Brain',avatar='';
+  let name='OmniOS',avatar='';
   try{
-    name=String(state?.settings?.profile?.name||'').trim()||'Second Brain';
+    const profileName=String(state?.settings?.profile?.name||'').trim();
+    const configuredBrand=String(state?.settings?.appearance?.branding?.title||'').trim();
+    const brandName=configuredBrand&&configuredBrand!=='Second Brain'?configuredBrand:'OmniOS';
+    // Legacy placeholder is not a person. Keep real profile names and custom brands.
+    name=profileName&&profileName!=='Second Brain'?profileName:brandName;
     avatar=String(state?.settings?.profile?.avatar||'').trim();
   }catch(_){}
   return{name,avatar}
@@ -13970,6 +13974,2495 @@ html .view :where(.v35-card,.v43-card,.org-card,.finance-panel,.note-card,.v43-k
  html .view :where(.form-row,.form-grid){grid-template-columns:minmax(0,1fr)!important}
  html .view :where(.modal-footer,.form-actions){gap:8px!important;flex-wrap:wrap}
 }
+
+/* ======================================================================
+   OMNIOS PHASE 1 FOUNDATION / v1
+   Canonical semantic tokens and shared UI components. Intentionally last
+   in the switchable unified stylesheet. No page markup/data mutations.
+   Carbon #101114 / Mist #EEF0F2 / Electric #2547E8
+   Violet #5F31C4 / Lime #C6F04A / Steel #55606D
+   ====================================================================== */
+html{
+  --ds-carbon:#101114;--ds-mist:#EEF0F2;--ds-electric:#2547E8;
+  --ds-violet:#5F31C4;--ds-lime:#C6F04A;--ds-steel:#55606D;
+  --ds-space-0:0;--ds-space-1:4px;--ds-space-2:8px;--ds-space-3:12px;
+  --ds-space-4:16px;--ds-space-5:20px;--ds-space-6:24px;
+  --ds-space-8:32px;--ds-space-10:40px;--ds-space-12:48px;
+  --ds-radius-xs:5px;--ds-radius-sm:8px;--ds-radius-md:10px;
+  --ds-radius-lg:12px;--ds-radius-pill:999px;
+  --ds-font:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --ds-text-xs:12px;--ds-text-sm:13px;--ds-text-md:14px;
+  --ds-text-base:16px;--ds-text-lg:20px;--ds-text-xl:24px;
+  --ds-text-2xl:clamp(26px,2.35vw,34px);
+  --ds-line-tight:1.2;--ds-line-body:1.5;
+  --ds-weight-medium:550;--ds-weight-semibold:650;--ds-weight-bold:760;
+  --ds-motion-fast:120ms;--ds-motion-normal:180ms;
+  --ds-ease:cubic-bezier(.22,.61,.36,1);
+}
+html:not([data-theme="light"]){
+  --ds-canvas:#101114;--ds-surface:#1A1C21;--ds-surface-raised:#242730;
+  --ds-surface-hover:#30343D;--ds-line:#3C414B;--ds-line-strong:#687482;
+  --ds-text:#EEF0F2;--ds-text-secondary:#D1D7E0;--ds-text-muted:#B7C0CE;
+  --ds-primary:#2547E8;--ds-primary-hover:#5F31C4;--ds-on-primary:#FFFFFF;
+  --ds-accent:#B89AFF;--ds-accent-surface:#30293F;--ds-accent-ink:#E8DFFF;
+  --ds-success:#C6F04A;--ds-on-success:#101114;
+  --ds-success-surface:#2B371A;--ds-success-ink:#D5F68C;
+  --ds-danger:#FFA4B1;--ds-danger-surface:#412630;--ds-on-danger:#101114;
+  --ds-warning:#F3CA69;--ds-warning-surface:#40351E;
+  --ds-focus:#B7C3FF;--ds-disabled:#87919F;--ds-overlay:rgba(4,5,8,.72);
+  --ds-skeleton:#30343D;--ds-skeleton-highlight:#474D59;
+  --omx-canvas:var(--ds-canvas)!important;--omx-card:var(--ds-surface)!important;
+  --omx-raised:var(--ds-surface-raised)!important;--omx-edge:var(--ds-line)!important;
+  --omx-copy:var(--ds-text)!important;--omx-sub:var(--ds-text-muted)!important;
+  --omx-soft:var(--ds-accent-surface)!important;--omx-focus:var(--ds-focus)!important;
+  --omr-panel:var(--ds-surface)!important;--omr-panel-muted:var(--ds-surface-raised)!important;
+  --omr-border:var(--ds-line)!important;--omr-quiet:var(--ds-text-muted)!important;
+}
+html[data-theme="light"]{
+  --ds-canvas:#EEF0F2;--ds-surface:#FFFFFF;--ds-surface-raised:#F2F4F6;
+  --ds-surface-hover:#E4E8EC;--ds-line:#CDD3DB;--ds-line-strong:#8A96A3;
+  --ds-text:#101114;--ds-text-secondary:#394450;--ds-text-muted:#55606D;
+  --ds-primary:#2547E8;--ds-primary-hover:#5F31C4;--ds-on-primary:#FFFFFF;
+  --ds-accent:#5F31C4;--ds-accent-surface:#EEE8FA;--ds-accent-ink:#5127B2;
+  --ds-success:#C6F04A;--ds-on-success:#101114;
+  --ds-success-surface:#F0F9D9;--ds-success-ink:#326500;
+  --ds-danger:#AD2944;--ds-danger-surface:#FCEAF0;--ds-on-danger:#FFFFFF;
+  --ds-warning:#835600;--ds-warning-surface:#FFF4D9;
+  --ds-focus:#5F31C4;--ds-disabled:#687482;--ds-overlay:rgba(16,17,20,.55);
+  --ds-skeleton:#E4E8EC;--ds-skeleton-highlight:#F4F6F8;
+  --omx-canvas:var(--ds-canvas)!important;--omx-card:var(--ds-surface)!important;
+  --omx-raised:var(--ds-surface-raised)!important;--omx-edge:var(--ds-line)!important;
+  --omx-copy:var(--ds-text)!important;--omx-sub:var(--ds-text-muted)!important;
+  --omx-soft:var(--ds-accent-surface)!important;--omx-focus:var(--ds-focus)!important;
+  --omr-panel:var(--ds-surface)!important;--omr-panel-muted:var(--ds-surface-raised)!important;
+  --omr-border:var(--ds-line)!important;--omr-quiet:var(--ds-text-muted)!important;
+}
+/* Compatibility bridge: legacy base classes consume the same semantic colors. */
+html:not([data-theme="light"]),html[data-theme="light"]{
+  --bg-base:var(--ds-canvas)!important;--bg-surface:var(--ds-surface)!important;
+  --bg-elevated:var(--ds-surface-raised)!important;--bg-hover:var(--ds-surface-hover)!important;
+  --border-color:var(--ds-line)!important;--border-light:var(--ds-line-strong)!important;
+  --text-primary:var(--ds-text)!important;--text-secondary:var(--ds-text-secondary)!important;
+  --text-muted:var(--ds-text-muted)!important;--omni-shadow:none!important;
+  --omni-cta:var(--ds-primary)!important;
+}
+html body{font-family:var(--ds-font)!important;color:var(--ds-text);}
+html .view :where(h1,h2,h3,h4,h5,h6),html .ds-heading{
+  color:var(--ds-text);letter-spacing:-.025em;line-height:var(--ds-line-tight);
+}
+html .ds-heading--xl{font-size:var(--ds-text-2xl);font-weight:var(--ds-weight-bold)}
+html .ds-heading--lg{font-size:var(--ds-text-xl);font-weight:var(--ds-weight-bold)}
+html .ds-heading--md{font-size:var(--ds-text-lg);font-weight:var(--ds-weight-semibold)}
+html .ds-body{font-size:var(--ds-text-base);line-height:var(--ds-line-body);color:var(--ds-text)}
+html .ds-body--muted{font-size:var(--ds-text-md);line-height:var(--ds-line-body);color:var(--ds-text-muted)}
+html .ds-label{font-size:var(--ds-text-sm);line-height:1.4;font-weight:var(--ds-weight-semibold);color:var(--ds-text-secondary)}
+/* Component 1: actions. Keep icon-only, segmented and custom page controls intact. */
+html :where(.ds-btn,.view .btn,.modal .btn,#hw-builder .btn,.view .view-btn,.view .tab-btn){
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--ds-space-2);
+  min-height:40px;max-width:100%;padding:9px 14px;
+  font-family:var(--ds-font);font-size:var(--ds-text-md);
+  font-weight:var(--ds-weight-semibold);line-height:1.3;text-decoration:none;
+  color:var(--ds-text);background:var(--ds-surface-raised);
+  background-image:none;border:1px solid var(--ds-line);border-radius:var(--ds-radius-md);
+  box-shadow:none;filter:none;cursor:pointer;
+  transition:background var(--ds-motion-fast) var(--ds-ease),border-color var(--ds-motion-fast) var(--ds-ease),color var(--ds-motion-fast) var(--ds-ease);
+}
+html :where(.ds-btn,.view .btn,.modal .btn):not([disabled]):not(:disabled):hover{
+  background:var(--ds-surface-hover);border-color:var(--ds-line-strong);
+}
+html :where(.ds-btn--primary,.view .btn-primary,.modal .btn-primary,#hw-builder .btn-primary,
+.topbar .btn-primary){
+  background:var(--ds-primary)!important;color:var(--ds-on-primary)!important;
+  border-color:var(--ds-primary)!important;box-shadow:none!important;
+}
+html :where(.ds-btn--primary,.view .btn-primary,.modal .btn-primary):not(:disabled):hover{
+  background:var(--ds-primary-hover)!important;border-color:var(--ds-primary-hover)!important;
+  color:#FFFFFF!important;
+}
+html :where(.ds-btn--quiet,.ds-btn--ghost){background:transparent;border-color:transparent}
+html :where(.ds-btn--danger,.view .btn-danger,.modal .btn-danger){
+  background:var(--ds-danger-surface)!important;color:var(--ds-danger)!important;
+  border-color:var(--ds-danger)!important;
+}
+html .ds-btn--small{min-height:32px;padding:5px 10px;font-size:var(--ds-text-sm)}
+html .ds-btn--square{width:40px;min-width:40px;padding:8px}
+html :where(.ds-btn,.view .btn,.modal .btn,.view .view-btn,.view .tab-btn)[disabled],
+html :where(.ds-btn,.view .btn,.modal .btn,.view .view-btn,.view .tab-btn):disabled{
+  opacity:.55!important;filter:none!important;cursor:not-allowed!important;
+  box-shadow:none!important;
+}
+/* Component 2: fields; type-specific selectors avoid radio/check/file controls. */
+html :where(.ds-input,.ds-select,.ds-textarea,.view .form-input,.view .form-select,
+.view .form-textarea,.modal .form-input,.modal .form-select,.modal .form-textarea,
+.view input[type="search"],.modal input[type="search"]){
+  color:var(--ds-text)!important;background:var(--ds-surface)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-sm)!important;
+  box-shadow:none!important;background-image:none;
+  font-family:var(--ds-font);font-size:var(--ds-text-md);line-height:1.45;
+  min-width:0;max-width:100%;min-height:40px;
+}
+html :where(.ds-input,.ds-select,.ds-textarea,.view .form-input,.view .form-select,
+.view .form-textarea,.modal .form-input,.modal .form-select,.modal .form-textarea,
+.view input[type="search"],.modal input[type="search"]):not(textarea){padding:9px 11px}
+html :where(.ds-textarea,.view .form-textarea,.modal .form-textarea){padding:10px 12px;resize:vertical}
+html :where(.ds-input,.ds-textarea,.view .form-input,.view .form-textarea,.modal .form-input,
+.modal .form-textarea)::placeholder{color:var(--ds-text-muted)!important;opacity:1}
+html :where(.ds-input,.ds-select,.ds-textarea,.view .form-input,.view .form-select,
+.view .form-textarea,.modal .form-input,.modal .form-select,.modal .form-textarea,
+.view input[type="search"],.modal input[type="search"]):hover{border-color:var(--ds-line-strong)!important}
+html :where(.ds-input,.ds-select,.ds-textarea,.view .form-input,.view .form-select,
+.view .form-textarea,.modal .form-input,.modal .form-select,.modal .form-textarea,
+.view input[type="search"],.modal input[type="search"])[aria-invalid="true"],
+html .ds-field--error :where(input,select,textarea){
+  border-color:var(--ds-danger)!important;
+}
+html .ds-field{display:flex;flex-direction:column;gap:var(--ds-space-2);min-width:0}
+html .ds-field__label{font-weight:var(--ds-weight-semibold);font-size:var(--ds-text-sm);color:var(--ds-text-secondary)}
+html .ds-field__hint{font-size:var(--ds-text-xs);line-height:1.5;color:var(--ds-text-muted)}
+html .ds-field--error .ds-field__hint{color:var(--ds-danger)}
+/* Component 3: cards: one radius, one flat surface, no nested decoration. */
+html :where(.ds-card,.view .card,.view .v35-card,.view .v43-card,.view .org-card,
+.view .note-card,.view .workout-session-card,.view .habit-week-card,
+.view .kpi-card,.view .stat-card,.view .finance-panel){
+  background:var(--ds-surface)!important;background-image:none!important;
+  color:var(--ds-text);border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;box-shadow:none!important;filter:none;
+}
+html .ds-card{padding:var(--ds-space-5)}
+html .ds-card--compact{padding:var(--ds-space-3)}
+html .ds-card--flat{background:transparent!important;border-color:transparent!important}
+html .ds-card__title{font-size:var(--ds-text-base);font-weight:var(--ds-weight-bold);line-height:1.25}
+html .ds-card__description{font-size:var(--ds-text-md);color:var(--ds-text-muted);line-height:1.5;margin-top:4px}
+html .ds-divider{height:1px;border:0;background:var(--ds-line);margin:var(--ds-space-4) 0}
+html .ds-stack{display:flex;flex-direction:column;gap:var(--ds-space-3)}
+html .ds-inline{display:flex;flex-wrap:wrap;align-items:center;gap:var(--ds-space-2)}
+/* Component 4: segmented controls and tabs with meaningful selected states. */
+html :where(.ds-tabs,.view .tab-btns,.view .v43-tabs,.view .v35-segmented,
+.view .workout-tabs,.view .hw-nav){
+  display:flex;gap:var(--ds-space-1);max-width:100%;
+  overflow-x:auto;scrollbar-width:none;
+  padding:4px;background:var(--ds-surface-raised)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important;
+  box-shadow:none!important;
+}
+html .ds-tabs::-webkit-scrollbar{display:none}
+html :where(.ds-tab,.ds-tabs>button){
+  flex:0 0 auto;min-height:36px;padding:7px 12px;
+  font:var(--ds-weight-semibold) var(--ds-text-md)/1.3 var(--ds-font);
+  color:var(--ds-text-secondary);background:transparent;border:1px solid transparent;
+  border-radius:var(--ds-radius-sm);cursor:pointer;
+}
+html :where(.ds-tab,.ds-tabs>button)[aria-selected="true"],html .ds-tabs>button.active{
+  color:var(--ds-accent-ink);background:var(--ds-accent-surface);
+  border-color:var(--ds-line);
+}
+html :where(.view .v43-tab,.view .tab-btn,.view .view-btn)[aria-selected="true"],
+html :where(.view .v43-tab,.view .tab-btn,.view .view-btn).active{
+  color:var(--ds-accent-ink)!important;background:var(--ds-accent-surface)!important;
+  border-color:var(--ds-line)!important;box-shadow:none!important;
+}
+/* Component 5: status chips. Lime always has Carbon text, never white. */
+html .ds-badge{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:22px;padding:3px 8px;border-radius:var(--ds-radius-sm);
+  border:1px solid var(--ds-line);background:var(--ds-surface-raised);
+  color:var(--ds-text-secondary);font-size:var(--ds-text-xs);
+  line-height:1.25;font-weight:var(--ds-weight-semibold);white-space:nowrap;
+}
+html .ds-badge--success{background:var(--ds-success)!important;color:var(--ds-on-success)!important;border-color:var(--ds-success)!important}
+html .ds-badge--warning{background:var(--ds-warning-surface);color:var(--ds-warning);border-color:var(--ds-line)}
+html .ds-badge--danger{background:var(--ds-danger-surface);color:var(--ds-danger);border-color:var(--ds-line)}
+html .ds-badge--accent{background:var(--ds-accent-surface);color:var(--ds-accent-ink);border-color:var(--ds-line)}
+html :where(.view .v43-badge,.view .v35-chip,.view .v58-badge){
+  border-radius:var(--ds-radius-sm)!important;box-shadow:none!important;
+  font-size:var(--ds-text-xs)!important;line-height:1.3!important;
+}
+html :where(.ds-badge,.view .v43-badge,.view .v35-chip).success{
+  background:var(--ds-success)!important;color:var(--ds-on-success)!important;
+}
+html .ds-progress{height:7px;overflow:hidden;background:var(--ds-surface-raised);border-radius:var(--ds-radius-xs)}
+html .ds-progress>span{display:block;height:100%;width:var(--ds-progress,0%);max-width:100%;background:var(--ds-success);border-radius:inherit}
+/* Component 6: overlays/dialogs: clear grouping and bounded scrolling. */
+html :where(.ds-dialog,.modal,.modal-content,.inspector-panel,#hw-builder .hw-modal){
+  color:var(--ds-text)!important;background:var(--ds-surface)!important;
+  background-image:none!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;box-shadow:none!important;
+}
+html .ds-dialog{width:min(560px,calc(100vw - 32px));max-height:min(88dvh,900px);
+  overflow-y:auto;overscroll-behavior:contain;padding:var(--ds-space-5)}
+html .ds-dialog__header,html .ds-dialog__footer{display:flex;align-items:center;justify-content:space-between;gap:var(--ds-space-3)}
+html .ds-dialog__title{font-size:var(--ds-text-lg);font-weight:var(--ds-weight-bold)}
+html .ds-dialog__footer{margin-top:var(--ds-space-5)}
+html :where(.ds-backdrop,.modal-overlay,.inspector-backdrop){background:var(--ds-overlay)}
+/* Component 7: empty, loading, error, and success feedback states. */
+html :where(.ds-state,.view .empty-state,.view .v43-empty,.view .org-empty){
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:var(--ds-space-2);padding:var(--ds-space-6) var(--ds-space-4);
+  min-height:100px;text-align:center;color:var(--ds-text-muted);
+  background:transparent;border:1px dashed var(--ds-line);
+  border-radius:var(--ds-radius-lg);font-size:var(--ds-text-md);
+  line-height:var(--ds-line-body);
+}
+html .ds-state__title{font-size:var(--ds-text-base);font-weight:var(--ds-weight-semibold);color:var(--ds-text)}
+html .ds-state__description{max-width:46ch;color:var(--ds-text-muted);font-size:var(--ds-text-md)}
+html .ds-state--error{border-style:solid;border-color:var(--ds-danger);color:var(--ds-danger)}
+html .ds-state--success{border-style:solid;border-color:var(--ds-success);color:var(--ds-text)}
+html .ds-skeleton{background:var(--ds-skeleton);border-radius:var(--ds-radius-xs);
+  background-image:linear-gradient(90deg,var(--ds-skeleton),var(--ds-skeleton-highlight),var(--ds-skeleton));
+  background-size:200% 100%;animation:ds-shimmer 1.65s linear infinite}
+@keyframes ds-shimmer{to{background-position-x:-200%}}
+html .ds-alert{padding:var(--ds-space-3) var(--ds-space-4);
+  background:var(--ds-surface-raised);color:var(--ds-text);
+  border:1px solid var(--ds-line);border-radius:var(--ds-radius-md);
+  font-size:var(--ds-text-md);line-height:1.5}
+html .ds-alert--error{background:var(--ds-danger-surface);border-color:var(--ds-danger);color:var(--ds-danger)}
+html .ds-alert--success{background:var(--ds-success-surface);border-color:var(--ds-line);color:var(--ds-success-ink)}
+/* Component 8: foundational accessibility and minimum target sizing. */
+html :where(button,a,input,select,textarea,[role="button"],[role="tab"]):focus-visible{
+  outline:2px solid var(--ds-focus)!important;outline-offset:2px!important;
+  box-shadow:none!important;
+}
+html :where(.ds-btn,.ds-tab,.ds-tabs>button,.view .btn,.modal .btn){touch-action:manipulation}
+html .ds-sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:760px){
+  html .ds-card,html .ds-dialog{padding:var(--ds-space-4)}
+  html :where(.ds-btn,.view .btn,.modal .btn,.ds-input,.ds-select,.ds-tab,.ds-tabs>button){min-height:44px}
+  html .ds-heading--xl{font-size:clamp(25px,7vw,30px)}
+}
+@media(prefers-reduced-motion:reduce){
+  html .ds-skeleton{animation:none!important;background-image:none!important}
+  html :where(.ds-btn,.ds-tab,.ds-tabs>button,.ds-progress>span){transition:none!important}
+}
+@media(forced-colors:active){
+  html :where(.ds-btn,.ds-input,.ds-select,.ds-textarea,.ds-card,.ds-badge,.ds-tab){
+    border:1px solid CanvasText!important;forced-color-adjust:auto!important;
+  }
+  html :where(.ds-btn,.ds-tab):focus-visible{outline:2px solid Highlight!important}
+}
+/* END OMNIOS PHASE 1 FOUNDATION / v1 */
+
+/* ===============================================================
+   OMNIOS PHASE 2 APPLICATION SHELL / v1
+   Navigation, responsive page frame, global search and More sheet.
+   Reuses v101 sidebar routing and omr accessible mobile drawer.
+   =============================================================== */
+html{
+  --om2-side-width:248px;
+  --om2-side-compact-width:76px;
+  --om2-topbar-height:66px;
+  --om2-content-max:1520px;
+  --om2-page-gutter:clamp(18px,2.5vw,36px);
+}
+html body{overflow-x:hidden!important}
+html .main-content{
+  flex:1 1 auto!important;min-width:0!important;
+  background:var(--ds-canvas)!important;
+}
+html .view-container{
+  box-sizing:border-box!important;width:100%!important;
+  min-width:0!important;max-width:var(--om2-content-max)!important;
+  margin:0 auto!important;
+  padding:26px var(--om2-page-gutter) 46px!important;
+  background:var(--ds-canvas)!important;
+  overflow-x:clip!important;
+}
+html .view.active{min-width:0!important;max-width:100%!important}
+html .sidebar{
+  box-sizing:border-box!important;
+  width:var(--om2-side-width)!important;min-width:var(--om2-side-width)!important;
+  height:100dvh!important;max-height:100dvh!important;
+  display:flex!important;flex-direction:column!important;
+  padding:14px 11px 12px!important;
+  background:var(--ds-surface)!important;background-image:none!important;
+  border-right:1px solid var(--ds-line)!important;
+  box-shadow:none!important;overflow:hidden!important;
+}
+html .sidebar.v101-sidebar>.logo{
+  display:block!important;flex:none;
+  padding:4px 2px 13px!important;
+  margin:0 0 11px!important;
+  background:none!important;border-bottom:1px solid var(--ds-line)!important;
+}
+html .sidebar.v101-sidebar .v101-sidebar-profile{
+  min-height:58px!important;display:grid!important;
+  grid-template-columns:38px minmax(0,1fr) 34px!important;
+  align-items:center!important;gap:9px!important;
+  border:0!important;padding:7px 5px!important;
+  border-radius:var(--ds-radius-md)!important;
+  background:transparent!important;background-image:none!important;
+  box-shadow:none!important;
+}
+html .sidebar.v101-sidebar .v101-sidebar-avatar{
+  width:38px!important;height:38px!important;
+  background:var(--ds-surface-raised)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-sm)!important;color:var(--ds-text)!important;
+}
+html .sidebar.v101-sidebar .v101-sidebar-profile-copy strong{
+  color:var(--ds-text)!important;font-size:13px!important;
+  font-weight:750!important;line-height:1.28!important;
+}
+html .sidebar.v101-sidebar .v101-sidebar-profile-copy span{
+  color:var(--ds-text-muted)!important;font-size:12px!important;
+  line-height:1.3!important;margin-top:3px!important;
+}
+html .sidebar.v101-sidebar .v101-sidebar-search-toggle{
+  width:34px!important;height:34px!important;min-height:34px!important;
+  color:var(--ds-text-secondary)!important;
+  background:var(--ds-surface-raised)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-sm)!important;
+}
+html .sidebar.v101-sidebar .v101-sidebar-search{border-radius:var(--ds-radius-sm)!important}
+html .sidebar.v101-sidebar .v101-sidebar-search input{font-size:14px!important;min-height:30px!important}
+html .sidebar.v101-sidebar .nav-menu{
+  flex:1 1 auto!important;min-width:0!important;
+  gap:8px!important;padding:0 2px 12px!important;
+  overflow-y:auto!important;overflow-x:hidden!important;
+  scrollbar-width:thin!important;scrollbar-color:var(--ds-line) transparent!important;
+}
+html .sidebar.v101-sidebar .nav-menu::-webkit-scrollbar{display:initial!important;width:5px}
+html .sidebar.v101-sidebar .nav-menu::-webkit-scrollbar-thumb{background:var(--ds-line);border-radius:5px}
+html .sidebar.v101-sidebar .v101-nav-group{
+  --v101-group-accent:var(--ds-accent)!important;
+  width:100%;overflow:visible!important;
+  border:0!important;background:transparent!important;
+  box-shadow:none!important;border-radius:0!important;
+  transition:none!important;min-width:0!important;
+}
+html .sidebar.v101-sidebar .v101-nav-group:hover{border:0!important}
+html .sidebar.v101-sidebar .v101-nav-group-head{
+  min-height:35px!important;max-height:none!important;
+  display:flex!important;align-items:center!important;
+  padding:5px 9px!important;gap:8px!important;
+  background:transparent!important;background-image:none!important;
+  border:0!important;border-radius:var(--ds-radius-sm)!important;
+  box-shadow:none!important;color:var(--ds-text-muted)!important;
+}
+html .sidebar.v101-sidebar .v101-nav-group-head:hover{
+  color:var(--ds-text)!important;background:var(--ds-surface-raised)!important;
+}
+html .sidebar.v101-sidebar .v101-nav-group-head-main{gap:8px!important}
+html .sidebar.v101-sidebar .v101-nav-group-icon{
+  width:23px!important;height:23px!important;flex:0 0 23px!important;
+  background:transparent!important;background-image:none!important;
+  color:var(--ds-text-muted)!important;border:0!important;
+  border-radius:var(--ds-radius-sm)!important;
+}
+html .sidebar.v101-sidebar .v101-nav-group-icon svg{width:17px!important;height:17px!important}
+html .sidebar.v101-sidebar .v101-nav-group-head-title{
+  color:var(--ds-text-muted)!important;font-size:11px!important;
+  line-height:1.3!important;letter-spacing:.09em!important;
+  text-transform:uppercase!important;font-weight:800!important;
+}
+html .sidebar.v101-sidebar .v101-nav-group-chevron{
+  color:var(--ds-text-muted)!important;opacity:.82!important;
+}
+html .sidebar.v101-sidebar .v101-nav-group-body{
+  min-width:0!important;
+  background:transparent!important;border:0!important;
+  border-top:0!important;padding:2px 3px 6px!important;gap:2px!important;
+}
+html .sidebar.v101-sidebar .nav-item{
+  display:grid!important;grid-template-columns:24px minmax(0,1fr) auto!important;
+  align-items:center!important;gap:9px!important;
+  width:100%!important;min-width:0!important;
+  min-height:39px!important;margin:0!important;padding:7px 9px!important;
+  border:1px solid transparent!important;border-left:2px solid transparent!important;
+  border-radius:var(--ds-radius-sm)!important;
+  background:transparent!important;box-shadow:none!important;
+  color:var(--ds-text-secondary)!important;
+  font-size:13px!important;font-weight:570!important;line-height:1.3!important;
+  text-align:left!important;
+}
+html .sidebar.v101-sidebar .nav-item:hover{
+  background:var(--ds-surface-raised)!important;
+  border-color:transparent!important;color:var(--ds-text)!important;
+}
+html .sidebar.v101-sidebar .nav-item.active{
+  background:var(--ds-accent-surface)!important;
+  border:1px solid var(--ds-line)!important;
+  border-left:3px solid var(--ds-accent)!important;
+  padding-left:8px!important;color:var(--ds-accent-ink)!important;
+  font-weight:750!important;
+}
+html .sidebar.v101-sidebar .nav-item .v101-nav-icon-wrap{
+  display:grid!important;place-items:center!important;
+  width:24px!important;height:24px!important;
+  background:transparent!important;background-image:none!important;
+  border:0!important;color:var(--ds-text-muted)!important;
+  border-radius:var(--ds-radius-sm)!important;
+}
+html .sidebar.v101-sidebar .nav-item.active .v101-nav-icon-wrap{color:var(--ds-accent-ink)!important}
+html .sidebar.v101-sidebar .nav-item .v101-nav-label{
+  display:block!important;font-size:13px!important;
+  min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  white-space:nowrap!important;color:inherit!important;
+}
+html .sidebar.v101-sidebar .v101-nav-badge.has-value{
+  border-radius:var(--ds-radius-xs)!important;
+  color:var(--ds-text-secondary)!important;
+  background:var(--ds-surface-raised)!important;border:1px solid var(--ds-line)!important;
+  min-width:20px!important;font-size:11px!important;
+}
+html .sidebar.v101-sidebar .nav-item:focus-visible,
+html .sidebar.v101-sidebar .v101-nav-group-head:focus-visible{
+  outline:2px solid var(--ds-focus)!important;outline-offset:-2px!important;
+}
+html .om2-sidebar-toggle{
+  display:inline-flex;align-items:center;justify-content:center;
+  flex:none;min-width:38px;min-height:38px;padding:8px;
+  border:1px solid var(--ds-line);border-radius:var(--ds-radius-sm);
+  color:var(--ds-text-secondary);background:var(--ds-surface-raised);
+  cursor:pointer;font-size:16px;line-height:1;
+}
+html .om2-sidebar-toggle:hover{background:var(--ds-surface-hover);color:var(--ds-text)}
+/* Compact desktop sidebar is icons-only but retains accessible labels/tooltips. */
+@media(min-width:761px){
+  html.om2-compact .sidebar.v101-sidebar{
+    width:var(--om2-side-compact-width)!important;
+    min-width:var(--om2-side-compact-width)!important;
+    padding:13px 8px!important;
+  }
+  html.om2-compact .sidebar.v101-sidebar>.logo{padding:5px 1px 12px!important}
+  html.om2-compact .sidebar.v101-sidebar .v101-sidebar-profile{
+    padding:5px 1px!important;display:flex!important;justify-content:center!important;
+  }
+  html.om2-compact .sidebar.v101-sidebar .v101-sidebar-profile-copy,
+  html.om2-compact .sidebar.v101-sidebar .v101-sidebar-search-toggle,
+  html.om2-compact .sidebar.v101-sidebar .v101-sidebar-search,
+  html.om2-compact .sidebar.v101-sidebar .v101-nav-group-head,
+  html.om2-compact .sidebar.v101-sidebar .nav-item .v101-nav-label,
+  html.om2-compact .sidebar.v101-sidebar .nav-item .v101-nav-badge{display:none!important}
+  html.om2-compact .sidebar.v101-sidebar .v101-nav-group{
+    padding:6px 0!important;border-bottom:1px solid var(--ds-line)!important;
+  }
+  html.om2-compact .sidebar.v101-sidebar .v101-nav-group-body{
+    display:flex!important;flex-direction:column!important;
+    gap:4px!important;padding:0!important;
+  }
+  html.om2-compact .sidebar.v101-sidebar .nav-item{
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    min-height:43px!important;min-width:43px!important;
+    padding:8px!important;
+  }
+  html.om2-compact .sidebar.v101-sidebar .nav-item .v101-nav-icon-wrap{
+    width:25px!important;height:25px!important;
+  }
+  html.om2-compact .sidebar.v101-sidebar .v101-nav-group:last-child{border:0!important}
+}
+/* One topbar language across all desktop views. */
+html .topbar{
+  display:flex!important;align-items:center!important;
+  gap:12px!important;min-width:0!important;
+  min-height:var(--om2-topbar-height)!important;
+  height:var(--om2-topbar-height)!important;
+  padding:0 var(--om2-page-gutter)!important;
+  border-bottom:1px solid var(--ds-line)!important;
+  background:var(--ds-canvas)!important;background-image:none!important;
+  box-shadow:none!important;backdrop-filter:none!important;
+}
+html .topbar-title{
+  color:var(--ds-text)!important;font-size:17px!important;
+  font-weight:770!important;letter-spacing:-.035em!important;
+  min-width:0!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+html #omni-unified-date{
+  color:var(--ds-text-muted)!important;font-size:12px!important;
+  margin-left:4px!important;margin-right:auto!important;white-space:nowrap!important;
+}
+html .topbar-actions{
+  display:flex!important;align-items:center!important;
+  margin-left:auto!important;gap:8px!important;flex:none!important;min-width:0!important;
+}
+html .topbar #save-status{
+  font-size:12px!important;color:var(--ds-text-muted)!important;
+  max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+html .topbar :where(#settings-topbar-btn,.om2-search-toggle){
+  display:inline-grid!important;place-items:center!important;
+  min-width:38px!important;width:38px!important;
+  min-height:38px!important;height:38px!important;padding:8px!important;
+  background:var(--ds-surface)!important;color:var(--ds-text-secondary)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-sm)!important;
+  box-shadow:none!important;cursor:pointer;
+}
+html .topbar .om2-search-toggle svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linejoin:round;stroke-linecap:round}
+html .topbar :where(#settings-topbar-btn,.om2-search-toggle):hover{
+  background:var(--ds-surface-hover)!important;color:var(--ds-text)!important;
+}
+html .topbar #global-add-btn{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  min-height:39px!important;padding:9px 14px!important;
+  border:1px solid var(--ds-primary)!important;background:var(--ds-primary)!important;
+  color:var(--ds-on-primary)!important;border-radius:var(--ds-radius-sm)!important;
+  font-size:13px!important;font-weight:700!important;box-shadow:none!important;
+}
+/* Search overlay: page navigation only, not a fake full-text search. */
+#om2-search-overlay[hidden]{display:none!important}
+#om2-search-overlay{
+  position:fixed;inset:0;z-index:110000;
+  background:var(--ds-overlay);
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:clamp(48px,13vh,135px) 16px 16px;box-sizing:border-box;
+}
+#om2-search-overlay .om2-search-dialog{
+  width:min(570px,100%);max-height:min(76dvh,700px);
+  display:flex;flex-direction:column;overflow:hidden;
+  background:var(--ds-surface);color:var(--ds-text);
+  border:1px solid var(--ds-line);border-radius:var(--ds-radius-lg);
+  box-shadow:none;
+}
+#om2-search-overlay .om2-search-top{
+  display:flex;align-items:center;gap:9px;padding:12px;
+  border-bottom:1px solid var(--ds-line);
+}
+#om2-search-overlay .om2-search-icon{
+  width:19px;height:19px;flex:none;color:var(--ds-text-muted);
+  fill:none;stroke:currentColor;stroke-width:1.8;
+}
+#om2-search-overlay .om2-search-input{
+  min-width:0;flex:1;width:100%;
+  padding:9px 6px;font:500 15px/1.35 var(--ds-font);
+  background:transparent;color:var(--ds-text);
+  border:0;outline:none;box-shadow:none;
+}
+#om2-search-overlay .om2-search-input::placeholder{color:var(--ds-text-muted);opacity:1}
+#om2-search-overlay .om2-search-dismiss{
+  background:var(--ds-surface-raised);border:1px solid var(--ds-line);
+  border-radius:var(--ds-radius-xs);color:var(--ds-text-muted);
+  padding:4px 8px;min-height:32px;cursor:pointer;font-size:12px;
+}
+#om2-search-overlay .om2-search-results{
+  display:flex;flex-direction:column;gap:2px;
+  min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  padding:9px;
+}
+#om2-search-overlay .om2-search-result{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;width:100%;min-height:43px;padding:9px 12px;
+  background:transparent;color:var(--ds-text-secondary);
+  border:1px solid transparent;border-radius:var(--ds-radius-sm);
+  font:600 14px/1.3 var(--ds-font);text-align:left;cursor:pointer;
+}
+#om2-search-overlay .om2-search-result:hover,
+#om2-search-overlay .om2-search-result[aria-selected="true"]{
+  background:var(--ds-accent-surface);border-color:var(--ds-line);
+  color:var(--ds-accent-ink);
+}
+#om2-search-overlay .om2-search-result small{font-size:11px;font-weight:600;color:var(--ds-text-muted)}
+#om2-search-overlay .om2-search-empty{
+  padding:18px 14px;color:var(--ds-text-muted);font-size:13px;line-height:1.5;
+}
+#om2-search-overlay .om2-search-help{
+  border-top:1px solid var(--ds-line);
+  padding:10px 15px;color:var(--ds-text-muted);font-size:12px;
+}
+/* Mobile dock: exactly five actions, readable icon+label, safe-area support. */
+@media(max-width:760px){
+  html .sidebar{display:none!important}
+  html .main-content{width:100%!important;max-width:100%!important;min-width:0!important}
+  html .topbar{
+    min-height:62px!important;height:auto!important;
+    padding:calc(7px + env(safe-area-inset-top,0px)) 13px 9px!important;
+    gap:9px!important;
+  }
+  html .topbar-title{font-size:16px!important;max-width:42vw!important}
+  html #omni-unified-date,html #save-status{display:none!important}
+  html .topbar .om2-sidebar-toggle{display:none!important}
+  html .topbar-actions{gap:6px!important}
+  html .topbar :where(#settings-topbar-btn,.om2-search-toggle){
+    min-width:40px!important;width:40px!important;height:40px!important;min-height:40px!important;
+  }
+  html .topbar #global-add-btn{
+    min-width:40px!important;width:40px!important;min-height:40px!important;
+    padding:4px!important;font-size:0!important;line-height:0!important;
+  }
+  html .topbar #global-add-btn::before{content:"+";font-size:23px!important;line-height:1!important}
+  html .view-container{
+    max-width:100%!important;width:100%!important;
+    padding:16px 13px calc(104px + env(safe-area-inset-bottom,0px))!important;
+    margin:0!important;
+  }
+  html .mobile-nav.omr-mobile-dock{
+    box-sizing:border-box!important;
+    position:fixed!important;left:12px!important;right:12px!important;
+    bottom:calc(9px + env(safe-area-inset-bottom,0px))!important;
+    width:auto!important;height:68px!important;min-height:68px!important;
+    display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    align-items:center!important;gap:3px!important;
+    padding:6px!important;background:var(--ds-surface)!important;
+    background-image:none!important;border:1px solid var(--ds-line)!important;
+    border-radius:var(--ds-radius-lg)!important;
+    box-shadow:none!important;backdrop-filter:none!important;z-index:480!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button{
+    min-width:0!important;max-width:100%!important;min-height:54px!important;
+    height:54px!important;display:flex!important;flex-direction:column!important;
+    align-items:center!important;justify-content:center!important;gap:4px!important;
+    padding:6px 2px!important;
+    background:transparent!important;color:var(--ds-text-muted)!important;
+    border:1px solid transparent!important;border-radius:var(--ds-radius-sm)!important;
+    box-shadow:none!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button.active{
+    color:var(--ds-accent-ink)!important;background:var(--ds-accent-surface)!important;
+    border:1px solid var(--ds-line)!important;
+  }
+  html .mobile-nav.omr-mobile-dock .nav-icon{
+    display:grid!important;place-items:center!important;
+    width:23px!important;height:23px!important;
+    font-size:21px!important;line-height:1!important;
+  }
+  html .mobile-nav.omr-mobile-dock .nav-icon svg{width:21px!important;height:21px!important}
+  html .mobile-nav.omr-mobile-dock .nav-label{
+    display:block!important;max-width:100%!important;
+    white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important;
+    color:inherit!important;font-size:10px!important;
+    font-weight:700!important;line-height:1.2!important;letter-spacing:0!important;
+  }
+  #omr-mobile-drawer{
+    padding:10px 10px max(10px,env(safe-area-inset-bottom,0px))!important;
+    background:var(--ds-overlay)!important;
+  }
+  #omr-mobile-drawer .omr-sheet{
+    width:100%!important;max-width:580px!important;
+    max-height:min(86dvh,780px)!important;
+    background:var(--ds-surface)!important;
+    border:1px solid var(--ds-line)!important;
+    border-radius:var(--ds-radius-lg) var(--ds-radius-lg) 0 0!important;
+    box-shadow:none!important;
+  }
+  #omr-mobile-drawer .omr-sheet-head{
+    padding:17px 18px!important;border-bottom:1px solid var(--ds-line)!important;
+  }
+  #omr-mobile-drawer .omr-sheet-head h3{font-size:17px!important;font-weight:760!important;color:var(--ds-text)!important}
+  #omr-mobile-drawer .omr-sheet-head button{
+    width:39px!important;height:39px!important;min-height:39px!important;
+    background:var(--ds-surface-raised)!important;
+    color:var(--ds-text)!important;border:1px solid var(--ds-line)!important;
+    border-radius:var(--ds-radius-sm)!important;
+  }
+  #omr-mobile-drawer .omr-sheet-body{overflow-y:auto!important;overscroll-behavior:contain;padding:12px 14px 22px!important}
+  #omr-mobile-drawer .omr-sheet-group{
+    color:var(--ds-text-muted)!important;font-size:11px!important;
+    text-transform:uppercase!important;font-weight:800!important;
+    letter-spacing:.08em!important;margin:15px 4px 6px!important;
+  }
+  #omr-mobile-drawer .omr-sheet-links{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+  #omr-mobile-drawer .omr-sheet-links button{
+    min-height:43px!important;padding:10px!important;
+    font-size:13px!important;text-align:left!important;
+    color:var(--ds-text-secondary)!important;
+    background:var(--ds-surface-raised)!important;border:1px solid var(--ds-line)!important;
+    border-radius:var(--ds-radius-sm)!important;box-shadow:none!important;
+  }
+  #omr-mobile-drawer .omr-sheet-links button:focus-visible,
+  #omr-mobile-drawer .omr-sheet-links button:hover{
+    color:var(--ds-accent-ink)!important;background:var(--ds-accent-surface)!important;
+  }
+  #om2-search-overlay{padding:calc(70px + env(safe-area-inset-top,0px)) 11px 12px!important}
+  #om2-search-overlay .om2-search-dialog{max-height:min(76dvh,620px)}
+}
+@media(max-width:390px){
+  html .topbar{gap:4px!important;padding-inline:10px!important}
+  html .topbar-title{max-width:36vw!important;font-size:15px!important}
+  html .view-container{padding-left:10px!important;padding-right:10px!important}
+  html .mobile-nav.omr-mobile-dock{left:7px!important;right:7px!important;gap:1px!important}
+  html .mobile-nav.omr-mobile-dock>button .nav-label{font-size:9.5px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  html .sidebar :where(.nav-item,.v101-nav-group-head),
+  #om2-search-overlay .om2-search-result,
+  html .mobile-nav.omr-mobile-dock>button{transition:none!important}
+}
+/* END OMNIOS PHASE 2 APPLICATION SHELL / v1 */
+
+/* ================================================================
+   OMNIOS PHASE 3 / DAILY WORKSPACE AND DASHBOARD / v1
+   Semantic, flat and responsive; no additional data state or observers.
+   ================================================================ */
+html #view-today,html #view-dashboard{min-width:0}
+html #view-today .om3-today-hero{
+  margin-bottom:17px!important;padding:6px 2px 18px!important;
+  display:flex;align-items:center!important;
+  background:transparent!important;border:0!important;border-bottom:1px solid var(--ds-line)!important;
+  box-shadow:none!important;border-radius:0!important;
+}
+html #view-today .om3-today-hero h3{font-size:clamp(1.65rem,3vw,2.65rem)!important;line-height:1.15!important}
+html #view-today .om3-today-hero p{font-size:var(--ds-text-md)!important;color:var(--ds-text-muted)!important}
+html #view-today .omr-day-hero-actions{display:flex;flex-wrap:wrap;gap:8px}
+html #view-today .om3-daily-glance{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;
+  margin-bottom:16px!important;min-width:0;
+}
+html #view-today .om3-daily-glance .omr-stat{
+  min-width:0;min-height:108px;display:flex;flex-direction:column;gap:7px;
+  padding:15px 17px!important;
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-lg)!important;
+  box-shadow:none!important;
+}
+html #view-today .om3-daily-glance .omr-stat span{
+  font-size:12px!important;color:var(--ds-text-muted)!important;font-weight:650;letter-spacing:.01em;
+}
+html #view-today .om3-daily-glance .omr-stat strong{
+  color:var(--ds-text)!important;font-size:clamp(1.2rem,1.9vw,1.65rem)!important;
+  line-height:1.15!important;letter-spacing:-.035em!important;
+}
+html #view-today .om3-daily-glance .omr-stat small{
+  color:var(--ds-text-secondary)!important;font-size:12px!important;line-height:1.3!important;
+}
+html #view-today .om3-today-grid{
+  display:grid!important;grid-template-columns:minmax(0,1.55fr) minmax(280px,.9fr)!important;
+  align-items:start;gap:12px!important;
+}
+html #view-today .om3-today-grid .omr-day-left,
+html #view-today .om3-today-grid .omr-day-right{display:flex;flex-direction:column;gap:12px!important;min-width:0}
+html #view-today .om3-today-grid .omr-panel,
+html #view-today .om3-today-grid .omr-feature{
+  padding:18px!important;background:var(--ds-surface)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-lg)!important;
+  box-shadow:none!important;color:var(--ds-text)!important;min-width:0;
+}
+html #view-today .om3-today-grid .omr-panel-head{margin-bottom:12px!important}
+html #view-today .om3-today-grid .omr-panel-head h4{font-size:1rem!important;color:var(--ds-text)!important}
+html #view-today .om3-today-grid .omr-eyebrow{color:var(--ds-accent)!important;font-size:11px!important;letter-spacing:.09em}
+html #view-today .om3-capture-panel{
+  background:var(--ds-accent-surface)!important;border-color:var(--ds-line)!important;
+}
+html #view-today .om3-capture-panel h4{font-size:1.15rem!important;color:var(--ds-text)!important}
+html #view-today .om3-capture-panel p{
+  color:var(--ds-text-secondary)!important;font-size:12px!important;margin:5px 0 15px!important;
+}
+html #view-today .om3-capture-panel .omr-capture-line{
+  display:flex!important;align-items:stretch!important;flex-wrap:wrap!important;gap:8px!important;
+}
+html #view-today .om3-capture-panel #v35-today-capture{
+  background:var(--ds-surface)!important;color:var(--ds-text)!important;
+  border-color:var(--ds-line)!important;min-height:42px!important;flex:1 1 155px!important;
+  border-radius:var(--ds-radius-sm)!important;
+}
+html #view-today .om3-capture-panel #v35-today-capture-btn{
+  background:var(--ds-primary)!important;color:var(--ds-on-primary)!important;
+  border:1px solid var(--ds-primary)!important;min-height:42px!important;border-radius:var(--ds-radius-sm)!important;
+}
+html #view-today .om3-today-grid .omr-priority-row,
+html #view-today .om3-today-grid .omr-timeline-row{
+  border-radius:8px!important;min-height:48px!important;
+  border-bottom:1px solid var(--ds-line)!important;
+}
+html #view-today .om3-today-grid .omr-priority-row:last-child,
+html #view-today .om3-today-grid .omr-timeline-row:last-child{border-bottom:0!important}
+html #view-today .om3-today-grid .omr-zero{min-height:0!important;padding:10px 0 5px!important}
+html #view-today .om3-today-grid .omr-zero strong{font-size:var(--ds-text-md)!important;color:var(--ds-text)!important}
+html #view-today .om3-today-grid .omr-zero p{font-size:var(--ds-text-sm)!important;line-height:1.55!important;color:var(--ds-text-muted)!important}
+html #view-today .om3-habit-progress{display:flex;align-items:center;justify-content:space-between;
+  gap:10px;margin:0 0 9px;font-size:var(--ds-text-sm);color:var(--ds-text-secondary)}
+html #view-today .om3-habit-progress strong{color:var(--ds-text);font-size:var(--ds-text-md)}
+html #view-today .omr-progress-track{height:7px!important;border-radius:5px!important;
+  background:var(--ds-surface-raised)!important;overflow:hidden;margin-bottom:11px!important}
+html #view-today .omr-progress-track>span{background:var(--ds-success)!important;border-radius:5px!important}
+html #view-today .om3-nutrition-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+html #view-today .om3-nutrition-row strong{color:var(--ds-text);font-size:1.3rem;letter-spacing:-.03em}
+html #view-today .om3-nutrition-row strong small{font-size:var(--ds-text-sm);color:var(--ds-text-muted);font-weight:600}
+html #view-today .om3-nutrition-row span{color:var(--ds-text-secondary);font-size:var(--ds-text-sm)}
+html #view-today .omr-habit-check.is-done{background:var(--ds-success)!important;color:var(--ds-on-success)!important;border-color:var(--ds-success)!important}
+html #view-dashboard .om3-dashboard-focus{
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-lg)!important;
+  background:var(--ds-surface)!important;padding:18px!important;box-shadow:none!important;
+  margin:0 0 13px!important;min-width:0;
+}
+html #view-dashboard .om3-dashboard-focus-heading{
+  display:flex;justify-content:space-between;align-items:start;gap:16px;margin-bottom:9px;
+}
+html #view-dashboard .om3-dashboard-focus-heading h4{
+  margin:5px 0 0;color:var(--ds-text);font-size:1.1rem;letter-spacing:-.025em
+}
+html #view-dashboard .om3-dashboard-focus-heading p{margin:5px 0 0;font-size:var(--ds-text-sm);color:var(--ds-text-muted)}
+html #view-dashboard .om3-focus-today,html #view-dashboard .om3-focus-footer{
+  border:0;background:transparent;color:var(--ds-accent);font-weight:700;
+  font-size:var(--ds-text-sm);cursor:pointer;padding:8px 0;text-align:left;
+}
+html #view-dashboard .om3-priority-list{display:flex;flex-direction:column;gap:0;min-width:0}
+html #view-dashboard .om3-priority-item{
+  width:100%;display:flex;align-items:center;gap:12px;min-width:0;text-align:left;
+  background:transparent;border:0;border-bottom:1px solid var(--ds-line);
+  border-radius:0;padding:11px 3px;cursor:pointer;color:var(--ds-text);
+  min-height:50px;box-shadow:none!important;
+}
+html #view-dashboard .om3-priority-item:hover{background:var(--ds-surface-hover)}
+html #view-dashboard .om3-priority-item:last-child{border-bottom:0}
+html #view-dashboard .om3-priority-index{
+  flex:0 0 27px;width:27px;height:27px;display:grid;place-items:center;
+  background:var(--ds-accent-surface);border-radius:6px;color:var(--ds-accent-ink);
+  font-size:var(--ds-text-xs);font-weight:750;
+}
+html #view-dashboard .om3-priority-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+html #view-dashboard .om3-priority-body strong{
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ds-text);
+  font-size:var(--ds-text-md);font-weight:700;
+}
+html #view-dashboard .om3-priority-body small{font-size:var(--ds-text-xs);color:var(--ds-text-muted)}
+html #view-dashboard .om3-priority-arrow{flex:0 0 auto;color:var(--ds-accent)}
+html #view-dashboard .om3-priority-empty{padding:10px 0;color:var(--ds-text-muted);font-size:var(--ds-text-md)}
+html #view-dashboard .om3-focus-footer{margin-top:8px}
+html #view-dashboard .v431-board{gap:12px!important}
+html #view-dashboard .v43-empty{padding:12px 0!important;min-height:0!important;
+  border:0!important;background:transparent!important;text-align:left!important}
+@media(max-width:1050px){
+  html #view-today .om3-today-grid{grid-template-columns:minmax(0,1.2fr) minmax(260px,.85fr)!important}
+  html #view-today .om3-daily-glance{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  html #view-today .om3-today-hero{align-items:start!important;gap:12px!important}
+  html #view-today .om3-daily-glance{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  html #view-today .om3-daily-glance .omr-stat{min-height:95px;padding:12px!important}
+  html #view-today .om3-today-grid{grid-template-columns:minmax(0,1fr)!important;gap:10px!important}
+  html #view-today .om3-today-grid .omr-panel,
+  html #view-today .om3-today-grid .omr-feature{padding:14px!important}
+  html #view-today .om3-capture-panel #v35-today-capture{min-width:0}
+  html #view-today .om3-capture-panel #v35-today-capture-btn{min-height:44px!important}
+  html #view-dashboard .om3-dashboard-focus{padding:14px!important}
+  html #view-dashboard .om3-dashboard-focus-heading{flex-wrap:wrap}
+  html #view-dashboard .om3-priority-item{min-height:52px}
+}
+@media(max-width:390px){
+  html #view-today .om3-daily-glance .omr-stat{padding:10px!important}
+  html #view-today .om3-daily-glance .omr-stat strong{font-size:1.23rem!important}
+  html #view-dashboard .om3-priority-body strong{font-size:var(--ds-text-sm)}
+}
+/* END OMNIOS PHASE 3 / DAILY WORKSPACE AND DASHBOARD / v1 */
+
+/* ================================================================
+   OMNIOS PHASE 4 / CALENDAR + PLANNER / v1
+   Flat accessible date navigation and device-adaptive schedules.
+   Shared state/actions preserved; no calendar reimplementation.
+   ================================================================ */
+html #view-master-calendar,html #view-planner{min-width:0}
+html #view-master-calendar .omx-calendar-intro{margin-bottom:14px!important;gap:14px!important}
+html #view-master-calendar .omx-calendar-intro h3{font-size:clamp(1.5rem,2.4vw,2rem)!important;letter-spacing:-.045em!important}
+html #view-master-calendar .omx-calendar-intro p{font-size:var(--ds-text-md)!important;color:var(--ds-text-muted)!important}
+html #view-master-calendar .omx-schedule-status{
+  color:var(--ds-text-secondary)!important;background:var(--ds-surface-raised)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-sm)!important;
+  padding:6px 10px!important;font-weight:650!important;
+}
+html #view-master-calendar .v36-cal-shell{
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-lg)!important;
+  background:var(--ds-surface)!important;box-shadow:none!important;overflow:hidden;min-width:0;
+}
+html #view-master-calendar .v36-cal-toolbar{
+  display:grid!important;grid-template-columns:minmax(235px,auto) minmax(0,1fr) auto!important;
+  gap:12px!important;padding:13px 16px!important;align-items:center!important;
+  background:var(--ds-surface)!important;border-bottom:1px solid var(--ds-line)!important;
+}
+html #view-master-calendar .v36-cal-nav{gap:6px!important;justify-content:flex-start!important;min-width:0}
+html #view-master-calendar .v36-cal-nav .btn{min-width:36px;min-height:36px;border-radius:8px!important;flex:none}
+html #view-master-calendar .v36-cal-period{
+  text-align:left!important;min-width:0!important;font-weight:790!important;
+  font-size:clamp(.82rem,1.4vw,.99rem)!important;letter-spacing:-.02em!important;
+  margin-left:6px!important;overflow:hidden;text-overflow:ellipsis;
+  color:var(--ds-text)!important;
+}
+html #view-master-calendar .v36-cal-center{justify-content:center!important;min-width:0;overflow:visible}
+html #view-master-calendar .v36-cal-modes{
+  display:flex;gap:3px!important;max-width:100%;overflow-x:auto;scrollbar-width:none;
+  border:1px solid var(--ds-line)!important;border-radius:10px!important;
+  background:var(--ds-surface-raised)!important;padding:4px!important;box-shadow:none!important;
+}
+html #view-master-calendar .v36-cal-mode{
+  min-height:34px!important;flex:0 0 auto!important;min-width:0!important;
+  border-radius:7px!important;border:1px solid transparent!important;
+  background:transparent!important;color:var(--ds-text-secondary)!important;
+  font-size:var(--ds-text-sm)!important;font-weight:700!important;padding:6px 10px!important;
+}
+html #view-master-calendar .v36-cal-mode.active{
+  background:var(--ds-accent-surface)!important;border-color:var(--ds-line)!important;
+  color:var(--ds-accent-ink)!important;box-shadow:none!important;
+}
+html #view-master-calendar .v36-cal-mode:focus-visible{outline:2px solid var(--ds-focus)!important;outline-offset:2px}
+html #view-master-calendar .v36-cal-actions{gap:8px!important;justify-content:flex-end!important;min-width:0}
+html #view-master-calendar .v36-cal-search{
+  min-width:125px!important;width:170px!important;min-height:36px!important;
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:8px!important;font-size:13px!important;color:var(--ds-text)!important;
+}
+html #view-master-calendar #v36-cal-add{background:var(--ds-primary)!important;color:#fff!important;
+  border-color:var(--ds-primary)!important;min-height:36px!important;border-radius:8px!important}
+html #view-master-calendar .v603-calendar-layout{
+  display:grid;grid-template-columns:230px minmax(0,1fr)!important;align-items:stretch;
+  min-width:0;background:var(--ds-surface)!important;
+}
+html #view-master-calendar .v603-calendar-rail{
+  background:var(--ds-surface)!important;border-right:1px solid var(--ds-line)!important;
+  box-shadow:none!important;padding:13px 10px!important;min-width:0;
+}
+html #view-master-calendar .v603-calendar-stage,
+html #view-master-calendar .v603-calendar-stage-inner{background:var(--ds-surface)!important;min-width:0;max-width:100%}
+html #view-master-calendar .v603-calendar-stage-head{
+  padding:13px 16px!important;border-bottom:1px solid var(--ds-line)!important;
+  background:var(--ds-surface)!important;
+}
+html #view-master-calendar .v603-calendar-stage-head strong{font-weight:780!important;color:var(--ds-text)!important}
+html #view-master-calendar .v602-stage-hint{font-size:12px!important;color:var(--ds-text-muted)!important}
+html #view-master-calendar .v603-rail-stat,
+html #view-master-calendar .v603-preset,
+html #view-master-calendar .v603-rail-section{
+  background:var(--ds-surface)!important;border-color:var(--ds-line)!important;box-shadow:none!important;
+}
+html #view-master-calendar .v603-preset.active{background:var(--ds-accent-surface)!important;color:var(--ds-accent-ink)!important}
+html #view-master-calendar .v36-month-grid{
+  background:var(--ds-line)!important;gap:1px!important;padding:0!important;
+  grid-template-columns:repeat(7,minmax(0,1fr))!important;width:100%!important;
+}
+html #view-master-calendar .v36-month-grid.hide-weekends{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+html #view-master-calendar .v36-month-weekday{
+  display:flex!important;align-items:center;justify-content:center;
+  background:var(--ds-surface-raised)!important;color:var(--ds-text-secondary)!important;
+  font-size:11px!important;letter-spacing:.065em!important;font-weight:730!important;
+  border:0!important;min-width:0;padding:10px 3px!important;text-transform:uppercase!important;
+}
+html #view-master-calendar .v36-month-grid.hide-weekends [data-weekend="1"]{display:none!important}
+html #view-master-calendar .v36-month-day{
+  min-height:112px!important;min-width:0!important;background:var(--ds-surface)!important;
+  border:0!important;padding:8px!important;opacity:1!important;box-shadow:none!important;
+}
+html #view-master-calendar .v36-month-day.other-month{background:var(--ds-surface-raised)!important}
+html #view-master-calendar .v36-month-day.other-month .v36-month-date{color:var(--ds-text-muted)!important}
+html #view-master-calendar .v36-month-day.today{background:var(--ds-accent-surface)!important;
+  outline:2px solid var(--ds-accent)!important;outline-offset:-2px}
+html #view-master-calendar .v36-month-day-head{display:flex;align-items:center;justify-content:space-between;gap:2px}
+html #view-master-calendar .v36-month-date{
+  color:var(--ds-text)!important;font-size:13px!important;font-weight:760!important;
+  width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;
+  display:grid!important;place-items:center!important;border-radius:8px!important;
+  background:transparent!important;border:0!important;
+}
+html #view-master-calendar .v36-month-day.today .v36-month-date{background:var(--ds-accent)!important;color:var(--ds-surface)!important}
+html #view-master-calendar .v36-day-add{border-radius:7px!important;color:var(--ds-text-muted)!important}
+html #view-master-calendar .v36-month-events{gap:4px!important;margin-top:5px!important;min-width:0}
+html #view-master-calendar .v36-month-event{
+  color:var(--ds-text)!important;background:var(--ds-surface-raised)!important;
+  border:0!important;border-left:3px solid var(--event-color)!important;
+  border-radius:6px!important;padding:5px 6px!important;min-height:24px!important;
+  font-size:11px!important;line-height:1.25!important;max-width:100%;
+}
+html #view-master-calendar .v36-month-event:hover{background:var(--ds-surface-hover)!important}
+html #view-master-calendar .v36-event-title{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+html #view-master-calendar .om4-month-indicators{display:none}
+html #view-master-calendar .v36-more{
+  min-height:23px!important;color:var(--ds-accent)!important;
+  font-size:11px!important;font-weight:730!important;text-align:left!important;
+}
+html #view-master-calendar .v36-all-day,
+html #view-master-calendar .v36-time-head,
+html #view-master-calendar .v36-time-days,
+html #view-master-calendar .v36-time-day,
+html #view-master-calendar .v36-time-day-head{
+  background:var(--ds-surface)!important;border-color:var(--ds-line)!important;
+}
+html #view-master-calendar .v36-time-day-head.today{background:var(--ds-accent-surface)!important;color:var(--ds-accent-ink)!important}
+html #view-master-calendar .v36-time-wrap{max-height:min(74vh,830px)!important;
+  background:var(--ds-surface)!important;overflow:auto!important;scrollbar-gutter:stable}
+html #view-master-calendar .v36-time-label,html #view-master-calendar .v36-time-end-label{
+  color:var(--ds-text-muted)!important;font-size:11px!important}
+html #view-master-calendar .v36-timed-event,
+html #view-master-calendar .v36-all-day-event{
+  background:var(--ds-surface-raised)!important;
+  border:1px solid var(--ds-line)!important;
+  border-left:3px solid var(--event-color)!important;
+  color:var(--ds-text)!important;border-radius:7px!important;box-shadow:none!important;
+}
+html #view-master-calendar .v36-timed-event:hover,
+html #view-master-calendar .v36-all-day-event:hover{background:var(--ds-surface-hover)!important}
+html #view-master-calendar .v36-timed-title{font-weight:720!important}
+html #view-master-calendar .v36-agenda{padding:16px!important;gap:14px!important;background:var(--ds-surface)!important}
+html #view-master-calendar .v36-agenda-day{
+  border:1px solid var(--ds-line)!important;border-radius:10px!important;
+  background:var(--ds-surface)!important;box-shadow:none!important;
+}
+html #view-master-calendar .v36-agenda-date{
+  background:var(--ds-surface-raised)!important;border-bottom:1px solid var(--ds-line)!important;
+  padding:12px 14px!important;margin:0!important;
+}
+html #view-master-calendar .v36-agenda-date-num{
+  border-radius:8px!important;background:var(--ds-surface)!important;
+  color:var(--ds-text)!important;border:1px solid var(--ds-line)!important;
+}
+html #view-master-calendar .v36-agenda-date.today .v36-agenda-date-num{
+  background:var(--ds-accent)!important;color:var(--ds-surface)!important;
+}
+html #view-master-calendar .v36-agenda-item{
+  background:var(--ds-surface)!important;border-bottom:1px solid var(--ds-line)!important;
+  box-shadow:none!important;border-left:3px solid var(--event-color)!important;
+}
+html #view-master-calendar .v36-agenda-item:last-child{border-bottom:0!important}
+html #view-master-calendar .v36-agenda-time,
+html #view-master-calendar .v36-agenda-meta{color:var(--ds-text-muted)!important}
+html #view-master-calendar .v36-agenda-title{color:var(--ds-text)!important;font-size:var(--ds-text-md)!important}
+html #view-master-calendar .om4-agenda-empty{
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;
+  padding:30px 16px!important;min-height:180px!important;
+  background:var(--ds-surface)!important;color:var(--ds-text)!important;
+  text-align:center;font-size:var(--ds-text-md)!important;
+}
+html #view-master-calendar .om4-agenda-empty strong{font-size:var(--ds-text-base)!important}
+html #view-master-calendar .om4-agenda-empty p{color:var(--ds-text-muted)!important;font-size:var(--ds-text-sm)!important}
+html #view-master-calendar .v65-mobile-week{background:var(--ds-surface)!important}
+html #view-master-calendar .v65-week-day{background:var(--ds-surface)!important;border-bottom:1px solid var(--ds-line)!important}
+html #view-master-calendar .v65-week-date{color:var(--ds-text)!important}
+html #view-master-calendar .v65-week-event{
+  background:var(--ds-surface)!important;
+  border:1px solid var(--ds-line)!important;border-left:3px solid var(--event-color)!important;
+  box-shadow:none!important;color:var(--ds-text)!important;border-radius:8px!important;
+}
+/* Planner: drag remains optional, Schedule and Auto work on touch and keyboard. */
+html #view-planner .v35-page-head{
+  display:flex!important;align-items:center!important;justify-content:space-between;
+  margin-bottom:16px!important;
+}
+html #view-planner .v35-page-head h3{font-size:clamp(1.5rem,2.2vw,2rem)!important;letter-spacing:-.035em!important}
+html #view-planner .v35-page-head .text-muted{color:var(--ds-text-muted)!important;font-size:var(--ds-text-md)!important}
+html #view-planner .v35-segmented{
+  display:flex;flex-wrap:nowrap;gap:4px!important;overflow-x:auto;scrollbar-width:none;
+  border:1px solid var(--ds-line)!important;border-radius:10px!important;
+  background:var(--ds-surface-raised)!important;padding:4px!important;margin-bottom:13px!important;
+}
+html #view-planner .v35-segmented button{
+  min-height:36px!important;flex:0 0 auto;white-space:nowrap;
+  border-radius:7px!important;border:1px solid transparent!important;
+  padding:7px 13px!important;color:var(--ds-text-secondary)!important;
+  font-size:var(--ds-text-sm)!important;font-weight:650!important;background:transparent!important;
+}
+html #view-planner .v35-segmented button.active{
+  background:var(--ds-accent-surface)!important;color:var(--ds-accent-ink)!important;
+  border-color:var(--ds-line)!important;
+}
+html #view-planner .v35-week-toolbar{
+  border:1px solid var(--ds-line)!important;background:var(--ds-surface)!important;
+  border-radius:12px!important;box-shadow:none!important;padding:16px!important;
+}
+html #view-planner .v35-week-toolbar-head{align-items:center!important;gap:14px!important}
+html #view-planner .v35-week-copy{min-width:0}
+html #view-planner .v35-week-copy .v35-card-title{font-weight:760!important;color:var(--ds-text)!important;font-size:var(--ds-text-base)!important}
+html #view-planner .v35-week-copy .v35-card-sub{font-size:var(--ds-text-sm)!important;color:var(--ds-text-muted)!important}
+html #view-planner .v35-unscheduled{gap:8px!important;margin-top:12px!important;padding:2px 0 9px!important}
+html #view-planner .v35-unscheduled-item{
+  padding:12px!important;min-width:200px!important;max-width:260px!important;
+  border:1px solid var(--ds-line)!important;border-radius:9px!important;
+  background:var(--ds-surface-raised)!important;box-shadow:none!important;
+  color:var(--ds-text)!important;
+}
+html #view-planner .v35-unscheduled-item .v35-row-title{font-size:var(--ds-text-md)!important;font-weight:700!important}
+html #view-planner .om4-task-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+html #view-planner .om4-task-actions .btn{min-height:34px!important;font-size:12px!important;padding:7px 10px!important}
+html #view-planner .om4-task-actions [data-om4-plan-task]{
+  color:#FFFFFF!important;background:var(--ds-primary)!important;border-color:var(--ds-primary)!important;
+}
+html #view-planner .v35-planner-shell{overflow:auto;scrollbar-gutter:stable;padding-bottom:8px!important}
+html #view-planner .v35-week-grid{gap:8px!important}
+html #view-planner .v35-day-col{
+  border:1px solid var(--ds-line)!important;background:var(--ds-surface)!important;
+  border-radius:10px!important;box-shadow:none!important;min-height:230px!important;padding:11px!important;
+}
+html #view-planner .v35-day-col.is-today{
+  border-color:var(--ds-accent)!important;background:var(--ds-accent-surface)!important;box-shadow:none!important;
+}
+html #view-planner .v35-day-head{border-bottom:1px solid var(--ds-line)!important;margin-bottom:10px!important}
+html #view-planner .v35-day-name{color:var(--ds-text-muted)!important;font-size:11px!important}
+html #view-planner .v35-day-num{color:var(--ds-text)!important;font-size:1.23rem!important}
+html #view-planner .v35-block{
+  border:1px solid var(--ds-line)!important;border-left:3px solid var(--ds-accent)!important;
+  background:var(--ds-surface-raised)!important;box-shadow:none!important;border-radius:8px!important;
+  color:var(--ds-text)!important;
+}
+html #view-planner .v35-block.event{border-left-color:var(--ds-primary)!important}
+html #view-planner .v35-block-time{color:var(--ds-text-muted)!important}
+html #view-planner .v35-day-add{width:100%;margin-top:9px!important;min-height:36px!important}
+@media(max-width:1250px) and (min-width:761px){
+  html #view-master-calendar .v36-cal-toolbar{grid-template-columns:1fr auto!important}
+  html #view-master-calendar .v36-cal-center{grid-row:2;grid-column:1/-1;justify-content:flex-start!important}
+  html #view-master-calendar .v603-calendar-layout{grid-template-columns:205px minmax(0,1fr)!important}
+}
+@media(max-width:760px){
+  html #view-master-calendar .v36-cal-shell{border-radius:11px!important}
+  html #view-master-calendar .omx-calendar-intro{margin:0 0 10px!important;padding:0 2px!important}
+  html #view-master-calendar .v36-cal-toolbar{
+    display:flex!important;flex-wrap:wrap!important;gap:8px!important;
+    padding:10px!important;align-items:center!important;
+  }
+  html #view-master-calendar .v36-cal-nav{order:1;flex:1 1 100%;gap:4px!important}
+  html #view-master-calendar .v36-cal-period{
+    flex:1!important;min-width:0!important;text-align:center!important;
+    margin-left:0!important;font-size:.87rem!important;
+  }
+  html #view-master-calendar .v36-cal-actions{order:2;flex:1 1 100%;justify-content:space-between!important}
+  html #view-master-calendar .v36-cal-search{flex:1 1 90px;min-width:0!important;width:auto!important}
+  html #view-master-calendar .v36-cal-center{order:3;width:100%!important;justify-content:flex-start!important}
+  html #view-master-calendar .v36-cal-modes{width:100%;max-width:100%!important}
+  html #view-master-calendar .v36-cal-mode{
+    flex:1 0 auto!important;font-size:11px!important;min-height:40px!important;padding:7px 9px!important;
+  }
+  html #view-master-calendar .v603-calendar-layout{display:block!important;min-height:0!important}
+  html #view-master-calendar .v603-calendar-rail{display:none!important}
+  html #view-master-calendar .v603-calendar-layout.rail-open .v603-calendar-rail{
+    display:flex!important;position:fixed!important;
+    left:8px!important;right:8px!important;
+    bottom:calc(var(--mobile-nav-h,82px) + env(safe-area-inset-bottom) + 8px)!important;
+    width:auto!important;max-height:72dvh!important;overflow-y:auto!important;
+    border:1px solid var(--ds-line)!important;border-radius:14px!important;
+    background:var(--ds-surface)!important;z-index:1500!important;padding:14px!important;
+  }
+  html #view-master-calendar .v36-month-grid{
+    display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;
+    gap:1px!important;padding:0!important;background:var(--ds-line)!important;
+  }
+  html #view-master-calendar .v36-month-grid.hide-weekends{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+  html #view-master-calendar .v36-month-day{
+    min-width:0!important;min-height:63px!important;
+    padding:4px 1px 6px!important;text-align:center!important;
+    display:flex!important;flex-direction:column!important;
+    justify-content:flex-start!important;align-items:center!important;
+  }
+  html #view-master-calendar .v36-month-weekday{
+    padding:7px 0!important;font-size:9px!important;
+    letter-spacing:0!important;text-transform:none!important;
+  }
+  html #view-master-calendar .v36-month-day-head{
+    display:flex!important;flex-direction:column!important;width:100%!important;
+    align-items:center!important;justify-content:center!important;
+  }
+  html #view-master-calendar .v36-month-date{
+    min-width:32px!important;width:32px!important;min-height:32px!important;height:32px!important;
+    padding:0!important;font-size:12px!important;
+  }
+  html #view-master-calendar .v36-day-add{display:none!important}
+  html #view-master-calendar .v36-month-events{display:none!important}
+  html #view-master-calendar .om4-month-indicators{
+    display:flex!important;align-items:center;justify-content:center;gap:3px;
+    min-height:8px!important;max-width:100%;padding:0 2px;margin-top:6px;
+  }
+  html #view-master-calendar .om4-month-indicator{
+    display:block;width:5px;height:5px;flex:0 0 5px;border-radius:50%;
+    background:var(--event-color,var(--ds-accent))!important;
+  }
+  html #view-master-calendar .om4-month-indicator-more{background:var(--ds-text-muted)!important}
+  html #view-master-calendar .v36-agenda{padding:9px!important;gap:10px!important}
+  html #view-master-calendar .v36-agenda-date{padding:10px!important}
+  html #view-master-calendar .v36-agenda-item{min-width:0;min-height:56px!important}
+  html #view-master-calendar .v36-time-wrap{max-height:min(65dvh,700px)!important;scrollbar-gutter:stable}
+  html #view-planner .v35-page-head{gap:12px!important;align-items:flex-start!important}
+  html #view-planner .v35-page-actions{display:flex;flex-wrap:wrap;gap:7px}
+  html #view-planner .v35-segmented button{min-height:44px!important}
+  html #view-planner .v35-week-toolbar{padding:12px!important}
+  html #view-planner .v35-week-toolbar-head{align-items:flex-start!important;flex-wrap:wrap!important}
+  html #view-planner .v35-week-nav{width:100%;justify-content:space-between}
+  html #view-planner .v35-week-nav .btn{min-height:44px!important}
+  html #view-planner .v35-unscheduled{
+    display:grid!important;grid-auto-flow:column!important;
+    grid-auto-columns:minmax(190px,75vw)!important;overflow-x:auto!important;
+    scroll-snap-type:x proximity!important;gap:8px!important;padding:3px 1px 11px!important;
+  }
+  html #view-planner .v35-unscheduled-item{scroll-snap-align:start;min-width:0!important;max-width:none!important}
+  html #view-planner .om4-task-actions .btn{min-height:42px!important}
+  html #view-planner .v35-planner-shell{overflow:visible!important}
+  html #view-planner .v35-week-grid{
+    min-width:0!important;grid-template-columns:minmax(0,1fr)!important;
+    gap:8px!important;
+  }
+  html #view-planner .v35-day-col{min-height:94px!important;padding:12px!important}
+  html #view-planner .v35-day-head{
+    display:flex!important;align-items:center!important;gap:9px!important;
+    margin-bottom:8px!important;padding-bottom:8px!important;
+  }
+  html #view-planner .v35-day-num{font-size:1.08rem!important;margin-top:0!important}
+  html #view-planner .v35-day-add{min-height:42px!important;width:auto!important;min-width:100px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  html #view-master-calendar :where(.v36-month-day,.v36-month-event,.v36-cal-mode,.v36-agenda-item){transition:none!important}
+  html #view-planner :where(.v35-block,.v35-day-col,.v35-unscheduled-item){transition:none!important}
+}
+/* END OMNIOS PHASE 4 / CALENDAR + PLANNER / v1 */
+
+/* ================================================================
+   OMNIOS PHASE 5 / HABITS + ROUTINE + WORKOUT / v1
+   Shared flat wellness workspace, all tracking handlers preserved.
+   ================================================================ */
+html #view-habits,html #view-routine,html #view-workout{min-width:0;color:var(--ds-text)}
+html #view-habits :where(.omx-page-heading,.habit-toolbar),
+html #view-workout .workout-hero,
+html #view-routine .rt-hero{
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;box-shadow:none!important;
+  background-image:none!important;
+}
+html #view-habits .omx-page-heading,
+html #view-workout .workout-hero,
+html #view-routine .rt-hero{
+  padding:clamp(16px,2vw,26px)!important;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+}
+html #view-habits .omx-page-heading h3,
+html #view-workout .workout-hero h3,
+html #view-routine .rt-hero h3{
+  font-size:clamp(1.55rem,2.35vw,2rem)!important;
+  line-height:1.13!important;letter-spacing:-.045em!important;
+  color:var(--ds-text)!important;
+}
+html #view-habits .omx-page-heading p,
+html #view-workout .workout-hero p,
+html #view-routine .rt-hero p{
+  font-size:var(--ds-text-md)!important;
+  color:var(--ds-text-muted)!important;line-height:1.5!important;max-width:55ch;
+}
+html #view-habits .omx-eyebrow,
+html #view-workout .eyebrow,
+html #view-routine .rt-kicker{
+  color:var(--ds-accent)!important;font-size:11px!important;font-weight:760!important;
+  letter-spacing:.09em!important;
+}
+/* Habits: actionable history and uncluttered glance metrics */
+html #view-habits .omx-habit-switch{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  padding:10px 14px!important;margin:12px 0!important;
+  border-radius:10px!important;box-shadow:none!important;
+}
+html #view-habits .omx-habit-switch-copy{color:var(--ds-text-muted)!important;font-size:var(--ds-text-sm)!important}
+html #view-habits [data-habitview].active{
+  background:var(--ds-accent-surface)!important;
+  color:var(--ds-accent-ink)!important;
+  border-color:var(--ds-line)!important;
+}
+html #view-habits .habit-summary-grid{
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:10px!important;margin:0 0 13px!important;
+}
+html #view-habits .habit-summary{
+  min-width:0!important;display:flex;flex-direction:column;justify-content:center;
+  gap:7px!important;min-height:112px!important;
+  padding:16px!important;border:1px solid var(--ds-line)!important;
+  background:var(--ds-surface)!important;background-image:none!important;
+  border-radius:var(--ds-radius-lg)!important;box-shadow:none!important;
+}
+html #view-habits .habit-summary-label{
+  font-size:11px!important;letter-spacing:.035em!important;
+  line-height:1.4!important;text-transform:none!important;
+  color:var(--ds-text-muted)!important;font-weight:690!important;
+}
+html #view-habits .habit-summary-value{
+  font-size:clamp(1.35rem,2.1vw,1.9rem)!important;
+  font-weight:780!important;letter-spacing:-.035em!important;
+  line-height:1.13!important;color:var(--ds-text)!important;
+}
+html #view-habits .habit-summary-value small{
+  font-size:var(--ds-text-sm)!important;color:var(--ds-text-muted)!important;
+  font-weight:600!important;letter-spacing:0!important;
+}
+html #view-habits .om5-habit-meter{
+  position:relative;height:6px;background:var(--ds-surface-raised);
+  border-radius:4px;overflow:hidden;width:100%;margin-top:1px;
+}
+html #view-habits .om5-habit-meter i{
+  display:block;height:100%;border-radius:inherit;background:var(--ds-success);
+}
+html #view-habits .v95-habit-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+html #view-habits .v95-habit-card,
+html #view-habits .v105-month-card,
+html #view-habits .habit-week-card{
+  background:var(--ds-surface)!important;
+  background-image:none!important;border:1px solid var(--ds-line)!important;
+  box-shadow:none!important;border-radius:var(--ds-radius-lg)!important;
+  padding:16px!important;min-width:0;
+}
+html #view-habits .v95-habit-card:hover,html #view-habits .v105-month-card:hover{
+  border-color:var(--ds-line-strong)!important;
+}
+html #view-habits .v95-habit-icon,html #view-habits .v105-month-icon{
+  border:1px solid var(--ds-line)!important;border-radius:9px!important;
+  background:var(--ds-surface-raised)!important;box-shadow:none!important;
+}
+html #view-habits .v95-habit-name,html #view-habits .v105-month-copy strong{
+  color:var(--ds-text)!important;font-size:var(--ds-text-base)!important;
+  letter-spacing:-.015em!important;font-weight:760!important;
+}
+html #view-habits .v95-habit-goal,html #view-habits .v105-month-copy span{
+  color:var(--ds-text-muted)!important;font-size:var(--ds-text-sm)!important;
+}
+html #view-habits .v95-habit-done-btn{
+  background:var(--ds-surface-raised)!important;border:1px solid var(--ds-line)!important;
+  color:var(--ds-text-muted)!important;border-radius:9px!important;
+  min-width:40px!important;min-height:40px!important;box-shadow:none!important;
+}
+html #view-habits .v95-habit-done-btn.active{
+  background:var(--ds-success)!important;color:var(--ds-on-success)!important;
+  border-color:var(--ds-success)!important;
+}
+html #view-habits .v95-habit-pill{background:var(--ds-surface-raised)!important;color:var(--ds-text-secondary)!important;
+  border:1px solid var(--ds-line)!important;box-shadow:none!important}
+html #view-habits .v95-habit-pill.accent{
+  background:var(--ds-accent-surface)!important;color:var(--ds-accent-ink)!important;
+}
+html #view-habits .v105-month-shell{background:transparent!important}
+html #view-habits .v105-month-toolbar{
+  padding:12px 14px!important;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:10px!important;box-shadow:none!important;
+  margin-bottom:12px!important;
+}
+html #view-habits .v105-month-title{color:var(--ds-text)!important;font-size:.97rem!important;font-weight:780!important}
+html #view-habits .v105-month-hint{color:var(--ds-text-muted)!important;font-size:var(--ds-text-sm)!important}
+html #view-habits .v105-month-grid{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:12px!important;align-items:start;
+}
+html #view-habits .v105-month-card-head{
+  border-bottom:1px solid var(--ds-line)!important;padding-bottom:10px!important;
+  margin-bottom:10px!important;
+}
+html #view-habits .v105-month-day{
+  border-radius:6px!important;min-width:0!important;
+  color:var(--ds-text-secondary)!important;background:transparent!important;
+}
+html #view-habits .v105-month-day.today{
+  outline:2px solid var(--ds-accent)!important;outline-offset:-1px!important;
+}
+html #view-habits .v105-month-day.done{
+  color:var(--ds-on-success)!important;background:var(--ds-success)!important;
+  border-color:var(--ds-success)!important;
+}
+html #view-habits .v105-month-stat strong{color:var(--ds-text)!important}
+html #view-habits .v105-month-foot{border-top:1px solid var(--ds-line)!important}
+html #view-habits .om5-empty-state{
+  padding:25px!important;min-height:150px!important;display:flex!important;
+  align-items:flex-start!important;flex-direction:column!important;gap:10px!important;
+  text-align:left!important;background:var(--ds-surface)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-lg)!important;
+}
+html #view-habits .om5-empty-state strong{font-size:1rem;color:var(--ds-text)}
+html #view-habits .om5-empty-state p{margin:0;font-size:var(--ds-text-md);color:var(--ds-text-muted)}
+/* Routine: quiet progress summary, distinct step controls */
+html #view-routine .rt611-shell{gap:12px!important;min-width:0}
+html #view-routine .rt-hero{background:var(--ds-surface)!important}
+html #view-routine .rt-hero-main{min-width:0;max-width:70ch}
+html #view-routine .rt611-tabs{
+  background:var(--ds-surface-raised)!important;border:1px solid var(--ds-line)!important;
+  border-radius:10px!important;padding:4px!important;gap:3px!important;
+  box-shadow:none!important;overflow-x:auto!important;scrollbar-width:none;
+}
+html #view-routine .rt611-tab{
+  min-height:38px!important;padding:8px 13px!important;
+  border:1px solid transparent!important;border-radius:7px!important;
+  background:transparent!important;color:var(--ds-text-secondary)!important;
+  font-size:var(--ds-text-sm)!important;font-weight:690!important;
+}
+html #view-routine .rt611-tab.active{
+  background:var(--ds-accent-surface)!important;color:var(--ds-accent-ink)!important;
+  border-color:var(--ds-line)!important;box-shadow:none!important;
+}
+html #view-routine .rt-kpis{
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:10px!important;min-width:0;
+}
+html #view-routine .rt-kpi{
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;box-shadow:none!important;
+  min-width:0;min-height:102px;padding:16px!important;
+}
+html #view-routine .rt-kpi span{color:var(--ds-text-muted)!important;font-size:var(--ds-text-sm)!important}
+html #view-routine .rt-kpi strong{font-size:clamp(1.4rem,2vw,1.8rem)!important;color:var(--ds-text)!important}
+html #view-routine .om5-routine-overview{
+  display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px 14px;
+  padding:13px 16px!important;border:1px solid var(--ds-line)!important;
+  border-radius:10px!important;background:var(--ds-surface)!important;
+  font-size:var(--ds-text-sm);font-weight:660;color:var(--ds-text-muted);
+}
+html #view-routine .om5-routine-overview strong{font-size:var(--ds-text-base);color:var(--ds-text)}
+html #view-routine .om5-routine-progress{grid-column:1/-1;height:7px;border-radius:4px;
+  background:var(--ds-surface-raised);overflow:hidden}
+html #view-routine .om5-routine-progress i{height:100%;display:block;background:var(--ds-success);border-radius:4px}
+html #view-routine .rt-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;align-items:start}
+html #view-routine .rt-card{
+  min-width:0!important;background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-lg)!important;
+  box-shadow:none!important;padding:16px!important;
+}
+html #view-routine .rt-card.done{border-color:var(--ds-line-strong)!important}
+html #view-routine .rt-card-head{gap:11px!important;flex-wrap:wrap}
+html #view-routine .rt-card-icon{background:var(--ds-surface-raised)!important;
+  border:1px solid var(--ds-line)!important;border-radius:9px!important;box-shadow:none!important}
+html #view-routine .rt-card-main{flex:1;min-width:140px}
+html #view-routine .rt-card-title{font-size:var(--ds-text-base)!important;
+  font-weight:770!important;line-height:1.25!important;color:var(--ds-text)!important}
+html #view-routine .rt-card-meta,html #view-routine .rt611-card-reset{
+  font-size:var(--ds-text-sm)!important;color:var(--ds-text-muted)!important;line-height:1.4!important}
+html #view-routine .rt-card-actions{display:flex;flex-wrap:wrap;gap:5px!important}
+html #view-routine .rt-card-actions .btn{min-height:32px!important;padding:6px 9px!important;font-size:11px!important}
+html #view-routine .rt-progress{height:7px!important;background:var(--ds-surface-raised)!important;
+  border-radius:4px!important;overflow:hidden;box-shadow:none!important}
+html #view-routine .rt-progress i{background:var(--ds-success)!important;border-radius:4px!important}
+html #view-routine .rt-items{display:flex;flex-direction:column;gap:0!important}
+html #view-routine .rt-item{
+  padding:11px 0!important;border:0!important;border-bottom:1px solid var(--ds-line)!important;
+  background:transparent!important;border-radius:0!important;box-shadow:none!important;
+  min-width:0;
+}
+html #view-routine .rt-item:last-child{border-bottom:0!important}
+html #view-routine .rt-check{min-width:34px;min-height:34px;background:var(--ds-surface-raised)!important;
+  border:1px solid var(--ds-line)!important;border-radius:8px!important;color:var(--ds-text-muted)!important}
+html #view-routine .rt-check.done{background:var(--ds-success)!important;color:var(--ds-on-success)!important;
+  border-color:var(--ds-success)!important}
+html #view-routine .rt-item-title{color:var(--ds-text)!important;font-size:var(--ds-text-md)!important;font-weight:670!important}
+html #view-routine .rt-item-note,html #view-routine .rt-link{color:var(--ds-text-muted)!important}
+html #view-routine .rt-empty{min-height:110px!important;padding:18px!important;
+  color:var(--ds-text-muted)!important;background:var(--ds-surface)!important}
+html #routine-editor-v611 .rt611-step-row{background:var(--ds-surface)!important;border-color:var(--ds-line)!important}
+html #routine-editor-v611 .rt611-step-title{min-width:0}
+html #routine-editor-v611 .rt611-builder{max-width:100%}
+/* Gym: accessible sets, lighter KPIs and clear session focus */
+html #view-workout .workout-hero{margin-bottom:12px!important;min-width:0}
+html #view-workout .workout-hero-actions{display:flex;flex-wrap:wrap;gap:8px!important}
+html #view-workout .workout-kpi-grid{
+  display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:10px!important;margin:0 0 13px!important;
+}
+html #view-workout .workout-kpi{
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;box-shadow:none!important;
+  min-width:0;min-height:107px;padding:14px!important;
+}
+html #view-workout .workout-kpi-label{color:var(--ds-text-muted)!important;font-size:11px!important;font-weight:680!important}
+html #view-workout .workout-kpi-value{color:var(--ds-text)!important;
+  font-size:clamp(1.22rem,2vw,1.75rem)!important;line-height:1.2!important;font-weight:780!important}
+html #view-workout .workout-kpi-meta{color:var(--ds-text-muted)!important;font-size:11px!important;line-height:1.35!important}
+html #view-workout .workout-tabs{
+  display:flex!important;overflow-x:auto!important;gap:3px!important;scrollbar-width:none;
+  padding:4px!important;background:var(--ds-surface-raised)!important;
+  border:1px solid var(--ds-line)!important;border-radius:10px!important;
+  box-shadow:none!important;max-width:100%!important;margin-bottom:13px!important;
+}
+html #view-workout .workout-tabs .view-btn{
+  min-height:38px!important;flex:0 0 auto!important;
+  border:1px solid transparent!important;border-radius:7px!important;
+  padding:8px 12px!important;background:transparent!important;
+  color:var(--ds-text-secondary)!important;font-size:var(--ds-text-sm)!important;
+}
+html #view-workout .workout-tabs .view-btn.active{
+  background:var(--ds-accent-surface)!important;color:var(--ds-accent-ink)!important;
+  border-color:var(--ds-line)!important;box-shadow:none!important;
+}
+html #view-workout .workout-session-empty{
+  min-height:160px!important;padding:26px 18px!important;
+  border:1px solid var(--ds-line)!important;background:var(--ds-surface)!important;
+  border-radius:var(--ds-radius-lg)!important;box-shadow:none!important;
+}
+html #view-workout .om5-session-head{
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;padding:15px 18px!important;
+  box-shadow:none!important;display:flex;gap:12px;flex-wrap:wrap;align-items:center;
+}
+html #view-workout .om5-session-label{font-size:11px!important;letter-spacing:.095em!important;
+  color:var(--ds-accent)!important;font-weight:760!important;margin-bottom:6px}
+html #view-workout .workout-session-head h3{color:var(--ds-text)!important;font-size:1.12rem!important}
+html #view-workout .om5-workout-progress{height:7px!important;border-radius:4px!important;
+  background:var(--ds-surface-raised)!important;overflow:hidden}
+html #view-workout .om5-workout-progress .workout-progress-fill{height:100%!important;
+  background:var(--ds-success)!important;border-radius:4px!important}
+html #view-workout .workout-session-card,.view#view-workout .workout-item-card{
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;box-shadow:none!important;
+  padding:16px!important;margin-bottom:10px!important;min-width:0;
+}
+html #view-workout .exercise-head{gap:12px!important;align-items:start!important}
+html #view-workout .exercise-name{font-size:var(--ds-text-base)!important;
+  font-weight:780!important;color:var(--ds-text)!important}
+html #view-workout .exercise-meta{font-size:var(--ds-text-sm)!important;color:var(--ds-text-muted)!important}
+html #view-workout .om5-set-scroll{max-width:100%;overflow-x:auto!important;
+  overscroll-behavior-x:contain;scrollbar-width:thin;margin:12px 0 10px}
+html #view-workout .set-table{
+  border-collapse:separate!important;border-spacing:0!important;width:100%;
+  min-width:370px;background:var(--ds-surface)!important;
+}
+html #view-workout .set-table thead{background:var(--ds-surface-raised)!important}
+html #view-workout .set-table th{color:var(--ds-text-secondary)!important;font-size:11px!important;
+  font-weight:720!important;padding:8px!important;white-space:nowrap}
+html #view-workout .set-table td{padding:7px!important;
+  border-bottom:1px solid var(--ds-line)!important;color:var(--ds-text)!important}
+html #view-workout .set-input{min-width:55px!important;width:100%!important;
+  min-height:36px!important;background:var(--ds-surface)!important;
+  color:var(--ds-text)!important;border:1px solid var(--ds-line)!important;
+  border-radius:7px!important;box-shadow:none!important}
+html #view-workout .set-complete{min-width:36px!important;min-height:36px!important;
+  border-radius:8px!important;background:var(--ds-surface-raised)!important;
+  color:var(--ds-text-muted)!important;border:1px solid var(--ds-line)!important}
+html #view-workout .set-complete.done{
+  background:var(--ds-success)!important;border-color:var(--ds-success)!important;
+  color:var(--ds-on-success)!important;
+}
+html #view-workout .exercise-actions{display:flex;flex-wrap:wrap;gap:8px!important}
+html #view-workout .workout-analytics-grid .card{background:var(--ds-surface)!important;box-shadow:none!important}
+html #view-workout .workout-progress-fill{background:var(--ds-success)!important}
+/* Image-free Home Workout: one purposeful active-set focus with timer controls */
+html #view-workout.hw-active #hw-panel{min-width:0;max-width:100%}
+html #view-workout #hw-panel .hw-top,
+html #view-workout #hw-panel .hw-plan,
+html #view-workout #hw-panel .hw-ex-card,
+html #view-workout #hw-panel .hw-main-card,
+html #view-workout #hw-panel .hw-queue,
+html #view-workout #hw-panel .hw-chart-card,
+html #view-workout #hw-panel .hw-history-row{
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-lg)!important;
+  box-shadow:none!important;color:var(--ds-text)!important;min-width:0;
+}
+html #view-workout #hw-panel .hw-top{padding:clamp(16px,2vw,25px)!important}
+html #view-workout #hw-panel .hw-kicker,
+html #view-workout #hw-panel .hw-overline{
+  color:var(--ds-accent)!important;font-size:11px!important;letter-spacing:.08em!important;
+}
+html #view-workout #hw-panel :where(h3,h4,h5){color:var(--ds-text)!important;letter-spacing:-.025em}
+html #view-workout #hw-panel :where(p,small){color:var(--ds-text-muted)!important}
+html #view-workout #hw-panel .hw-kpis{
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;
+}
+html #view-workout #hw-panel .hw-kpis>div{
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;padding:14px!important;
+  min-width:0;box-shadow:none!important;
+}
+html #view-workout #hw-panel .hw-kpis strong{color:var(--ds-text)!important}
+html #view-workout #hw-panel .hw-nav{
+  background:var(--ds-surface-raised)!important;border:1px solid var(--ds-line)!important;
+  border-radius:10px!important;padding:4px!important;gap:3px!important;
+  max-width:100%;overflow-x:auto!important;scrollbar-width:none;
+}
+html #view-workout #hw-panel .hw-nav-btn{
+  background:transparent!important;color:var(--ds-text-secondary)!important;
+  border:1px solid transparent!important;border-radius:7px!important;
+  min-height:38px!important;font-size:var(--ds-text-sm)!important;
+}
+html #view-workout #hw-panel .hw-nav-btn.active{
+  background:var(--ds-accent-surface)!important;color:var(--ds-accent-ink)!important;
+  border-color:var(--ds-line)!important;box-shadow:none!important;
+}
+html #view-workout #hw-panel .hw-plan-actions{display:flex;flex-wrap:wrap;gap:7px}
+html #view-workout #hw-panel .hw-session-header{
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;padding:15px!important;box-shadow:none!important;
+}
+html #view-workout #hw-panel .hw-session-status{color:var(--ds-text-secondary)!important}
+html #view-workout #hw-panel .hw-progress-track{
+  height:7px!important;border-radius:4px!important;overflow:hidden;
+  background:var(--ds-surface-raised)!important;
+}
+html #view-workout #hw-panel .hw-progress-track i{
+  height:100%!important;background:var(--ds-success)!important;border-radius:4px!important;
+}
+html #view-workout #hw-panel .hw-session-layout{
+  display:grid!important;grid-template-columns:minmax(0,1.35fr) minmax(255px,.8fr)!important;
+  align-items:start;gap:12px!important;
+}
+html #view-workout #hw-panel .hw-main-card{padding:20px!important}
+html #view-workout #hw-panel .hw-main-card h3{
+  font-size:clamp(1.55rem,2.4vw,2.15rem)!important;line-height:1.15!important;
+}
+html #view-workout #hw-panel .hw-actual{
+  background:var(--ds-surface-raised)!important;border:1px solid var(--ds-line)!important;
+  border-radius:10px!important;padding:14px!important;display:flex;align-items:end;
+  flex-wrap:wrap;gap:12px;
+}
+html #view-workout #hw-panel .hw-actual input,
+html #view-workout #hw-panel .hw-builder-row input{
+  border:1px solid var(--ds-line)!important;background:var(--ds-surface)!important;
+  border-radius:8px!important;color:var(--ds-text)!important;min-height:42px!important;
+}
+html #view-workout #hw-panel .hw-rest{
+  background:var(--ds-surface-raised)!important;border:1px solid var(--ds-line)!important;
+  border-radius:10px!important;padding:14px!important;margin-top:13px!important;
+  box-shadow:none!important;display:flex;flex-wrap:wrap;gap:14px;align-items:center;
+}
+html #view-workout #hw-panel :where(#hw-rest-timer,#hw-work-timer){
+  color:var(--ds-text)!important;font-variant-numeric:tabular-nums;
+  font-size:clamp(1.4rem,2.2vw,2rem)!important;letter-spacing:-.035em;
+}
+html #view-workout #hw-panel .hw-rest-actions{display:flex;flex-wrap:wrap;gap:6px}
+html #view-workout #hw-panel .hw-queue-row{
+  border:0!important;border-bottom:1px solid var(--ds-line)!important;
+  background:transparent!important;border-radius:0!important;
+}
+html #view-workout #hw-panel .hw-queue-row:last-child{border-bottom:0!important}
+html #view-workout #hw-panel .hw-queue-row.current{background:var(--ds-accent-surface)!important;border-radius:8px!important}
+html #view-workout #hw-panel .hw-set-dots span.done{background:var(--ds-success)!important}
+html #view-workout #hw-panel .hw-bars .hw-bar-rail div{background:var(--ds-primary)!important}
+html #view-workout #hw-panel .hw-empty{
+  background:var(--ds-surface-raised)!important;color:var(--ds-text-muted)!important;
+  border:1px dashed var(--ds-line)!important;box-shadow:none!important;
+}
+@media(max-width:1120px){
+  html #view-habits .habit-summary-grid,html #view-routine .rt-kpis,
+  html #view-workout #hw-panel .hw-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  html #view-habits .v105-month-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  html #view-workout .workout-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  html #view-workout #hw-panel .hw-session-layout{grid-template-columns:minmax(0,1fr)!important}
+}
+@media(max-width:760px){
+  html #view-habits .omx-page-heading,html #view-workout .workout-hero,
+  html #view-routine .rt-hero{align-items:start!important;flex-direction:column!important;padding:17px!important}
+  html #view-habits .habit-summary-grid,html #view-routine .rt-kpis,
+  html #view-workout #hw-panel .hw-kpis,html #view-workout .workout-kpi-grid{
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;
+  }
+  html #view-habits .habit-summary,html #view-routine .rt-kpi,
+  html #view-workout .workout-kpi,html #view-workout #hw-panel .hw-kpis>div{
+    min-height:95px!important;padding:12px!important;
+  }
+  html #view-habits .v95-habit-list,html #view-habits .v105-month-grid,
+  html #view-routine .rt-list{grid-template-columns:minmax(0,1fr)!important;gap:9px!important}
+  html #view-habits .v95-habit-card,html #view-habits .v105-month-card,
+  html #view-routine .rt-card{padding:14px!important}
+  html #view-habits .v95-habit-done-btn{min-height:44px!important;min-width:44px!important}
+  html #view-habits .v105-month-day{min-height:34px!important}
+  html #view-habits .v105-month-toolbar{padding:10px!important}
+  html #view-routine .rt611-tab{min-height:44px!important}
+  html #view-routine .rt-card-actions .btn{min-height:36px!important}
+  html #view-routine .rt-check{min-height:44px!important;min-width:44px!important}
+  html #view-workout .workout-tabs .view-btn{min-height:44px!important}
+  html #view-workout .workout-session-card{padding:12px!important}
+  html #view-workout .om5-set-scroll{overflow-x:auto!important}
+  html #view-workout .set-input{min-height:42px!important}
+  html #view-workout .set-complete{min-width:44px!important;min-height:44px!important}
+  html #view-workout .om5-session-head{padding:13px!important}
+  html #view-workout .workout-session-head{align-items:flex-start!important;flex-direction:column!important}
+  html #view-workout #hw-panel .hw-top{padding:16px!important}
+  html #view-workout #hw-panel .hw-nav-btn{min-height:44px!important}
+  html #view-workout #hw-panel .hw-main-card{padding:15px!important}
+  html #view-workout #hw-panel .hw-rest{padding:12px!important}
+  html #view-workout #hw-panel .hw-session-layout{grid-template-columns:minmax(0,1fr)!important}
+  html #view-workout #hw-panel .hw-rest-actions .btn{min-height:42px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  html #view-habits :where(.v105-month-day,.v95-habit-done-btn),
+  html #view-routine :where(.rt-check,.rt-card),
+  html #view-workout :where(.set-complete,.hw-nav-btn){transition:none!important}
+}
+/* END OMNIOS PHASE 5 / HABITS + ROUTINE + WORKOUT / v1 */
+
+/* ================================================================
+   OMNIOS PHASE 6 / REMAINING MODULES / v1
+   Flat cross-module experience. No layout observers or data changes.
+   ================================================================ */
+html :is(#view-tasks,#view-inbox,#view-projects,#view-reminders,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-life-hub,#view-people,
+#view-bible,#view-organize,#view-settings,#view-data-center,#view-sync,#view-studio,
+#view-goals,#view-passwords,#view-help){min-width:0;max-width:100%;color:var(--ds-text)}
+/* One visual language for headers, including dynamically rendered views. */
+html :is(#view-tasks,#view-inbox,#view-projects,#view-data-center,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-reminders,#view-people,
+#view-life-hub,#view-organize,#view-bible,#view-studio,#view-goals,#view-settings)
+:where(.omx-page-heading,.v35-page-head,.org-hero,.v38-finance-head,.diet-hero,.v55-studio-head,.finance-hero){
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;
+  padding:clamp(16px,2vw,25px)!important;background:var(--ds-surface)!important;
+  background-image:none!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;box-shadow:none!important;
+  margin-bottom:16px!important;min-width:0
+}
+html :is(#view-tasks,#view-inbox,#view-projects,#view-data-center,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-reminders,#view-people,
+#view-life-hub,#view-organize,#view-bible,#view-studio,#view-goals,#view-settings)
+:where(.omx-page-heading h3,.v35-page-head h3,.org-title,.v38-finance-head h3,.diet-hero h3,.v55-studio-head h3,.finance-hero h3){
+  font-size:clamp(1.5rem,2.4vw,2rem)!important;letter-spacing:-.035em!important;
+  line-height:1.16!important;color:var(--ds-text)!important;margin:0 0 7px!important
+}
+html :is(#view-tasks,#view-inbox,#view-projects,#view-data-center,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-reminders,#view-people,
+#view-life-hub,#view-organize,#view-bible,#view-studio,#view-goals,#view-settings)
+:where(.omx-page-heading p,.v35-page-head .text-muted,.org-sub,
+.v38-finance-head .text-muted,.diet-hero p,.v55-studio-head p,.finance-hero p){
+  color:var(--ds-text-muted)!important;line-height:1.5!important;
+  max-width:65ch!important;font-size:var(--ds-text-md)!important
+}
+html :is(#view-tasks,#view-inbox,#view-projects,#view-budget,#view-diet,#view-notes,
+#view-reminders,#view-data-center,#view-life-hub,#view-people,#view-studio)
+:where(.omx-eyebrow,.v35-kicker,.org-kicker,.eyebrow,.finance-eyebrow,.v55-kicker){
+  color:var(--ds-accent)!important;letter-spacing:.085em!important;
+  font-size:11px!important;font-weight:750!important
+}
+/* Module controls share a predictable horizontal rhythm. */
+html :is(#view-tasks,#view-inbox,#view-projects,#view-reminders,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-organize,#view-settings)
+:where(.toolbar,.omx-tasks-toolbar,.v35-segmented,.org-toolbar,.org-seg,
+.v38-fin-tabs,.notes-toolbar,.diet-toolbar,.settings-tabs,.workout-tabs){
+  min-width:0;max-width:100%;border-color:var(--ds-line)!important;
+  box-shadow:none!important;background-image:none!important
+}
+html :is(#view-tasks,#view-inbox,#view-projects,#view-reminders,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-organize,#view-settings)
+:where(.btn,.view-btn,.v35-segmented button,.v38-fin-tab,.org-seg button,
+.org-rail-btn,.icon-btn,.filter-select,.search-input,.form-input,.form-select){
+  font-size:var(--ds-text-md)!important
+}
+html :is(#view-tasks,#view-inbox,#view-projects,#view-reminders,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-organize,#view-settings)
+:where(.view-btn.active,.v35-segmented button.active,.v38-fin-tab.active,
+.org-seg button.active,.org-rail-btn.active){
+  background:var(--ds-accent-surface)!important;color:var(--ds-accent-ink)!important;
+  border-color:var(--ds-line-strong)!important;box-shadow:none!important
+}
+html :is(#view-tasks,#view-inbox,#view-projects,#view-reminders,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-organize,#view-settings)
+:where(.view-btn,.v35-segmented button,.v38-fin-tab,.org-seg button,.org-rail-btn)
+:not(.active){color:var(--ds-text-secondary)!important}
+html :is(#view-tasks,#view-inbox,#view-projects,#view-reminders,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-organize,#view-settings)
+:where(button,input,select,textarea,[role="button"]):focus-visible{
+  outline:2px solid var(--ds-focus)!important;outline-offset:3px!important
+}
+/* Tasks: bounded columns, uncluttered filters, immediately usable empty view. */
+html #view-tasks .omx-tasks-toolbar{
+  padding:11px!important;display:flex;align-items:center;flex-wrap:wrap;gap:9px!important;
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;margin:0 0 16px!important
+}
+html #view-tasks .omx-tasks-toolbar .toolbar-group{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
+html #view-tasks .omx-tasks-toolbar .toolbar-divider{
+  height:28px;width:1px;background:var(--ds-line);margin:0 4px
+}
+html #view-tasks [data-taskview]{border-radius:var(--ds-radius-sm)!important;min-height:38px}
+html #view-tasks :where(.kanban-board,.matrix-grid,.gallery-grid){min-width:0;max-width:100%}
+html #view-tasks .kanban-board{display:flex;gap:12px;overflow-x:auto;overscroll-behavior-x:contain;
+  scroll-snap-type:x proximity;padding:3px 1px 14px}
+html #view-tasks .kanban-col{flex:1 0 min(270px,82vw);min-width:0;max-width:420px;
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;box-shadow:none!important;scroll-snap-align:start}
+html #view-tasks :where(.kanban-card,.gallery-card,.task-card,.list-item){
+  background:var(--ds-surface-raised)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important;
+  box-shadow:none!important;color:var(--ds-text)!important
+}
+html #view-tasks :where(.kanban-card-title,.list-item-title){overflow-wrap:anywhere;font-weight:650}
+html #view-tasks .om6-task-empty{margin:12px 0;padding:clamp(22px,4vw,38px);
+  background:var(--ds-surface)!important;border:1px dashed var(--ds-line-strong)!important;
+  border-radius:var(--ds-radius-lg)!important;display:grid;justify-items:start;gap:10px}
+html #view-tasks .om6-task-empty p{color:var(--ds-text-muted);margin:0}
+html #view-tasks :where(.kanban-card,.gallery-card,.list-item):hover{
+  border-color:var(--ds-line-strong)!important;box-shadow:none!important
+}
+/* Inbox, Projects, Data Center: readable rows and quiet status. */
+html :is(#view-inbox,#view-projects,#view-data-center)
+:where(.v35-card,.v35-db-hero,.v35-stat,.v35-project-card,.v35-row,.v35-callout){
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important;
+  box-shadow:none!important;color:var(--ds-text)!important;min-width:0
+}
+html #view-inbox .v35-inline-capture{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
+html #view-inbox .v35-inline-capture .form-input{flex:1 1 220px;min-width:0}
+html #view-inbox .v35-inline-capture .btn{flex:0 0 auto}
+html #view-inbox .v35-row{display:grid;grid-template-columns:32px minmax(0,1fr) auto;
+  align-items:center;gap:10px;padding:12px!important;margin-bottom:8px}
+html #view-inbox .v35-row-main{min-width:0;overflow-wrap:anywhere}
+html #view-inbox .v35-row-icon{color:var(--ds-accent)!important}
+html #view-inbox .om6-inbox-count{display:inline-flex;vertical-align:middle;align-items:center;
+  justify-content:center;font-size:12px;min-width:27px;padding:3px 7px;
+  border:1px solid var(--ds-line-strong);border-radius:var(--ds-radius-sm);
+  background:var(--ds-surface-raised);color:var(--ds-text-secondary);letter-spacing:0}
+html #view-inbox #v35-inbox-process:disabled{opacity:.45;cursor:not-allowed}
+html #view-projects .v35-segmented{display:flex;gap:6px;flex-wrap:wrap;
+  padding:6px!important;background:var(--ds-surface)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important}
+html #view-projects .v35-project-grid{display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}
+html #view-projects .v35-project-card{padding:17px!important;cursor:pointer}
+html #view-projects .v35-project-card:hover{border-color:var(--ds-line-strong)!important}
+html #view-projects .v35-project-title{font-size:1.04rem!important;font-weight:760!important;
+  margin:13px 0 8px!important;line-height:1.3!important;overflow-wrap:anywhere}
+html #view-projects .v35-progress,html #view-data-center .v35-progress{
+  overflow:hidden;border-radius:var(--ds-radius-pill)!important;
+  background:var(--ds-line)!important;height:7px!important}
+html #view-projects .v35-progress>div{background:var(--ds-electric)!important;border-radius:inherit}
+html #view-data-center .v35-db-state{display:flex;align-items:center;gap:10px}
+html #view-data-center .v35-stat-grid{display:grid;gap:10px;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr))}
+html #view-data-center .v35-stat-label{color:var(--ds-text-muted)!important}
+/* Finance: tab bar, summaries, accounts, transactions and charts. */
+html #view-budget :where(.v38-finance-head,.v38-fin-card,.v38-summary-card,
+.v38-chart-card,.v38-fin-kpi,.v38-budget-cat,.v38-rec-section,.v38-goal,.v38-account,
+.finance-panel,.finance-kpi,.finance-wallet-card){
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-lg)!important;
+  box-shadow:none!important;color:var(--ds-text)!important;min-width:0
+}
+html #view-budget .v38-finance-head-actions,html #view-budget .v38-month-nav{
+  display:flex;flex-wrap:wrap;align-items:center;gap:7px;min-width:0
+}
+html #view-budget .v38-fin-tabs{display:flex;gap:5px;max-width:100%;overflow-x:auto;
+  padding:7px!important;border:1px solid var(--ds-line)!important;
+  background:var(--ds-surface)!important;border-radius:var(--ds-radius-md)!important;
+  scrollbar-width:thin}
+html #view-budget .v38-fin-tab{flex:0 0 auto;white-space:nowrap;min-height:39px;
+  border-radius:var(--ds-radius-sm)!important}
+html #view-budget .v38-overview-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px}
+html #view-budget .v38-overview-columns{display:grid;gap:12px;min-width:0}
+html #view-budget :where(.v38-summary-value,.v38-fin-kpi strong,.finance-kpi-value){
+  color:var(--ds-text)!important;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+html #view-budget :where(.v38-summary-label,.v38-fin-card-sub,.v38-txn-meta,
+.v38-rec-meta,.v38-goal-meta,.finance-panel-meta){color:var(--ds-text-muted)!important}
+html #view-budget :where(.v38-txn,.v38-rec-item,.v38-cat-line,.finance-item){
+  border-bottom:1px solid var(--ds-line)!important;min-width:0;
+  background:transparent!important;box-shadow:none!important
+}
+html #view-budget :where(.v38-txn-title,.v38-rec-title,.finance-item-title){
+  overflow-wrap:anywhere;color:var(--ds-text)!important}
+html #view-budget :where(.v38-summary-budget-track,.v38-progress-track,.finance-kpi-budget-track){
+  background:var(--ds-line)!important;border-radius:100px!important;overflow:hidden}
+html #view-budget :where(.v38-summary-budget-fill,.v38-progress-fill){
+  background:var(--ds-electric)!important}
+html #view-budget :where(.v38-chart-stage,.v38-category-chart){max-width:100%;min-width:0;
+  overflow:hidden}
+/* Nutrition: calendar cells, daily KPIs, databases and planning panels. */
+html #view-diet :where(.diet-card,.diet-kpi,.diet-calendar-wrap,.diet-nutrient,
+.diet-food-card,.diet-prep-card,.diet-reference,.diet-progress-grid,.diet-weight-chart){
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important;
+  box-shadow:none!important;min-width:0;color:var(--ds-text)!important
+}
+html #view-diet .diet-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  padding:12px!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-md)!important;background:var(--ds-surface)!important}
+html #view-diet .diet-kpi-grid{display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr));gap:10px}
+html #view-diet .diet-kpi{padding:15px!important}
+html #view-diet .diet-kpi-value{font-size:clamp(1.15rem,2vw,1.65rem)!important;
+  color:var(--ds-text)!important;font-variant-numeric:tabular-nums}
+html #view-diet :where(.diet-kpi-label,.diet-kpi-meta,.diet-item-meta,.diet-food-meta){
+  color:var(--ds-text-muted)!important}
+html #view-diet .diet-calendar-wrap{min-width:0;overflow-x:auto;overscroll-behavior-x:contain}
+html #view-diet .diet-calendar{min-width:540px;max-width:none}
+html #view-diet .diet-day{border-color:var(--ds-line)!important;box-shadow:none!important;
+  background:var(--ds-surface)!important}
+html #view-diet .diet-day:hover{background:var(--ds-surface-hover)!important}
+html #view-diet :where(.diet-meal-slot,.diet-item-row,.diet-prep-card,.diet-food-card){
+  border-color:var(--ds-line)!important}
+html #view-diet :where(.diet-db-grid,.diet-prep-grid){display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
+/* Organize (Notes, Reminders, Grocery, Pantry, Wishlist), shared library treatment. */
+html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist,
+#view-organize,#view-life-hub,#view-people)
+:where(.org-card,.org-row,.org-kpi,.org-rail,.org-reader,.org-rem-item,
+.org-shop-summary,.org-col,.org-empty,.org-form-section,.v55-card,.v35-card){
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important;
+  box-shadow:none!important;color:var(--ds-text)!important;min-width:0
+}
+html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist)
+:where(.org-toolbar,.notes-toolbar){display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+  margin-bottom:14px!important;padding:9px!important;background:var(--ds-surface)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important}
+html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist)
+:where(.org-shell,.org-two-pane,.org-split){min-width:0;max-width:100%}
+html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist) .org-rail{
+  padding:10px!important;border-radius:var(--ds-radius-md)!important;min-width:0}
+html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist)
+.org-rail-btn{display:flex;align-items:center;gap:8px;min-height:38px;
+  color:var(--ds-text-secondary)!important;border-radius:var(--ds-radius-sm)!important}
+html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist)
+.org-rail-title{color:var(--ds-text-muted)!important;letter-spacing:.06em!important}
+html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist)
+:where(.org-grid,.notes-grid){min-width:0;max-width:100%;gap:12px}
+html #view-notes :where(.note-card,.org-card){background:var(--ds-surface)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important;
+  box-shadow:none!important}
+html #view-notes :where(.org-card-title,.note-title,.org-row-title){overflow-wrap:anywhere;
+  color:var(--ds-text)!important}
+html #view-reminders .org-kpis{display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,155px),1fr));gap:10px}
+html #view-reminders .org-rem-group{margin:14px 0!important;min-width:0}
+html #view-reminders .org-rem-date{margin-bottom:8px;color:var(--ds-text-secondary)!important}
+html #view-reminders .org-rem-item{display:grid;align-items:center;
+  grid-template-columns:12px minmax(0,1fr) auto;gap:12px;padding:12px!important;margin-bottom:8px}
+html #view-reminders .org-rem-title{font-weight:680!important;overflow-wrap:anywhere}
+html #view-reminders .org-rem-meta{color:var(--ds-text-muted)!important}
+html #view-reminders .org-rem-dot{background:var(--ds-electric)!important}
+html #view-reminders .org-rem-item.overdue .org-rem-dot{background:var(--ds-danger)!important}
+html :is(#view-grocery,#view-pantry,#view-wishlist) :where(.org-shop-item,.org-row){
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-sm)!important;box-shadow:none!important}
+/* Life Hub, people, Studio and supporting screens retain native actions. */
+html :is(#view-life-hub,#view-people,#view-studio,#view-organize,#view-goals)
+:where(.v35-card,.v35-row,.v55-card,.v55-stat,.v55-row,.v35-record-card){
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important;
+  box-shadow:none!important;color:var(--ds-text)!important;min-width:0
+}
+html :is(#view-life-hub,#view-people,#view-studio,#view-organize,#view-goals)
+:where(.v55-grid,.v35-grid,.v35-record-grid){min-width:0;max-width:100%;gap:12px}
+html :is(#view-life-hub,#view-people,#view-studio,#view-organize,#view-goals)
+:where(.v35-row-title,.v55-row-title,.v55-card-title){overflow-wrap:anywhere;
+  color:var(--ds-text)!important;font-weight:700!important}
+html :is(#view-life-hub,#view-people,#view-studio,#view-organize,#view-goals)
+:where(.v35-row-meta,.v55-row-meta,.v55-card-sub){color:var(--ds-text-muted)!important}
+/* Bible/Settings/Sync/Data Center: readable secondary controls and bounded forms. */
+html #view-bible :where(.card,.bible-card,.v35-card),
+html #view-settings :where(.settings-section,.card),
+html #view-data-center :where(.v35-card,.v35-db-hero),
+html #view-sync :where(.card,.v35-card){
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-lg)!important;
+  box-shadow:none!important;color:var(--ds-text)!important;min-width:0
+}
+html #view-settings #settings-tabs{display:flex;overflow-x:auto;max-width:100%;
+  padding:7px!important;gap:5px;background:var(--ds-surface)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important}
+html #view-settings #settings-tabs .view-btn{flex:0 0 auto;min-height:40px}
+html #view-settings #settings-content{display:grid;gap:12px;min-width:0}
+html #view-settings .settings-row{display:flex;justify-content:space-between;
+  align-items:center;flex-wrap:wrap;gap:12px;border-bottom:1px solid var(--ds-line)!important;
+  min-width:0;padding:13px 0!important}
+html #view-settings :where(.settings-row-label,.settings-section h3){
+  color:var(--ds-text)!important}
+html #view-settings :where(.settings-row-desc,.settings-meta-line){
+  color:var(--ds-text-muted)!important;line-height:1.45!important}
+html #view-settings :where(.settings-row-control,.settings-swatches){max-width:100%}
+html :is(#view-settings,#view-data-center,#view-sync) :where(input,select,textarea){
+  max-width:100%;color:var(--ds-text);border-color:var(--ds-line-strong)!important}
+html :is(#view-settings,#view-data-center,#view-sync) :where(.btn,.icon-btn){
+  box-shadow:none!important}
+/* Module dialogs and detail panes maintain a quiet, accessible surface. */
+html :where(.v35-drawer,.v55-drawer,.org-modal,.modal,.inspector-panel){
+  max-width:min(100%,100vw);box-shadow:none!important}
+html :where(.v35-drawer,.v55-drawer,.org-modal,.modal)
+:where(.form-input,.form-select,textarea){max-width:100%}
+@media(max-width:760px){
+  html :is(#view-tasks,#view-inbox,#view-projects,#view-reminders,#view-budget,#view-diet,
+  #view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-organize,#view-settings)
+  :where(.btn,.view-btn,.v35-segmented button,.v38-fin-tab,.org-seg button,
+  .org-rail-btn,.icon-btn,input,select){min-height:44px!important}
+  html :is(#view-tasks,#view-inbox,#view-projects,#view-data-center,#view-budget,#view-diet,
+  #view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-reminders,
+  #view-life-hub,#view-people,#view-studio,#view-goals)
+  :where(.omx-page-heading,.v35-page-head,.org-hero,.v38-finance-head,.diet-hero,
+  .v55-studio-head,.finance-hero){align-items:flex-start;flex-direction:column}
+  html #view-tasks .omx-tasks-toolbar{align-items:stretch;flex-direction:column}
+  html #view-tasks .omx-tasks-toolbar .toolbar-divider{height:1px;width:100%;margin:2px 0}
+  html #view-tasks .omx-tasks-toolbar .toolbar-group{max-width:100%;
+    overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}
+  html #view-tasks .omx-tasks-toolbar .filter-select{flex:0 0 auto;max-width:200px}
+  html #view-inbox .v35-row{grid-template-columns:minmax(0,1fr) auto}
+  html #view-inbox .v35-row-icon{display:none}
+  html #view-budget .v38-overview-summary{grid-template-columns:minmax(0,1fr)}
+  html #view-budget .v38-finance-head-actions{width:100%}
+  html #view-budget .v38-fin-tabs{scroll-snap-type:x proximity}
+  html #view-budget .v38-fin-tab{scroll-snap-align:start}
+  html #view-diet .diet-calendar{min-width:490px}
+  html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist)
+  :where(.org-shell,.org-two-pane,.org-split){grid-template-columns:minmax(0,1fr)!important}
+  html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist)
+  .org-rail{width:100%!important;max-width:100%!important}
+  html #view-reminders .org-rem-item{grid-template-columns:10px minmax(0,1fr)}
+  html #view-reminders .org-rem-actions{grid-column:2;justify-self:start;display:flex;flex-wrap:wrap}
+  html #view-settings .settings-row{align-items:flex-start}
+}
+@media(max-width:420px){
+  html #view-inbox .v35-inline-capture .btn{flex:1 1 100%}
+  html #view-projects .v35-project-grid{grid-template-columns:minmax(0,1fr)}
+  html #view-budget .v38-month-nav{width:100%;justify-content:space-between}
+  html #view-diet .diet-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){
+  html #view-tasks .kanban-board,html #view-budget .v38-fin-tabs{scroll-behavior:auto!important}
+}
+/* END OMNIOS PHASE 6 / REMAINING MODULES / v1 */
+
+/* ================================================================
+   OMNIOS PHASE 9 / BRAND + MOBILE DENSITY / v1
+   Final scoped refinement; custom branding and app state are untouched.
+   ================================================================ */
+@media(max-width:760px){
+  /* Mobile dock: exactly one visible icon and one readable label per destination. */
+  html .mobile-nav.omr-mobile-dock{
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    min-height:70px!important;height:70px!important;
+    padding:6px 7px!important;gap:4px!important;
+    box-shadow:none!important;border-color:var(--ds-line)!important;
+    background:var(--ds-surface)!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button{
+    display:flex!important;flex-direction:column!important;
+    align-items:center!important;justify-content:center!important;
+    min-width:0!important;height:56px!important;min-height:56px!important;
+    gap:5px!important;padding:5px 2px!important;
+    overflow:hidden!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button>.v48-mobile-icon,
+  html .mobile-nav.omr-mobile-dock>button>.v35-nav-icon,
+  html .mobile-nav.omr-mobile-dock>button>.v58-nav-icon{
+    display:none!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button:not(.omni-has-custom-icon)>.nav-icon{
+    display:grid!important;place-items:center!important;
+    width:22px!important;height:22px!important;flex:0 0 22px!important;
+    margin:0!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button.omni-has-custom-icon>.nav-icon{
+    display:none!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button>.omni-mobile-custom-icon:not(.omni-custom-icon-active){
+    display:none!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button>.omni-mobile-custom-icon.omni-custom-icon-active{
+    width:22px!important;height:22px!important;flex:0 0 22px!important;
+    margin:0!important;object-fit:contain!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button>.nav-label{
+    display:block!important;flex:0 0 auto!important;
+    width:100%!important;max-width:100%!important;
+    overflow:hidden!important;text-overflow:ellipsis!important;
+    white-space:nowrap!important;line-height:1.22!important;
+    font-size:11px!important;font-weight:690!important;
+    text-align:center!important;color:inherit!important;
+  }
+  /* Large empty hero regions caused by legacy minimum heights on phones. */
+  html :is(#view-notes,#view-projects,#view-inbox,#view-reminders,#view-grocery,
+      #view-pantry,#view-wishlist,#view-budget,#view-diet,#view-tasks)
+  :where(.org-hero,.v35-page-head,.v38-finance-head,.finance-hero,.diet-hero,.omx-page-heading){
+    height:auto!important;min-height:0!important;
+    max-height:none!important;align-content:start!important;
+    margin-bottom:10px!important;padding:15px!important;gap:10px!important;
+  }
+  html :is(#view-notes,#view-projects,#view-inbox,#view-reminders,#view-budget,#view-diet)
+  :where(.v35-page-head h3,.org-title,.v38-finance-head h3,.diet-hero h3){
+    font-size:clamp(1.3rem,5.5vw,1.65rem)!important;
+    line-height:1.18!important;margin:0 0 4px!important;
+  }
+  html :is(#view-notes,#view-projects,#view-inbox,#view-reminders,#view-budget,#view-diet)
+  :where(.org-sub,.v35-page-head .text-muted,.v38-finance-head .text-muted,.diet-hero p){
+    font-size:13px!important;line-height:1.42!important;margin:0!important;
+  }
+  /* Finance month picker is a single compact strip, never a tall 2-column wrap. */
+  html #view-budget .v38-finance-head{
+    display:flex!important;flex-direction:column!important;align-items:stretch!important;
+    justify-content:flex-start!important;
+  }
+  html #view-budget .v38-finance-head>div:first-child{
+    display:flex!important;flex-direction:column!important;align-items:flex-start!important;
+    justify-content:flex-start!important;gap:4px!important;
+    flex:0 0 auto!important;min-height:0!important;height:auto!important;
+    padding:0!important;margin:0!important;
+  }
+  html #view-budget .v38-finance-head-actions{
+    display:flex!important;flex-wrap:wrap!important;align-items:center!important;
+    flex:0 0 auto!important;min-height:0!important;height:auto!important;
+    width:100%!important;min-width:0!important;gap:8px!important;
+    margin:0!important;
+  }
+  html #view-budget .v38-month-nav{
+    display:grid!important;
+    grid-template-columns:36px max-content minmax(0,1fr) 36px!important;
+    grid-template-rows:44px!important;
+    align-items:center!important;gap:5px!important;
+    width:100%!important;max-width:100%!important;
+    min-width:0!important;margin:0!important;
+    padding:4px!important;
+    background:var(--ds-surface-raised)!important;
+    border:1px solid var(--ds-line)!important;
+    border-radius:var(--ds-radius-md)!important;
+  }
+  html #view-budget .v38-month-nav>:where(button,.v38-month-label){
+    min-width:0!important;margin:0!important;grid-row:1!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    height:36px!important;min-height:36px!important;
+    white-space:nowrap!important;
+  }
+  html #view-budget .v38-month-nav .v38-month-label{
+    font-size:12px!important;font-weight:720!important;
+    overflow:hidden!important;text-overflow:ellipsis!important;
+    color:var(--ds-text)!important;
+  }
+  html #view-budget .v38-month-nav #v38-prev-month{grid-column:1!important}
+  html #view-budget .v38-month-nav #v38-today-month{grid-column:2!important}
+  html #view-budget .v38-month-nav #v38-next-month{grid-column:4!important}
+  html #view-budget :where(.v38-overview-summary,.v38-overview-columns,.v38-fin-tabs){
+    margin-top:10px!important;
+  }
+  /* Keep settings usable without oversized branding / appearance cards. */
+  html #view-settings :where(#omni-2026-appearance,#brand54-settings-card){
+    min-height:0!important;height:auto!important;
+    margin-bottom:10px!important;padding:15px!important;
+    box-shadow:none!important;border-color:var(--ds-line)!important;
+  }
+  html #view-settings #settings-tabs{
+    gap:5px!important;padding:5px!important;
+    margin:0 0 10px!important;
+  }
+  html #view-settings .brand54-mode{display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+  html #view-settings .brand54-preview{min-height:0!important;padding:12px!important}
+  html #view-tasks .omx-tasks-toolbar{margin-bottom:10px!important}
+  html #view-tasks .omx-page-heading p{font-size:13px!important}
+}
+@media(max-width:390px){
+  html #view-budget .v38-month-nav{
+    grid-template-columns:32px max-content minmax(0,1fr) 32px!important;
+    gap:3px!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button>.nav-label{font-size:10px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  html .mobile-nav.omr-mobile-dock>button{transition:none!important}
+}
+/* END OMNIOS PHASE 9 / BRAND + MOBILE DENSITY / v1 */
+
+/* ================================================================
+   OMNIOS PHASE 10 / APP-WIDE VISUAL CONSISTENCY / v1
+   Authoritative flat-theme rhythm; no data, navigation or handlers changed.
+   ================================================================ */
+html{
+  --om10-space-xs:6px;
+  --om10-space-sm:10px;
+  --om10-space-md:16px;
+  --om10-space-lg:22px;
+  --om10-surface:var(--ds-surface,var(--bg-surface));
+  --om10-subtle:var(--ds-surface-raised,var(--bg-elevated));
+  --om10-border:var(--ds-line,var(--border-color));
+}
+/* One compact, accessible switch. Earlier global button rules incorrectly
+   stretched 42x24 switches into 44x44 squares and left the dot at the top. */
+html :is(.settings-toggle,button.settings-toggle,[role="switch"].settings-toggle){
+  box-sizing:border-box!important;display:inline-block!important;
+  position:relative!important;vertical-align:middle!important;
+  width:50px!important;min-width:50px!important;max-width:50px!important;
+  height:30px!important;min-height:30px!important;max-height:30px!important;
+  flex:0 0 50px!important;margin:0!important;padding:0!important;
+  border:1px solid var(--ds-line-strong,var(--border-color))!important;
+  border-radius:999px!important;background:var(--om10-subtle)!important;
+  box-shadow:none!important;cursor:pointer!important;
+  overflow:visible!important;-webkit-appearance:none!important;appearance:none!important;
+}
+html .settings-toggle::after{
+  content:""!important;display:block!important;
+  position:absolute!important;top:4px!important;left:4px!important;
+  width:20px!important;height:20px!important;
+  border-radius:50%!important;
+  background:var(--ds-text-muted,var(--text-secondary))!important;
+  transform:none!important;box-shadow:none!important;
+  transition:left .17s ease,background .17s ease!important;
+}
+html .settings-toggle:is(.on,[aria-checked="true"]){
+  background:var(--ds-accent-surface,#27304d)!important;
+  border-color:var(--ds-accent,var(--accent-cyan))!important;
+}
+html .settings-toggle:is(.on,[aria-checked="true"])::after{
+  left:24px!important;background:var(--ds-accent-ink,var(--accent-cyan))!important;
+}
+html .settings-toggle:focus-visible{
+  outline:2px solid var(--ds-accent,var(--accent-cyan))!important;
+  outline-offset:3px!important;
+}
+html .settings-row{gap:14px!important;min-width:0;max-width:100%}
+html .settings-row>div:first-child{min-width:0;flex:1 1 auto}
+html .settings-row .settings-toggle{align-self:center!important}
+
+/* Page cover remains editable but no longer visually detaches from headings. */
+html .view > .v44-page-cover-shell:has(.v44-page-cover-empty){
+  min-height:0!important;height:auto!important;margin:0 0 6px!important;
+  padding:0!important;border:0!important;background:transparent!important;
+}
+html .view > .v44-page-cover-shell .v44-page-cover-empty{
+  min-height:24px!important;height:auto!important;display:flex!important;
+  align-items:center!important;margin:0!important;padding:0!important;
+}
+html .view .v44-add-cover{
+  font-size:12px!important;font-weight:580!important;
+  min-height:28px!important;height:28px!important;padding:4px 9px!important;
+  display:inline-flex!important;align-items:center!important;gap:6px!important;
+  border-radius:7px!important;
+}
+/* Canonical page header contract. It outranks old version-specific
+   0px/negative padding overrides, including dynamically rendered screens. */
+html body .view :is(.v35-page-head,.v43-page-head,.v55-page-head,.omx-page-heading,
+  .org-hero,.finance-hero,.v38-finance-head,.diet-hero,.v55-studio-head){
+  box-sizing:border-box!important;position:relative!important;
+  display:flex!important;align-items:center!important;
+  justify-content:space-between!important;flex-wrap:wrap!important;
+  width:100%!important;max-width:100%!important;min-width:0!important;
+  min-height:0!important;height:auto!important;
+  margin:0 0 14px!important;padding:20px 22px!important;
+  gap:14px 18px!important;
+  background:var(--om10-surface)!important;background-image:none!important;
+  border:1px solid var(--om10-border)!important;
+  border-radius:12px!important;box-shadow:none!important;
+  overflow:visible!important;
+}
+html body .view :is(.v35-page-head,.v43-page-head,.v55-page-head,.omx-page-heading,
+  .org-hero,.finance-hero,.v38-finance-head,.diet-hero,.v55-studio-head)>div:first-child{
+  display:flex!important;flex:1 1 270px!important;flex-direction:column!important;
+  align-items:flex-start!important;justify-content:center!important;
+  min-width:0!important;max-width:100%!important;gap:5px!important;
+  height:auto!important;min-height:0!important;margin:0!important;padding:0!important;
+}
+html body .view :is(.v35-page-head,.v43-page-head,.v55-page-head,.omx-page-heading,
+  .org-hero,.finance-hero,.v38-finance-head,.diet-hero,.v55-studio-head)
+  :is(.v35-kicker,.omx-eyebrow,.org-kicker,.eyebrow,.finance-eyebrow,.v55-kicker){
+  display:block!important;line-height:1.35!important;margin:0!important;
+  font-size:11px!important;letter-spacing:.075em!important;
+  font-weight:740!important;color:var(--ds-accent-ink,var(--accent-cyan))!important;
+}
+html body .view :is(.v35-page-head,.v43-page-head,.v55-page-head,.omx-page-heading,
+  .org-hero,.finance-hero,.v38-finance-head,.diet-hero,.v55-studio-head)
+  :is(h2,h3,.org-title){
+  display:block!important;line-height:1.16!important;
+  margin:0!important;padding:0!important;
+  font-size:clamp(21px,2.1vw,29px)!important;
+  letter-spacing:-.032em!important;color:var(--ds-text,var(--text-primary))!important;
+}
+html body .view :is(.v35-page-head,.v43-page-head,.v55-page-head,.omx-page-heading,
+  .org-hero,.finance-hero,.v38-finance-head,.diet-hero,.v55-studio-head)
+  :is(p,.text-muted,.org-sub){
+  line-height:1.5!important;min-width:0!important;
+  max-width:66ch!important;margin:0!important;padding:0!important;
+  font-size:13px!important;color:var(--ds-text-muted,var(--text-muted))!important;
+}
+html body .view :is(.v35-page-actions,.omx-page-actions,.finance-hero-actions,
+  .v38-finance-head-actions){
+  display:flex!important;align-items:center!important;
+  justify-content:flex-end!important;flex:0 1 auto!important;
+  flex-wrap:wrap!important;min-width:0!important;
+  gap:8px!important;margin:0!important;padding:0!important;
+}
+html body .view :is(.v35-page-head,.omx-page-heading,.org-hero,.v38-finance-head) .btn{
+  min-height:38px!important;padding:9px 14px!important;
+  border-radius:9px!important;
+}
+/* Navigation strips use the same flat segmented-control language. */
+html body .view :is(.v35-segmented,.v38-fin-tabs,.org-seg,.omx-tasks-toolbar,
+  .v43-tabs,.v55-tabs,.workout-tabs){
+  box-sizing:border-box!important;max-width:100%!important;
+  min-width:0!important;margin-bottom:14px!important;
+  padding:5px!important;gap:5px!important;
+  background:var(--om10-subtle)!important;
+  border:1px solid var(--om10-border)!important;
+  border-radius:11px!important;box-shadow:none!important;
+}
+html body .view :is(.v35-segmented,.v38-fin-tabs,.org-seg,.v43-tabs) :is(button,.v38-fin-tab){
+  min-height:36px!important;padding:8px 12px!important;
+  border-radius:8px!important;font-size:13px!important;
+  font-weight:670!important;line-height:1.2!important;
+  white-space:nowrap!important;
+}
+html body .view :is(.v35-segmented,.v38-fin-tabs,.org-seg,.v43-tabs)
+  :is(button.active,[aria-selected="true"],[aria-pressed="true"]){
+  color:var(--ds-accent-ink,var(--accent-cyan))!important;
+  background:var(--ds-accent-surface,var(--bg-hover))!important;
+  box-shadow:none!important;
+}
+/* Finance month picker: a bounded, predictable horizontal group. */
+html body #view-budget .v38-finance-head{align-items:center!important;gap:14px!important}
+html body #view-budget .v38-finance-head>div:first-child{
+  flex:1 1 270px!important;max-width:100%!important;
+}
+html body #view-budget .v38-finance-head-actions{
+  flex:0 1 auto!important;justify-content:flex-end!important;gap:8px!important;
+}
+html body #view-budget .v38-month-nav{
+  box-sizing:border-box!important;display:grid!important;align-items:center!important;
+  grid-template-columns:38px auto minmax(115px,1fr) 38px!important;
+  gap:5px!important;width:min(100%,420px)!important;min-width:0!important;
+  height:46px!important;min-height:46px!important;max-height:46px!important;
+  padding:4px!important;border:1px solid var(--om10-border)!important;
+  border-radius:10px!important;background:var(--om10-subtle)!important;
+  box-shadow:none!important;
+}
+html body #view-budget .v38-month-nav>:is(button,.v38-month-label){
+  grid-row:1!important;height:36px!important;min-height:36px!important;
+  max-height:36px!important;min-width:0!important;margin:0!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  padding:4px 8px!important;border-radius:7px!important;white-space:nowrap!important;
+}
+html body #view-budget .v38-month-nav .v38-month-label{
+  grid-column:3!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  font-size:13px!important;font-weight:730!important;color:var(--ds-text)!important;
+}
+html body #view-budget .v38-month-nav #v38-prev-month{grid-column:1!important}
+html body #view-budget .v38-month-nav #v38-today-month{grid-column:2!important}
+html body #view-budget .v38-month-nav #v38-next-month{grid-column:4!important}
+/* Settings/profile: remove oversized legacy modal footer drawn inside a card. */
+html body #view-settings #settings-content>.card.settings-section{
+  height:auto!important;min-height:0!important;padding:22px!important;
+  border:1px solid var(--om10-border)!important;
+  border-radius:12px!important;box-shadow:none!important;
+}
+html body #view-settings #settings-content .modal-footer:has(#profile-save){
+  box-sizing:border-box!important;position:static!important;
+  display:flex!important;justify-content:flex-end!important;align-items:center!important;
+  flex-wrap:wrap!important;width:100%!important;height:auto!important;
+  min-height:0!important;max-height:none!important;
+  margin:16px 0 0!important;padding:14px 0 0!important;
+  border:0!important;border-top:1px solid var(--om10-border)!important;
+  background:transparent!important;box-shadow:none!important;
+}
+html body #view-settings #profile-save{
+  min-height:40px!important;height:40px!important;
+  margin:0!important;padding:8px 16px!important;border-radius:9px!important;
+}
+/* Dashboard: KPI tiles have their own consistent surface instead of black blocks. */
+html body #view-dashboard .v43-card{
+  background:var(--om10-surface)!important;
+  border:1px solid var(--om10-border)!important;
+  border-radius:13px!important;padding:18px!important;
+  box-shadow:none!important;min-width:0!important;
+}
+html body #view-dashboard .v43-card-head{margin-bottom:12px!important;gap:10px!important}
+html body #view-dashboard :is(.v43-mini-grid,.v431-detail-grid){
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:9px!important;background:transparent!important;
+  border:0!important;border-radius:0!important;overflow:visible!important;
+}
+html body #view-dashboard :is(.v43-metric,.v431-detail){
+  box-sizing:border-box!important;min-width:0!important;
+  min-height:78px!important;margin:0!important;padding:12px 13px!important;
+  border:1px solid var(--om10-border)!important;
+  border-radius:10px!important;
+  background:var(--om10-subtle)!important;
+  box-shadow:none!important;
+}
+html body #view-dashboard :is(.v43-metric,.v431-detail) strong{
+  font-size:clamp(16px,1.3vw,20px)!important;line-height:1.22!important;
+}
+html body #view-dashboard :is(.v43-metric,.v431-detail) span{
+  display:block!important;margin-top:5px!important;
+  font-size:12px!important;line-height:1.35!important;
+}
+html body #view-dashboard .v431-area-row{
+  box-sizing:border-box!important;display:block!important;
+  padding:12px 13px!important;margin:0 0 8px!important;
+  background:var(--om10-subtle)!important;
+  border:1px solid var(--om10-border)!important;border-radius:10px!important;
+  box-shadow:none!important;
+}
+html body #view-dashboard .v431-area-row+.v431-area-row{border-top:1px solid var(--om10-border)!important}
+html body #view-dashboard .v431-area-row:hover{
+  padding:12px 13px!important;border-color:var(--ds-line-strong)!important;
+}
+html body #view-dashboard .v431-area-head{
+  font-size:13px!important;line-height:1.45!important;font-weight:690!important;
+}
+html body #view-dashboard .v431-area-meta{
+  margin:7px 0 0!important;font-size:12px!important;line-height:1.35!important;
+}
+html body #view-dashboard .v431-area-row .v43-progress{
+  display:block!important;height:6px!important;min-height:6px!important;
+  margin:9px 0 0!important;border-radius:999px!important;
+  overflow:hidden!important;background:var(--om10-border)!important;
+}
+html body #view-dashboard .v431-area-row .v43-progress>i{
+  display:block!important;height:100%!important;
+  border-radius:999px!important;background:var(--ds-primary)!important;
+}
+/* Planner: empty days are shorter but remain valid drag/drop targets. */
+html body #view-planner .v35-week-grid{
+  grid-template-columns:repeat(7,minmax(125px,1fr))!important;gap:9px!important;
+}
+html body #view-planner .v35-day-col{
+  min-height:176px!important;height:auto!important;padding:13px!important;
+  border-radius:11px!important;box-shadow:none!important;
+}
+html body #view-planner .v35-day-col.is-today{
+  border-color:var(--ds-primary)!important;
+  background:var(--ds-accent-surface)!important;
+}
+html body #view-planner .v35-day-head{padding-bottom:10px!important;margin-bottom:10px!important}
+html body #view-planner .v35-day-add{
+  margin-top:8px!important;min-height:38px!important;border-radius:8px!important;
+}
+/* Habit rows: text hierarchy and compact annual heatmap gutters. */
+html body #view-habits .v95-habit-card{border-radius:12px!important;box-shadow:none!important}
+html body #view-habits .v95-habit-head{gap:11px!important;min-width:0!important}
+html body #view-habits .v95-habit-name{
+  font-size:14px!important;line-height:1.3!important;overflow-wrap:anywhere!important;
+}
+html body #view-habits .v95-habit-footer{gap:6px!important;min-width:0!important}
+html body #view-habits .v103-year-heatmap{max-width:100%!important;overflow:hidden!important}
+/* Welcome screen belongs to the same visual system as the app it launches. */
+html body #welcome63{padding:clamp(12px,2vw,26px)!important}
+html body #welcome63 .w63-shell{
+  width:min(980px,100%)!important;
+  max-height:calc(100dvh - 28px)!important;
+  border:1px solid var(--om10-border)!important;
+  border-radius:16px!important;
+  background:var(--om10-surface)!important;box-shadow:none!important;
+}
+html body #welcome63 .w63-top{
+  padding:14px 20px!important;
+  background:var(--om10-surface)!important;
+  border-bottom:1px solid var(--om10-border)!important;
+  backdrop-filter:none!important;
+}
+html body #welcome63 .w63-main{padding:16px 20px 20px!important}
+html body #welcome63 .w63-hero{gap:12px!important}
+html body #welcome63 :is(.w63-intro,.w63-next,.w63-card){
+  border:1px solid var(--om10-border)!important;
+  border-radius:12px!important;background:var(--om10-subtle)!important;
+  box-shadow:none!important;
+}
+html body #welcome63 .w63-intro{
+  min-height:200px!important;padding:22px!important;
+}
+html body #welcome63 .w63-intro h1{
+  font-size:clamp(32px,4vw,54px)!important;
+  line-height:1.04!important;margin:12px 0 10px!important;
+}
+html body #welcome63 .w63-actions{margin-top:17px!important}
+html body #welcome63 .w63-next{padding:20px!important}
+html body #welcome63 .w63-btn{
+  border-radius:9px!important;box-shadow:none!important;
+  font-size:12px!important;
+}
+html body #welcome63 .w63-stats{border-radius:11px!important}
+@media(max-width:760px){
+  html body .view :is(.v35-page-head,.v43-page-head,.v55-page-head,.omx-page-heading,
+    .org-hero,.finance-hero,.v38-finance-head,.diet-hero,.v55-studio-head){
+    padding:16px!important;gap:10px!important;
+    flex-direction:column!important;align-items:stretch!important;
+  }
+  html body .view :is(.v35-page-head,.v43-page-head,.v55-page-head,.omx-page-heading,
+    .org-hero,.finance-hero,.v38-finance-head,.diet-hero,.v55-studio-head)>div:first-child{
+    flex:0 1 auto!important;width:100%!important;
+  }
+  html body .view :is(.v35-page-actions,.omx-page-actions,.finance-hero-actions,
+    .v38-finance-head-actions){width:100%!important;justify-content:flex-start!important}
+  html body #view-budget .v38-finance-head>div:first-child{flex:0 0 auto!important;min-height:0!important;height:auto!important;max-height:none!important}
+  html body #view-budget .v38-finance-head-actions{width:100%!important}
+  html body #view-budget .v38-month-nav{width:100%!important}
+  html body #view-planner .v35-week-grid{
+    grid-template-columns:minmax(0,1fr)!important;gap:8px!important;
+  }
+  html body #view-planner .v35-day-col{min-height:94px!important;padding:12px!important}
+  html body #view-dashboard .v43-card{padding:14px!important}
+  html body #welcome63{padding:0!important}
+  html body #welcome63 .w63-shell{
+    height:100dvh!important;max-height:100dvh!important;
+    border:0!important;border-radius:0!important;
+  }
+  html body #welcome63 .w63-main{padding:12px 14px 24px!important}
+  html body #welcome63 .w63-top{padding:12px 14px!important}
+  html body #welcome63 .w63-intro{min-height:0!important;padding:19px!important}
+}
+@media(max-width:430px){
+  html body #view-budget .v38-month-nav{
+    grid-template-columns:32px max-content minmax(0,1fr) 32px!important;
+    gap:3px!important;
+  }
+  html body #view-budget .v38-month-nav>:is(button,.v38-month-label){
+    padding:4px!important;font-size:12px!important;
+  }
+  html body #view-dashboard :is(.v43-metric,.v431-detail){
+    min-height:75px!important;padding:11px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  html .settings-toggle::after{transition:none!important}
+}
+/* END OMNIOS PHASE 10 / APP-WIDE VISUAL CONSISTENCY / v1 */
 </style>
 
 <script id="omnios-unified-2026-controls">
@@ -14053,17 +16546,32 @@ html .view :where(.v35-card,.v43-card,.org-card,.finance-panel,.note-card,.v43-k
     const body=document.createElement('div');body.className='omr-sheet-body';
     const source=document.querySelector('.sidebar .nav-menu');
     let container=null;
+    function addGroup(title){
+      const h=document.createElement('div');h.className='omr-sheet-group';
+      h.textContent=title||'Navigation';body.appendChild(h);
+      container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container);
+    }
+    function addPage(el){
+      const view=el.dataset.view;
+      if(!view)return;
+      if(!container){container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container)}
+      const b=document.createElement('button');b.type='button';b.dataset.omrGo=view;
+      b.textContent=el.querySelector('.v101-nav-label')?.textContent?.trim()||
+        el.textContent.trim().replace(/\s+/g,' ').replace(/^[\p{Extended_Pictographic}\s]+/u,'')||view;
+      if(el.classList.contains('active')){b.classList.add('active');b.setAttribute('aria-current','page')}
+      container.appendChild(b);
+    }
     if(source){
-      for(const el of source.children){
-        if(el.matches('.nav-section')){
-          const h=document.createElement('div');h.className='omr-sheet-group';h.textContent=el.dataset.v35Section||el.textContent.trim();body.appendChild(h);
-          container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container);
-        }else if(el.matches('button.nav-item[data-view]')){
-          if(!container){container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container)}
-          const b=document.createElement('button');b.type='button';b.dataset.omrGo=el.dataset.view;
-          const label=el.textContent.trim().replace(/\s+/g,' ').replace(/^[\p{Extended_Pictographic}\s]+/u,'');
-          b.textContent=label||el.dataset.view;
-          container.appendChild(b);
+      const groups=source.querySelectorAll(':scope > .v101-nav-group');
+      if(groups.length){
+        groups.forEach(group=>{
+          addGroup(group.dataset.group||group.querySelector('.v101-nav-group-head-title')?.textContent?.trim()||'Navigation');
+          group.querySelectorAll('.nav-item[data-view]').forEach(addPage);
+        });
+      }else{
+        for(const el of source.children){
+          if(el.matches('.nav-section'))addGroup(el.dataset.v35Section||el.textContent.trim());
+          else if(el.matches('button.nav-item[data-view]'))addPage(el);
         }
       }
     }
@@ -14112,5 +16620,162 @@ html .view :where(.v35-card,.v43-card,.org-card,.finance-panel,.note-card,.v43-k
     if(more)more.setAttribute('aria-expanded','false');
   },{once:true});
   window.OmniRemakeNav={open,close,build};
+})();
+</script>
+
+
+<!-- OmniOS Phase 2 shell controls: uses existing route and mobile-sheet handlers. -->
+<script id="omnios-phase2-shell-controls">
+(function(){
+ 'use strict';
+ if(window.OmniPhase2Shell)return;
+ const STORAGE='omnios_phase2_sidebar_compact';
+ let initialized=false;
+ let priorFocus=null;
+ let picked=0;
+ let matches=[];
+ const $=selector=>document.querySelector(selector);
+ const icon='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.7" cy="10.7" r="6.5"/><path d="m16 16 4.4 4.4"/></svg>';
+ const isClassic=()=>document.documentElement.dataset.omniUi==='classic';
+ const compact=()=>document.documentElement.classList.contains('om2-compact');
+ function setCompact(on){
+   document.documentElement.classList.toggle('om2-compact',!!on);
+   try{localStorage.setItem(STORAGE,on?'1':'0')}catch(_){}
+   const toggle=$('#om2-sidebar-toggle');
+   if(toggle){
+     toggle.setAttribute('aria-pressed',String(!!on));
+     toggle.setAttribute('aria-label',on?'Expand sidebar':'Collapse sidebar');
+     toggle.title=on?'Expand sidebar':'Collapse sidebar';
+     toggle.textContent=on?'»':'«';
+   }
+ }
+ function routes(){
+   return Array.from(document.querySelectorAll('.sidebar .nav-item[data-view]'))
+     .filter(b=>b.dataset.view&&document.getElementById('view-'+b.dataset.view))
+     .map(b=>({view:b.dataset.view,label:(b.querySelector('.v101-nav-label')?.textContent||b.textContent||b.dataset.view).trim()}))
+     .filter(x=>x.label);
+ }
+ function open(){
+   if(isClassic())return;
+   const host=$('#om2-search-overlay');if(!host)return;
+   priorFocus=document.activeElement;host.hidden=false;
+   document.body.classList.add('om2-search-open');
+   const input=host.querySelector('.om2-search-input');
+   input.value='';picked=0;update('');
+   input.focus({preventScroll:true});
+ }
+ function close(){
+   const host=$('#om2-search-overlay');if(!host||host.hidden)return;
+   host.hidden=true;document.body.classList.remove('om2-search-open');
+   if(priorFocus?.isConnected&&typeof priorFocus.focus==='function')
+     priorFocus.focus({preventScroll:true});
+   priorFocus=null;
+ }
+ function update(value){
+   const host=$('#om2-search-overlay');if(!host)return;
+   const q=String(value||'').trim().toLocaleLowerCase();
+   matches=routes().filter(x=>(x.label+' '+x.view.replace(/-/g,' ')).toLocaleLowerCase().includes(q)).slice(0,35);
+   picked=Math.min(picked,Math.max(0,matches.length-1));
+   const results=host.querySelector('#om2-search-results');
+   results.replaceChildren();
+   if(!matches.length){
+     const empty=document.createElement('div');
+     empty.className='om2-search-empty';empty.textContent='No matching pages. Try a different page name.';
+     results.appendChild(empty);return;
+   }
+   matches.forEach((route,i)=>{
+     const btn=document.createElement('button');
+     btn.type='button';btn.className='om2-search-result';btn.dataset.om2Go=route.view;
+     btn.setAttribute('role','option');btn.setAttribute('aria-selected',String(i===picked));
+     const label=document.createElement('span');label.textContent=route.label;
+     const shortcut=document.createElement('small');shortcut.textContent=i===picked?'Enter':'↗';
+     btn.append(label,shortcut);
+     results.appendChild(btn);
+   });
+ }
+ function select(index){
+   const btn=$('#om2-search-results')?.querySelectorAll('.om2-search-result')[index];
+   if(!btn)return;
+   const target=btn.dataset.om2Go;
+   const page=document.getElementById('view-'+target);
+   if(!page)return;
+   close();
+   const nav=document.querySelector('.sidebar .nav-item[data-view="'+target+'"]');
+   const group=nav?.closest('.v101-nav-group');
+   if(group&&!compact()){
+     group.classList.remove('collapsed');
+     group.querySelector('.v101-nav-group-head')?.setAttribute('aria-expanded','true');
+   }
+   if(typeof window.switchView==='function')window.switchView(target);
+   else nav?.click();
+ }
+ function mount(){
+   if(initialized)return;
+   const bar=$('.topbar'), title=$('#view-title'),actions=$('.topbar-actions'),sidebar=$('.sidebar');
+   if(!bar||!actions||!title||!sidebar)return;
+   initialized=true;
+   const guard=document.createElement('style');guard.id='om2-classic-guard';
+   guard.textContent='html[data-omni-ui="classic"] #om2-sidebar-toggle,html[data-omni-ui="classic"] #om2-search-toggle,html[data-omni-ui="classic"] #om2-search-overlay{display:none!important}';
+   document.head.appendChild(guard);
+   const side=document.createElement('button');
+   side.id='om2-sidebar-toggle';side.type='button';side.className='om2-sidebar-toggle';
+   title.insertAdjacentElement('beforebegin',side);
+   const search=document.createElement('button');
+   search.id='om2-search-toggle';search.type='button';search.className='om2-search-toggle';
+   search.setAttribute('aria-label','Find pages');search.title='Find pages (Ctrl+K)';
+   search.innerHTML=icon;actions.insertBefore(search,actions.firstChild);
+   const add=$('#global-add-btn');
+   if(add&&!add.hasAttribute('aria-label'))add.setAttribute('aria-label','Quick Add');
+   const host=document.createElement('div');host.id='om2-search-overlay';host.hidden=true;
+   host.innerHTML='<div class="om2-search-dialog" role="dialog" aria-modal="true" aria-labelledby="om2-search-title">'+
+    '<div class="om2-search-top"><svg class="om2-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.5"/><path d="m16 16 4.4 4.4"/></svg>'+
+    '<label for="om2-search-input" id="om2-search-title" class="ds-sr-only">Find OmniOS pages</label>'+
+    '<input id="om2-search-input" class="om2-search-input" type="search" role="combobox" aria-autocomplete="list" aria-controls="om2-search-results" aria-expanded="true" autocomplete="off" placeholder="Find a page…" />'+
+    '<button type="button" class="om2-search-dismiss" aria-label="Close page search">Esc</button></div>'+
+    '<div id="om2-search-results" class="om2-search-results" role="listbox" aria-label="Matching OmniOS pages"></div>'+
+    '<div class="om2-search-help">Navigate with ↑ ↓ · Enter to open · Esc to close</div></div>';
+   document.body.appendChild(host);
+   side.addEventListener('click',()=>setCompact(!compact()));
+   search.addEventListener('click',open);
+   host.querySelector('.om2-search-dismiss').addEventListener('click',close);
+   host.addEventListener('click',e=>{
+     if(e.target===host){close();return}
+     const btn=e.target.closest?.('[data-om2-go]');
+     if(btn){select(Array.from(host.querySelectorAll('.om2-search-result')).indexOf(btn))}
+   });
+   const input=host.querySelector('.om2-search-input');
+   input.addEventListener('input',()=>{picked=0;update(input.value)});
+   host.addEventListener('keydown',e=>{
+     if(e.key==='Escape'){e.preventDefault();close();return}
+     if(e.key==='ArrowDown'&&matches.length){e.preventDefault();picked=(picked+1)%matches.length;update(input.value)}
+     if(e.key==='ArrowUp'&&matches.length){e.preventDefault();picked=(picked+matches.length-1)%matches.length;update(input.value)}
+     if(e.key==='Enter'&&matches.length){e.preventDefault();select(picked)}
+     if(e.key==='Tab'){
+       const buttons=Array.from(host.querySelectorAll('input:not([disabled]),button:not([disabled])'));
+       const first=buttons[0],last=buttons[buttons.length-1];
+       if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+       else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+     }
+   });
+   document.addEventListener('keydown',e=>{
+     if(isClassic())return;
+     const editing=!!e.target.closest?.('input,textarea,select,[contenteditable="true"]');
+     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){
+       e.preventDefault();host.hidden?open():close();
+     }else if(e.key==='/'&&!editing&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
+       e.preventDefault();open();
+     }
+   });
+   document.addEventListener('click',e=>{if(e.target.closest?.('#omni-unified-mode-toggle')&&isClassic())close()});
+   document.querySelectorAll('.sidebar .nav-item[data-view]').forEach(b=>{
+     b.title=b.querySelector('.v101-nav-label')?.textContent?.trim()||b.textContent.trim();
+   });
+   let saved=false;
+   try{saved=localStorage.getItem(STORAGE)==='1'}catch(_){}
+   setCompact(saved);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});
+ else mount();
+ window.OmniPhase2Shell={mount,open,close,setCompact,isCompact:compact};
 })();
 </script>

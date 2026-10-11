@@ -1,0 +1,91 @@
+name: Semgrep security
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: '37 2 * * 2'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: semgrep-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semgrep:
+    name: Semgrep SAST and GitHub Actions rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+      - name: Install pinned Semgrep CLI
+        run: python -m pip install 'semgrep==1.179.0'
+      - name: Validate OmniOS rules
+        run: semgrep scan --validate --config .semgrep/rules.yml
+      - name: Scan tracked JavaScript, TypeScript, HTML and GitHub Actions
+        run: |
+          semgrep scan \
+            --config p/default \
+            --config p/secrets \
+            --config p/github-actions \
+            --config .semgrep/rules.yml \
+            --metrics=off \
+            --max-target-bytes 5000000 \
+            --timeout 20 \
+            --sarif --output semgrep.sarif \
+            --exclude '.semgrep-inline/**' .
+      - name: Extract JavaScript from OmniOS HTML fragments
+        run: node scripts/semgrep-inline.mjs
+      - name: Audit inline JavaScript (advisory)
+        continue-on-error: true
+        run: |
+          semgrep scan \
+            --config p/default \
+            --config .semgrep/rules.yml \
+            --metrics=off \
+            --max-target-bytes 5000000 \
+            --timeout 20 \
+            --json --output semgrep-inline.json .semgrep-inline
+      - name: Upload findings and inline script map
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: semgrep-security-reports
+          path: |
+            semgrep.sarif
+            semgrep-inline.json
+            .semgrep-inline/manifest.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Publish tracked-file findings in GitHub Security
+        if: ${{ always() && hashFiles('semgrep.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep-community
+      - name: Block new high-confidence OmniOS violations
+        if: github.event_name == 'pull_request'
+        run: |
+          base="$(git merge-base HEAD origin/main)"
+          semgrep scan \
+            --config .semgrep/rules.yml \
+            --baseline-commit "$base" \
+            --severity ERROR --error \
+            --metrics=off \
+            --max-target-bytes 5000000 \
+            --exclude '.semgrep-inline/**' .

@@ -1,0 +1,32 @@
+rules:
+  - id: omnios.security.no-dynamic-code-evaluation
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Avoid eval() and the Function constructor. Parse structured input instead.
+    metadata:
+      category: security
+      cwe: "CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code"
+      confidence: HIGH
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: new Function(...)
+
+  - id: omnios.security.no-disabled-tls-verification
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Do not disable TLS certificate verification in browser or Netlify code.
+    metadata:
+      category: security
+      cwe: "CWE-295: Improper Certificate Validation"
+      confidence: HIGH
+    pattern: process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+
+  - id: omnios.security.document-write-review
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: Review document.write(); it can inject untrusted HTML.
+    metadata:
+      category: security
+      cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation"
+      confidence: MEDIUM
+    pattern: document.write(...)

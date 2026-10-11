@@ -2181,7 +2181,7 @@ function hideWelcomeUntilTomorrow(){
   try{localStorage.setItem(WELCOME_HIDE_DAY_KEY,welcomeDayKey())}catch(_){}
   close()
 }
-function show(){document.getElementById('welcome63')?.remove();const x=data(),o=document.createElement('div'),dv=window.OmniDailyVerse79?.today?.()||null,profileName=String(x.s?.settings?.profile?.name||'').trim(),profileAvatar=String(x.s?.settings?.profile?.avatar||''),logo=x.s?.brandingLogo||x.s?.customIcons?.logo||'',sum=[x.agenda.length?x.agenda.length+' scheduled':'',x.tasks.length?x.tasks.length+' tasks due':'',x.routines.length?x.routines.length+' routines':''].filter(Boolean).join(' · ')||'Your day is open';o.id='welcome63';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');o.setAttribute('aria-label','Today briefing');o.innerHTML=`<div class="w63-shell"><div class="w63-top"><div class="w63-brand"><div class="w63-mark">${logo?`<img src="${E(logo)}" alt="">`:'✦'}</div><span>Second Brain</span></div><button type="button" class="w63-x" data-w63close aria-label="Close welcome screen">✕</button></div><main class="w63-main"><section class="w63-hero"><div class="w63-intro"><div class="w63-date">${E(x.d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}))}</div>${profileAvatar?`<img class="w93-welcome-avatar" src="${E(profileAvatar)}" alt="">`:''}<h1>${g(x.d.getHours())}${profileName?', '+E(profileName):''}.</h1><div class="w63-summary">${E(sum)}. Here is your day at a glance.</div><div class="w63-actions"><button class="w63-btn primary" data-w63go="today">Start with Today</button><button class="w63-btn" data-w63close>Enter workspace</button><button class="w63-btn w63-btn-later" data-w63tomorrow>Hide until tomorrow</button></div></div><aside class="w63-next"><div><div class="w63-label">Next on your schedule</div><div class="w63-time">${x.next?E(tm(x.next.time)):x.agenda.length?'Done for now':'Open day'}</div><div class="w63-next-title">${x.next?E(x.next.t):x.agenda.length?'No more timed items today.':'Nothing scheduled today.'}</div>${x.next?`<div class="w63-muted">${E(x.next.k)}${x.next.dur?' · '+E(x.next.dur+' min'):''}</div>`:''}</div><button class="w63-link" data-w63go="master-calendar">View calendar →</button></aside></section>${dv?`<section class="w80-welcome-verse" aria-label="Verse of the day"><div class="w80-welcome-verse-main"><div class="w80-welcome-verse-kicker">Verse of the day · ${E(dv.theme)}</div><blockquote>${E(dv.text)}</blockquote><div class="w80-welcome-verse-ref">${E(dv.ref)}</div></div><div class="w80-welcome-verse-actions"><button type="button" class="w63-btn" data-w80verse="read">Read in Bible</button><button type="button" class="w63-btn" data-w80verse="meditate">Meditate</button></div></section>`:''}<section class="w63-stats"><div class="w63-stat"><span>Schedule</span><strong>${x.agenda.length}</strong></div><div class="w63-stat"><span>Tasks due</span><strong>${x.tasks.length}</strong></div><div class="w63-stat"><span>Habits</span><strong>${x.hd}/${x.habits.length}</strong></div><div class="w63-stat"><span>Focus today</span><strong>${Math.round(x.focus)}m</strong></div></section><section class="w63-grid"><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Today’s agenda</div><div class="w63-sub">Events and time blocks</div></div><button class="w63-link" data-w63go="master-calendar">Calendar</button></div>${rowsAgenda(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Priority tasks</div><div class="w63-sub">Pinned, urgent and due first</div></div><button class="w63-link" data-w63go="tasks">Tasks</button></div>${rowsTasks(x)}</div></div><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Routines</div><div class="w63-sub">Today’s progress</div></div><button class="w63-link" data-w63go="routine">Routine</button></div>${rowsR(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Habits</div><div class="w63-sub">${x.hd} completed today</div></div><button class="w63-link" data-w63go="habits">Habits</button></div>${rowsH(x)}</div></div></section></main></div>`;document.body.appendChild(o);o.addEventListener('click',e=>{if(e.target===o)close()});o.querySelectorAll('[data-w63close]').forEach(b=>b.onclick=close);o.querySelectorAll('[data-w63tomorrow]').forEach(b=>b.onclick=hideWelcomeUntilTomorrow);o.querySelectorAll('[data-w63go]').forEach(b=>b.onclick=()=>go(b.dataset.w63go));o.querySelectorAll('[data-w80verse]').forEach(b=>b.onclick=()=>{const mode=b.dataset.w80verse;close();setTimeout(()=>{if(mode==='meditate')window.OmniDailyVerse79?.meditate?.(dv?.ref);else window.OmniDailyVerse79?.read?.(dv?.ref)},100)});requestAnimationFrame(()=>requestAnimationFrame(()=>o.classList.add('open')))}
+function show(){document.getElementById('welcome63')?.remove();const x=data(),o=document.createElement('div'),dv=window.OmniDailyVerse79?.today?.()||null,profileName=String(x.s?.settings?.profile?.name||'').trim(),profileAvatar=String(x.s?.settings?.profile?.avatar||''),logo=x.s?.brandingLogo||x.s?.customIcons?.logo||'',sum=[x.agenda.length?x.agenda.length+' scheduled':'',x.tasks.length?x.tasks.length+' tasks due':'',x.routines.length?x.routines.length+' routines':''].filter(Boolean).join(' · ')||'Your day is open';o.id='welcome63';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');o.setAttribute('aria-label','Today briefing');o.innerHTML=`<div class="w63-shell"><div class="w63-top"><div class="w63-brand"><div class="w63-mark">${logo?`<img src="${E(logo)}" alt="">`:'✦'}</div><span>${E((x.s?.settings?.appearance?.branding?.title==='Second Brain'?'OmniOS':x.s?.settings?.appearance?.branding?.title)||'OmniOS')}</span></div><button type="button" class="w63-x" data-w63close aria-label="Close welcome screen">✕</button></div><main class="w63-main"><section class="w63-hero"><div class="w63-intro"><div class="w63-date">${E(x.d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}))}</div>${profileAvatar?`<img class="w93-welcome-avatar" src="${E(profileAvatar)}" alt="">`:''}<h1>${g(x.d.getHours())}${profileName?', '+E(profileName):''}.</h1><div class="w63-summary">${E(sum)}. Here is your day at a glance.</div><div class="w63-actions"><button class="w63-btn primary" data-w63go="today">Start with Today</button><button class="w63-btn" data-w63close>Enter workspace</button><button class="w63-btn w63-btn-later" data-w63tomorrow>Hide until tomorrow</button></div></div><aside class="w63-next"><div><div class="w63-label">Next on your schedule</div><div class="w63-time">${x.next?E(tm(x.next.time)):x.agenda.length?'Done for now':'Open day'}</div><div class="w63-next-title">${x.next?E(x.next.t):x.agenda.length?'No more timed items today.':'Nothing scheduled today.'}</div>${x.next?`<div class="w63-muted">${E(x.next.k)}${x.next.dur?' · '+E(x.next.dur+' min'):''}</div>`:''}</div><button class="w63-link" data-w63go="master-calendar">View calendar →</button></aside></section>${dv?`<section class="w80-welcome-verse" aria-label="Verse of the day"><div class="w80-welcome-verse-main"><div class="w80-welcome-verse-kicker">Verse of the day · ${E(dv.theme)}</div><blockquote>${E(dv.text)}</blockquote><div class="w80-welcome-verse-ref">${E(dv.ref)}</div></div><div class="w80-welcome-verse-actions"><button type="button" class="w63-btn" data-w80verse="read">Read in Bible</button><button type="button" class="w63-btn" data-w80verse="meditate">Meditate</button></div></section>`:''}<section class="w63-stats"><div class="w63-stat"><span>Schedule</span><strong>${x.agenda.length}</strong></div><div class="w63-stat"><span>Tasks due</span><strong>${x.tasks.length}</strong></div><div class="w63-stat"><span>Habits</span><strong>${x.hd}/${x.habits.length}</strong></div><div class="w63-stat"><span>Focus today</span><strong>${Math.round(x.focus)}m</strong></div></section><section class="w63-grid"><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Today’s agenda</div><div class="w63-sub">Events and time blocks</div></div><button class="w63-link" data-w63go="master-calendar">Calendar</button></div>${rowsAgenda(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Priority tasks</div><div class="w63-sub">Pinned, urgent and due first</div></div><button class="w63-link" data-w63go="tasks">Tasks</button></div>${rowsTasks(x)}</div></div><div class="w63-col"><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Routines</div><div class="w63-sub">Today’s progress</div></div><button class="w63-link" data-w63go="routine">Routine</button></div>${rowsR(x)}</div><div class="w63-card"><div class="w63-head"><div><div class="w63-title">Habits</div><div class="w63-sub">${x.hd} completed today</div></div><button class="w63-link" data-w63go="habits">Habits</button></div>${rowsH(x)}</div></div></section></main></div>`;document.body.appendChild(o);o.addEventListener('click',e=>{if(e.target===o)close()});o.querySelectorAll('[data-w63close]').forEach(b=>b.onclick=close);o.querySelectorAll('[data-w63tomorrow]').forEach(b=>b.onclick=hideWelcomeUntilTomorrow);o.querySelectorAll('[data-w63go]').forEach(b=>b.onclick=()=>go(b.dataset.w63go));o.querySelectorAll('[data-w80verse]').forEach(b=>b.onclick=()=>{const mode=b.dataset.w80verse;close();setTimeout(()=>{if(mode==='meditate')window.OmniDailyVerse79?.meditate?.(dv?.ref);else window.OmniDailyVerse79?.read?.(dv?.ref)},100)});requestAnimationFrame(()=>requestAnimationFrame(()=>o.classList.add('open')))}
 function close(){const o=document.getElementById('welcome63');if(o){o.classList.remove('open');setTimeout(()=>o.remove(),250)}}function go(v){close();setTimeout(()=>window.switchView?.(v),100)}function ready(){if(window.__welcome63Shown)return;if(welcomeHiddenToday()){window.__welcome63Shown=1;return}let n=0;const q=()=>{n++;if((document.documentElement.classList.contains('omnios-ready')&&!document.getElementById('omnios-boot-screen'))||n>70){window.__welcome63Shown=1;if(!welcomeHiddenToday())setTimeout(show,100)}else setTimeout(q,80)};q()}window.OmniWelcome={open:show,close,refresh:show};document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
 })();
 </script>
@@ -15968,6 +15968,138 @@ html :where(.v35-drawer,.v55-drawer,.org-modal,.modal)
   html #view-tasks .kanban-board,html #view-budget .v38-fin-tabs{scroll-behavior:auto!important}
 }
 /* END OMNIOS PHASE 6 / REMAINING MODULES / v1 */
+
+/* ================================================================
+   OMNIOS PHASE 9 / BRAND + MOBILE DENSITY / v1
+   Final scoped refinement; custom branding and app state are untouched.
+   ================================================================ */
+@media(max-width:760px){
+  /* Mobile dock: exactly one visible icon and one readable label per destination. */
+  html .mobile-nav.omr-mobile-dock{
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    min-height:70px!important;height:70px!important;
+    padding:6px 7px!important;gap:4px!important;
+    box-shadow:none!important;border-color:var(--ds-line)!important;
+    background:var(--ds-surface)!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button{
+    display:flex!important;flex-direction:column!important;
+    align-items:center!important;justify-content:center!important;
+    min-width:0!important;height:56px!important;min-height:56px!important;
+    gap:5px!important;padding:5px 2px!important;
+    overflow:hidden!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button>.v48-mobile-icon,
+  html .mobile-nav.omr-mobile-dock>button>.v35-nav-icon,
+  html .mobile-nav.omr-mobile-dock>button>.v58-nav-icon{
+    display:none!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button:not(.omni-has-custom-icon)>.nav-icon{
+    display:grid!important;place-items:center!important;
+    width:22px!important;height:22px!important;flex:0 0 22px!important;
+    margin:0!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button.omni-has-custom-icon>.nav-icon{
+    display:none!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button>.omni-mobile-custom-icon:not(.omni-custom-icon-active){
+    display:none!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button>.omni-mobile-custom-icon.omni-custom-icon-active{
+    width:22px!important;height:22px!important;flex:0 0 22px!important;
+    margin:0!important;object-fit:contain!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button>.nav-label{
+    display:block!important;flex:0 0 auto!important;
+    width:100%!important;max-width:100%!important;
+    overflow:hidden!important;text-overflow:ellipsis!important;
+    white-space:nowrap!important;line-height:1.22!important;
+    font-size:11px!important;font-weight:690!important;
+    text-align:center!important;color:inherit!important;
+  }
+  /* Large empty hero regions caused by legacy minimum heights on phones. */
+  html :is(#view-notes,#view-projects,#view-inbox,#view-reminders,#view-grocery,
+      #view-pantry,#view-wishlist,#view-budget,#view-diet,#view-tasks)
+  :where(.org-hero,.v35-page-head,.v38-finance-head,.finance-hero,.diet-hero,.omx-page-heading){
+    height:auto!important;min-height:0!important;
+    max-height:none!important;align-content:start!important;
+    margin-bottom:10px!important;padding:15px!important;gap:10px!important;
+  }
+  html :is(#view-notes,#view-projects,#view-inbox,#view-reminders,#view-budget,#view-diet)
+  :where(.v35-page-head h3,.org-title,.v38-finance-head h3,.diet-hero h3){
+    font-size:clamp(1.3rem,5.5vw,1.65rem)!important;
+    line-height:1.18!important;margin:0 0 4px!important;
+  }
+  html :is(#view-notes,#view-projects,#view-inbox,#view-reminders,#view-budget,#view-diet)
+  :where(.org-sub,.v35-page-head .text-muted,.v38-finance-head .text-muted,.diet-hero p){
+    font-size:13px!important;line-height:1.42!important;margin:0!important;
+  }
+  /* Finance month picker is a single compact strip, never a tall 2-column wrap. */
+  html #view-budget .v38-finance-head{
+    display:flex!important;flex-direction:column!important;align-items:stretch!important;
+    justify-content:flex-start!important;
+  }
+  html #view-budget .v38-finance-head-actions{
+    display:flex!important;flex-wrap:wrap!important;align-items:center!important;
+    width:100%!important;min-width:0!important;gap:8px!important;
+    margin:0!important;
+  }
+  html #view-budget .v38-month-nav{
+    display:grid!important;
+    grid-template-columns:36px max-content minmax(0,1fr) 36px!important;
+    grid-template-rows:44px!important;
+    align-items:center!important;gap:5px!important;
+    width:100%!important;max-width:100%!important;
+    min-width:0!important;margin:0!important;
+    padding:4px!important;
+    background:var(--ds-surface-raised)!important;
+    border:1px solid var(--ds-line)!important;
+    border-radius:var(--ds-radius-md)!important;
+  }
+  html #view-budget .v38-month-nav>:where(button,.v38-month-label){
+    min-width:0!important;margin:0!important;grid-row:1!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    height:36px!important;min-height:36px!important;
+    white-space:nowrap!important;
+  }
+  html #view-budget .v38-month-nav .v38-month-label{
+    font-size:12px!important;font-weight:720!important;
+    overflow:hidden!important;text-overflow:ellipsis!important;
+    color:var(--ds-text)!important;
+  }
+  html #view-budget .v38-month-nav #v38-prev-month{grid-column:1!important}
+  html #view-budget .v38-month-nav #v38-today-month{grid-column:2!important}
+  html #view-budget .v38-month-nav #v38-next-month{grid-column:4!important}
+  html #view-budget :where(.v38-overview-summary,.v38-overview-columns,.v38-fin-tabs){
+    margin-top:10px!important;
+  }
+  /* Keep settings usable without oversized branding / appearance cards. */
+  html #view-settings :where(#omni-2026-appearance,#brand54-settings-card){
+    min-height:0!important;height:auto!important;
+    margin-bottom:10px!important;padding:15px!important;
+    box-shadow:none!important;border-color:var(--ds-line)!important;
+  }
+  html #view-settings #settings-tabs{
+    gap:5px!important;padding:5px!important;
+    margin:0 0 10px!important;
+  }
+  html #view-settings .brand54-mode{display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+  html #view-settings .brand54-preview{min-height:0!important;padding:12px!important}
+  html #view-tasks .omx-tasks-toolbar{margin-bottom:10px!important}
+  html #view-tasks .omx-page-heading p{font-size:13px!important}
+}
+@media(max-width:390px){
+  html #view-budget .v38-month-nav{
+    grid-template-columns:32px max-content minmax(0,1fr) 32px!important;
+    gap:3px!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button>.nav-label{font-size:10px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  html .mobile-nav.omr-mobile-dock>button{transition:none!important}
+}
+/* END OMNIOS PHASE 9 / BRAND + MOBILE DENSITY / v1 */
 </style>
 
 <script id="omnios-unified-2026-controls">

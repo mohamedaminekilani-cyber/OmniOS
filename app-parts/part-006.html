@@ -1539,12 +1539,17 @@ function renderDashboard43(){
     const lifeAreasHtml=areaStats.length?areaStats.map(a=>{const total=a.tasks+a.projects,m=Math.max(1,...areaStats.map(x=>x.tasks+x.projects));return `<div class="v431-area-row" data-v431-area="${E(a.id)}"><div class="v431-area-head"><span>${E(a.icon)} ${E(a.name)}</span><span>${total}</span></div><div class="v43-progress"><i style="width:${Math.round(total/m*100)}%"></i></div><div class="v431-area-meta">${a.tasks} task${a.tasks===1?'':'s'} · ${a.projects} project${a.projects===1?'':'s'}</div></div>`}).join(''):'<div class="v43-empty">Create Life Areas to see balance across responsibilities.</div>';
     const notesHtml=recentNotes.length?recentNotes.map(n=>row43({icon:n.pinned?'★':'✎',title:n.title||'Untitled',meta:`Updated ${new Date(n.updatedAt||n.date||Date.now()).toLocaleDateString()}`,key:'note-'+n.id})).join(''):'<div class="v43-empty">No notes yet.</div>';
 
+    const greetingHour=new Date().getHours();
+    const greeting43=greetingHour<12?'Good morning':greetingHour<17?'Good afternoon':'Good evening';
+    const firstName43=String(state.settingsProfile?.name||state.settings?.profile?.name||'').trim().split(/\s+/)[0].slice(0,32);
+    const friendlyDate43=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
     sec.innerHTML=`
     <div class="v43-hero v431-hero">
       <div class="v431-hero-main">
-        <div class="v43-kicker">SYSTEM OVERVIEW</div>
-        <div class="v431-title-row"><h3>Dashboard</h3><span class="v431-period-chip">${E(d.r.label)}</span></div>
-        <div class="v43-hero-copy">A quiet overview of what needs attention, what is moving, and where your time and money are going.</div>
+        <div class="v43-kicker">${E(friendlyDate43)} · YOUR SPACE</div>
+        <div class="v431-title-row"><h3>${greeting43}${firstName43?', '+E(firstName43):''}!</h3><span class="v431-period-chip">${E(d.r.label)}</span></div>
+        <div class="v43-hero-copy">Your priorities, plans and progress — all in one calm place.</div>
+        <button type="button" class="omni-dashboard-capture" id="omni-dashboard-capture" aria-label="Open quick add to capture your next priority"><span>What’s your next priority?</span><span class="omni-dashboard-capture-arrow" aria-hidden="true">↗</span></button>
       </div>
       <div class="v43-hero-actions v431-hero-actions">
         <label class="v431-period-control"><span>Period</span><select class="filter-select" id="v43-dash-period" aria-label="Dashboard period"><option value="today">Today</option><option value="week">This week</option><option value="month">This month</option><option value="all">All time</option></select></label>

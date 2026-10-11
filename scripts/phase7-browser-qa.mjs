@@ -75,10 +75,12 @@ try{
  await setViewport(390,844);await evaluate('window.switchView("budget")');await delay(500);
  const picker=await evaluate('(()=>{const n=document.querySelector("#view-budget .v38-month-nav");if(!n)return {found:false};const kids=[...n.children].filter(x=>x.matches("button,.v38-month-label"));const tops=kids.map(x=>Math.round(x.getBoundingClientRect().top));return {found:true,children:kids.length,tops,height:Math.round(n.getBoundingClientRect().height)}})()');
  check('Finance month navigation fits one mobile row',picker.found&&picker.children>=4&&Math.max(...picker.tops)-Math.min(...picker.tops)<=10&&picker.height<=70,picker);
+ const financeHeight=await evaluate('(()=>{const h=document.querySelector("#view-budget .v38-finance-head");if(!h)return 9999;return Math.round(h.getBoundingClientRect().height)})()');
+ check('Mobile Finance header has no oversized empty flex spacer',financeHeight>=80&&financeHeight<=180,{height:financeHeight});
 
  // Phase 10: verify the actual rendered geometry, not only the CSS sources.
  await setViewport(1440,900);
- const switchShape=await evaluate('(()=>{const s=document.createElement("button");s.className="settings-toggle";s.type="button";s.setAttribute("role","switch");s.setAttribute("aria-checked","false");document.body.appendChild(s);const a=getComputedStyle(s),w=Math.round(s.getBoundingClientRect().width),h=Math.round(s.getBoundingClientRect().height),leftOff=parseFloat(getComputedStyle(s,"::after").left);s.classList.add("on");s.setAttribute("aria-checked","true");const leftOn=parseFloat(getComputedStyle(s,"::after").left);s.remove();return {w,h,leftOff,leftOn}})()');
+ const switchShape=await evaluate('(async()=>{const s=document.createElement("button");s.className="settings-toggle";s.type="button";s.setAttribute("role","switch");s.setAttribute("aria-checked","false");document.body.appendChild(s);const a=getComputedStyle(s),w=Math.round(s.getBoundingClientRect().width),h=Math.round(s.getBoundingClientRect().height),leftOff=parseFloat(getComputedStyle(s,"::after").left);s.classList.add("on");s.setAttribute("aria-checked","true");await new Promise(resolve=>setTimeout(resolve,240));const leftOn=parseFloat(getComputedStyle(s,"::after").left);s.remove();return {w,h,leftOff,leftOn}})()');
  check('Switches render as compact centered controls with moving thumb',switchShape.w===50&&switchShape.h===30&&switchShape.leftOff===4&&switchShape.leftOn===24,switchShape);
  for(const view of ['inbox','planner','projects','budget']){
    await evaluate('window.switchView('+JSON.stringify(view)+')');await delay(250);

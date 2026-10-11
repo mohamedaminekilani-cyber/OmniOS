@@ -14763,7 +14763,7 @@ html .topbar #global-add-btn{
     }
     function addPage(el){
       const view=el.dataset.view;
-      if(!view||!document.getElementById('view-'+view))return;
+      if(!view)return;
       if(!container){container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container)}
       const b=document.createElement('button');b.type='button';b.dataset.omrGo=view;
       b.textContent=el.querySelector('.v101-nav-label')?.textContent?.trim()||

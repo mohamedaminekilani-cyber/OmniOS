@@ -90,6 +90,8 @@ test('page search supports shortcuts, escape, and Classic appearance',()=>{
  w.OmniPhase2Shell.open();
  assert.equal(w.document.getElementById('om2-search-overlay').hidden,true);
  assert.ok(w.document.getElementById('om2-classic-guard'));
+ assert.equal(w.document.getElementById('global-add-btn').getAttribute('aria-label'),'Quick Add');
+ assert.equal(w.document.getElementById('om2-search-toggle').getAttribute('aria-label'),'Find pages');
  f.dom.window.close();
 });
 test('mobile More sheet includes pages nested under upgraded grouped sidebar',()=>{

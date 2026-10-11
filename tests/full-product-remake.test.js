@@ -34,10 +34,10 @@ test('core functional page headers and dashboard action hierarchy are real marku
  assert.match(shell,/omx-task-quick-add'\)\?\.addEventListener\('click',\(\)=>\{resetTaskForm\(\);openModal\('task-modal'\)\}/);
  assert.match(today,/omx-calendar-intro/);
  assert.match(today,/omx-schedule-status/);
- assert.match(dashboard,/class="omx-next-focus"/);
+ assert.match(dashboard,/class="om3-dashboard-focus"/);
  assert.match(dashboard,/class="omx-quick-actions"/);
  assert.match(dashboard,/data-v43-open="master-calendar"/);
- assert.match(dashboard,/nextFocusTask43/);
+ assert.match(dashboard,/priorityTasks43/);
 });
 test('remake covers every major module at mobile and desktop breakpoints',()=>{
  for(const selector of ['#view-dashboard','#view-tasks','#view-master-calendar','#view-habits','#view-workout','#view-budget','#view-notes','#view-life-hub','#view-focus','#view-settings']){

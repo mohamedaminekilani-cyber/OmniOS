@@ -32,6 +32,7 @@ function context(){
 }
 const attachmentSource=section(p2,'function safeAttachmentURL(src){','  function compressImage(');
 const photoSource=section(p7,'function safePhotoURL49(src){','function photoField49(');
+const dietSource=section(p2,'function safeDietImageURL(src){','  function showDietInspector(');
 const mediaSource=section(p7,'function mediaNode49(', 'let lastNote49=null;');
 
 test('attachment URLs reject non-image data, script protocols and HTML attribute attacks',()=>{
@@ -50,6 +51,20 @@ test('attachment URLs reject non-image data, script protocols and HTML attribute
   assert.equal(dom.window.document.querySelectorAll('[onerror]').length,0);
   assert.equal(dom.window.document.querySelectorAll('[onclick]').length,0);
   assert.equal(dom.window.document.querySelector('img:last-child').getAttribute('src'),png);
+});
+
+test('diet image gallery escapes attributes and excludes script or SVG payloads',()=>{
+  const {dom,env}=context();
+  vm.runInContext(dietSource,env);
+  assert.equal(vm.runInContext("safeDietImageURL('javascript:alert(1)')",env),'');
+  assert.equal(vm.runInContext("safeDietImageURL('data:image/svg+xml,<svg/>')",env),'');
+  env.malicious='https://images.example/photo.png" onerror="alert(1)';
+  const html=vm.runInContext("imagesHtml([malicious,'javascript:alert(1)','data:image/png;base64,aGVsbG8='])",env);
+  dom.window.document.body.innerHTML=html;
+  assert.equal(dom.window.document.querySelectorAll('img').length,2);
+  assert.equal(dom.window.document.querySelectorAll('[onerror]').length,0);
+  assert.equal(dom.window.document.querySelector('img:last-child').getAttribute('src'),png);
+  dom.window.close();
 });
 
 test('native image cards use DOM nodes and reject dangerous image URLs',()=>{
@@ -107,4 +122,5 @@ test('known scanned HTML sinks are removed, while legitimate design classes rema
   assert.match(p2,/function imageAttrEscape\(value\)/);
   assert.doesNotMatch(p2,/<img class="image-thumb" src="\$\{src\}"/);
   assert.doesNotMatch(p2,/<img src="\$\{src\}"/);
+  assert.match(p2,/escapeHtml\(String\(e\.notes\)\.substring\(0,70\)\)/);
 });

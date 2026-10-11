@@ -13970,6 +13970,273 @@ html .view :where(.v35-card,.v43-card,.org-card,.finance-panel,.note-card,.v43-k
  html .view :where(.form-row,.form-grid){grid-template-columns:minmax(0,1fr)!important}
  html .view :where(.modal-footer,.form-actions){gap:8px!important;flex-wrap:wrap}
 }
+
+/* ======================================================================
+   OMNIOS PHASE 1 FOUNDATION / v1
+   Canonical semantic tokens and shared UI components. Intentionally last
+   in the switchable unified stylesheet. No page markup/data mutations.
+   Carbon #101114 / Mist #EEF0F2 / Electric #2547E8
+   Violet #5F31C4 / Lime #C6F04A / Steel #55606D
+   ====================================================================== */
+html{
+  --ds-carbon:#101114;--ds-mist:#EEF0F2;--ds-electric:#2547E8;
+  --ds-violet:#5F31C4;--ds-lime:#C6F04A;--ds-steel:#55606D;
+  --ds-space-0:0;--ds-space-1:4px;--ds-space-2:8px;--ds-space-3:12px;
+  --ds-space-4:16px;--ds-space-5:20px;--ds-space-6:24px;
+  --ds-space-8:32px;--ds-space-10:40px;--ds-space-12:48px;
+  --ds-radius-xs:5px;--ds-radius-sm:8px;--ds-radius-md:10px;
+  --ds-radius-lg:12px;--ds-radius-pill:999px;
+  --ds-font:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --ds-text-xs:12px;--ds-text-sm:13px;--ds-text-md:14px;
+  --ds-text-base:16px;--ds-text-lg:20px;--ds-text-xl:24px;
+  --ds-text-2xl:clamp(26px,2.35vw,34px);
+  --ds-line-tight:1.2;--ds-line-body:1.5;
+  --ds-weight-medium:550;--ds-weight-semibold:650;--ds-weight-bold:760;
+  --ds-motion-fast:120ms;--ds-motion-normal:180ms;
+  --ds-ease:cubic-bezier(.22,.61,.36,1);
+}
+html:not([data-theme="light"]){
+  --ds-canvas:#101114;--ds-surface:#1A1C21;--ds-surface-raised:#242730;
+  --ds-surface-hover:#30343D;--ds-line:#3C414B;--ds-line-strong:#687482;
+  --ds-text:#EEF0F2;--ds-text-secondary:#D1D7E0;--ds-text-muted:#B7C0CE;
+  --ds-primary:#2547E8;--ds-primary-hover:#5F31C4;--ds-on-primary:#FFFFFF;
+  --ds-accent:#B89AFF;--ds-accent-surface:#30293F;--ds-accent-ink:#E8DFFF;
+  --ds-success:#C6F04A;--ds-on-success:#101114;
+  --ds-success-surface:#2B371A;--ds-success-ink:#D5F68C;
+  --ds-danger:#FFA4B1;--ds-danger-surface:#412630;--ds-on-danger:#101114;
+  --ds-warning:#F3CA69;--ds-warning-surface:#40351E;
+  --ds-focus:#B7C3FF;--ds-disabled:#87919F;--ds-overlay:rgba(4,5,8,.72);
+  --ds-skeleton:#30343D;--ds-skeleton-highlight:#474D59;
+  --omx-canvas:var(--ds-canvas)!important;--omx-card:var(--ds-surface)!important;
+  --omx-raised:var(--ds-surface-raised)!important;--omx-edge:var(--ds-line)!important;
+  --omx-copy:var(--ds-text)!important;--omx-sub:var(--ds-text-muted)!important;
+  --omx-soft:var(--ds-accent-surface)!important;--omx-focus:var(--ds-focus)!important;
+  --omr-panel:var(--ds-surface)!important;--omr-panel-muted:var(--ds-surface-raised)!important;
+  --omr-border:var(--ds-line)!important;--omr-quiet:var(--ds-text-muted)!important;
+}
+html[data-theme="light"]{
+  --ds-canvas:#EEF0F2;--ds-surface:#FFFFFF;--ds-surface-raised:#F2F4F6;
+  --ds-surface-hover:#E4E8EC;--ds-line:#CDD3DB;--ds-line-strong:#8A96A3;
+  --ds-text:#101114;--ds-text-secondary:#394450;--ds-text-muted:#55606D;
+  --ds-primary:#2547E8;--ds-primary-hover:#5F31C4;--ds-on-primary:#FFFFFF;
+  --ds-accent:#5F31C4;--ds-accent-surface:#EEE8FA;--ds-accent-ink:#5127B2;
+  --ds-success:#C6F04A;--ds-on-success:#101114;
+  --ds-success-surface:#F0F9D9;--ds-success-ink:#326500;
+  --ds-danger:#AD2944;--ds-danger-surface:#FCEAF0;--ds-on-danger:#FFFFFF;
+  --ds-warning:#835600;--ds-warning-surface:#FFF4D9;
+  --ds-focus:#5F31C4;--ds-disabled:#687482;--ds-overlay:rgba(16,17,20,.55);
+  --ds-skeleton:#E4E8EC;--ds-skeleton-highlight:#F4F6F8;
+  --omx-canvas:var(--ds-canvas)!important;--omx-card:var(--ds-surface)!important;
+  --omx-raised:var(--ds-surface-raised)!important;--omx-edge:var(--ds-line)!important;
+  --omx-copy:var(--ds-text)!important;--omx-sub:var(--ds-text-muted)!important;
+  --omx-soft:var(--ds-accent-surface)!important;--omx-focus:var(--ds-focus)!important;
+  --omr-panel:var(--ds-surface)!important;--omr-panel-muted:var(--ds-surface-raised)!important;
+  --omr-border:var(--ds-line)!important;--omr-quiet:var(--ds-text-muted)!important;
+}
+/* Compatibility bridge: legacy base classes consume the same semantic colors. */
+html:not([data-theme="light"]),html[data-theme="light"]{
+  --bg-base:var(--ds-canvas)!important;--bg-surface:var(--ds-surface)!important;
+  --bg-elevated:var(--ds-surface-raised)!important;--bg-hover:var(--ds-surface-hover)!important;
+  --border-color:var(--ds-line)!important;--border-light:var(--ds-line-strong)!important;
+  --text-primary:var(--ds-text)!important;--text-secondary:var(--ds-text-secondary)!important;
+  --text-muted:var(--ds-text-muted)!important;--omni-shadow:none!important;
+  --omni-cta:var(--ds-primary)!important;
+}
+html body{font-family:var(--ds-font)!important;color:var(--ds-text);}
+html .view :where(h1,h2,h3,h4,h5,h6),html .ds-heading{
+  color:var(--ds-text);letter-spacing:-.025em;line-height:var(--ds-line-tight);
+}
+html .ds-heading--xl{font-size:var(--ds-text-2xl);font-weight:var(--ds-weight-bold)}
+html .ds-heading--lg{font-size:var(--ds-text-xl);font-weight:var(--ds-weight-bold)}
+html .ds-heading--md{font-size:var(--ds-text-lg);font-weight:var(--ds-weight-semibold)}
+html .ds-body{font-size:var(--ds-text-base);line-height:var(--ds-line-body);color:var(--ds-text)}
+html .ds-body--muted{font-size:var(--ds-text-md);line-height:var(--ds-line-body);color:var(--ds-text-muted)}
+html .ds-label{font-size:var(--ds-text-sm);line-height:1.4;font-weight:var(--ds-weight-semibold);color:var(--ds-text-secondary)}
+/* Component 1: actions. Keep icon-only, segmented and custom page controls intact. */
+html :where(.ds-btn,.view .btn,.modal .btn,#hw-builder .btn,.view .view-btn,.view .tab-btn){
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--ds-space-2);
+  min-height:40px;max-width:100%;padding:9px 14px;
+  font-family:var(--ds-font);font-size:var(--ds-text-md);
+  font-weight:var(--ds-weight-semibold);line-height:1.3;text-decoration:none;
+  color:var(--ds-text);background:var(--ds-surface-raised);
+  background-image:none;border:1px solid var(--ds-line);border-radius:var(--ds-radius-md);
+  box-shadow:none;filter:none;cursor:pointer;
+  transition:background var(--ds-motion-fast) var(--ds-ease),border-color var(--ds-motion-fast) var(--ds-ease),color var(--ds-motion-fast) var(--ds-ease);
+}
+html :where(.ds-btn,.view .btn,.modal .btn):not([disabled]):not(:disabled):hover{
+  background:var(--ds-surface-hover);border-color:var(--ds-line-strong);
+}
+html :where(.ds-btn--primary,.view .btn-primary,.modal .btn-primary,#hw-builder .btn-primary,
+.topbar .btn-primary){
+  background:var(--ds-primary)!important;color:var(--ds-on-primary)!important;
+  border-color:var(--ds-primary)!important;box-shadow:none!important;
+}
+html :where(.ds-btn--primary,.view .btn-primary,.modal .btn-primary):not(:disabled):hover{
+  background:var(--ds-primary-hover)!important;border-color:var(--ds-primary-hover)!important;
+  color:#FFFFFF!important;
+}
+html :where(.ds-btn--quiet,.ds-btn--ghost){background:transparent;border-color:transparent}
+html :where(.ds-btn--danger,.view .btn-danger,.modal .btn-danger){
+  background:var(--ds-danger-surface)!important;color:var(--ds-danger)!important;
+  border-color:var(--ds-danger)!important;
+}
+html .ds-btn--small{min-height:32px;padding:5px 10px;font-size:var(--ds-text-sm)}
+html .ds-btn--square{width:40px;min-width:40px;padding:8px}
+html :where(.ds-btn,.view .btn,.modal .btn,.view .view-btn,.view .tab-btn)[disabled],
+html :where(.ds-btn,.view .btn,.modal .btn,.view .view-btn,.view .tab-btn):disabled{
+  opacity:.55!important;filter:none!important;cursor:not-allowed!important;
+  box-shadow:none!important;
+}
+/* Component 2: fields; type-specific selectors avoid radio/check/file controls. */
+html :where(.ds-input,.ds-select,.ds-textarea,.view .form-input,.view .form-select,
+.view .form-textarea,.modal .form-input,.modal .form-select,.modal .form-textarea,
+.view input[type="search"],.modal input[type="search"]){
+  color:var(--ds-text)!important;background:var(--ds-surface)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-sm)!important;
+  box-shadow:none!important;background-image:none;
+  font-family:var(--ds-font);font-size:var(--ds-text-md);line-height:1.45;
+  min-width:0;max-width:100%;min-height:40px;
+}
+html :where(.ds-input,.ds-select,.ds-textarea,.view .form-input,.view .form-select,
+.view .form-textarea,.modal .form-input,.modal .form-select,.modal .form-textarea,
+.view input[type="search"],.modal input[type="search"]):not(textarea){padding:9px 11px}
+html :where(.ds-textarea,.view .form-textarea,.modal .form-textarea){padding:10px 12px;resize:vertical}
+html :where(.ds-input,.ds-textarea,.view .form-input,.view .form-textarea,.modal .form-input,
+.modal .form-textarea)::placeholder{color:var(--ds-text-muted)!important;opacity:1}
+html :where(.ds-input,.ds-select,.ds-textarea,.view .form-input,.view .form-select,
+.view .form-textarea,.modal .form-input,.modal .form-select,.modal .form-textarea,
+.view input[type="search"],.modal input[type="search"]):hover{border-color:var(--ds-line-strong)!important}
+html :where(.ds-input,.ds-select,.ds-textarea,.view .form-input,.view .form-select,
+.view .form-textarea,.modal .form-input,.modal .form-select,.modal .form-textarea,
+.view input[type="search"],.modal input[type="search"])[aria-invalid="true"],
+html .ds-field--error :where(input,select,textarea){
+  border-color:var(--ds-danger)!important;
+}
+html .ds-field{display:flex;flex-direction:column;gap:var(--ds-space-2);min-width:0}
+html .ds-field__label{font-weight:var(--ds-weight-semibold);font-size:var(--ds-text-sm);color:var(--ds-text-secondary)}
+html .ds-field__hint{font-size:var(--ds-text-xs);line-height:1.5;color:var(--ds-text-muted)}
+html .ds-field--error .ds-field__hint{color:var(--ds-danger)}
+/* Component 3: cards: one radius, one flat surface, no nested decoration. */
+html :where(.ds-card,.view .card,.view .v35-card,.view .v43-card,.view .org-card,
+.view .note-card,.view .workout-session-card,.view .habit-week-card,
+.view .kpi-card,.view .stat-card,.view .finance-panel){
+  background:var(--ds-surface)!important;background-image:none!important;
+  color:var(--ds-text);border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;box-shadow:none!important;filter:none;
+}
+html .ds-card{padding:var(--ds-space-5)}
+html .ds-card--compact{padding:var(--ds-space-3)}
+html .ds-card--flat{background:transparent!important;border-color:transparent!important}
+html .ds-card__title{font-size:var(--ds-text-base);font-weight:var(--ds-weight-bold);line-height:1.25}
+html .ds-card__description{font-size:var(--ds-text-md);color:var(--ds-text-muted);line-height:1.5;margin-top:4px}
+html .ds-divider{height:1px;border:0;background:var(--ds-line);margin:var(--ds-space-4) 0}
+html .ds-stack{display:flex;flex-direction:column;gap:var(--ds-space-3)}
+html .ds-inline{display:flex;flex-wrap:wrap;align-items:center;gap:var(--ds-space-2)}
+/* Component 4: segmented controls and tabs with meaningful selected states. */
+html :where(.ds-tabs,.view .tab-btns,.view .v43-tabs,.view .v35-segmented,
+.view .workout-tabs,.view .hw-nav){
+  display:flex;gap:var(--ds-space-1);max-width:100%;
+  overflow-x:auto;scrollbar-width:none;
+  padding:4px;background:var(--ds-surface-raised)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important;
+  box-shadow:none!important;
+}
+html .ds-tabs::-webkit-scrollbar{display:none}
+html :where(.ds-tab,.ds-tabs>button){
+  flex:0 0 auto;min-height:36px;padding:7px 12px;
+  font:var(--ds-weight-semibold) var(--ds-text-md)/1.3 var(--ds-font);
+  color:var(--ds-text-secondary);background:transparent;border:1px solid transparent;
+  border-radius:var(--ds-radius-sm);cursor:pointer;
+}
+html :where(.ds-tab,.ds-tabs>button)[aria-selected="true"],html .ds-tabs>button.active{
+  color:var(--ds-accent-ink);background:var(--ds-accent-surface);
+  border-color:var(--ds-line);
+}
+html :where(.view .v43-tab,.view .tab-btn,.view .view-btn)[aria-selected="true"],
+html :where(.view .v43-tab,.view .tab-btn,.view .view-btn).active{
+  color:var(--ds-accent-ink)!important;background:var(--ds-accent-surface)!important;
+  border-color:var(--ds-line)!important;box-shadow:none!important;
+}
+/* Component 5: status chips. Lime always has Carbon text, never white. */
+html .ds-badge{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:22px;padding:3px 8px;border-radius:var(--ds-radius-sm);
+  border:1px solid var(--ds-line);background:var(--ds-surface-raised);
+  color:var(--ds-text-secondary);font-size:var(--ds-text-xs);
+  line-height:1.25;font-weight:var(--ds-weight-semibold);white-space:nowrap;
+}
+html .ds-badge--success{background:var(--ds-success)!important;color:var(--ds-on-success)!important;border-color:var(--ds-success)!important}
+html .ds-badge--warning{background:var(--ds-warning-surface);color:var(--ds-warning);border-color:var(--ds-line)}
+html .ds-badge--danger{background:var(--ds-danger-surface);color:var(--ds-danger);border-color:var(--ds-line)}
+html .ds-badge--accent{background:var(--ds-accent-surface);color:var(--ds-accent-ink);border-color:var(--ds-line)}
+html :where(.view .v43-badge,.view .v35-chip,.view .v58-badge){
+  border-radius:var(--ds-radius-sm)!important;box-shadow:none!important;
+  font-size:var(--ds-text-xs)!important;line-height:1.3!important;
+}
+html :where(.ds-badge,.view .v43-badge,.view .v35-chip).success{
+  background:var(--ds-success)!important;color:var(--ds-on-success)!important;
+}
+html .ds-progress{height:7px;overflow:hidden;background:var(--ds-surface-raised);border-radius:var(--ds-radius-xs)}
+html .ds-progress>span{display:block;height:100%;width:var(--ds-progress,0%);max-width:100%;background:var(--ds-success);border-radius:inherit}
+/* Component 6: overlays/dialogs: clear grouping and bounded scrolling. */
+html :where(.ds-dialog,.modal,.modal-content,.inspector-panel,#hw-builder .hw-modal){
+  color:var(--ds-text)!important;background:var(--ds-surface)!important;
+  background-image:none!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;box-shadow:none!important;
+}
+html .ds-dialog{width:min(560px,calc(100vw - 32px));max-height:min(88dvh,900px);
+  overflow-y:auto;overscroll-behavior:contain;padding:var(--ds-space-5)}
+html .ds-dialog__header,html .ds-dialog__footer{display:flex;align-items:center;justify-content:space-between;gap:var(--ds-space-3)}
+html .ds-dialog__title{font-size:var(--ds-text-lg);font-weight:var(--ds-weight-bold)}
+html .ds-dialog__footer{margin-top:var(--ds-space-5)}
+html :where(.ds-backdrop,.modal-overlay,.inspector-backdrop){background:var(--ds-overlay)}
+/* Component 7: empty, loading, error, and success feedback states. */
+html :where(.ds-state,.view .empty-state,.view .v43-empty,.view .org-empty){
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:var(--ds-space-2);padding:var(--ds-space-6) var(--ds-space-4);
+  min-height:100px;text-align:center;color:var(--ds-text-muted);
+  background:transparent;border:1px dashed var(--ds-line);
+  border-radius:var(--ds-radius-lg);font-size:var(--ds-text-md);
+  line-height:var(--ds-line-body);
+}
+html .ds-state__title{font-size:var(--ds-text-base);font-weight:var(--ds-weight-semibold);color:var(--ds-text)}
+html .ds-state__description{max-width:46ch;color:var(--ds-text-muted);font-size:var(--ds-text-md)}
+html .ds-state--error{border-style:solid;border-color:var(--ds-danger);color:var(--ds-danger)}
+html .ds-state--success{border-style:solid;border-color:var(--ds-success);color:var(--ds-text)}
+html .ds-skeleton{background:var(--ds-skeleton);border-radius:var(--ds-radius-xs);
+  background-image:linear-gradient(90deg,var(--ds-skeleton),var(--ds-skeleton-highlight),var(--ds-skeleton));
+  background-size:200% 100%;animation:ds-shimmer 1.65s linear infinite}
+@keyframes ds-shimmer{to{background-position-x:-200%}}
+html .ds-alert{padding:var(--ds-space-3) var(--ds-space-4);
+  background:var(--ds-surface-raised);color:var(--ds-text);
+  border:1px solid var(--ds-line);border-radius:var(--ds-radius-md);
+  font-size:var(--ds-text-md);line-height:1.5}
+html .ds-alert--error{background:var(--ds-danger-surface);border-color:var(--ds-danger);color:var(--ds-danger)}
+html .ds-alert--success{background:var(--ds-success-surface);border-color:var(--ds-line);color:var(--ds-success-ink)}
+/* Component 8: foundational accessibility and minimum target sizing. */
+html :where(button,a,input,select,textarea,[role="button"],[role="tab"]):focus-visible{
+  outline:2px solid var(--ds-focus)!important;outline-offset:2px!important;
+  box-shadow:none!important;
+}
+html :where(.ds-btn,.ds-tab,.ds-tabs>button,.view .btn,.modal .btn){touch-action:manipulation}
+html .ds-sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:760px){
+  html .ds-card,html .ds-dialog{padding:var(--ds-space-4)}
+  html :where(.ds-btn,.view .btn,.modal .btn,.ds-input,.ds-select,.ds-tab,.ds-tabs>button){min-height:44px}
+  html .ds-heading--xl{font-size:clamp(25px,7vw,30px)}
+}
+@media(prefers-reduced-motion:reduce){
+  html .ds-skeleton{animation:none!important;background-image:none!important}
+  html :where(.ds-btn,.ds-tab,.ds-tabs>button,.ds-progress>span){transition:none!important}
+}
+@media(forced-colors:active){
+  html :where(.ds-btn,.ds-input,.ds-select,.ds-textarea,.ds-card,.ds-badge,.ds-tab){
+    border:1px solid CanvasText!important;forced-color-adjust:auto!important;
+  }
+  html :where(.ds-btn,.ds-tab):focus-visible{outline:2px solid Highlight!important}
+}
+/* END OMNIOS PHASE 1 FOUNDATION / v1 */
 </style>
 
 <script id="omnios-unified-2026-controls">

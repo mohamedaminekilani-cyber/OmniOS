@@ -77,3 +77,20 @@ test('Product-facing boot, notifications, and app defaults use OmniOS',()=>{
  const pwa=fs.readFileSync('pwa-personalization.js','utf8');
  assert.ok(pwa.includes('OmniOS daily summary'));
 });
+
+test('Desktop sidebar uses OmniOS brand fallback while preserving personal names',()=>{
+ const start=final.indexOf('function profileData(){'),end=final.indexOf('function renderProfile(sidebar)',start);
+ assert.ok(start>=0&&end>start);
+ const src=final.slice(start,end);
+ for(const [settings,expected] of [
+  [{},'OmniOS'],
+  [{profile:{name:'Second Brain'},appearance:{branding:{title:'Second Brain'}}},'OmniOS'],
+  [{profile:{name:'Second Brain'},appearance:{branding:{title:'Research Studio'}}},'Research Studio'],
+  [{profile:{name:'Amina'},appearance:{branding:{title:'Research Studio'}}},'Amina']
+ ]){
+  const dom=new JSDOM('<!doctype html>',{runScripts:'outside-only'});
+  const w=dom.window;w.eval('var state={settings:'+JSON.stringify(settings)+'};'+src+';window.__name=profileData().name');
+  assert.equal(w.__name,expected);
+  dom.window.close();
+ }
+});

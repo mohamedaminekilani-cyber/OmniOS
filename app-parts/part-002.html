@@ -2621,13 +2621,27 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalon
   function adultReference(){const p=state.settings.profile||{},age=Number(p.age),w=Number(p.weightKg),h=Number(p.heightCm);if(!age||age<18||!w||!h||!p.sex)return null;const bmr=p.sex==='male'?10*w+6.25*h-5*age+5:10*w+6.25*h-5*age-161;const mult={sedentary:1.2,light:1.375,moderate:1.55,active:1.725,veryActive:1.9}[p.activity]||1.55;return{bmr,tdee:bmr*mult}};
   function conditionForDay(k){const x=dayData(k),ref=adultReference();if(!x.logged)return ['neutral','Not logged'];if(!ref)return x.logged>=daySlots().length?['complete','Logged'] : ['neutral','Partially logged'];const ratio=x.totals.calories/ref.tdee; if(ratio>1.25)return['high','Above reference'];if(ratio>=.75)return['reference','Near reference'];return['neutral','Below reference'];}
   function imgDataURL(files){return Promise.all([...files].filter(f=>f.type.startsWith('image/')).slice(0,6).map(f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{const im=new Image();im.onload=()=>{const max=1000,s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,im.width*s);c.height=Math.max(1,im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.72))};im.onerror=rej;im.src=e.target.result};r.onerror=rej;r.readAsDataURL(f)})))}
-  function imagesHtml(images){return(images||[]).map(src=>`<img src="${src}" class="diet-image-thumb" data-diet-image="${src}" alt="Food image">`).join('')}
+  function safeDietImageURL(src){
+    const value=String(src??'').trim();
+    if(!value)return '';
+    if(/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(value))return value;
+    try{const u=new URL(value,location.href);if(u.protocol==='https:'||(u.protocol==='http:'&&u.origin===location.origin)||(u.protocol==='blob:'&&u.origin===location.origin))return u.href}catch(_){}
+    return '';
+  }
+  function dietImageAttr(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+  function imagesHtml(images){return(images||[]).map(src=>{const safe=safeDietImageURL(src);if(!safe)return '';const attr=dietImageAttr(safe);
+    return `<img src="${attr}" class="diet-image-thumb" data-diet-image="${attr}" alt="Food image">`;
+  }).join('')}
   function showDietInspector(title,html,buttons=''){
     const p=document.getElementById('inspector-panel'),b=document.getElementById('inspector-backdrop'),c=document.getElementById('inspector-content');if(!p||!b||!c)return;
     c.innerHTML=`<div class="calendar-item-preview"><div class="calendar-preview-icon">🥗</div><div class="calendar-preview-type">Diet</div><h2 class="calendar-preview-title">${esc(title)}</h2>${html}<div class="calendar-preview-actions">${buttons}<button type="button" class="btn" id="diet-inspector-close">Close</button></div></div>`;p.classList.add('open');b.classList.add('active');document.getElementById('diet-inspector-close').onclick=closeInspector;
   }
   function openDietImage(src){
-    const p=document.createElement('div');p.className='modal-overlay active';p.innerHTML=`<div class="modal" style="max-width:860px;text-align:center"><div class="modal-header"><h3 class="modal-title">Image</h3><button class="icon-btn" type="button">✕</button></div><img src="${src}" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:10px"><div class="modal-footer"><button class="btn" type="button">Close</button></div></div>`;document.body.appendChild(p);p.querySelectorAll('button').forEach(b=>b.onclick=()=>p.remove());
+    const safe=safeDietImageURL(src);if(!safe)return;
+    const p=document.createElement('div');p.className='modal-overlay active';
+    p.innerHTML='<div class="modal" style="max-width:860px;text-align:center"><div class="modal-header"><h3 class="modal-title">Image</h3><button class="icon-btn" type="button">✕</button></div><img alt="Food image" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:10px"><div class="modal-footer"><button class="btn" type="button">Close</button></div></div>';
+    p.querySelector('img').src=safe;
+    document.body.appendChild(p);p.querySelectorAll('button').forEach(b=>b.onclick=()=>p.remove());
   }
   document.addEventListener('click',e=>{const x=e.target.closest('[data-diet-image]');if(x){e.stopPropagation();openDietImage(x.dataset.dietImage)}});
 

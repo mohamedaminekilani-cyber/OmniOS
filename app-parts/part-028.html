@@ -13150,6 +13150,301 @@ button:focus-visible,a:focus-visible,:where(input,select,textarea):focus-visible
 }
 #view-dashboard .omni-dashboard-capture:focus-visible{outline:2px solid var(--accent-cyan)!important;outline-offset:3px!important}
 @media(max-width:760px){#view-dashboard .omni-dashboard-capture{margin-top:16px;min-height:44px;font-size:.76rem}}
+
+/* ================================================================
+   OmniOS FLAT / Tech SaaS. Contrast-verified WCAG 2.2 palette.
+   Carbon #101114 · Mist #EEF0F2 · Electric #2547E8
+   Violet #5F31C4 · Lime #C6F04A · Steel #55606D.
+   Kept inside the existing switchable stylesheet so Classic stays reversible.
+   ================================================================ */
+html:not([data-theme="light"]){
+  --omni-carbon:#101114;--omni-mist:#EEF0F2;
+  --omni-electric:#2547E8;--omni-violet:#5F31C4;--omni-lime:#C6F04A;--omni-steel:#55606D;
+  --omni-cta:#2547E8!important;
+  --accent-cyan:#A6B6FF!important;  /* readable accent text on Carbon; not Electric */
+  --accent-blue:#8FA4FF!important;
+  --accent-purple:#B89AFF!important;
+  --accent-green:#C6F04A!important;
+  --accent-yellow:#F3CA69!important;
+  --accent-red:#FF99A6!important;
+  --bg-base:#101114!important;
+  --bg-surface:#1A1C21!important;
+  --bg-elevated:#242730!important;
+  --bg-hover:#30343D!important;
+  --border-color:#3C414B!important;
+  --border-light:#59616D!important;
+  --text-primary:#EEF0F2!important;
+  --text-secondary:#D1D7E0!important;
+  --text-muted:#B7C0CE!important;
+  --omni-side-bg:#101114!important;
+  --omni-soft:#272A35!important;
+  --omni-shadow:none!important;
+  --ui-shadow:none!important;
+  --omni-card-edge:#3C414B!important;
+  --omni-contrast-ink:#101114;
+  --omni-field:#242730;
+  --omni-focus:#A6B6FF;
+  color-scheme:dark;
+}
+html[data-theme="light"]{
+  --omni-carbon:#101114;--omni-mist:#EEF0F2;
+  --omni-electric:#2547E8;--omni-violet:#5F31C4;--omni-lime:#C6F04A;--omni-steel:#55606D;
+  --omni-cta:#2547E8!important;
+  --accent-cyan:#5F31C4!important;
+  --accent-blue:#2547E8!important;
+  --accent-purple:#5F31C4!important;
+  --accent-green:#337000!important; /* legible success text on Mist */
+  --accent-yellow:#835600!important;
+  --accent-red:#AD2944!important;
+  --bg-base:#EEF0F2!important;
+  --bg-surface:#FFFFFF!important;
+  --bg-elevated:#F2F4F6!important;
+  --bg-hover:#E3E7EC!important;
+  --border-color:#CED4DB!important;
+  --border-light:#9AA4B0!important;
+  --text-primary:#101114!important;
+  --text-secondary:#3A424C!important;
+  --text-muted:#55606D!important;
+  --omni-side-bg:#FFFFFF!important;
+  --omni-soft:#EEE8FA!important;
+  --omni-shadow:none!important;
+  --ui-shadow:none!important;
+  --omni-card-edge:#CED4DB!important;
+  --omni-contrast-ink:#101114;
+  --omni-field:#FFFFFF;
+  --omni-focus:#5F31C4;
+  color-scheme:light;
+}
+/* Flatness and elevation: separation comes from value and borders, never glow. */
+html body,html:not([data-theme="light"]) body,
+html .main-content,html .view-container{
+  background:var(--bg-base)!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+html body::after{display:none!important;content:none!important}
+html .sidebar,html:not([data-theme="light"]) .sidebar{
+  background:var(--omni-side-bg)!important;
+  background-image:none!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  border-right:1px solid var(--border-color)!important;
+}
+html .topbar,html:not([data-theme="light"]) .topbar{
+  background:var(--bg-base)!important;
+  background-image:none!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  border-color:var(--border-color)!important;
+}
+html .mobile-nav,html:not([data-theme="light"]) .mobile-nav{
+  background:var(--bg-surface)!important;
+  background-image:none!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  border:1px solid var(--border-color)!important;
+}
+html .view-container{padding-top:21px!important}
+html .sidebar .logo{background:transparent!important}
+html .sidebar .logo h1 span{color:var(--accent-cyan)!important}
+html .sidebar .nav-item{background:transparent!important;border-radius:9px!important}
+html .sidebar .nav-item.active{
+  background:var(--omni-soft)!important;
+  border:1px solid var(--border-color)!important;
+  color:var(--text-primary)!important;
+}
+html:not([data-theme="light"]) .sidebar .nav-item.active{border-left:3px solid var(--omni-lime)!important}
+html[data-theme="light"] .sidebar .nav-item.active{border-left:3px solid var(--omni-violet)!important}
+html .sidebar .nav-item:hover{background:var(--bg-elevated)!important}
+html .mobile-nav>button.active{background:var(--omni-soft)!important;border:1px solid var(--border-color)!important;color:var(--text-primary)!important}
+html:not([data-theme="light"]) .mobile-nav>button.active .nav-icon{color:var(--omni-lime)!important}
+html[data-theme="light"] .mobile-nav>button.active .nav-icon{color:var(--omni-violet)!important}
+html .topbar-title{letter-spacing:-.02em!important;font-weight:780!important}
+/* Buttons use explicit foregrounds. No white on Lime / lime on white. */
+html .btn-primary,html .topbar .btn-primary,html #hw-panel .btn-primary{
+  background:var(--omni-electric)!important;
+  background-image:none!important;
+  border:1px solid var(--omni-electric)!important;
+  color:#FFFFFF!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+  border-radius:9px!important;
+}
+html .btn-primary:hover,html .topbar .btn-primary:hover{
+  background:var(--omni-violet)!important;
+  border-color:var(--omni-violet)!important;
+  color:#FFFFFF!important;
+  filter:none!important;
+}
+html .btn:not(.btn-primary),html .view-btn,html .tab-btn,html .icon-btn{
+  box-shadow:none!important;
+  background-image:none!important;
+  border-radius:9px!important;
+}
+html button:focus-visible,html a:focus-visible,html input:focus-visible,
+html select:focus-visible,html textarea:focus-visible{
+  outline:2px solid var(--omni-focus)!important;outline-offset:2px!important;
+}
+html .view :where(h2,h3,h4,h5){color:var(--text-primary)}
+html :where(.card,.stat-card,.kpi-card,.note-card,.power-card,.org-card,
+.v35-card,.v43-card,.v43-kpi,.v35-stat,.workout-kpi,.workout-session-card,
+.workout-item-card,.habit-week-card,.v105-month-card,.habit-summary,.nut-surface,
+.v38-fin-card,.v38-card,.finance-card,.eq-box,.diet-card,.rt611-card,
+.master-calendar-shell,.v36-cal-shell,.hw-plan,.hw-ex-card,.hw-main-card,
+.hw-queue,.hw-chart-card){
+  background:var(--bg-surface)!important;
+  background-image:none!important;
+  border:1px solid var(--border-color)!important;
+  box-shadow:none!important;
+  filter:none!important;
+  border-radius:12px!important;
+}
+html .view :where(.dashboard-toolbar,.habit-toolbar,.notes-toolbar,.master-cal-toolbar,
+.toolbar,.v35-page-head,.org-hero,.v43-hero,.nut-hero,.workout-hero,.v38-finance-head){
+  background:var(--bg-surface)!important;
+  background-image:none!important;
+  border:1px solid var(--border-color)!important;
+  box-shadow:none!important;
+  border-radius:12px!important;
+}
+html .view :where(.v43-hero,.v35-page-head,.workout-hero,.org-hero)::before,
+html .view :where(.v43-hero,.v35-page-head,.workout-hero,.org-hero)::after{
+  box-shadow:none!important;
+}
+html #view-dashboard .v431-hero,html #view-today .v35-page-head,
+html #view-life-hub .v43-hero,html #view-workout .workout-hero,
+html #view-workout #hw-panel .hw-top,html #view-routine .rt611-hero{
+  background:var(--bg-surface)!important;
+  background-image:none!important;
+  border:1px solid var(--border-color)!important;
+  box-shadow:none!important;
+  border-radius:13px!important;
+}
+html #view-dashboard .v431-hero::after{display:none!important}
+html #view-dashboard .v43-kicker{color:var(--accent-cyan)!important}
+html #view-dashboard .v431-period-chip,
+html .v43-kpi .v431-kpi-icon{
+  background:var(--omni-soft)!important;
+  border:1px solid var(--border-color)!important;
+  color:var(--accent-cyan)!important;
+  box-shadow:none!important;
+  border-radius:8px!important;
+}
+html #view-dashboard .v43-kpi{background:var(--bg-surface)!important;border-color:var(--border-color)!important}
+html #view-dashboard .v43-kpi-value{font-weight:780!important}
+html #view-dashboard .v43-progress{background:var(--bg-elevated)!important;border-radius:5px!important}
+html #view-dashboard .v43-progress i{background:var(--omni-lime)!important;border-radius:5px!important}
+html #view-dashboard .omni-dashboard-capture{
+  background:var(--bg-elevated)!important;
+  border:1px solid var(--border-color)!important;
+  border-radius:11px!important;
+  color:var(--text-secondary)!important;
+}
+html #view-dashboard .omni-dashboard-capture-arrow{
+  background:var(--omni-electric)!important;
+  color:#FFFFFF!important;
+  border-radius:7px!important;
+}
+html .view :where(.v43-tabs,.tab-btns,.workout-tabs,.v35-segmented,.v38-fin-tabs,
+.v58-seg,.rt611-tabs,.v36-cal-modes,.hw-nav){
+  background:var(--bg-elevated)!important;
+  border:1px solid var(--border-color)!important;
+  box-shadow:none!important;
+  border-radius:10px!important;
+}
+html .view :where(.v43-tab,.rt611-tab,.hw-nav-btn).active{
+  background:var(--bg-surface)!important;
+  box-shadow:none!important;
+  color:var(--accent-cyan)!important;
+  border:1px solid var(--border-color)!important;
+}
+html #view-habits .habit-week-card,
+html #view-habits .v105-month-card,
+html #view-habits .habit-summary,
+html #view-workout #hw-panel .hw-ex-card{
+  background:var(--bg-surface)!important;
+  box-shadow:none!important;
+}
+html #view-habits .habit-week-day.completed,
+html #view-habits .v105-month-day.done{
+  background:var(--omni-lime)!important;
+  border-color:var(--omni-lime)!important;
+  color:var(--omni-carbon)!important;
+}
+html #view-habits .habit-week-day.completed *,
+html #view-habits .v105-month-day.done *{color:var(--omni-carbon)!important}
+html #view-habits .v105-month-day,
+html #view-habits .habit-week-day{border-radius:5px!important}
+html #view-habits .habit-summary-value{color:var(--text-primary)!important}
+html #view-master-calendar .v36-cal-shell,
+html #view-master-calendar .master-calendar-shell{
+  border:1px solid var(--border-color)!important;
+  box-shadow:none!important;
+  border-radius:12px!important;
+}
+html #view-master-calendar .v36-cal-toolbar,
+html #view-master-calendar .v603-calendar-rail,
+html #view-master-calendar .v603-calendar-stage{
+  background:var(--bg-surface)!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+html #view-master-calendar .v36-month-day{border-color:var(--border-color)!important}
+html #view-workout #hw-panel .hw-ex-card{border-top:3px solid var(--omni-violet)!important}
+html #view-workout #hw-panel .hw-progress-track i{
+  background:var(--omni-lime)!important;
+  border-radius:5px!important;
+}
+html #view-workout #hw-panel .hw-queue-row.current{background:var(--omni-soft)!important}
+html .view :where(.tag,.badge,.v35-chip,.v43-badge,.v58-badge){
+  background-image:none!important;box-shadow:none!important;
+  border-radius:7px!important;
+}
+html .view :where(.tag,.badge,.v35-chip,.v43-badge,.v58-badge):not(.success):not(.bad):not(.warn){
+  color:var(--text-primary);
+}
+html :where(.modal,.modal-content,.inspector-panel,.power-sidebar,#hw-builder .hw-modal){
+  background:var(--bg-surface)!important;
+  background-image:none!important;
+  border:1px solid var(--border-color)!important;
+  border-radius:13px!important;
+  box-shadow:none!important;
+}
+html :where(.form-input,.form-select,.form-textarea,.search-input,.filter-select,
+input[type="date"],input[type="time"],input[type="datetime-local"],textarea){
+  background:var(--omni-field)!important;
+  color:var(--text-primary)!important;
+  border:1px solid var(--border-color)!important;
+  border-radius:8px!important;
+  box-shadow:none!important;
+}
+html .view :where(.v43-row,.list-item,.v35-record,.org-list-row){
+  border-radius:9px!important;
+}
+html #omni-2026-appearance{
+  background:var(--bg-surface)!important;border-color:var(--border-color)!important;
+  border-radius:12px!important;box-shadow:none!important;
+}
+/* Use Lime as a positive-progress accent with Carbon text, not as small light text. */
+html .omni-flat-positive{
+  background:var(--omni-lime)!important;color:var(--omni-carbon)!important;
+  border:1px solid var(--omni-lime)!important;
+}
+html .omni-flat-primary{
+  background:var(--omni-electric)!important;color:#FFFFFF!important;
+  border:1px solid var(--omni-electric)!important;
+}
+@media(max-width:760px){
+  html .topbar,html .mobile-nav{background:var(--bg-surface)!important}
+  html .topbar{border-radius:0!important}
+  html .mobile-nav{border-radius:15px!important;box-shadow:none!important}
+  html .mobile-nav>button{border-radius:9px!important}
+  html .view-container{padding-top:13px!important}
+  html #view-dashboard .v431-hero{padding:18px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  html .view :where(.card,.v43-card,.v35-card,.habit-week-card,.v43-kpi){transition:none!important}
+}
 </style>
 
 <script id="omnios-unified-2026-controls">

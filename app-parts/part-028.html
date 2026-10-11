@@ -13932,6 +13932,44 @@ html :where(.v43-tabs,.tab-btns,.workout-tabs,.v35-segmented,.v38-fin-tabs,.rt61
 @media(prefers-reduced-motion:reduce){
  html .view :where(.card,.v43-card,.v35-card,.workout-kpi,.habit-week-day){transition:none!important;animation:none!important}
 }
+
+/* Final detail pass: all remaining workspaces reuse the same design language. */
+html .view :where(.v43-card-sub,.v35-card-sub,.v43-kpi-meta,.v43-row-meta,.card-subtitle,.finance-panel-meta,.omr-panel-head small){font-size:max(.75rem,12px)!important;color:var(--omx-sub)!important;line-height:1.5!important}
+html .view :where(.v43-card-title,.v35-card-title,.card-title,.finance-panel h3){font-weight:775!important;letter-spacing:-.025em!important}
+html #view-dashboard .omx-eyebrow,html .view .omx-eyebrow{font-size:11px!important}
+html :where(.workout-tab-panel,.nutrition-workspace,.finance-workspace,.notes-workspace,.org-workspace,.v43-life-main,.v603-calendar-stage){min-width:0}
+html .view :where(.toolbar,.dashboard-toolbar,.habit-toolbar,.notes-toolbar,.finance-toolbar,.org-toolbar){gap:10px!important}
+html .view :where(.v35-card,.org-card,.v38-card,.v43-card,.rt611-card,.habit-week-card,.nut-surface,.finance-panel){margin-block:0}
+html #view-grocery :where(.card,.v35-card,.grocery-card,.grocery-list,.list-card),
+html #view-wishlist :where(.card,.v35-card,.wishlist-card,.wishlist-item),
+html #view-pantry :where(.card,.v35-card,.pantry-card,.pantry-item),
+html #view-goals :where(.card,.v35-card,.goal-card,.goal-item),
+html #view-bible :where(.card,.bib-card,.bib-top,.bib-journal-editor-card),
+html #view-automations :where(.card,.v35-card,.automation-card),
+html #view-studio :where(.card,.v35-card,.studio-card),
+html #view-reminders :where(.card,.v35-card,.reminder-card),
+html #view-data-center :where(.card,.v35-card,.v35-db-hero),
+html #view-settings :where(.settings-section,.settings-card,.settings-panel){
+  border:1px solid var(--omx-edge)!important;
+  border-radius:12px!important;
+  background:var(--omx-card)!important;background-image:none!important;
+  box-shadow:none!important;
+}
+html #view-bible .bib-top{background:var(--omx-card)!important;background-image:none!important}
+html #view-routine .rt611-tab.active,html #view-workout .workout-tabs .view-btn.active{background:var(--omx-card)!important;border:1px solid var(--omx-edge)!important}
+html :where(.list-item,.v43-row,.v35-record,.note-card,.workout-item-card,.habit-week-day,.v35-row,.org-row){transition:border-color .12s ease,background .12s ease!important}
+html .view :where(.list-item,.v43-row,.v35-record,.note-card,.workout-item-card,.v35-row,.org-row):hover{background:var(--omx-raised)!important}
+html .view :where(.v35-page-head,.v43-hero,.v43-dashboard-hero,.org-hero,.nut-hero){backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html .view :where(.v43-card,.v35-card,.note-card,.workout-item-card,.finance-panel)::before{box-shadow:none!important}
+html #view-grocery .btn-primary,html #view-wishlist .btn-primary,html #view-bible .btn-primary,
+html #view-nutrition .btn-primary,html #view-focus .btn-primary{background:var(--omx-blue)!important;color:#fff!important;border-color:var(--omx-blue)!important}
+html .view :where(.v35-card,.v43-card,.org-card,.finance-panel,.note-card,.v43-kpi){overflow-wrap:anywhere}
+@media(max-width:760px){
+ html :where(#view-bible,#view-grocery,#view-wishlist,#view-pantry,#view-goals,#view-notes,#view-budget,#view-diet,#view-routine,#view-settings) :where(.toolbar,.notes-toolbar,.finance-toolbar,.org-toolbar){flex-wrap:wrap!important}
+ html .view :where(.v35-card-sub,.v43-card-sub,.v43-kpi-meta,.v43-row-meta){font-size:12px!important}
+ html .view :where(.form-row,.form-grid){grid-template-columns:minmax(0,1fr)!important}
+ html .view :where(.modal-footer,.form-actions){gap:8px!important;flex-wrap:wrap}
+}
 </style>
 
 <script id="omnios-unified-2026-controls">

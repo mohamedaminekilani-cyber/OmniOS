@@ -14756,17 +14756,32 @@ html .topbar #global-add-btn{
     const body=document.createElement('div');body.className='omr-sheet-body';
     const source=document.querySelector('.sidebar .nav-menu');
     let container=null;
+    function addGroup(title){
+      const h=document.createElement('div');h.className='omr-sheet-group';
+      h.textContent=title||'Navigation';body.appendChild(h);
+      container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container);
+    }
+    function addPage(el){
+      const view=el.dataset.view;
+      if(!view||!document.getElementById('view-'+view))return;
+      if(!container){container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container)}
+      const b=document.createElement('button');b.type='button';b.dataset.omrGo=view;
+      b.textContent=el.querySelector('.v101-nav-label')?.textContent?.trim()||
+        el.textContent.trim().replace(/\s+/g,' ').replace(/^[\p{Extended_Pictographic}\s]+/u,'')||view;
+      if(el.classList.contains('active')){b.classList.add('active');b.setAttribute('aria-current','page')}
+      container.appendChild(b);
+    }
     if(source){
-      for(const el of source.children){
-        if(el.matches('.nav-section')){
-          const h=document.createElement('div');h.className='omr-sheet-group';h.textContent=el.dataset.v35Section||el.textContent.trim();body.appendChild(h);
-          container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container);
-        }else if(el.matches('button.nav-item[data-view]')){
-          if(!container){container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container)}
-          const b=document.createElement('button');b.type='button';b.dataset.omrGo=el.dataset.view;
-          const label=el.textContent.trim().replace(/\s+/g,' ').replace(/^[\p{Extended_Pictographic}\s]+/u,'');
-          b.textContent=label||el.dataset.view;
-          container.appendChild(b);
+      const groups=source.querySelectorAll(':scope > .v101-nav-group');
+      if(groups.length){
+        groups.forEach(group=>{
+          addGroup(group.dataset.group||group.querySelector('.v101-nav-group-head-title')?.textContent?.trim()||'Navigation');
+          group.querySelectorAll('.nav-item[data-view]').forEach(addPage);
+        });
+      }else{
+        for(const el of source.children){
+          if(el.matches('.nav-section'))addGroup(el.dataset.v35Section||el.textContent.trim());
+          else if(el.matches('button.nav-item[data-view]'))addPage(el);
         }
       }
     }

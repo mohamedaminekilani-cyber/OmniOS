@@ -31,8 +31,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Generate source release manifest
-        run: npm run release:source
+      - name: Assert committed release manifest matches source
+        run: node scripts/release-source.mjs --check
       - name: Regression checks
         run: npm test && npm run test:runtime
 

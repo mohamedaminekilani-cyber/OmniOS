@@ -12760,7 +12760,8 @@ html:not([data-theme="light"]){
   --text-primary:#f6f7fc;
   --text-secondary:#c3c7d4;
   --text-muted:#a2a8b9;
-  --accent-cyan:#7184ff;
+  --accent-cyan:#8796ff;
+  --omni-cta:#465fdf;
   --accent-blue:#637bff;
   --accent-purple:#aa8af7;
   --accent-green:#43d3a0;
@@ -12783,6 +12784,7 @@ html[data-theme="light"]{
   --text-secondary:#4b5468;
   --text-muted:#657088;
   --accent-cyan:#4868e7;
+  --omni-cta:#4868e7;
   --accent-blue:#4868e7;
   --accent-purple:#8255d6;
   --accent-green:#148968;
@@ -12874,8 +12876,8 @@ body{background:var(--bg-base)!important;color:var(--text-primary);font-family:I
 :where(.btn,.view-btn,.tab-btn,.icon-btn):not(.btn-primary){background:var(--bg-elevated)!important;color:var(--text-primary)!important;border:1px solid var(--border-color)!important}
 :where(.btn,.view-btn,.tab-btn,.icon-btn):not(.btn-primary):hover{background:var(--bg-hover)!important;border-color:var(--border-light)!important}
 .btn-primary,.topbar .btn-primary,#hw-panel .btn-primary{
-  background:var(--accent-cyan)!important;
-  border-color:var(--accent-cyan)!important;
+  background:var(--omni-cta)!important;
+  border-color:var(--omni-cta)!important;
   color:#fff!important;
   font-weight:750!important;
   box-shadow:0 4px 13px color-mix(in srgb,var(--accent-cyan) 20%,transparent)!important;
@@ -13113,6 +13115,7 @@ button:focus-visible,a:focus-visible,:where(input,select,textarea):focus-visible
   #view-habits .v105-month-toolbar{gap:10px!important}
   #view-master-calendar .v36-cal-shell{border-radius:19px!important;overflow:hidden}
   #view-master-calendar .v36-cal-toolbar{padding:11px!important}
+  #view-master-calendar .v36-month-event{border-radius:50%!important}
   #view-master-calendar .v603-calendar-rail{background:var(--bg-surface)!important}
   #view-workout #hw-panel .hw-top{padding:17px!important}
   #view-workout #hw-panel .hw-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
@@ -13143,7 +13146,7 @@ button:focus-visible,a:focus-visible,:where(input,select,textarea):focus-visible
 #view-dashboard .omni-dashboard-capture:hover{border-color:var(--accent-cyan);color:var(--text-primary);background:var(--bg-hover)}
 #view-dashboard .omni-dashboard-capture-arrow{
   display:grid;place-items:center;flex:none;width:30px;height:30px;
-  border-radius:50%;background:var(--accent-cyan);color:white;font-size:1.15rem;font-weight:770;
+  border-radius:50%;background:var(--omni-cta);color:white;font-size:1.15rem;font-weight:770;
 }
 #view-dashboard .omni-dashboard-capture:focus-visible{outline:2px solid var(--accent-cyan)!important;outline-offset:3px!important}
 @media(max-width:760px){#view-dashboard .omni-dashboard-capture{margin-top:16px;min-height:44px;font-size:.76rem}}

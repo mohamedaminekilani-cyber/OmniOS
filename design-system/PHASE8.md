@@ -32,3 +32,7 @@ These are release-blocking **QA instrumentation defects**. They do not demonstra
 ## Review evidence required
 
 The prior Phase 7 artifact `omnios-phase7-visual-qa` contained 30 captures of `#welcome63`, making its passing screenshot assertions non-evidence for module design. Phase 8's CI must generate a **new** artifact with visible module content. Examine the Dashboard and Tasks desktop captures and Calendar and Finance mobile captures, not just the numeric CI result. Keep Phase 8 unmerged if captures are still identical, or if Chrome reports any blocking dialog, runtime exception, or stale source manifest.
+
+## Stacked PR verification workflow
+
+The repository's CI trigger may require temporarily targeting `main` for the automated PR-only checks. While checking Phase 8, never merge that temporary PR base or issue a `workflow_dispatch` deployment. Restore its base to `feature/omnios-phase7-qa-release-2026-10-11` immediately after the CI check is visible. Both PR verification jobs are safe because GitHub Pages deployment in `pages.yml` explicitly excludes `pull_request` events.

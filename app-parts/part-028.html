@@ -15642,6 +15642,332 @@ html #view-workout #hw-panel .hw-empty{
   html #view-workout :where(.set-complete,.hw-nav-btn){transition:none!important}
 }
 /* END OMNIOS PHASE 5 / HABITS + ROUTINE + WORKOUT / v1 */
+
+/* ================================================================
+   OMNIOS PHASE 6 / REMAINING MODULES / v1
+   Flat cross-module experience. No layout observers or data changes.
+   ================================================================ */
+html :is(#view-tasks,#view-inbox,#view-projects,#view-reminders,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-life-hub,#view-people,
+#view-bible,#view-organize,#view-settings,#view-data-center,#view-sync,#view-studio,
+#view-goals,#view-passwords,#view-help){min-width:0;max-width:100%;color:var(--ds-text)}
+/* One visual language for headers, including dynamically rendered views. */
+html :is(#view-tasks,#view-inbox,#view-projects,#view-data-center,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-reminders,#view-people,
+#view-life-hub,#view-organize,#view-bible,#view-studio,#view-goals,#view-settings)
+:where(.omx-page-heading,.v35-page-head,.org-hero,.v38-finance-head,.diet-hero,.v55-studio-head,.finance-hero){
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;
+  padding:clamp(16px,2vw,25px)!important;background:var(--ds-surface)!important;
+  background-image:none!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;box-shadow:none!important;
+  margin-bottom:16px!important;min-width:0
+}
+html :is(#view-tasks,#view-inbox,#view-projects,#view-data-center,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-reminders,#view-people,
+#view-life-hub,#view-organize,#view-bible,#view-studio,#view-goals,#view-settings)
+:where(.omx-page-heading h3,.v35-page-head h3,.org-title,.v38-finance-head h3,.diet-hero h3,.v55-studio-head h3,.finance-hero h3){
+  font-size:clamp(1.5rem,2.4vw,2rem)!important;letter-spacing:-.035em!important;
+  line-height:1.16!important;color:var(--ds-text)!important;margin:0 0 7px!important
+}
+html :is(#view-tasks,#view-inbox,#view-projects,#view-data-center,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-reminders,#view-people,
+#view-life-hub,#view-organize,#view-bible,#view-studio,#view-goals,#view-settings)
+:where(.omx-page-heading p,.v35-page-head .text-muted,.org-sub,
+.v38-finance-head .text-muted,.diet-hero p,.v55-studio-head p,.finance-hero p){
+  color:var(--ds-text-muted)!important;line-height:1.5!important;
+  max-width:65ch!important;font-size:var(--ds-text-md)!important
+}
+html :is(#view-tasks,#view-inbox,#view-projects,#view-budget,#view-diet,#view-notes,
+#view-reminders,#view-data-center,#view-life-hub,#view-people,#view-studio)
+:where(.omx-eyebrow,.v35-kicker,.org-kicker,.eyebrow,.finance-eyebrow,.v55-kicker){
+  color:var(--ds-accent)!important;letter-spacing:.085em!important;
+  font-size:11px!important;font-weight:750!important
+}
+/* Module controls share a predictable horizontal rhythm. */
+html :is(#view-tasks,#view-inbox,#view-projects,#view-reminders,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-organize,#view-settings)
+:where(.toolbar,.omx-tasks-toolbar,.v35-segmented,.org-toolbar,.org-seg,
+.v38-fin-tabs,.notes-toolbar,.diet-toolbar,.settings-tabs,.workout-tabs){
+  min-width:0;max-width:100%;border-color:var(--ds-line)!important;
+  box-shadow:none!important;background-image:none!important
+}
+html :is(#view-tasks,#view-inbox,#view-projects,#view-reminders,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-organize,#view-settings)
+:where(.btn,.view-btn,.v35-segmented button,.v38-fin-tab,.org-seg button,
+.org-rail-btn,.icon-btn,.filter-select,.search-input,.form-input,.form-select){
+  font-size:var(--ds-text-md)!important
+}
+html :is(#view-tasks,#view-inbox,#view-projects,#view-reminders,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-organize,#view-settings)
+:where(.view-btn.active,.v35-segmented button.active,.v38-fin-tab.active,
+.org-seg button.active,.org-rail-btn.active){
+  background:var(--ds-accent-surface)!important;color:var(--ds-accent-ink)!important;
+  border-color:var(--ds-line-strong)!important;box-shadow:none!important
+}
+html :is(#view-tasks,#view-inbox,#view-projects,#view-reminders,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-organize,#view-settings)
+:where(.view-btn,.v35-segmented button,.v38-fin-tab,.org-seg button,.org-rail-btn)
+:not(.active){color:var(--ds-text-secondary)!important}
+html :is(#view-tasks,#view-inbox,#view-projects,#view-reminders,#view-budget,#view-diet,
+#view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-organize,#view-settings)
+:where(button,input,select,textarea,[role="button"]):focus-visible{
+  outline:2px solid var(--ds-focus)!important;outline-offset:3px!important
+}
+/* Tasks: bounded columns, uncluttered filters, immediately usable empty view. */
+html #view-tasks .omx-tasks-toolbar{
+  padding:11px!important;display:flex;align-items:center;flex-wrap:wrap;gap:9px!important;
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;margin:0 0 16px!important
+}
+html #view-tasks .omx-tasks-toolbar .toolbar-group{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
+html #view-tasks .omx-tasks-toolbar .toolbar-divider{
+  height:28px;width:1px;background:var(--ds-line);margin:0 4px
+}
+html #view-tasks [data-taskview]{border-radius:var(--ds-radius-sm)!important;min-height:38px}
+html #view-tasks :where(.kanban-board,.matrix-grid,.gallery-grid){min-width:0;max-width:100%}
+html #view-tasks .kanban-board{display:flex;gap:12px;overflow-x:auto;overscroll-behavior-x:contain;
+  scroll-snap-type:x proximity;padding:3px 1px 14px}
+html #view-tasks .kanban-col{flex:1 0 min(270px,82vw);min-width:0;max-width:420px;
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-lg)!important;box-shadow:none!important;scroll-snap-align:start}
+html #view-tasks :where(.kanban-card,.gallery-card,.task-card,.list-item){
+  background:var(--ds-surface-raised)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important;
+  box-shadow:none!important;color:var(--ds-text)!important
+}
+html #view-tasks :where(.kanban-card-title,.list-item-title){overflow-wrap:anywhere;font-weight:650}
+html #view-tasks .om6-task-empty{margin:12px 0;padding:clamp(22px,4vw,38px);
+  background:var(--ds-surface)!important;border:1px dashed var(--ds-line-strong)!important;
+  border-radius:var(--ds-radius-lg)!important;display:grid;justify-items:start;gap:10px}
+html #view-tasks .om6-task-empty p{color:var(--ds-text-muted);margin:0}
+html #view-tasks :where(.kanban-card,.gallery-card,.list-item):hover{
+  border-color:var(--ds-line-strong)!important;box-shadow:none!important
+}
+/* Inbox, Projects, Data Center: readable rows and quiet status. */
+html :is(#view-inbox,#view-projects,#view-data-center)
+:where(.v35-card,.v35-db-hero,.v35-stat,.v35-project-card,.v35-row,.v35-callout){
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important;
+  box-shadow:none!important;color:var(--ds-text)!important;min-width:0
+}
+html #view-inbox .v35-inline-capture{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
+html #view-inbox .v35-inline-capture .form-input{flex:1 1 220px;min-width:0}
+html #view-inbox .v35-inline-capture .btn{flex:0 0 auto}
+html #view-inbox .v35-row{display:grid;grid-template-columns:32px minmax(0,1fr) auto;
+  align-items:center;gap:10px;padding:12px!important;margin-bottom:8px}
+html #view-inbox .v35-row-main{min-width:0;overflow-wrap:anywhere}
+html #view-inbox .v35-row-icon{color:var(--ds-accent)!important}
+html #view-inbox .om6-inbox-count{display:inline-flex;vertical-align:middle;align-items:center;
+  justify-content:center;font-size:12px;min-width:27px;padding:3px 7px;
+  border:1px solid var(--ds-line-strong);border-radius:var(--ds-radius-sm);
+  background:var(--ds-surface-raised);color:var(--ds-text-secondary);letter-spacing:0}
+html #view-inbox #v35-inbox-process:disabled{opacity:.45;cursor:not-allowed}
+html #view-projects .v35-segmented{display:flex;gap:6px;flex-wrap:wrap;
+  padding:6px!important;background:var(--ds-surface)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important}
+html #view-projects .v35-project-grid{display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}
+html #view-projects .v35-project-card{padding:17px!important;cursor:pointer}
+html #view-projects .v35-project-card:hover{border-color:var(--ds-line-strong)!important}
+html #view-projects .v35-project-title{font-size:1.04rem!important;font-weight:760!important;
+  margin:13px 0 8px!important;line-height:1.3!important;overflow-wrap:anywhere}
+html #view-projects .v35-progress,html #view-data-center .v35-progress{
+  overflow:hidden;border-radius:var(--ds-radius-pill)!important;
+  background:var(--ds-line)!important;height:7px!important}
+html #view-projects .v35-progress>div{background:var(--ds-electric)!important;border-radius:inherit}
+html #view-data-center .v35-db-state{display:flex;align-items:center;gap:10px}
+html #view-data-center .v35-stat-grid{display:grid;gap:10px;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr))}
+html #view-data-center .v35-stat-label{color:var(--ds-text-muted)!important}
+/* Finance: tab bar, summaries, accounts, transactions and charts. */
+html #view-budget :where(.v38-finance-head,.v38-fin-card,.v38-summary-card,
+.v38-chart-card,.v38-fin-kpi,.v38-budget-cat,.v38-rec-section,.v38-goal,.v38-account,
+.finance-panel,.finance-kpi,.finance-wallet-card){
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-lg)!important;
+  box-shadow:none!important;color:var(--ds-text)!important;min-width:0
+}
+html #view-budget .v38-finance-head-actions,html #view-budget .v38-month-nav{
+  display:flex;flex-wrap:wrap;align-items:center;gap:7px;min-width:0
+}
+html #view-budget .v38-fin-tabs{display:flex;gap:5px;max-width:100%;overflow-x:auto;
+  padding:7px!important;border:1px solid var(--ds-line)!important;
+  background:var(--ds-surface)!important;border-radius:var(--ds-radius-md)!important;
+  scrollbar-width:thin}
+html #view-budget .v38-fin-tab{flex:0 0 auto;white-space:nowrap;min-height:39px;
+  border-radius:var(--ds-radius-sm)!important}
+html #view-budget .v38-overview-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px}
+html #view-budget .v38-overview-columns{display:grid;gap:12px;min-width:0}
+html #view-budget :where(.v38-summary-value,.v38-fin-kpi strong,.finance-kpi-value){
+  color:var(--ds-text)!important;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+html #view-budget :where(.v38-summary-label,.v38-fin-card-sub,.v38-txn-meta,
+.v38-rec-meta,.v38-goal-meta,.finance-panel-meta){color:var(--ds-text-muted)!important}
+html #view-budget :where(.v38-txn,.v38-rec-item,.v38-cat-line,.finance-item){
+  border-bottom:1px solid var(--ds-line)!important;min-width:0;
+  background:transparent!important;box-shadow:none!important
+}
+html #view-budget :where(.v38-txn-title,.v38-rec-title,.finance-item-title){
+  overflow-wrap:anywhere;color:var(--ds-text)!important}
+html #view-budget :where(.v38-summary-budget-track,.v38-progress-track,.finance-kpi-budget-track){
+  background:var(--ds-line)!important;border-radius:100px!important;overflow:hidden}
+html #view-budget :where(.v38-summary-budget-fill,.v38-progress-fill){
+  background:var(--ds-electric)!important}
+html #view-budget :where(.v38-chart-stage,.v38-category-chart){max-width:100%;min-width:0;
+  overflow:hidden}
+/* Nutrition: calendar cells, daily KPIs, databases and planning panels. */
+html #view-diet :where(.diet-card,.diet-kpi,.diet-calendar-wrap,.diet-nutrient,
+.diet-food-card,.diet-prep-card,.diet-reference,.diet-progress-grid,.diet-weight-chart){
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important;
+  box-shadow:none!important;min-width:0;color:var(--ds-text)!important
+}
+html #view-diet .diet-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  padding:12px!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-md)!important;background:var(--ds-surface)!important}
+html #view-diet .diet-kpi-grid{display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr));gap:10px}
+html #view-diet .diet-kpi{padding:15px!important}
+html #view-diet .diet-kpi-value{font-size:clamp(1.15rem,2vw,1.65rem)!important;
+  color:var(--ds-text)!important;font-variant-numeric:tabular-nums}
+html #view-diet :where(.diet-kpi-label,.diet-kpi-meta,.diet-item-meta,.diet-food-meta){
+  color:var(--ds-text-muted)!important}
+html #view-diet .diet-calendar-wrap{min-width:0;overflow-x:auto;overscroll-behavior-x:contain}
+html #view-diet .diet-calendar{min-width:540px;max-width:none}
+html #view-diet .diet-day{border-color:var(--ds-line)!important;box-shadow:none!important;
+  background:var(--ds-surface)!important}
+html #view-diet .diet-day:hover{background:var(--ds-surface-hover)!important}
+html #view-diet :where(.diet-meal-slot,.diet-item-row,.diet-prep-card,.diet-food-card){
+  border-color:var(--ds-line)!important}
+html #view-diet :where(.diet-db-grid,.diet-prep-grid){display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
+/* Organize (Notes, Reminders, Grocery, Pantry, Wishlist), shared library treatment. */
+html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist,
+#view-organize,#view-life-hub,#view-people)
+:where(.org-card,.org-row,.org-kpi,.org-rail,.org-reader,.org-rem-item,
+.org-shop-summary,.org-col,.org-empty,.org-form-section,.v55-card,.v35-card){
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important;
+  box-shadow:none!important;color:var(--ds-text)!important;min-width:0
+}
+html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist)
+:where(.org-toolbar,.notes-toolbar){display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+  margin-bottom:14px!important;padding:9px!important;background:var(--ds-surface)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important}
+html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist)
+:where(.org-shell,.org-two-pane,.org-split){min-width:0;max-width:100%}
+html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist) .org-rail{
+  padding:10px!important;border-radius:var(--ds-radius-md)!important;min-width:0}
+html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist)
+.org-rail-btn{display:flex;align-items:center;gap:8px;min-height:38px;
+  color:var(--ds-text-secondary)!important;border-radius:var(--ds-radius-sm)!important}
+html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist)
+.org-rail-title{color:var(--ds-text-muted)!important;letter-spacing:.06em!important}
+html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist)
+:where(.org-grid,.notes-grid){min-width:0;max-width:100%;gap:12px}
+html #view-notes :where(.note-card,.org-card){background:var(--ds-surface)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important;
+  box-shadow:none!important}
+html #view-notes :where(.org-card-title,.note-title,.org-row-title){overflow-wrap:anywhere;
+  color:var(--ds-text)!important}
+html #view-reminders .org-kpis{display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,155px),1fr));gap:10px}
+html #view-reminders .org-rem-group{margin:14px 0!important;min-width:0}
+html #view-reminders .org-rem-date{margin-bottom:8px;color:var(--ds-text-secondary)!important}
+html #view-reminders .org-rem-item{display:grid;align-items:center;
+  grid-template-columns:12px minmax(0,1fr) auto;gap:12px;padding:12px!important;margin-bottom:8px}
+html #view-reminders .org-rem-title{font-weight:680!important;overflow-wrap:anywhere}
+html #view-reminders .org-rem-meta{color:var(--ds-text-muted)!important}
+html #view-reminders .org-rem-dot{background:var(--ds-electric)!important}
+html #view-reminders .org-rem-item.overdue .org-rem-dot{background:var(--ds-danger)!important}
+html :is(#view-grocery,#view-pantry,#view-wishlist) :where(.org-shop-item,.org-row){
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-sm)!important;box-shadow:none!important}
+/* Life Hub, people, Studio and supporting screens retain native actions. */
+html :is(#view-life-hub,#view-people,#view-studio,#view-organize,#view-goals)
+:where(.v35-card,.v35-row,.v55-card,.v55-stat,.v55-row,.v35-record-card){
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important;
+  box-shadow:none!important;color:var(--ds-text)!important;min-width:0
+}
+html :is(#view-life-hub,#view-people,#view-studio,#view-organize,#view-goals)
+:where(.v55-grid,.v35-grid,.v35-record-grid){min-width:0;max-width:100%;gap:12px}
+html :is(#view-life-hub,#view-people,#view-studio,#view-organize,#view-goals)
+:where(.v35-row-title,.v55-row-title,.v55-card-title){overflow-wrap:anywhere;
+  color:var(--ds-text)!important;font-weight:700!important}
+html :is(#view-life-hub,#view-people,#view-studio,#view-organize,#view-goals)
+:where(.v35-row-meta,.v55-row-meta,.v55-card-sub){color:var(--ds-text-muted)!important}
+/* Bible/Settings/Sync/Data Center: readable secondary controls and bounded forms. */
+html #view-bible :where(.card,.bible-card,.v35-card),
+html #view-settings :where(.settings-section,.card),
+html #view-data-center :where(.v35-card,.v35-db-hero),
+html #view-sync :where(.card,.v35-card){
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-lg)!important;
+  box-shadow:none!important;color:var(--ds-text)!important;min-width:0
+}
+html #view-settings #settings-tabs{display:flex;overflow-x:auto;max-width:100%;
+  padding:7px!important;gap:5px;background:var(--ds-surface)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-md)!important}
+html #view-settings #settings-tabs .view-btn{flex:0 0 auto;min-height:40px}
+html #view-settings #settings-content{display:grid;gap:12px;min-width:0}
+html #view-settings .settings-row{display:flex;justify-content:space-between;
+  align-items:center;flex-wrap:wrap;gap:12px;border-bottom:1px solid var(--ds-line)!important;
+  min-width:0;padding:13px 0!important}
+html #view-settings :where(.settings-row-label,.settings-section h3){
+  color:var(--ds-text)!important}
+html #view-settings :where(.settings-row-desc,.settings-meta-line){
+  color:var(--ds-text-muted)!important;line-height:1.45!important}
+html #view-settings :where(.settings-row-control,.settings-swatches){max-width:100%}
+html :is(#view-settings,#view-data-center,#view-sync) :where(input,select,textarea){
+  max-width:100%;color:var(--ds-text);border-color:var(--ds-line-strong)!important}
+html :is(#view-settings,#view-data-center,#view-sync) :where(.btn,.icon-btn){
+  box-shadow:none!important}
+/* Module dialogs and detail panes maintain a quiet, accessible surface. */
+html :where(.v35-drawer,.v55-drawer,.org-modal,.modal,.inspector-panel){
+  max-width:min(100%,100vw);box-shadow:none!important}
+html :where(.v35-drawer,.v55-drawer,.org-modal,.modal)
+:where(.form-input,.form-select,textarea){max-width:100%}
+@media(max-width:760px){
+  html :is(#view-tasks,#view-inbox,#view-projects,#view-reminders,#view-budget,#view-diet,
+  #view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-organize,#view-settings)
+  :where(.btn,.view-btn,.v35-segmented button,.v38-fin-tab,.org-seg button,
+  .org-rail-btn,.icon-btn,input,select){min-height:44px!important}
+  html :is(#view-tasks,#view-inbox,#view-projects,#view-data-center,#view-budget,#view-diet,
+  #view-notes,#view-grocery,#view-pantry,#view-wishlist,#view-reminders,
+  #view-life-hub,#view-people,#view-studio,#view-goals)
+  :where(.omx-page-heading,.v35-page-head,.org-hero,.v38-finance-head,.diet-hero,
+  .v55-studio-head,.finance-hero){align-items:flex-start;flex-direction:column}
+  html #view-tasks .omx-tasks-toolbar{align-items:stretch;flex-direction:column}
+  html #view-tasks .omx-tasks-toolbar .toolbar-divider{height:1px;width:100%;margin:2px 0}
+  html #view-tasks .omx-tasks-toolbar .toolbar-group{max-width:100%;
+    overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}
+  html #view-tasks .omx-tasks-toolbar .filter-select{flex:0 0 auto;max-width:200px}
+  html #view-inbox .v35-row{grid-template-columns:minmax(0,1fr) auto}
+  html #view-inbox .v35-row-icon{display:none}
+  html #view-budget .v38-overview-summary{grid-template-columns:minmax(0,1fr)}
+  html #view-budget .v38-finance-head-actions{width:100%}
+  html #view-budget .v38-fin-tabs{scroll-snap-type:x proximity}
+  html #view-budget .v38-fin-tab{scroll-snap-align:start}
+  html #view-diet .diet-calendar{min-width:490px}
+  html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist)
+  :where(.org-shell,.org-two-pane,.org-split){grid-template-columns:minmax(0,1fr)!important}
+  html :is(#view-notes,#view-reminders,#view-grocery,#view-pantry,#view-wishlist)
+  .org-rail{width:100%!important;max-width:100%!important}
+  html #view-reminders .org-rem-item{grid-template-columns:10px minmax(0,1fr)}
+  html #view-reminders .org-rem-actions{grid-column:2;justify-self:start;display:flex;flex-wrap:wrap}
+  html #view-settings .settings-row{align-items:flex-start}
+}
+@media(max-width:420px){
+  html #view-inbox .v35-inline-capture .btn{flex:1 1 100%}
+  html #view-projects .v35-project-grid{grid-template-columns:minmax(0,1fr)}
+  html #view-budget .v38-month-nav{width:100%;justify-content:space-between}
+  html #view-diet .diet-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){
+  html #view-tasks .kanban-board,html #view-budget .v38-fin-tabs{scroll-behavior:auto!important}
+}
+/* END OMNIOS PHASE 6 / REMAINING MODULES / v1 */
 </style>
 
 <script id="omnios-unified-2026-controls">

@@ -75,8 +75,8 @@ try{
  await setViewport(390,844);await evaluate('window.switchView("budget")');await delay(500);
  const picker=await evaluate('(()=>{const n=document.querySelector("#view-budget .v38-month-nav");if(!n)return {found:false};const kids=[...n.children].filter(x=>x.matches("button,.v38-month-label"));const tops=kids.map(x=>Math.round(x.getBoundingClientRect().top));return {found:true,children:kids.length,tops,height:Math.round(n.getBoundingClientRect().height)}})()');
  check('Finance month navigation fits one mobile row',picker.found&&picker.children>=4&&Math.max(...picker.tops)-Math.min(...picker.tops)<=10&&picker.height<=70,picker);
- const financeHeight=await evaluate('(()=>{const h=document.querySelector("#view-budget .v38-finance-head");if(!h)return 9999;return Math.round(h.getBoundingClientRect().height)})()');
- check('Mobile Finance header has no oversized empty flex spacer',financeHeight>=80&&financeHeight<=180,{height:financeHeight});
+ const financeHeader=await evaluate('(()=>{const h=document.querySelector("#view-budget .v38-finance-head"),a=h?.querySelector(".v38-finance-head-actions"),t=h?.firstElementChild;if(!h||!a||!t)return {found:false};const r=h.getBoundingClientRect(),tr=t.getBoundingClientRect(),ar=a.getBoundingClientRect();return {found:true,height:Math.round(r.height),introHeight:Math.round(tr.height),gap:Math.round(ar.top-tr.bottom)}})()');
+ check('Mobile Finance header has no oversized empty flex spacer',financeHeader.found&&financeHeader.height<=285&&financeHeader.introHeight<140&&financeHeader.gap>=0&&financeHeader.gap<=38,financeHeader);
 
  // Phase 10: verify the actual rendered geometry, not only the CSS sources.
  await setViewport(1440,900);

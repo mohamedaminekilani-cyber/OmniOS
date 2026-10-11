@@ -14,10 +14,10 @@ function renderGallery(entries, container) {
     container.innerHTML = `
         <div class="gallery-grid">
             ${entries.map(e => `
-                <div class="gallery-card priority-${e.importance === 'high' ? 'high' : e.importance === 'medium' ? 'med' : 'low'}" data-entry-id="${e.id}">
+                <div class="gallery-card priority-${e.importance === 'high' ? 'high' : e.importance === 'medium' ? 'med' : 'low'}" data-entry-id="${escapeHtml(String(e.id))}">
                     <div class="gallery-card-title">${escapeHtml(e.title)}</div>
-                    <div class="gallery-card-cat">${catLabels[e.category] || '💼 Work'}</div>
-                    ${e.notes ? `<div style="font-size:0.76rem; color:var(--text-secondary); margin-bottom:6px;">${e.notes.substring(0,70)}${e.notes.length > 70 ? '...' : ''}</div>` : ''}
+                    <div class="gallery-card-cat">${escapeHtml(catLabels[e.category] || '💼 Work')}</div>
+                    ${e.notes ? `<div style="font-size:0.76rem; color:var(--text-secondary); margin-bottom:6px;">${escapeHtml(String(e.notes).substring(0,70))}${e.notes.length > 70 ? '...' : ''}</div>` : ''}
                     <div class="gallery-card-footer">
                         <span class="tag ${e.importance === 'high' ? 'tag-high' : e.importance === 'medium' ? 'tag-med' : 'tag-low'}">${impLabels[e.importance] || 'Med'}</span>
                         <span class="tag ${e.urgency === 'urgent' ? 'tag-urgent' : 'tag-not-urgent'}">${e.urgency === 'urgent' ? 'Urgent' : 'Not Urgent'}</span>

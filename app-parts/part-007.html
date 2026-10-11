@@ -431,12 +431,36 @@ function persist49(){try{typeof saveState==='function'?saveState():localStorage.
 function fileData49(file){return new Promise((resolve,reject)=>{if(!file?.type?.startsWith('image/'))return resolve(null);const fr=new FileReader();fr.onerror=reject;fr.onload=()=>{const im=new Image();im.onerror=()=>resolve(String(fr.result));im.onload=()=>{const max=1400,s=Math.min(1,max/im.width,max/im.height),w=Math.max(1,Math.round(im.width*s)),h=Math.max(1,Math.round(im.height*s)),cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(im,0,0,w,h);try{resolve(cv.toDataURL('image/jpeg',.80))}catch(_){resolve(String(fr.result))}};im.src=String(fr.result)};fr.readAsDataURL(file)})}
 async function readFiles49(files){const out=[];for(const f of [...(files||[])].filter(x=>x.type?.startsWith('image/')).slice(0,6)){const d=await fileData49(f);if(d)out.push(d)}return out}
 const drafts49=new WeakMap();
+function safePhotoURL49(src){
+  const value=String(src??'').trim();
+  if(!value)return '';
+  if(/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(value))return value;
+  try{
+    const url=new URL(value,location.href);
+    if(url.protocol==='https:'||(url.protocol==='http:'&&url.origin===location.origin)||(url.protocol==='blob:'&&url.origin===location.origin))return url.href;
+  }catch(_){}
+  return '';
+}
 function renderPhotos49(field,draft){
-  const strip=field.querySelector('.v49-photo-strip'),empty=field.querySelector('.v49-photo-empty');const imgs=arr(draft.images);
-  empty.style.display=imgs.length?'none':'block';
-  strip.innerHTML=imgs.map((src,i)=>`<div class="v49-photo-tile ${i===0?'is-primary':''}" data-v49-photo="${i}" title="${i===0?'Primary card image':'Click to make primary'}"><img src="${esc49(src)}" alt=""><span class="v49-photo-primary">${i===0?'Primary':'Set primary'}</span><button type="button" class="v49-photo-remove" data-v49-remove="${i}" aria-label="Remove photo">×</button></div>`).join('');
-  strip.querySelectorAll('[data-v49-photo]').forEach(t=>t.onclick=e=>{if(e.target.closest('[data-v49-remove]'))return;const i=+t.dataset.v49Photo;if(i>0){const [x]=draft.images.splice(i,1);draft.images.unshift(x);renderPhotos49(field,draft)}});
-  strip.querySelectorAll('[data-v49-remove]').forEach(b=>b.onclick=e=>{e.stopPropagation();draft.images.splice(+b.dataset.v49Remove,1);renderPhotos49(field,draft)});
+  const strip=field.querySelector('.v49-photo-strip'),empty=field.querySelector('.v49-photo-empty');
+  const imgs=arr(draft.images);if(!strip||!empty)return;
+  strip.replaceChildren();
+  let displayed=0;
+  imgs.forEach((src,i)=>{
+    const safe=safePhotoURL49(src);if(!safe)return;
+    const tile=document.createElement('div');tile.className='v49-photo-tile'+(i===0?' is-primary':'');
+    tile.dataset.v49Photo=String(i);
+    tile.title=i===0?'Primary card image':'Click to make primary';
+    const img=document.createElement('img');img.src=safe;img.alt='';
+    const label=document.createElement('span');label.className='v49-photo-primary';label.textContent=i===0?'Primary':'Set primary';
+    const remove=document.createElement('button');remove.type='button';remove.className='v49-photo-remove';remove.dataset.v49Remove=String(i);
+    remove.setAttribute('aria-label','Remove photo');remove.textContent='×';
+    tile.append(img,label,remove);
+    tile.onclick=e=>{if(e.target.closest('[data-v49-remove]'))return;if(i>0){const [item]=draft.images.splice(i,1);draft.images.unshift(item);renderPhotos49(field,draft)}};
+    remove.onclick=e=>{e.stopPropagation();draft.images.splice(i,1);renderPhotos49(field,draft)};
+    strip.appendChild(tile);displayed++;
+  });
+  empty.style.display=displayed?'none':'block';
 }
 function photoField49(modal,type,id,saveSel,label='Photos'){
   if(!modal||modal.querySelector('.v49-photo-field'))return;
@@ -464,17 +488,52 @@ function decorateModals49(){
   const goal=q('#org-goal-modal .modal');if(goal)photoField49(goal,'goal',inferGoal49(goal),'#gg-save','Photos');
   qa('.modal-overlay.active .modal').forEach(m=>{if(m.querySelector('#v35-proj-name'))photoField49(m,'project',inferProject49(m),'#v35-proj-save','Photos')});
 }
-function media49(src,cls='v49-native-media'){return src?`<div class="${cls}"><img src="${esc49(src)}" alt=""></div>`:''}
+function mediaNode49(src,cls='v49-native-media',bare=false){
+  const safe=safePhotoURL49(src);if(!safe)return null;
+  const img=document.createElement('img');img.src=safe;img.alt='';
+  if(bare){img.className=cls;return img}
+  const host=document.createElement('div');host.className=cls;host.appendChild(img);return host;
+}
 let lastNote49=null;
 document.addEventListener('click',e=>{const n=e.target.closest('[data-note-open]');if(n)lastNote49=n.dataset.noteOpen},true);
 function decorateCards49(){
-  qa('#view-notes article.org-card[data-note-open]').forEach(c=>{const n=entity49('note',c.dataset.noteOpen),src=n?.images?.[0];c.querySelector(':scope > .v49-native-media')?.remove();if(src)c.insertAdjacentHTML('afterbegin',media49(src))});
-  qa('#view-notes .org-row[data-note-open]').forEach(r=>{const n=entity49('note',r.dataset.noteOpen),src=n?.images?.[0];r.querySelector(':scope > .v49-row-image')?.remove();if(src)r.insertAdjacentHTML('afterbegin',`<img class="v49-row-image" src="${esc49(src)}" alt="">`)});
-  qa('#view-goals article.org-card[data-org-type="goal"]').forEach(c=>{const x=entity49('goal',c.dataset.orgId),src=x?.images?.[0];c.querySelector(':scope > .v49-native-media')?.remove();if(src)c.insertAdjacentHTML('afterbegin',media49(src))});
-  qa('#view-projects [data-v35-project]').forEach(c=>{const x=entity49('project',c.dataset.v35Project),src=x?.images?.[0];c.querySelector(':scope > .v49-project-image')?.remove();if(src)c.insertAdjacentHTML('afterbegin',media49(src,'v49-project-image'))});
-  qa('#view-tasks .kanban-card[data-entry-id],#view-tasks .gallery-card[data-entry-id]').forEach(c=>{const x=entity49('task',c.dataset.entryId),src=x?.images?.[0];c.querySelector(':scope > .v49-task-image')?.remove();if(src)c.insertAdjacentHTML('afterbegin',media49(src,'v49-task-image'))});
-  qa('#view-tasks .list-item[data-entry-id]').forEach(r=>{const x=entity49('task',r.dataset.entryId),src=x?.images?.[0];r.querySelector(':scope > .v49-row-image')?.remove();if(src)r.insertAdjacentHTML('afterbegin',`<img class="v49-row-image" src="${esc49(src)}" alt="">`)});
-  const reader=q('.v43-note-reader');if(reader&&lastNote49){const x=entity49('note',lastNote49),src=x?.images?.[0];reader.querySelector('.v49-note-reader-image')?.remove();if(src){const meta=reader.querySelector('.v43-note-meta')||reader.querySelector('h1');meta?.insertAdjacentHTML('afterend',`<img class="v49-note-reader-image" src="${esc49(src)}" alt="">`)}}
+  qa('#view-notes article.org-card[data-note-open]').forEach(c=>{
+    const n=entity49('note',c.dataset.noteOpen),src=n?.images?.[0];
+    c.querySelector(':scope > .v49-native-media')?.remove();
+    const image=mediaNode49(src);if(image)c.prepend(image);
+  });
+  qa('#view-notes .org-row[data-note-open]').forEach(r=>{
+    const n=entity49('note',r.dataset.noteOpen),src=n?.images?.[0];
+    r.querySelector(':scope > .v49-row-image')?.remove();
+    const image=mediaNode49(src,'v49-row-image',true);if(image)r.prepend(image);
+  });
+  qa('#view-goals article.org-card[data-org-type="goal"]').forEach(c=>{
+    const x=entity49('goal',c.dataset.orgId),src=x?.images?.[0];
+    c.querySelector(':scope > .v49-native-media')?.remove();
+    const image=mediaNode49(src);if(image)c.prepend(image);
+  });
+  qa('#view-projects [data-v35-project]').forEach(c=>{
+    const x=entity49('project',c.dataset.v35Project),src=x?.images?.[0];
+    c.querySelector(':scope > .v49-project-image')?.remove();
+    const image=mediaNode49(src,'v49-project-image');if(image)c.prepend(image);
+  });
+  qa('#view-tasks .kanban-card[data-entry-id],#view-tasks .gallery-card[data-entry-id]').forEach(c=>{
+    const x=entity49('task',c.dataset.entryId),src=x?.images?.[0];
+    c.querySelector(':scope > .v49-task-image')?.remove();
+    const image=mediaNode49(src,'v49-task-image');if(image)c.prepend(image);
+  });
+  qa('#view-tasks .list-item[data-entry-id]').forEach(r=>{
+    const x=entity49('task',r.dataset.entryId),src=x?.images?.[0];
+    r.querySelector(':scope > .v49-row-image')?.remove();
+    const image=mediaNode49(src,'v49-row-image',true);if(image)r.prepend(image);
+  });
+  const reader=q('.v43-note-reader');
+  if(reader&&lastNote49){
+    const x=entity49('note',lastNote49),src=x?.images?.[0];
+    reader.querySelector('.v49-note-reader-image')?.remove();
+    const image=mediaNode49(src,'v49-note-reader-image',true);
+    if(image){const meta=reader.querySelector('.v43-note-meta')||reader.querySelector('h1');meta?.after(image)}
+  }
 }
 // Note autosave should carry the native photo draft too, just like text changes.
 try{const basePersist49=persistCurrentNote;if(typeof basePersist49==='function'){persistCurrentNote=function(){const ok=basePersist49.apply(this,arguments);if(ok){const m=q('#note-modal .modal'),d=m&&drafts49.get(m);if(d&&typeof editingNoteId!=='undefined'&&editingNoteId){const n=entity49('note',editingNoteId);if(n)n.images=[...d.draft.images]}}return ok}}}catch(e){console.warn('v49 note autosave hook',e)}

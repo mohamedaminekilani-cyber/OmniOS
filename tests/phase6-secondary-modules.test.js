@@ -9,7 +9,9 @@ const finance=fs.readFileSync('app-parts/part-005.html','utf8');
 const organize=fs.readFileSync('app-parts/part-006.html','utf8');
 const layers=fs.readFileSync('app-parts/part-028.html','utf8');
 const css=layers.match(/<style id="omnios-unified-design-2026">([\s\S]*?)<\/style>/)?.[1]||'';
-const phase=css.slice(css.indexOf('OMNIOS PHASE 6 / REMAINING MODULES / v1'));
+const phaseStart=css.indexOf('OMNIOS PHASE 6 / REMAINING MODULES / v1');
+const phaseEnd=css.indexOf('END OMNIOS PHASE 6 / REMAINING MODULES / v1',phaseStart);
+const phase=css.slice(phaseStart,phaseEnd+'END OMNIOS PHASE 6 / REMAINING MODULES / v1'.length);
 
 test('Phase 6 follows Phase 5 inside one reversible UI stylesheet',()=>{
  assert.ok(css.indexOf('OMNIOS PHASE 6 / REMAINING MODULES / v1')>css.indexOf('END OMNIOS PHASE 5 / HABITS + ROUTINE + WORKOUT / v1'));

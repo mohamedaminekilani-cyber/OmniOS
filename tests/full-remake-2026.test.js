@@ -47,7 +47,7 @@ test('Today is rebuilt with real actions, compact agenda, priority list, and pro
  const b=todaySource.indexOf('function todaySignals35(){',a);
  assert.ok(a>0&&b>a);
  const fn=todaySource.slice(a,b);
- for(const selector of ['omr-day-hero','omr-day-main','omr-feature','omr-timeline','omr-priority-list','omr-stats-grid','omr-habit-row']){
+ for(const selector of ['omr-day-hero','omr-day-main','omr-feature','omr-timeline','omr-priority-list','om3-daily-glance','omr-habit-row']){
    assert.ok(fn.includes(selector),'missing structural element '+selector);
  }
  assert.ok(fn.includes('captureInbox35'));

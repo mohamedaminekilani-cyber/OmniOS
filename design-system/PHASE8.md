@@ -28,3 +28,7 @@ These are release-blocking **QA instrumentation defects**. They do not demonstra
 **Pre-Phase-8 source backup:** `backup/omnios-before-phase8-2026-10-11` at `afa196d66cb97f93cd781cdc4993116364cd7562`.
 
 **Safe release:** review and merge PRs #29 → #30 → #31 → #32 → #33 → #34 → #35 → Phase 8 in dependency order, and only after the screenshots and browser workflows are verified. Do not auto-merge or push to production.
+
+## Review evidence required
+
+The prior Phase 7 artifact `omnios-phase7-visual-qa` contained 30 captures of `#welcome63`, making its passing screenshot assertions non-evidence for module design. Phase 8's CI must generate a **new** artifact with visible module content. Examine the Dashboard and Tasks desktop captures and Calendar and Finance mobile captures, not just the numeric CI result. Keep Phase 8 unmerged if captures are still identical, or if Chrome reports any blocking dialog, runtime exception, or stale source manifest.

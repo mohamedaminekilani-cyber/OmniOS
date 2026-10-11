@@ -751,7 +751,7 @@ function buildMobileNav35(){
   more.id='v35-mobile-more';
   more.setAttribute('aria-label','Open page menu');
   more.setAttribute('aria-expanded','false');
-  more.innerHTML='<span class="nav-label">Menu</span>';
+  more.innerHTML='<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="nav-label">Menu</span>';
   more.onclick=toggleMore35;
   nav.appendChild(more);
   updateMobileActive35(activeView35());

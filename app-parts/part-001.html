@@ -2184,7 +2184,7 @@ img,svg{max-width:100%}
 <div class="shortcuts-overlay" id="shortcuts-overlay" aria-hidden="true">
     <div class="shortcuts-box">
         <h3>Keyboard shortcuts</h3>
-        <p class="text-muted text-sm">These work anywhere in Second Brain, even while a form is focused (except where noted).</p>
+        <p class="text-muted text-sm">These work anywhere in OmniOS, even while a form is focused (except where noted).</p>
         <div class="shortcuts-row"><span>Search everything</span><span class="shortcuts-keys"><kbd>Ctrl/⌘</kbd><kbd>K</kbd></span></div>
         <div class="shortcuts-row"><span>Open the Assistant</span><span class="shortcuts-keys"><kbd>Ctrl/⌘</kbd><kbd>J</kbd></span></div>
         <div class="shortcuts-row"><span>Undo the last saved change</span><span class="shortcuts-keys"><kbd>Ctrl/⌘</kbd><kbd>Z</kbd></span></div>
@@ -2466,7 +2466,7 @@ img,svg{max-width:100%}
                         <div>
                             <div class="eyebrow">DISTRACTION CONTROL</div>
                             <h3 class="card-title" style="margin-top:4px;">Focus Guard</h3>
-                            <p class="text-muted text-sm" style="margin-top:4px;">In-app distraction guard for websites and links opened through Second Brain. System-wide iPhone blocking is available only when the native Screen Time host is connected.</p>
+                            <p class="text-muted text-sm" style="margin-top:4px;">In-app distraction guard for websites and links opened through OmniOS. System-wide iPhone blocking is available only when the native Screen Time host is connected.</p>
                         </div>
                         <div class="focus-guard-status" id="focus-guard-status">Inactive</div>
                     </div>
@@ -2517,7 +2517,7 @@ img,svg{max-width:100%}
                     <div class="focus-blocked-list" id="focus-blocked-list"></div>
 
                     <div class="focus-guard-note">
-                        <strong>Device limitation:</strong> Second Brain can enforce this guard for links and launches made through the PWA. iOS/Android do not let a normal web app intercept every launch of another installed app; use Screen Time / Digital Wellbeing for system-wide enforcement.
+                        <strong>Device limitation:</strong> OmniOS can enforce this guard for links and launches made through the PWA. iOS/Android do not let a normal web app intercept every launch of another installed app; use Screen Time / Digital Wellbeing for system-wide enforcement.
                     </div>
                 </div>
             </div>
@@ -2543,7 +2543,7 @@ img,svg{max-width:100%}
         <!-- PASSWORDS -->
         <section id="view-passwords" class="view">
             <div class="flex-between mb-4">
-                <div><h3 style="margin-bottom:4px;">Password Manager</h3><div class="text-muted text-sm">Stored locally on this device only — not encrypted, same as the rest of Second Brain's data. Don't sync this file anywhere you don't fully trust.</div></div>
+                <div><h3 style="margin-bottom:4px;">Password Manager</h3><div class="text-muted text-sm">Stored locally on this device only — not encrypted, same as the rest of OmniOS's data. Don't sync this file anywhere you don't fully trust.</div></div>
                 <button type="button" class="btn btn-primary" onclick="openPasswordModal()">+ Add Password</button>
             </div>
             <input id="password-search" class="search-input" type="search" placeholder="Search by site or username…" aria-label="Search passwords" style="margin-bottom:14px;max-width:360px">
@@ -3163,14 +3163,14 @@ function saveState() {
         window.OmniRecovery35?.queueBackgroundProtect?.('save');
         setSaveStatus('Saved locally','saved');
     } catch (e) {
-        console.error('Primary Second Brain save failed:', e);
+        console.error('Primary OmniOS save failed:', e);
         setSaveStatus('Protecting locally…');
         const protect=window.OmniRecovery35?.backgroundProtect;
         if(protect){
             Promise.resolve(protect('primary-save-fallback',state)).then(ok=>{
                 if(ok)setSaveStatus('Saved locally','saved');
-                else{setSaveStatus('Save unavailable','error');window.toast?.('Second Brain could not protect this change on this device.')}
-            }).catch(()=>{setSaveStatus('Save unavailable','error');window.toast?.('Second Brain could not protect this change on this device.')});
+                else{setSaveStatus('Save unavailable','error');window.toast?.('OmniOS could not protect this change on this device.')}
+            }).catch(()=>{setSaveStatus('Save unavailable','error');window.toast?.('OmniOS could not protect this change on this device.')});
         }else{
             setSaveStatus('Saved for this session','saved');
         }

@@ -15,6 +15,7 @@ export function sourceRelease(){
 if(process.argv.includes('--write'))fs.writeFileSync('source-release.json',JSON.stringify(sourceRelease().manifest,null,2)+'\n');
 if(process.argv.includes('--check')){
   const saved=JSON.parse(fs.readFileSync('source-release.json','utf8'));
-  if(JSON.stringify(saved)!==JSON.stringify(sourceRelease().manifest))throw Error('Source release is stale. Run npm run release:source before committing.');
+  const actual=sourceRelease().manifest;
+  if(JSON.stringify(saved)!==JSON.stringify(actual))throw Error('Source release is stale. Actual SHA-256: '+actual.sha256+' ('+actual.bytes+' bytes); committed: '+saved.sha256+' ('+saved.bytes+' bytes). Run npm run release:source before committing.');
   console.log('Source-hosted release checksum matches the application.');
 }

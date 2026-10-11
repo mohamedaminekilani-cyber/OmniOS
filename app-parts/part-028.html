@@ -13659,6 +13659,279 @@ html .omr-mobile-dock>button .nav-icon{display:grid!important;place-items:center
 }
 @media(max-width:370px){html .view-container{padding-inline:9px!important}html #view-today .omr-capture-line{flex-wrap:wrap}html #view-today .omr-capture-line button{width:100%}}
 @media(prefers-reduced-motion:reduce){html #view-today button{transition:none!important}}
+
+/* =============================================================
+   OMNIOS PRODUCT REMAKE / v2
+   Intentional layout architecture across desktop and mobile.
+   Flat WCAG-aware Tech SaaS palette, no visual debt or effects.
+   Entire theme remains reversible by Settings > Classic.
+   ============================================================= */
+html {--omx-blue:#2547E8;--omx-violet:#5F31C4;--omx-lime:#C6F04A;--omx-carbon:#101114;--omx-mist:#EEF0F2;--omx-steel:#55606D;--omx-round:13px}
+html:not([data-theme="light"]){--omx-canvas:#101114;--omx-card:#1A1C21;--omx-raised:#24272F;--omx-edge:#363C47;--omx-copy:#EEF0F2;--omx-sub:#B7C0CE;--omx-soft:#282632;--omx-focus:#B5C1FF}
+html[data-theme="light"]{--omx-canvas:#EEF0F2;--omx-card:#FFFFFF;--omx-raised:#F4F5F7;--omx-edge:#CDD3DB;--omx-copy:#101114;--omx-sub:#55606D;--omx-soft:#F0EBFA;--omx-focus:#5F31C4}
+html body,html .main-content,html .view-container{background:var(--omx-canvas)!important}
+html .main-content{min-width:0!important}
+html .view-container{max-width:1470px!important;margin-inline:auto!important;padding:29px clamp(18px,2.55vw,38px) 48px!important;scrollbar-gutter:auto}
+html .view.active{min-width:0}
+html .view h3,html .view h4{letter-spacing:-.038em!important}
+html .view :is(p,small,.text-muted,.v43-card-sub,.workout-hero p,.omx-page-heading p){line-height:1.5!important}
+html .sidebar{width:238px!important;min-width:238px!important;padding:22px 12px!important;background:var(--omx-card)!important;border-right:1px solid var(--omx-edge)!important}
+html .sidebar .logo{padding:3px 11px 20px!important;margin-bottom:10px!important}
+html .sidebar .nav-menu{padding:0 2px!important}
+html .sidebar .nav-section,html .sidebar .v35-nav-section{
+  background:transparent!important;color:var(--omx-sub)!important;
+  text-transform:uppercase!important;letter-spacing:.105em!important;
+  font-size:10px!important;font-weight:800!important;
+  margin:16px 5px 5px!important;padding:5px 9px!important;
+  border:0!important;box-shadow:none!important;min-height:25px!important;
+}
+html .sidebar .nav-item{
+  margin:2px 0!important;min-height:39px!important;padding:9px 12px!important;
+  color:var(--text-secondary)!important;background:transparent!important;
+  border:1px solid transparent!important;border-radius:9px!important;
+  font-weight:600!important;box-shadow:none!important;text-shadow:none!important;
+}
+html .sidebar .nav-item:hover{color:var(--text-primary)!important;background:var(--omx-raised)!important;border-color:transparent!important}
+html .sidebar .nav-item.active{
+  color:var(--text-primary)!important;background:var(--omx-soft)!important;
+  border:1px solid transparent!important;
+  border-left:3px solid var(--omx-violet)!important;
+  padding-left:10px!important;
+}
+html:not([data-theme="light"]) .sidebar .nav-item.active{border-left-color:var(--omx-lime)!important}
+html .sidebar .nav-item .v35-nav-emoji{filter:grayscale(1)!important;opacity:.82!important}
+html .sidebar .nav-item.active .v35-nav-emoji{opacity:1!important}
+html .topbar{
+  height:66px!important;min-height:66px!important;
+  background:var(--omx-canvas)!important;border-bottom:1px solid var(--omx-edge)!important;
+  padding:0 clamp(18px,2.5vw,38px)!important;box-shadow:none!important;
+}
+html .topbar-title{font-size:1.05rem!important;letter-spacing:-.03em!important;font-weight:790!important}
+html .topbar-actions{gap:7px!important}
+html #global-add-btn{border-radius:9px!important}
+html :where(.btn,.view-btn,.tab-btn,.icon-btn,.v43-tab){border-radius:9px!important}
+html :where(.btn,.view-btn,.tab-btn,.icon-btn):hover{transform:none!important}
+html :where(.btn-primary,#global-add-btn){background:var(--omx-blue)!important;color:#fff!important;border:1px solid var(--omx-blue)!important;box-shadow:none!important}
+html .btn-primary:hover{background:var(--omx-violet)!important;border-color:var(--omx-violet)!important;color:#fff!important}
+html :where(.card,.v43-card,.v35-card,.org-card,.workout-session-card,.habit-week-card,.finance-panel,.nut-surface,.rt611-card,.note-card,.omr-panel,.omr-feature,.workout-kpi,.v43-kpi){
+  border:1px solid var(--omx-edge)!important;border-radius:var(--omx-round)!important;
+  background:var(--omx-card)!important;background-image:none!important;box-shadow:none!important;
+}
+html :where(.modal,.inspector-panel,.modal-content,.settings-section){background:var(--omx-card)!important;border-color:var(--omx-edge)!important;box-shadow:none!important}
+html :where(.form-input,.form-select,.form-textarea,.search-input,.filter-select,textarea,input[type="number"],input[type="date"],input[type="time"]){
+  background:var(--omx-raised)!important;border:1px solid var(--omx-edge)!important;
+  color:var(--text-primary)!important;box-shadow:none!important;border-radius:9px!important;
+}
+html :where(button,input,select,textarea,a):focus-visible{outline:2px solid var(--omx-focus)!important;outline-offset:2px!important}
+html .view :where(.empty-state,.v43-empty,.v35-empty,.list-empty,.omr-zero){
+  min-height:0!important;max-height:none!important;padding:13px 15px!important;
+  border:1px dashed var(--omx-edge)!important;border-radius:10px!important;
+  background:transparent!important;box-shadow:none!important;
+  font-size:.74rem!important;line-height:1.5!important;
+}
+html .view :where(.empty-state,.v43-empty,.v35-empty,.list-empty,.omr-zero) :where(p,small){color:var(--omx-sub)!important}
+html .view :where(.empty-state,.v43-empty,.v35-empty,.list-empty,.omr-zero) svg{max-height:30px!important}
+html .view :where(.badge,.tag,.v35-chip,.v43-badge){border-radius:7px!important;box-shadow:none!important}
+html .view :where(.toolbar,.dashboard-toolbar,.habit-toolbar,.notes-toolbar,.master-cal-toolbar){
+  background:var(--omx-card)!important;border:1px solid var(--omx-edge)!important;
+  box-shadow:none!important;border-radius:var(--omx-round)!important;
+}
+html .omx-page-heading{
+  display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:18px;
+  margin:2px 0 18px!important;padding:0 0 19px!important;
+  background:transparent!important;border:0!important;border-bottom:1px solid var(--omx-edge)!important;
+}
+html .omx-eyebrow{display:block;font-size:.65rem;font-weight:830!important;letter-spacing:.12em;color:var(--accent-cyan)!important;text-transform:uppercase}
+html .omx-page-heading h3{margin:7px 0 6px!important;font-size:clamp(1.75rem,2.5vw,2.25rem)!important;font-weight:810!important;line-height:1.13!important;letter-spacing:-.055em!important}
+html .omx-page-heading p{margin:0!important;color:var(--omx-sub)!important;font-size:.8rem!important;max-width:590px}
+html .omx-page-heading>.btn{min-height:43px!important}
+html .omx-section-title{display:flex;align-items:end;justify-content:space-between;gap:14px;margin:12px 0 13px}
+html .omx-section-title h4{font-size:1.03rem!important;font-weight:780!important;margin:6px 0 0!important}
+html .omx-context-label{color:var(--omx-sub)!important;font-size:.71rem!important;white-space:nowrap}
+/* Dashboard: one hero, one next action, four readable metrics and bento detail */
+html #view-dashboard .v431-hero{
+  display:flex!important;align-items:start!important;gap:16px!important;
+  background:var(--omx-card)!important;padding:26px!important;margin:0 0 12px!important;
+  border:1px solid var(--omx-edge)!important;border-radius:15px!important;
+}
+html #view-dashboard .v431-hero-main{flex:1;min-width:0}
+html #view-dashboard .v431-hero-actions{align-self:start}
+html #view-dashboard .v431-hero .v431-title-row h3{font-size:clamp(1.75rem,2.85vw,2.5rem)!important;letter-spacing:-.06em!important;font-weight:810!important}
+html #view-dashboard .v43-hero-copy{font-size:.82rem!important;color:var(--omx-sub)!important}
+html #view-dashboard .omni-dashboard-capture{max-width:550px!important;border-radius:10px!important;margin-top:19px!important;box-shadow:none!important}
+html #view-dashboard .omni-dashboard-capture-arrow{border-radius:7px!important;background:var(--omx-blue)!important;color:white!important}
+html #view-dashboard .omx-quick-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+html #view-dashboard .omx-quick-actions button{
+  min-height:33px;padding:7px 12px;
+  border:1px solid var(--omx-edge);border-radius:8px;
+  background:var(--omx-raised);color:var(--text-secondary);
+  font:inherit;font-size:.72rem;font-weight:680;cursor:pointer;
+}
+html #view-dashboard .omx-quick-actions button:hover{color:var(--text-primary);border-color:var(--accent-cyan)}
+html #view-dashboard .v431-tabs{margin:12px 0 14px!important}
+html #view-dashboard .omx-next-focus{
+  display:flex;align-items:center;gap:15px;padding:17px 20px;
+  border:1px solid var(--omx-edge);border-left:4px solid var(--omx-violet);
+  background:var(--omx-card);border-radius:12px;margin-bottom:18px;
+}
+html:not([data-theme="light"]) #view-dashboard .omx-next-focus{border-left-color:var(--omx-lime)}
+html #view-dashboard .omx-next-focus-mark{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:10px;background:var(--omx-soft);font-size:.89rem;font-weight:830;color:var(--text-primary)}
+html #view-dashboard .omx-next-focus-text{flex:1;min-width:0}
+html #view-dashboard .omx-next-focus-text strong{display:block;font-size:.94rem;font-weight:790;margin-top:3px;line-height:1.32;overflow-wrap:anywhere}
+html #view-dashboard .omx-next-focus-text p{color:var(--omx-sub);font-size:.72rem;margin:3px 0 0}
+html #view-dashboard .omx-focus-link{flex:none;min-height:37px;padding:9px 13px;border:1px solid var(--omx-edge);background:var(--omx-raised);border-radius:8px;color:var(--text-primary);font-size:.73rem;font-weight:730;cursor:pointer}
+html #view-dashboard .omx-focus-link:hover{border-color:var(--accent-cyan)}
+html #view-dashboard .v431-glance{margin:14px 0 18px}
+html #view-dashboard .v431-kpis{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:11px!important}
+html #view-dashboard .v43-kpi{min-height:119px!important;padding:17px!important;border-radius:12px!important}
+html #view-dashboard .v43-kpi-value{font-size:clamp(1.35rem,2vw,1.85rem)!important;line-height:1.15!important}
+html #view-dashboard .v431-kpi-icon{width:31px;height:31px;border-radius:8px;background:var(--omx-soft)!important}
+html #view-dashboard .v431-board{grid-template-columns:minmax(0,1.55fr) minmax(285px,1fr)!important;gap:12px!important}
+html #view-dashboard :is(.v431-main,.v431-side){min-width:0;gap:12px!important}
+html #view-dashboard .v43-card{padding:18px!important;min-width:0}
+html #view-dashboard .v43-row{border-radius:8px!important}
+html #view-dashboard .v43-empty{padding:13px!important;text-align:left!important}
+html #view-dashboard .v43-mini-grid{gap:9px!important}
+html #view-dashboard .v43-metric{border-radius:9px!important;min-width:0}
+html #view-dashboard .v43-progress i{background:var(--omx-lime)!important}
+/* Tasks: wide calm view switch followed by genuinely scannable filters */
+html #view-tasks .omx-tasks-toolbar{
+  display:flex!important;flex-direction:column!important;align-items:stretch!important;
+  padding:12px!important;gap:10px!important;margin:0 0 15px!important;
+}
+html #view-tasks .omx-tasks-toolbar>.toolbar-divider{display:none!important}
+html #view-tasks .omx-tasks-toolbar>.toolbar-group{display:flex!important;flex-wrap:wrap!important;gap:7px!important;min-width:0}
+html #view-tasks .omx-tasks-toolbar>.toolbar-group:first-child{flex-wrap:nowrap!important;overflow-x:auto!important;scrollbar-width:thin;padding-bottom:2px}
+html #view-tasks .omx-tasks-toolbar>.toolbar-group:first-child .view-btn{white-space:nowrap!important;min-height:39px!important;flex:0 0 auto}
+html #view-tasks .omx-tasks-toolbar .filter-select{min-width:120px!important;max-width:220px;flex:1 1 135px}
+html #view-tasks .omx-tasks-toolbar #search-input{flex:1 1 220px;min-width:150px!important}
+html #view-tasks .omx-tasks-toolbar>.toolbar-group:last-child{border-top:1px solid var(--omx-edge);padding-top:10px!important}
+html #view-tasks :where(.kanban-board,.kanban-column,.list-container,.eisenhower-grid){min-width:0}
+html #view-tasks .kanban-card,html #view-tasks .gallery-card{border-radius:10px!important;box-shadow:none!important}
+html #view-tasks .kanban-column{background:var(--omx-raised)!important;border:1px solid var(--omx-edge)!important;border-radius:12px!important}
+/* Calendar: clear view control rail with a visible header and readable schedules */
+html #view-master-calendar .omx-calendar-intro{margin-bottom:16px!important}
+html #view-master-calendar .omx-calendar-side{display:flex;align-items:center}
+html #view-master-calendar .omx-schedule-status{font-size:.72rem;color:var(--omx-sub);background:var(--omx-card);border:1px solid var(--omx-edge);border-radius:8px;padding:8px 11px}
+html #view-master-calendar .v36-cal-shell{background:var(--omx-card)!important;border:1px solid var(--omx-edge)!important;border-radius:13px!important;box-shadow:none!important;overflow:hidden}
+html #view-master-calendar .v36-cal-toolbar{display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;align-items:center!important;gap:10px!important;padding:14px!important;background:var(--omx-card)!important;border-bottom:1px solid var(--omx-edge)!important}
+html #view-master-calendar .v36-cal-center{min-width:0}
+html #view-master-calendar .v36-cal-nav{min-width:0}
+html #view-master-calendar .v36-cal-actions{justify-content:end!important;gap:7px!important}
+html #view-master-calendar .v36-cal-modes{background:var(--omx-raised)!important}
+html #view-master-calendar .v36-cal-mode.active{background:var(--omx-card)!important;color:var(--text-primary)!important;border-color:var(--omx-edge)!important}
+html #view-master-calendar .v603-calendar-rail{background:var(--omx-card)!important;border-right:1px solid var(--omx-edge)!important}
+html #view-master-calendar .v603-calendar-stage{background:var(--omx-card)!important}
+html #view-master-calendar .v36-month-event{border-radius:6px!important}
+html #view-master-calendar .v36-cal-period{font-weight:800!important;letter-spacing:-.03em!important}
+html #view-master-calendar .v36-cal-search{min-width:105px!important}
+/* Habits: compact streak and monthly calendar workspace */
+html #view-habits .omx-habit-switch{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;padding:9px 12px!important;margin-bottom:12px!important}
+html #view-habits .omx-habit-switch-copy{font-size:.77rem;font-weight:700;color:var(--text-secondary)}
+html #view-habits .omx-habit-switch-copy span{color:var(--accent-cyan)}
+html #view-habits .omx-habit-switch .toolbar-group{flex-wrap:nowrap!important}
+html #view-habits .omx-habit-switch .view-btn{min-width:74px}
+html #view-habits .habit-summary-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;margin-bottom:14px!important}
+html #view-habits .habit-summary{padding:14px!important;background:var(--omx-card)!important;border:1px solid var(--omx-edge)!important;box-shadow:none!important}
+html #view-habits .habit-summary-value{font-size:1.3rem!important;font-weight:800!important}
+html #view-habits .v105-month-card{padding:15px!important;border-radius:12px!important}
+html #view-habits .v105-month-card-head{margin-bottom:13px!important}
+html #view-habits .v105-month-day,html #view-habits .habit-week-day{border-radius:6px!important}
+html #view-habits :where(.v105-month-day.done,.habit-week-day.completed){background:var(--omx-lime)!important;color:var(--omx-carbon)!important;border-color:var(--omx-lime)!important}
+/* Workout: training-focused cards, and no external exercise images */
+html #view-workout .workout-hero{
+  display:flex!important;align-items:end!important;justify-content:space-between!important;gap:18px!important;
+  background:transparent!important;border:0!important;border-bottom:1px solid var(--omx-edge)!important;
+  padding:4px 0 20px!important;margin-bottom:15px!important;border-radius:0!important;
+}
+html #view-workout .workout-hero h3{font-size:clamp(1.75rem,2.4vw,2.2rem)!important;line-height:1.13!important;font-weight:810!important}
+html #view-workout .workout-hero p{font-size:.79rem!important;color:var(--omx-sub)!important;max-width:650px}
+html #view-workout .workout-kpi-grid{gap:11px!important}
+html #view-workout .workout-kpi{border:1px solid var(--omx-edge)!important;background:var(--omx-card)!important}
+html #view-workout .workout-tabs{gap:5px!important;margin:15px 0!important;overflow-x:auto!important}
+html #view-workout .workout-tabs .view-btn{white-space:nowrap!important;flex:0 0 auto!important}
+html #view-workout #hw-panel .hw-top,html #view-workout #hw-panel :is(.hw-plan,.hw-ex-card,.hw-main-card,.hw-queue,.hw-chart-card){border-radius:12px!important;box-shadow:none!important}
+html #view-workout #hw-panel .hw-ex-card{border-top:3px solid var(--omx-violet)!important}
+html #view-workout #hw-panel .hw-progress-track i{background:var(--omx-lime)!important}
+/* Finance, notes, life, routine, focus: same components and density */
+html #view-budget .finance-hero{background:transparent!important;border:0!important;border-bottom:1px solid var(--omx-edge)!important;box-shadow:none!important;border-radius:0!important;padding:0 0 19px!important;margin-bottom:15px!important}
+html #view-budget .finance-hero h3{font-size:clamp(1.7rem,2.4vw,2.25rem)!important}
+html #view-budget :where(.finance-panel,.finance-kpi,.finance-stat,.finance-summary,.finance-analytics-card){background:var(--omx-card)!important;background-image:none!important;border:1px solid var(--omx-edge)!important;border-radius:12px!important;box-shadow:none!important}
+html #view-budget :where(.finance-analytics-grid,.finance-main-grid,.finance-kpi-grid){gap:12px!important}
+html #view-notes .notes-toolbar{display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin-bottom:13px!important}
+html #view-notes #notes-search{flex:1 1 230px!important;min-width:150px}
+html #view-notes .notes-grid{gap:12px!important}
+html #view-life-hub .v43-hero,html #view-routine .rt611-hero{background:var(--omx-card)!important;border:1px solid var(--omx-edge)!important}
+html #view-life-hub .v43-life-shell{gap:12px!important}
+html #view-focus .focus-workspace{gap:12px!important}
+html #view-settings #settings-tabs{overflow-x:auto!important;flex-wrap:nowrap!important;scrollbar-width:thin}
+html #view-settings #settings-tabs .view-btn{white-space:nowrap!important;flex:0 0 auto!important}
+/* Dialogs: one elevation level, sticky actions and accessible focus */
+html .modal-overlay{background:rgba(0,0,0,.64)!important}
+html .modal{border-radius:14px!important;background:var(--omx-card)!important;border:1px solid var(--omx-edge)!important;box-shadow:none!important;max-height:min(92dvh,900px)!important}
+html .modal-footer{border-top:1px solid var(--omx-edge)!important}
+html .inspector-panel{border:1px solid var(--omx-edge)!important;box-shadow:none!important}
+html :where(.view-btn,.tab-btn).active{background:var(--omx-soft)!important;color:var(--text-primary)!important;border-color:var(--omx-edge)!important}
+html :where(.v43-tabs,.tab-btns,.workout-tabs,.v35-segmented,.v38-fin-tabs,.rt611-tabs,.v36-cal-modes){background:var(--omx-raised)!important;border-color:var(--omx-edge)!important;border-radius:11px!important}
+@media(max-width:1150px) and (min-width:761px){
+ html .sidebar{width:215px!important;min-width:215px!important}
+ html .view-container{padding:21px!important}
+ html #view-dashboard .v431-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ html #view-master-calendar .v36-cal-toolbar{grid-template-columns:1fr auto!important}
+ html #view-master-calendar .v36-cal-center{grid-column:1 / -1;grid-row:2;justify-self:start}
+}
+@media(max-width:760px){
+ html .sidebar{display:none!important}
+ html .main-content{width:100%!important;max-width:100%!important}
+ html .topbar{min-height:62px!important;height:auto!important;padding:max(8px,env(safe-area-inset-top)) 12px 8px!important}
+ html .topbar-title{max-width:38vw!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+ html .view-container{padding:12px 13px calc(105px + env(safe-area-inset-bottom))!important;max-width:100%!important;min-width:0!important;overflow-x:hidden!important}
+ html .mobile-nav.omr-mobile-dock{position:fixed!important;left:11px!important;right:11px!important;bottom:calc(10px + env(safe-area-inset-bottom))!important;height:66px!important;border-radius:15px!important;box-shadow:none!important;background:var(--omx-card)!important;border:1px solid var(--omx-edge)!important;padding:5px!important}
+ html .omx-page-heading{gap:12px!important;margin:2px 0 14px!important;padding-bottom:15px!important;align-items:start!important}
+ html .omx-page-heading h3{font-size:1.72rem!important}
+ html .omx-page-heading p{font-size:.76rem!important}
+ html .omx-page-heading>.btn{min-height:41px!important}
+ html #view-dashboard .v431-hero{display:flex!important;flex-direction:column!important;padding:19px!important;gap:14px!important}
+ html #view-dashboard .v431-hero-actions{width:100%!important;display:flex!important;flex-wrap:wrap!important;justify-content:space-between!important}
+ html #view-dashboard .v431-hero .v431-title-row h3{font-size:1.8rem!important}
+ html #view-dashboard .omx-quick-actions{gap:6px;margin-top:10px}
+ html #view-dashboard .omx-quick-actions button{flex:1 1 auto;padding:7px 9px;font-size:.68rem}
+ html #view-dashboard .omx-next-focus{align-items:start!important;padding:14px!important;gap:10px!important;flex-wrap:wrap}
+ html #view-dashboard .omx-next-focus-mark{width:35px;height:35px}
+ html #view-dashboard .omx-focus-link{margin-left:45px}
+ html #view-dashboard .v431-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+ html #view-dashboard .v43-kpi{min-height:110px!important;padding:13px!important}
+ html #view-dashboard .v431-board{display:flex!important;flex-direction:column!important;gap:11px!important}
+ html #view-dashboard .v431-board>*{width:100%!important;max-width:100%!important}
+ html #view-tasks .omx-tasks-toolbar{padding:9px!important}
+ html #view-tasks .omx-tasks-toolbar>.toolbar-group:first-child{margin-inline:-2px}
+ html #view-tasks .omx-tasks-toolbar>.toolbar-group:first-child .view-btn{min-height:38px!important}
+ html #view-tasks .omx-tasks-toolbar .filter-select{min-width:112px!important;flex:1 1 112px}
+ html #view-master-calendar .v36-cal-toolbar{display:flex!important;flex-wrap:wrap!important;gap:9px!important;padding:12px!important}
+ html #view-master-calendar .v36-cal-nav{flex:1 1 100%;justify-content:space-between!important}
+ html #view-master-calendar .v36-cal-center{order:3;width:100%;overflow-x:auto}
+ html #view-master-calendar .v36-cal-actions{flex:1 1 100%;order:2;justify-content:space-between!important}
+ html #view-master-calendar .v36-cal-search{flex:1 1 100px;min-width:100px!important}
+ html #view-master-calendar .v36-cal-modes{max-width:100%;overflow-x:auto;scrollbar-width:thin}
+ html #view-habits .omx-habit-switch{display:flex!important;flex-wrap:wrap!important}
+ html #view-habits .omx-habit-switch-copy{font-size:.73rem}
+ html #view-habits .habit-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ html #view-workout .workout-hero{align-items:start!important;flex-direction:column!important}
+ html #view-workout .workout-hero-actions{width:100%!important;display:flex!important}
+ html #view-workout .workout-hero-actions>.btn{flex:1}
+ html #view-notes .notes-toolbar{padding:10px!important}
+ html #view-budget .finance-hero{align-items:start!important;flex-direction:column!important;gap:12px!important}
+ html #view-budget .finance-hero-actions{width:100%!important;flex-wrap:wrap!important}
+ html :where(.modal,.inspector-panel){border-radius:14px 14px 0 0!important}
+}
+@media(max-width:380px){
+ html .view-container{padding-left:9px!important;padding-right:9px!important}
+ html #view-dashboard .omx-quick-actions button{font-size:.66rem!important}
+ html #view-tasks .omx-tasks-toolbar .filter-select{flex:1 1 125px}
+}
+@media(prefers-reduced-motion:reduce){
+ html .view :where(.card,.v43-card,.v35-card,.workout-kpi,.habit-week-day){transition:none!important;animation:none!important}
+}
 </style>
 
 <script id="omnios-unified-2026-controls">

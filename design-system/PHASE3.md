@@ -46,3 +46,7 @@ The new `OMNIOS PHASE 3 / DAILY WORKSPACE AND DASHBOARD / v1` block lives **afte
 - Source rollback branch: [`backup/omnios-before-phase3-2026-10-11`](https://github.com/mohamedaminekilani-cyber/OmniOS/tree/backup/omnios-before-phase3-2026-10-11), commit `09d42b76a240bdf9c0edf9f044d8aebe03c7860c`. Earlier Phase 1/2 backups remain available.
 
 **Not part of Phase 3:** rewriting Calendar, Habits, Workout, Finance or other modules, or changing their underlying workflows. Those are later phases.
+
+## CI routing
+
+The verification workflow runs only when a pull request targets `main`. For automated verification, this stacked PR can temporarily target `main` and receive a documentation-only commit to trigger the `synchronize` event. After the job finishes, restore base `feature/omnios-phase2-shell-2026-10-11`. The deployment job is intentionally skipped for pull requests.

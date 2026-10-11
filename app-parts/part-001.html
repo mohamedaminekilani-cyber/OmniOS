@@ -2229,7 +2229,7 @@ img,svg{max-width:100%}
                 <!-- TASKS -->
         <section id="view-tasks" class="view">
             <header class="omx-page-heading"><div><span class="omx-eyebrow">MAKE SPACE FOR WHAT MATTERS</span><h3>Tasks</h3><p>See what needs action. Switch views without losing your filters.</p></div><button type="button" class="btn btn-primary" id="omx-task-quick-add">+ New task</button></header>
-            <div class="toolbar omx-tasks-toolbar">
+            <div class="toolbar omx-tasks-toolbar" role="group" aria-label="Task views and filters">
                 <div class="toolbar-group">
                     <button type="button" class="view-btn active" data-taskview="kanban">Kanban</button>
                     <button type="button" class="view-btn" data-taskview="matrix">Matrix</button>
@@ -3622,8 +3622,10 @@ function renderTasks() {
     const entries = getFilteredEntries();
     const container = document.getElementById('tasks-content');
 
+    document.querySelectorAll('#view-tasks [data-taskview]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.taskview === currentTaskView)));
     if (entries.length === 0 && currentTaskView !== 'calendar') {
-        container.innerHTML = '<div class="empty-state">No entries found. Click "+ Add" to create one.</div>';
+        container.innerHTML = '<div class="om6-task-empty ds-state"><strong>No tasks in this view</strong><p>Change your filters or create an action to get started.</p><button type="button" class="btn btn-primary" id="om6-empty-task">+ New task</button></div>';
+        container.querySelector('#om6-empty-task')?.addEventListener('click', () => document.getElementById('omx-task-quick-add')?.click());
         return;
     }
 

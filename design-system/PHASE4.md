@@ -43,3 +43,7 @@ Manually review **light and dark mode**, keyboard focus, CSS/contrast, breakpoin
 No user-data migrations; storage, calendar filters, task IDs and reminder workflows remain intact. Merge the stacked PRs in order **Phase 1 → Phase 2 → Phase 3 → Phase 4**, with independent release checks and safe rollback via the preserved GitHub branch.
 
 **Excluded from Phase 4:** Habits, Workout, Today, Finance, and other module redesigns.
+
+## Stacked PR verification
+
+GitHub Actions currently runs for PRs targeting `main`. For CI verification, PR #32 is temporarily retargeted to `main` and a documentation-only commit triggers the `synchronize` event. On success, its base must be restored to `feature/omnios-phase3-today-dashboard-2026-10-11`; the pull-request workflow does not deploy GitHub Pages.

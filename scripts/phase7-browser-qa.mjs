@@ -69,6 +69,13 @@ try{
  for(const page of pages)await visit(page,'dark',1440);
  await setViewport(390,844);for(const page of pages)await visit(page,'light',390);
  await setViewport(360,780);for(const page of ['today','master-calendar','tasks','habits','budget','notes'])await visit(page,'dark',360);
+
+ const dock=await evaluate('(()=>{const nav=document.querySelector(".mobile-nav.omr-mobile-dock");if(!nav)return {found:false};const visible=e=>{const st=getComputedStyle(e),r=e.getBoundingClientRect();return st.display!=="none"&&st.visibility!=="hidden"&&r.width>2&&r.height>2};return {found:true,items:[...nav.querySelectorAll(":scope > button")].map(b=>({name:b.getAttribute("aria-label"),label:b.querySelector(".nav-label")?.textContent?.trim(),icons:[...b.querySelectorAll(":scope > .nav-icon,:scope > .v48-mobile-icon,:scope > .omni-mobile-custom-icon,:scope > .v35-nav-icon,:scope > .v58-nav-icon")].filter(visible).length}))}})()');
+ check('Mobile dock renders one icon and one text label per destination',dock.found&&dock.items.length===5&&dock.items.every(i=>i.icons===1&&!!i.label),dock);
+ await setViewport(390,844);await evaluate('window.switchView("budget")');await delay(500);
+ const picker=await evaluate('(()=>{const n=document.querySelector("#view-budget .v38-month-nav");if(!n)return {found:false};const kids=[...n.children].filter(x=>x.matches("button,.v38-month-label"));const tops=kids.map(x=>Math.round(x.getBoundingClientRect().top));return {found:true,children:kids.length,tops,height:Math.round(n.getBoundingClientRect().height)}})()');
+ check('Finance month navigation fits one mobile row',picker.found&&picker.children>=4&&Math.max(...picker.tops)-Math.min(...picker.tops)<=10&&picker.height<=70,picker);
+
  for(const [width,theme] of [[1440,'dark'],[390,'light']]){
    const hashes=report.screenshotSignatures.filter(x=>x.width===width&&x.theme===theme).map(x=>x.sha256);
    const distinct=new Set(hashes).size;

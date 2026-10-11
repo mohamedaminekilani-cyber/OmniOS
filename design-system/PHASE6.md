@@ -42,3 +42,7 @@ The final Phase 6 CSS block is appended **inside** `<style id="omnios-unified-de
 **Safety:** no migrations, data clears, added network fetches, deployment or changes to `main`. Review/merge stacked PRs in order **Phase 1 → 2 → 3 → 4 → 5 → 6** only after CI and manual visual QA. Next phase: full QA, release and regression fixes.
 
 **Note:** GitHub PR checks may need temporary base retargeting to `main` because the existing workflow filters to PRs targeting `main`; restore the stacked Phase 5 base after checking. No Pages production deployment is triggered by PR checks.
+
+## Stacked PR CI verification
+
+This documentation-only commit triggers pull-request verification while the PR is temporarily targeting `main`, because `pages.yml` filters PR events to `main`. The `deploy-live` job is disabled for `pull_request` events. After checks complete, restore the intended Phase 5 base; no production update is performed.

@@ -7,10 +7,15 @@ const dom=new JSDOM(fs.readFileSync(dir+file,'utf8'),{url:'https://example.org/O
 await new Promise(r=>setTimeout(r,2500));console.log('TITLE',dom.window.document.title,'ERRORS',errors.length,'VAULT',!!dom.window.SecondBrainPasswords,'SYNC',!!dom.window.SecondBrainSync);if(!dom.window.SecondBrainPasswords||!dom.window.SecondBrainSync)throw Error('New modules did not initialize');
 const w=dom.window;w.eval("state.passwords=[{id:'test-login',site:'Synthetic test',password:'test-only-secret'}];saveState();SecondBrainPasswords.edit()");
 w.document.querySelector('#sb-vault-pass').value='synthetic-test-passphrase-123';w.document.querySelector('#sb-vault-confirm').value='synthetic-test-passphrase-123';w.document.querySelector('[data-unlock]').click();
-for(let i=0;i<100&&!w.eval('!!state.passwordVault');i++)await new Promise(r=>setTimeout(r,100));
-await new Promise(r=>setTimeout(r,500));
-if(!w.eval('!!state.passwordVault')||w.eval('state.passwords.length')!==0)throw Error('Vault migration failed: '+w.document.querySelector('[data-error]')?.textContent);
-const saved=w.localStorage.getItem('omnios_v3_state');if(saved.includes('test-only-secret'))throw Error('Plaintext credentials persisted after migration');
+for(let i=0;i<200;i++){
+ const encrypted=w.eval('!!state.passwordVault && state.passwords.length===0');
+ const committed=!!w.localStorage.getItem('omnios_v3_state')&&!w.localStorage.getItem('omnios_v3_state').includes('test-only-secret');
+ const dialogClosed=!w.document.querySelector('#sb-vault-pass');
+ if(encrypted&&committed&&dialogClosed)break;
+ await new Promise(r=>setTimeout(r,100));
+}
+if(!w.eval('!!state.passwordVault')||w.eval('state.passwords.length')!==0||w.document.querySelector('#sb-vault-pass'))throw Error('Vault migration did not complete: '+w.document.querySelector('[data-error]')?.textContent);
+const saved=w.localStorage.getItem('omnios_v3_state');if(!saved||saved.includes('test-only-secret'))throw Error('Plaintext credentials persisted after completed migration');
 const unlocked=await w.SecondBrainCrypto.open(JSON.parse(saved).passwordVault,'synthetic-test-passphrase-123');if(unlocked.value[0].password!=='test-only-secret')throw Error('Migration lost credentials');
 w.SecondBrainPasswords.lock();console.log('Vault migration, encrypted persistence and unlock passed.');
 

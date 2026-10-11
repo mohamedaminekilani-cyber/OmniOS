@@ -13445,6 +13445,220 @@ html .omni-flat-primary{
 @media(prefers-reduced-motion:reduce){
   html .view :where(.card,.v43-card,.v35-card,.habit-week-card,.v43-kpi){transition:none!important}
 }
+
+/* ===================================================================
+ OmniOS REMAKE v1 — structural desktop/mobile design authority.
+ Built on the six-color accessible Tech SaaS theme, flat and restrained.
+ The entire visual layer remains disabled by the existing Classic switch.
+=================================================================== */
+html{--omr-space:16px;--omr-ink:#101114;--omr-mist:#EEF0F2;--omr-electric:#2547E8;--omr-violet:#5F31C4;--omr-lime:#C6F04A;--omr-steel:#55606D;--omr-radius:14px;}
+html:not([data-theme="light"]){--omr-panel:#1b1d23;--omr-panel-muted:#23262e;--omr-border:#363b46;--omr-quiet:#B7C0CE;--omr-side:#15171b;--omr-fg:#EEF0F2}
+html[data-theme="light"]{--omr-panel:#FFFFFF;--omr-panel-muted:#F4F5F7;--omr-border:#D5D9E0;--omr-quiet:#55606D;--omr-side:#FFFFFF;--omr-fg:#101114}
+html .sidebar{width:236px!important;min-width:236px!important;background:var(--omr-side)!important;padding:19px 12px!important}
+html .sidebar .logo{padding:9px 12px 18px!important;display:grid;grid-template-columns:40px minmax(0,1fr);grid-template-rows:auto auto;gap:0 10px;align-items:center;margin:0 0 15px!important;border-bottom:1px solid var(--omr-border)!important}
+html .sidebar .logo img{grid-row:span 2;width:38px!important;height:38px!important;margin:0!important;border-radius:11px!important;object-fit:cover}
+html .sidebar .logo h1{font-size:1.08rem!important;line-height:1.2;letter-spacing:-.042em!important}
+html .sidebar .logo p{font-size:.65rem!important;margin-top:0!important}
+html .sidebar .nav-menu{padding:0!important;overflow-y:auto!important;scrollbar-width:thin}
+html .sidebar .nav-section,html .sidebar .v35-nav-section{
+ display:flex!important;align-items:center;min-height:29px!important;
+ padding:10px 9px 5px!important;margin:12px 0 2px!important;
+ color:var(--omr-quiet)!important;background:transparent!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;
+ font-size:.61rem!important;font-weight:760!important;letter-spacing:.095em!important;text-transform:uppercase!important;
+}
+html .sidebar .nav-section:hover{color:var(--text-primary)!important;background:transparent!important}
+html .sidebar .nav-section:before{display:none!important}
+html .sidebar .nav-section:after{font-size:.65rem!important;color:var(--text-muted)!important}
+html .sidebar .nav-item{
+ display:flex!important;align-items:center!important;gap:10px!important;
+ min-height:37px!important;max-height:42px!important;
+ margin:1px 0!important;padding:8px 11px!important;border-radius:8px!important;
+ border:1px solid transparent!important;background:transparent!important;
+ box-shadow:none!important;text-shadow:none!important;
+ font-size:.76rem!important;font-weight:580!important;
+ color:var(--text-secondary)!important;
+}
+html .sidebar .nav-item .v35-nav-emoji,html .sidebar .nav-item>svg{
+ flex:none;width:17px!important;min-width:17px!important;height:17px!important;
+ filter:grayscale(1);opacity:.7;
+}
+html .sidebar .nav-item:hover{background:var(--bg-elevated)!important;color:var(--text-primary)!important;border-color:transparent!important}
+html .sidebar .nav-item.active{
+ background:var(--omni-soft)!important;
+ color:var(--text-primary)!important;
+ border-color:transparent!important;
+ border-left:3px solid var(--omr-violet)!important;
+ padding-left:9px!important;font-weight:720!important;
+}
+html:not([data-theme="light"]) .sidebar .nav-item.active{border-left-color:var(--omr-lime)!important}
+html .sidebar .nav-item.active .v35-nav-emoji{filter:grayscale(1);opacity:1}
+html .topbar{height:66px!important;min-height:66px!important;gap:12px!important;padding:0 clamp(16px,2vw,32px)!important;background:var(--bg-base)!important;border-bottom:1px solid var(--omr-border)!important}
+html .topbar-title{font-size:1.07rem!important;font-weight:770!important}
+html #omni-unified-date{font-size:.71rem!important;color:var(--text-muted)!important}
+html .topbar-actions{gap:8px!important}
+html #global-add-btn{border-radius:9px!important;min-height:39px!important;box-shadow:none!important}
+html #settings-topbar-btn{border-radius:9px!important;min-height:38px!important;min-width:38px!important}
+html .view-container{padding:26px clamp(18px,2.35vw,37px) 44px!important;max-width:1530px!important}
+html .view{min-width:0;overflow-wrap:break-word}
+html .view :is(h2,h3,h4){letter-spacing:-.033em}
+html .view :is(.v43-kicker,.v35-kicker,.org-kicker,.v431-section-label){font-size:.64rem!important;letter-spacing:.085em!important}
+html .view :where(.card,.v43-card,.v35-card,.habit-week-card,.org-card,.workout-session-card,.rt611-card,.nut-surface,.finance-card,.v38-card,.v43-kpi,.v35-stat){
+ border-radius:12px!important;border:1px solid var(--omr-border)!important;
+ box-shadow:none!important;background:var(--omr-panel)!important;
+}
+html .view :where(.v35-grid,.v43-grid,.grid-2,.dashboard-grid,.v431-board,.v43-kpis,.habit-summary-grid,.org-grid,.workout-kpi-grid){gap:12px!important}
+html .view :where(.card-header,.v43-card-head,.v35-card-head,.org-card-head){margin-bottom:12px!important}
+html .view :where(.btn,.view-btn,.tab-btn,.icon-btn){border-radius:8px!important;font-weight:670!important;box-shadow:none!important}
+html .view :where(.v35-empty,.v43-empty,.empty-state,.list-empty){
+ padding:17px 15px!important;min-height:0!important;border:1px dashed var(--omr-border)!important;
+ background:transparent!important;color:var(--text-muted)!important;
+ border-radius:10px!important;line-height:1.55!important;
+}
+html .view :where(.v35-empty,.v43-empty,.empty-state) svg{max-height:50px}
+html .view :where(.toolbar,.dashboard-toolbar,.habit-toolbar,.master-cal-toolbar,.notes-toolbar){border-radius:11px!important;box-shadow:none!important}
+html .view :where(.v35-page-head,.v43-hero,.workout-hero,.nut-hero,.org-hero){border-radius:12px!important;background:var(--omr-panel)!important;background-image:none!important;box-shadow:none!important}
+html #view-dashboard .v431-hero{min-height:0!important;padding:24px!important}
+html #view-dashboard .v431-hero .v431-title-row h3{font-size:clamp(1.5rem,2.3vw,2.22rem)!important}
+html #view-dashboard .v431-kpis{grid-template-columns:repeat(auto-fit,minmax(164px,1fr))!important}
+html #view-dashboard .v43-kpi{min-height:112px!important;padding:15px!important}
+html #view-dashboard .v431-board{gap:12px!important}
+html #view-dashboard .v43-card,.view .v35-card{min-height:0!important}
+html #view-dashboard .v43-card .v43-list:empty{display:none}
+html #view-habits .v105-month-card{border-radius:12px!important}
+html #view-habits .v105-month-day,html #view-habits .habit-week-day{border-radius:5px!important}
+html #view-master-calendar .v36-cal-shell{border-radius:12px!important;box-shadow:none!important}
+html #view-master-calendar .v603-calendar-rail{background:var(--omr-panel)!important}
+html #view-workout #hw-panel .hw-top{border-radius:12px!important}
+html #view-workout #hw-panel :where(.hw-plan,.hw-ex-card,.hw-main-card,.hw-queue,.hw-chart-card){border-radius:12px!important;box-shadow:none!important}
+html #view-life-hub .v43-hero{padding:21px!important}
+html #view-budget .finance-card,html #view-notes .note-card{box-shadow:none!important}
+/* Full Today structural remake — no old four-column KPI row or giant empty boxes. */
+html #view-today .v44-page-cover-shell{margin:0 0 9px!important}
+html #view-today .omr-day-hero{
+ display:flex;align-items:end;justify-content:space-between;gap:15px;
+ padding:8px 1px 22px;border-bottom:1px solid var(--omr-border);
+ margin-bottom:20px;background:transparent!important;
+}
+html #view-today .omr-day-hero h3{font-size:clamp(2.15rem,3.1vw,3.25rem)!important;line-height:1.1!important;letter-spacing:-.07em!important;font-weight:790!important;margin:9px 0 8px!important}
+html #view-today .omr-day-hero p{margin:0;color:var(--text-secondary);font-size:.8rem;line-height:1.5}
+html #view-today .omr-day-period{color:var(--omr-violet)}
+html:not([data-theme="light"]) #view-today .omr-day-period{color:var(--omr-lime)}
+html #view-today .omr-day-hero-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+html #view-today .omr-day-hero-actions button{min-height:40px!important;padding:9px 14px!important;white-space:nowrap}
+html #view-today .omr-eyebrow{font-size:.62rem;letter-spacing:.105em;font-weight:780;color:var(--text-muted);text-transform:uppercase;line-height:1.3}
+html #view-today .omr-live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--omr-lime);margin-right:9px;vertical-align:2px}
+html #view-today .omr-day-main{display:grid;grid-template-columns:minmax(0,1.62fr) minmax(310px,1fr);gap:15px;align-items:start}
+html #view-today .omr-day-left,html #view-today .omr-day-right{display:flex;flex-direction:column;gap:15px;min-width:0}
+html #view-today .omr-feature{
+ padding:22px 23px;border-radius:13px;
+ background:var(--omr-violet)!important;border:1px solid var(--omr-violet);
+ color:#FFFFFF;box-shadow:none!important;
+}
+html #view-today .omr-feature .omr-eyebrow{color:#F2E9FF}
+html #view-today .omr-feature h4{color:#FFFFFF!important;font-size:1.45rem!important;letter-spacing:-.043em!important;margin:9px 0 16px!important}
+html #view-today .omr-capture-line{display:flex;align-items:center;gap:8px}
+html #view-today .omr-capture-line input{flex:1;min-width:0;background:#FFFFFF!important;color:#101114!important;border:1px solid #FFFFFF!important;min-height:46px!important;border-radius:8px!important;font-size:16px!important}
+html #view-today .omr-capture-line input::placeholder{color:#55606D!important;opacity:1}
+html #view-today .omr-capture-line button{flex:none;background:var(--omr-lime)!important;border:1px solid var(--omr-lime)!important;color:var(--omr-ink)!important;min-height:46px!important;border-radius:8px!important}
+html #view-today .omr-panel{padding:20px;border:1px solid var(--omr-border);border-radius:12px;background:var(--omr-panel);box-shadow:none;min-width:0}
+html #view-today .omr-panel-head{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:15px}
+html #view-today .omr-panel-head h4{font-size:1.06rem!important;letter-spacing:-.035em!important;margin:5px 0 0!important}
+html #view-today .omr-text-link{
+ border:0!important;background:transparent!important;color:var(--accent-cyan)!important;
+ cursor:pointer;box-shadow:none!important;padding:6px 0!important;font-size:.72rem;
+ font-weight:735!important;white-space:nowrap!important;text-align:right;
+}
+html #view-today .omr-text-link:hover{text-decoration:underline;text-underline-offset:4px}
+html #view-today .omr-timeline{display:flex;flex-direction:column}
+html #view-today .omr-timeline-row{
+ display:grid;grid-template-columns:77px 14px minmax(0,1fr) 16px;gap:10px;align-items:center;
+ text-align:left;width:100%;padding:13px 2px;background:transparent;border:0;
+ border-bottom:1px solid var(--omr-border);color:var(--text-primary);cursor:pointer;
+}
+html #view-today .omr-timeline-row:last-child{border-bottom:0}
+html #view-today .omr-timeline-row:hover,html #view-today .omr-priority-row:hover{background:var(--bg-elevated)!important}
+html #view-today .omr-timeline-time{color:var(--text-secondary);font-size:.73rem;font-variant-numeric:tabular-nums}
+html #view-today .omr-timeline-marker{height:10px;width:10px;border:2px solid var(--omr-violet);border-radius:50%}
+html #view-today .omr-timeline-copy,html #view-today .omr-priority-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+html #view-today .omr-timeline-copy strong,html #view-today .omr-priority-copy strong{font-size:.79rem;font-weight:720;color:var(--text-primary);overflow-wrap:anywhere}
+html #view-today .omr-timeline-copy small,html #view-today .omr-priority-copy small{font-size:.68rem;color:var(--text-muted);line-height:1.4}
+html #view-today .omr-row-arrow{font-size:.78rem;color:var(--text-muted)}
+html #view-today .omr-priority-list{display:flex;flex-direction:column}
+html #view-today .omr-priority-row{display:flex;gap:12px;align-items:center;width:100%;padding:12px 3px;border:0;border-bottom:1px solid var(--omr-border);background:transparent;text-align:left;cursor:pointer}
+html #view-today .omr-priority-row:last-child{border-bottom:0}
+html #view-today .omr-priority-index{display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:8px;background:var(--bg-elevated);color:var(--text-secondary);font-size:.75rem;font-weight:740}
+html #view-today .omr-priority-copy{flex:1}
+html #view-today .omr-zero{padding:15px 0 5px;min-height:0!important;border:0;background:transparent}
+html #view-today .omr-zero strong{font-size:.77rem;color:var(--text-primary)}
+html #view-today .omr-zero p{font-size:.72rem;line-height:1.55;color:var(--text-muted);margin:6px 0}
+html #view-today .omr-zero-small{padding:6px 0}
+html #view-today .omr-stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+html #view-today .omr-stat{padding:15px 12px;background:var(--omr-panel-muted);border:1px solid var(--omr-border);border-radius:10px;display:flex;flex-direction:column;min-height:107px;gap:5px}
+html #view-today .omr-stat span{font-size:.64rem;color:var(--text-muted);font-weight:660}
+html #view-today .omr-stat strong{font-size:1.35rem!important;line-height:1.18;font-weight:790;letter-spacing:-.045em;color:var(--text-primary)}
+html #view-today .omr-stat small{font-size:.64rem;color:var(--text-muted);line-height:1.4}
+html #view-today .omr-stat-lime{border-top:3px solid var(--omr-lime)}
+html #view-today .omr-stat-electric{border-top:3px solid var(--omr-electric)}
+html #view-today .omr-stat-violet{border-top:3px solid var(--omr-violet)}
+html #view-today .omr-chip{display:inline-flex;padding:5px 9px;border-radius:6px;background:var(--bg-elevated);font-size:.62rem;font-weight:680;color:var(--text-secondary);white-space:nowrap}
+html #view-today .omr-progress-foot{display:flex;justify-content:space-between;gap:12px;color:var(--text-secondary);font-size:.7rem;margin-top:17px;margin-bottom:8px}
+html #view-today .omr-progress-foot strong{color:var(--text-primary)}
+html #view-today .omr-progress-track{height:7px;border-radius:4px;background:var(--bg-elevated);overflow:hidden}
+html #view-today .omr-progress-track span{display:block;height:100%;border-radius:4px;background:var(--omr-lime)}
+html #view-today .omr-habit-stack{display:flex;flex-direction:column}
+html #view-today .omr-habit-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--omr-border)}
+html #view-today .omr-habit-row:last-child{border-bottom:0}
+html #view-today .omr-habit-name{font-size:.76rem;color:var(--text-primary);font-weight:600;min-width:0;overflow-wrap:anywhere}
+html #view-today .omr-habit-check{display:grid;place-items:center;flex:none;width:31px;height:31px;border:1px solid var(--omr-border);border-radius:8px;background:var(--bg-elevated);color:var(--text-primary);cursor:pointer;font-weight:780}
+html #view-today .omr-habit-check.is-done{background:var(--omr-lime)!important;border-color:var(--omr-lime)!important;color:var(--omr-ink)!important}
+html #view-today .omr-signals-panel .v35-row{background:transparent!important;min-height:0!important;padding:9px 0!important}
+@media(min-width:1360px){html #view-today .omr-day-main{grid-template-columns:minmax(0,1.72fr) minmax(325px,.94fr)}}
+@media(max-width:1100px){html #view-today .omr-day-main{grid-template-columns:minmax(0,1.35fr) minmax(260px,1fr)}}
+@media(max-width:900px){html #view-today .omr-day-main{grid-template-columns:1fr}html #view-today .omr-day-right{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}html #view-today .omr-progress-panel{grid-column:span 2}}
+/* Five-item mobile dock and accessible More sheet. */
+html .omr-mobile-dock>button svg{width:22px!important;height:22px!important;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round;fill:none}
+html .omr-mobile-dock>button .nav-icon{display:grid!important;place-items:center!important}
+#omr-mobile-drawer[hidden]{display:none!important}
+#omr-mobile-drawer{position:fixed;inset:0;z-index:99998;display:flex;align-items:end;justify-content:center;background:rgba(0,0,0,.61);padding:16px 14px max(15px,env(safe-area-inset-bottom))}
+#omr-mobile-drawer .omr-sheet{width:min(540px,100%);max-height:min(82dvh,740px);display:flex;flex-direction:column;background:var(--bg-surface);border:1px solid var(--omr-border);border-radius:17px;overflow:hidden}
+#omr-mobile-drawer .omr-sheet-head{display:flex;justify-content:space-between;align-items:center;padding:18px 18px 12px;border-bottom:1px solid var(--omr-border)}
+#omr-mobile-drawer .omr-sheet-head h3{margin:0;font-size:1.12rem;color:var(--text-primary)}
+#omr-mobile-drawer .omr-sheet-head button{background:var(--bg-elevated);border:1px solid var(--omr-border);border-radius:8px;color:var(--text-primary);width:36px;height:36px}
+#omr-mobile-drawer .omr-sheet-body{overflow-y:auto;overscroll-behavior:contain;padding:12px 16px 22px}
+#omr-mobile-drawer .omr-sheet-group{margin:14px 0 7px;font-size:.63rem;font-weight:770;letter-spacing:.11em;color:var(--text-muted);text-transform:uppercase}
+#omr-mobile-drawer .omr-sheet-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#omr-mobile-drawer .omr-sheet-links button{min-height:43px;padding:10px 12px;background:var(--bg-elevated);border:1px solid var(--omr-border);border-radius:8px;color:var(--text-primary);font-size:.77rem;font-weight:630;text-align:left}
+#omr-mobile-drawer .omr-sheet-links button:focus-visible{outline:2px solid var(--omr-violet);outline-offset:2px}
+@media(max-width:760px){
+ html .sidebar{display:none!important}
+ html .view-container{width:100%!important;max-width:100%!important;padding:12px 13px calc(102px + env(safe-area-inset-bottom))!important}
+ html .topbar{height:61px!important;min-height:61px!important;padding:8px 13px!important}
+ html .mobile-nav.omr-mobile-dock{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:3px!important;left:11px!important;right:11px!important;bottom:calc(9px + env(safe-area-inset-bottom))!important;width:auto!important;height:66px!important;min-height:66px!important;border-radius:15px!important;padding:5px!important}
+ html .omr-mobile-dock>button{height:54px!important;min-height:54px!important;border-radius:9px!important;gap:3px!important}
+ html .omr-mobile-dock>button .nav-label{font-size:10px!important;line-height:1.15!important;font-weight:695!important}
+ html #view-today .omr-day-main{display:flex;flex-direction:column;gap:11px}
+ html #view-today .omr-day-left,html #view-today .omr-day-right{display:flex;flex-direction:column;gap:11px;width:100%}
+ html #view-today .omr-day-hero{align-items:start;flex-direction:column;gap:15px;padding:9px 0 18px;margin-bottom:13px}
+ html #view-today .omr-day-hero h3{font-size:2.05rem!important;margin:8px 0 6px!important}
+ html #view-today .omr-day-hero-actions{width:100%}
+ html #view-today .omr-day-hero-actions .btn{flex:1}
+ html #view-today .omr-feature{padding:18px 15px}
+ html #view-today .omr-feature h4{font-size:1.3rem!important;margin:9px 0 13px!important}
+ html #view-today .omr-panel{padding:15px!important}
+ html #view-today .omr-panel-head{margin-bottom:12px}
+ html #view-today .omr-timeline-row{grid-template-columns:58px 10px minmax(0,1fr) 12px;gap:8px;padding:11px 0}
+ html #view-today .omr-timeline-time{font-size:.66rem}
+ html #view-today .omr-capture-line button{padding:9px 12px!important}
+ html #view-today .omr-stat{min-height:92px;padding:11px}
+ html #view-today .omr-stat strong{font-size:1.22rem!important}
+ html #view-dashboard .v431-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ html #view-dashboard .v431-hero{padding:18px!important}
+ html #view-habits .v105-month-card{padding:12px!important}
+ html #view-master-calendar .v36-cal-shell{border-radius:11px!important}
+}
+@media(max-width:370px){html .view-container{padding-inline:9px!important}html #view-today .omr-capture-line{flex-wrap:wrap}html #view-today .omr-capture-line button{width:100%}}
+@media(prefers-reduced-motion:reduce){html #view-today button{transition:none!important}}
 </style>
 
 <script id="omnios-unified-2026-controls">
@@ -13496,5 +13710,96 @@ html .omni-flat-primary{
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});
  else mount();
  window.OmniUnifiedDesign2026={setMode:setMode,getMode:()=>mode,refresh:mount};
+})();
+</script>
+
+<script id="omnios-remake-mobile-nav">
+(function(){
+  'use strict';
+  if(window.__omniRemakeNav)return;
+  window.__omniRemakeNav=true;
+  let priorFocus=null;
+  function drawer(){return document.getElementById('omr-mobile-drawer')}
+  function close(){
+    const host=drawer();
+    if(!host||host.hidden)return;
+    host.hidden=true;
+    document.body.classList.remove('omr-sheet-open');
+    const btn=document.getElementById('omr-mobile-more');
+    if(btn){btn.setAttribute('aria-expanded','false');btn.classList.remove('active')}
+    if(priorFocus?.isConnected)priorFocus.focus({preventScroll:true});
+    priorFocus=null;
+  }
+  function build(){
+    if(drawer())return drawer();
+    const host=document.createElement('div');host.id='omr-mobile-drawer';host.hidden=true;host.setAttribute('role','presentation');
+    const panel=document.createElement('div');panel.className='omr-sheet';panel.setAttribute('role','dialog');
+    panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','omr-sheet-title');
+    const head=document.createElement('div');head.className='omr-sheet-head';
+    const title=document.createElement('h3');title.id='omr-sheet-title';title.textContent='Explore OmniOS';
+    const dismiss=document.createElement('button');dismiss.type='button';dismiss.textContent='✕';dismiss.setAttribute('aria-label','Close navigation');
+    head.append(title,dismiss);panel.appendChild(head);
+    const body=document.createElement('div');body.className='omr-sheet-body';
+    const source=document.querySelector('.sidebar .nav-menu');
+    let container=null;
+    if(source){
+      for(const el of source.children){
+        if(el.matches('.nav-section')){
+          const h=document.createElement('div');h.className='omr-sheet-group';h.textContent=el.dataset.v35Section||el.textContent.trim();body.appendChild(h);
+          container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container);
+        }else if(el.matches('button.nav-item[data-view]')){
+          if(!container){container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container)}
+          const b=document.createElement('button');b.type='button';b.dataset.omrGo=el.dataset.view;
+          const label=el.textContent.trim().replace(/\s+/g,' ').replace(/^[\p{Extended_Pictographic}\s]+/u,'');
+          b.textContent=label||el.dataset.view;
+          container.appendChild(b);
+        }
+      }
+    }
+    panel.appendChild(body);host.appendChild(panel);document.body.appendChild(host);
+    dismiss.addEventListener('click',close);
+    host.addEventListener('click',function(event){
+      if(event.target===host){close();return}
+      const item=event.target.closest('[data-omr-go]');
+      if(item){
+        const next=item.dataset.omrGo;close();
+        if(typeof window.switchView==='function')window.switchView(next);
+      }
+    });
+    return host;
+  }
+  function open(){
+    const host=build();
+    priorFocus=document.activeElement;
+    host.hidden=false;
+    document.body.classList.add('omr-sheet-open');
+    const btn=document.getElementById('omr-mobile-more');
+    if(btn){btn.setAttribute('aria-expanded','true');btn.classList.add('active')}
+    host.querySelector('.omr-sheet-head button')?.focus({preventScroll:true});
+  }
+  // Capture before legacy mobile listeners try navigating to a missing "More" view.
+  document.addEventListener('click',function(event){
+    const more=event.target.closest?.('#omr-mobile-more');
+    if(more){event.preventDefault();event.stopImmediatePropagation();drawer()&&!drawer().hidden?close():open();return}
+    const nav=event.target.closest?.('.mobile-nav button[data-mobile-view]');
+    if(nav&&drawer()&&!drawer().hidden)close();
+  },true);
+  document.addEventListener('keydown',function(event){
+    const host=drawer();
+    if(!host||host.hidden)return;
+    if(event.key==='Escape'){event.preventDefault();close();return}
+    if(event.key==='Tab'){
+      const available=Array.from(host.querySelectorAll('button:not([disabled])'));
+      if(!available.length)return;
+      const first=available[0],last=available[available.length-1];
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+      else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
+    }
+  },true);
+  document.addEventListener('DOMContentLoaded',function(){
+    const more=document.getElementById('omr-mobile-more');
+    if(more)more.setAttribute('aria-expanded','false');
+  },{once:true});
+  window.OmniRemakeNav={open,close,build};
 })();
 </script>

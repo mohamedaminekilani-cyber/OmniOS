@@ -76,6 +76,20 @@ try{
  const picker=await evaluate('(()=>{const n=document.querySelector("#view-budget .v38-month-nav");if(!n)return {found:false};const kids=[...n.children].filter(x=>x.matches("button,.v38-month-label"));const tops=kids.map(x=>Math.round(x.getBoundingClientRect().top));return {found:true,children:kids.length,tops,height:Math.round(n.getBoundingClientRect().height)}})()');
  check('Finance month navigation fits one mobile row',picker.found&&picker.children>=4&&Math.max(...picker.tops)-Math.min(...picker.tops)<=10&&picker.height<=70,picker);
 
+ // Phase 10: verify the actual rendered geometry, not only the CSS sources.
+ await setViewport(1440,900);
+ const switchShape=await evaluate('(()=>{const s=document.createElement("button");s.className="settings-toggle";s.type="button";s.setAttribute("role","switch");s.setAttribute("aria-checked","false");document.body.appendChild(s);const a=getComputedStyle(s),w=Math.round(s.getBoundingClientRect().width),h=Math.round(s.getBoundingClientRect().height),leftOff=parseFloat(getComputedStyle(s,"::after").left);s.classList.add("on");s.setAttribute("aria-checked","true");const leftOn=parseFloat(getComputedStyle(s,"::after").left);s.remove();return {w,h,leftOff,leftOn}})()');
+ check('Switches render as compact centered controls with moving thumb',switchShape.w===50&&switchShape.h===30&&switchShape.leftOff===4&&switchShape.leftOn===24,switchShape);
+ for(const view of ['inbox','planner','projects','budget']){
+   await evaluate('window.switchView('+JSON.stringify(view)+')');await delay(250);
+   const head=await evaluate('(()=>{const v=document.querySelector(".view.active"),h=v?.querySelector(".v35-page-head,.omx-page-heading,.v38-finance-head");if(!h)return {present:false};const r=h.getBoundingClientRect(),p=getComputedStyle(h),first=h.firstElementChild?.getBoundingClientRect();return {present:true,paddingLeft:parseFloat(p.paddingLeft),paddingTop:parseFloat(p.paddingTop),height:r.height,firstInset:first?Math.round(first.left-r.left):null}})()');
+   check('Phase 10 '+view+' header has consistent internal spacing',head.present&&head.paddingLeft>=16&&head.paddingTop>=15&&head.height>=65&&head.firstInset>=16,head);
+ }
+ await setViewport(1024,800);
+ for(const view of ['dashboard','inbox','planner','budget'])await visit(view,'dark',1024);
+ await setViewport(760,900);
+ for(const view of ['projects','settings'])await visit(view,'light',760);
+
  for(const [width,theme] of [[1440,'dark'],[390,'light']]){
    const hashes=report.screenshotSignatures.filter(x=>x.width===width&&x.theme===theme).map(x=>x.sha256);
    const distinct=new Set(hashes).size;

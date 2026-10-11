@@ -12,7 +12,7 @@ const server=http.createServer((req,res)=>{
  let p;try{p=decodeURIComponent(new URL(req.url,'http://localhost').pathname)}catch{res.writeHead(400).end();return}
  const full=path.resolve('dist','.'+p);
  if(!full.startsWith(path.resolve('dist')+path.sep)){res.writeHead(403).end();return}
- fs.stat(full,(err,stat)=>{if(err||!stat.isFile()){res.writeHead(404).end();return}res.writeHead(200,{'Content-Type':full.endsWith('.html')?'text/html; charset=utf-8':'application/octet-stream','Cache-Control':'no-store'});fs.createReadStream(full).pipe(res)});
+ fs.stat(full,(err,stat)=>{if(err||!stat.isFile()){res.writeHead(404).end();return}res.writeHead(200,{'Content-Type':full.endsWith('.html')?'text/html; charset=utf-8':full.endsWith('.js')?'text/javascript; charset=utf-8':full.endsWith('.json')?'application/json':full.endsWith('.css')?'text/css':'application/octet-stream','Cache-Control':'no-store'});fs.createReadStream(full).pipe(res)});
 });
 await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
 const url='http://127.0.0.1:'+server.address().port+'/'+release.file;

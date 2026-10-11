@@ -10961,9 +10961,13 @@ function readCollapsed(){
 function writeCollapsed(x){try{localStorage.setItem(GROUP_KEY,JSON.stringify(x||{}))}catch(_){}}
 
 function profileData(){
-  let name='Second Brain',avatar='';
+  let name='OmniOS',avatar='';
   try{
-    name=String(state?.settings?.profile?.name||'').trim()||'Second Brain';
+    const profileName=String(state?.settings?.profile?.name||'').trim();
+    const configuredBrand=String(state?.settings?.appearance?.branding?.title||'').trim();
+    const brandName=configuredBrand&&configuredBrand!=='Second Brain'?configuredBrand:'OmniOS';
+    // Legacy placeholder is not a person. Keep real profile names and custom brands.
+    name=profileName&&profileName!=='Second Brain'?profileName:brandName;
     avatar=String(state?.settings?.profile?.avatar||'').trim();
   }catch(_){}
   return{name,avatar}

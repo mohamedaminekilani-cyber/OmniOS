@@ -50,9 +50,9 @@ test('Projects can be opened with mouse, Enter, and Space while keeping editor a
 
 test('Finance and Reminders provide accessible tab state without changing data behavior',()=>{
  const f=finance.slice(finance.indexOf('function topShell38(){'),finance.indexOf('window.renderFinanceV38=',finance.indexOf('function topShell38(){')));
- for(const x of ['aria-pressed="\${tab===k}"','aria-label="Previous finance month"','aria-label="Next finance month"','openFinanceTransactionV38','openTransferV38','renderTransactions38','renderBudgetTab38'])assert.ok(f.includes(x),x);
+ for(const x of ['aria-pressed="${tab===k}"','aria-label="Previous finance month"','aria-label="Next finance month"','openFinanceTransactionV38','openTransferV38','renderTransactions38','renderBudgetTab38'])assert.ok(f.includes(x),x);
  const r=organize.slice(organize.indexOf('function renderReminders40(){'),organize.indexOf('function ',organize.indexOf('function renderReminders40(){')+12));
- for(const x of ['aria-pressed="\${u.scope===k}"','aria-label="Search reminders"','id="org-rem-new"','data-rem-scope','org-rem-item'])assert.ok(r.includes(x),x);
+ for(const x of ['aria-pressed="${u.scope===k}"','aria-label="Search reminders"','id="org-rem-new"','data-rem-scope','org-rem-item'])assert.ok(r.includes(x),x);
 });
 
 test('Remaining modules receive flat surfaces and responsive bounded layouts',()=>{

@@ -1542,7 +1542,12 @@ function renderDashboard43(){
     const greeting43=greetingHour<12?'Good morning':greetingHour<17?'Good afternoon':'Good evening';
     const firstName43=String(state.settingsProfile?.name||state.settings?.profile?.name||'').trim().split(/\s+/)[0].slice(0,32);
     const friendlyDate43=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
-    const nextFocusTask43=d.open.find(t=>t.urgency==='urgent'||t.importance==='high')||d.open[0]||null;
+    const priorityTasks43=arr(state.entries).filter(t=>!done43(t)).sort((a,b)=>{
+        const priority=t=>(t.urgency==='urgent'?0:t.importance==='high'?1:2);
+        const due=t=>(t.date&&t.date<=today()?0:t.date?1:2);
+        return due(a)-due(b)||priority(a)-priority(b)||String(a.date||'9999').localeCompare(String(b.date||'9999'));
+    }).slice(0,3);
+    const priorityRows43=priorityTasks43.map((t,i)=>`<button type="button" class="om3-priority-item" data-om3-task="${E(t.id)}"><span class="om3-priority-index">${String(i+1).padStart(2,'0')}</span><span class="om3-priority-body"><strong>${E(t.title||'Untitled task')}</strong><small>${t.date?'Due '+E(t.date):'Anytime'}${t.urgency==='urgent'?' · Urgent':t.importance==='high'?' · Important':''}</small></span><span class="om3-priority-arrow" aria-hidden="true">↗</span></button>`).join('');
     sec.innerHTML=`
     <div class="v43-hero v431-hero">
       <div class="v431-hero-main">
@@ -1559,7 +1564,7 @@ function renderDashboard43(){
       </div>
     </div>
     <nav class="v43-tabs v431-tabs" id="v43-dash-scopes" aria-label="Dashboard scope">${[['all','Overview'],['productivity','Productivity'],['wellness','Wellness'],['finance','Finance'],['life','Life']].map(([k,l])=>`<button type="button" class="v43-tab ${scope===k?'active':''}" data-v43-scope="${k}">${l}</button>`).join('')}</nav>
-    ${(scope==='all'||scope==='productivity')?`<section class="omx-next-focus" aria-label="Suggested next priority"><div class="omx-next-focus-mark" aria-hidden="true">01</div><div class="omx-next-focus-text"><span class="omx-eyebrow">START HERE</span><strong>${nextFocusTask43?E(nextFocusTask43.title||'Task'):'Your next important thing'}</strong><p>${nextFocusTask43?'One action at a time keeps things moving.':'No outstanding tasks. Make room for your next idea.'}</p></div><button type="button" data-v43-open="tasks" class="omx-focus-link">${nextFocusTask43?'Open tasks':'Plan a task'} ↗</button></section>`:''}
+    ${(scope==='all'||scope==='productivity')?`<section class="om3-dashboard-focus" aria-label="Top priorities"><div class="om3-dashboard-focus-heading"><div><span class="omx-eyebrow">START WITH WHAT MATTERS</span><h4>Top priorities</h4><p>Your next actions, not another status report.</p></div><button type="button" data-v43-open="today" class="om3-focus-today">Go to Today ↗</button></div><div class="om3-priority-list">${priorityRows43||'<div class="om3-priority-empty">No open tasks right now. Your next action is yours to choose.</div>'}</div><button type="button" class="om3-focus-footer" data-v43-open="tasks">Open all tasks ↗</button></section>`:''}
     <section class="v431-glance" aria-label="At a glance"><div class="omx-section-title"><div><span class="omx-eyebrow">YOUR MOMENTUM</span><h4>At a glance</h4></div><span class="omx-context-label">${E(d.r.label)}</span></div><div class="v43-kpis v431-kpis">${kpis.join('')}</div></section>
     ${att.length&&(scope==='all'||scope==='life'||scope==='productivity')?`<section class="v43-card v43-attention v431-attention"><div class="v43-card-head"><div><div class="v43-card-title">Needs attention <span class="v431-count">${att.length}</span></div><div class="v43-card-sub">Only overdue and time-sensitive items</div></div>${openButton('reminders','Attention Center')}</div><div class="v43-list">${att.slice(0,4).map((x,i)=>row43({...x,key:'att-'+i,badge:x.tone==='bad'?'Overdue':'Soon'})).join('')}</div></section>`:''}
     <div class="v431-board">
@@ -1582,6 +1587,7 @@ function renderDashboard43(){
     sec.querySelector('#v43-dash-today')?.addEventListener('click',()=>switchView('today'));
     sec.querySelector('#v43-dash-custom')?.addEventListener('click',openDashboardOptions43);
     sec.querySelectorAll('[data-v43-open]').forEach(b=>b.onclick=()=>switchView(b.dataset.v43Open));
+    sec.querySelectorAll('[data-om3-task]').forEach(b=>b.onclick=()=>{const id=b.dataset.om3Task;if(typeof window.showPowerSidebarFor==='function')window.showPowerSidebarFor('task',id);else switchView('tasks')});
     sec.querySelectorAll('[data-v43-row]').forEach(r=>{
         const k=r.dataset.v43Row||'';
         if(k.startsWith('att-')) r.onclick=att[Number(k.slice(4))]?.action;

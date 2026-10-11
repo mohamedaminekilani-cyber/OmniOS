@@ -13129,4 +13129,74 @@ button:focus-visible,a:focus-visible,:where(input,select,textarea):focus-visible
 @media(prefers-reduced-motion:reduce){
   :where(.btn,.view-btn,.tab-btn,.nav-item,.v43-tab,.mobile-nav>button){animation:none!important;transition:none!important}
 }
+
+/* Quick capture keeps the reference's next-priority action functional. */
+#view-dashboard .omni-dashboard-capture{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  width:min(470px,100%);min-height:46px;margin-top:19px;
+  padding:9px 11px 9px 17px;
+  border:1px solid var(--border-light);border-radius:99px;
+  background:var(--bg-elevated);color:var(--text-muted);
+  font:inherit;font-size:.79rem;font-weight:580;
+  text-align:left;cursor:pointer;
+}
+#view-dashboard .omni-dashboard-capture:hover{border-color:var(--accent-cyan);color:var(--text-primary);background:var(--bg-hover)}
+#view-dashboard .omni-dashboard-capture-arrow{
+  display:grid;place-items:center;flex:none;width:30px;height:30px;
+  border-radius:50%;background:var(--accent-cyan);color:white;font-size:1.15rem;font-weight:770;
+}
+#view-dashboard .omni-dashboard-capture:focus-visible{outline:2px solid var(--accent-cyan)!important;outline-offset:3px!important}
+@media(max-width:760px){#view-dashboard .omni-dashboard-capture{margin-top:16px;min-height:44px;font-size:.76rem}}
 </style>
+
+<script id="omnios-unified-2026-controls">
+(function(){
+ 'use strict';
+ if(window.__omniosUnifiedDesign2026)return;
+ window.__omniosUnifiedDesign2026=true;
+ const KEY='omnios_visual_style_2026';
+ const css=document.getElementById('omnios-unified-design-2026');
+ const getMode=()=>{try{return localStorage.getItem(KEY)==='classic'?'classic':'modern'}catch(_){return 'modern'}};
+ let mode=getMode();
+ function setMode(next){
+   mode=next==='classic'?'classic':'modern';
+   if(css)css.disabled=mode==='classic';
+   document.documentElement.dataset.omniUi=mode;
+   try{localStorage.setItem(KEY,mode)}catch(_){}
+   const toggle=document.getElementById('omni-unified-mode-toggle');
+   if(toggle){toggle.textContent=mode==='classic'?'Use refreshed design':'Use Classic appearance';toggle.setAttribute('aria-pressed',String(mode==='classic'))}
+ }
+ // Apply the user's prior choice immediately, before the first app render.
+ setMode(mode);
+ function mount(){
+   const settings=document.getElementById('view-settings');
+   if(settings&&!document.getElementById('omni-2026-appearance')){
+     const el=document.createElement('div');
+     el.id='omni-2026-appearance';
+     el.setAttribute('role','group');
+     el.setAttribute('aria-label','OmniOS interface appearance');
+     el.innerHTML='<div><h3>Interface style</h3><p>Compare the new OmniOS look with your original interface. Your saved data stays the same.</p></div><button type="button" class="btn" id="omni-unified-mode-toggle" aria-pressed="false">Use Classic appearance</button>';
+     settings.insertBefore(el,settings.firstChild);
+     setMode(mode);
+   }
+   const bar=document.querySelector('.topbar'),title=document.getElementById('view-title');
+   if(bar&&title&&!document.getElementById('omni-unified-date')){
+     const date=document.createElement('span');date.id='omni-unified-date';
+     date.textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+     title.insertAdjacentElement('afterend',date);
+   }
+ }
+ document.addEventListener('click',function(e){
+   if(e.target.closest&&e.target.closest('#omni-unified-mode-toggle')){
+     setMode(mode==='classic'?'modern':'classic');
+   }
+   if(e.target.closest&&e.target.closest('#omni-dashboard-capture')){
+     const add=document.getElementById('global-add-btn');
+     if(add)add.click();
+   }
+ });
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});
+ else mount();
+ window.OmniUnifiedDesign2026={setMode:setMode,getMode:()=>mode,refresh:mount};
+})();
+</script>

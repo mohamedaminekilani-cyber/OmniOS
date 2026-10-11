@@ -14237,6 +14237,442 @@ html .ds-sr-only{position:absolute!important;width:1px;height:1px;padding:0;marg
   html :where(.ds-btn,.ds-tab):focus-visible{outline:2px solid Highlight!important}
 }
 /* END OMNIOS PHASE 1 FOUNDATION / v1 */
+
+/* ===============================================================
+   OMNIOS PHASE 2 APPLICATION SHELL / v1
+   Navigation, responsive page frame, global search and More sheet.
+   Reuses v101 sidebar routing and omr accessible mobile drawer.
+   =============================================================== */
+html{
+  --om2-side-width:248px;
+  --om2-side-compact-width:76px;
+  --om2-topbar-height:66px;
+  --om2-content-max:1520px;
+  --om2-page-gutter:clamp(18px,2.5vw,36px);
+}
+html body{overflow-x:hidden!important}
+html .main-content{
+  flex:1 1 auto!important;min-width:0!important;
+  background:var(--ds-canvas)!important;
+}
+html .view-container{
+  box-sizing:border-box!important;width:100%!important;
+  min-width:0!important;max-width:var(--om2-content-max)!important;
+  margin:0 auto!important;
+  padding:26px var(--om2-page-gutter) 46px!important;
+  background:var(--ds-canvas)!important;
+  overflow-x:clip!important;
+}
+html .view.active{min-width:0!important;max-width:100%!important}
+html .sidebar{
+  box-sizing:border-box!important;
+  width:var(--om2-side-width)!important;min-width:var(--om2-side-width)!important;
+  height:100dvh!important;max-height:100dvh!important;
+  display:flex!important;flex-direction:column!important;
+  padding:14px 11px 12px!important;
+  background:var(--ds-surface)!important;background-image:none!important;
+  border-right:1px solid var(--ds-line)!important;
+  box-shadow:none!important;overflow:hidden!important;
+}
+html .sidebar.v101-sidebar>.logo{
+  display:block!important;flex:none;
+  padding:4px 2px 13px!important;
+  margin:0 0 11px!important;
+  background:none!important;border-bottom:1px solid var(--ds-line)!important;
+}
+html .sidebar.v101-sidebar .v101-sidebar-profile{
+  min-height:58px!important;display:grid!important;
+  grid-template-columns:38px minmax(0,1fr) 34px!important;
+  align-items:center!important;gap:9px!important;
+  border:0!important;padding:7px 5px!important;
+  border-radius:var(--ds-radius-md)!important;
+  background:transparent!important;background-image:none!important;
+  box-shadow:none!important;
+}
+html .sidebar.v101-sidebar .v101-sidebar-avatar{
+  width:38px!important;height:38px!important;
+  background:var(--ds-surface-raised)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-sm)!important;color:var(--ds-text)!important;
+}
+html .sidebar.v101-sidebar .v101-sidebar-profile-copy strong{
+  color:var(--ds-text)!important;font-size:13px!important;
+  font-weight:750!important;line-height:1.28!important;
+}
+html .sidebar.v101-sidebar .v101-sidebar-profile-copy span{
+  color:var(--ds-text-muted)!important;font-size:12px!important;
+  line-height:1.3!important;margin-top:3px!important;
+}
+html .sidebar.v101-sidebar .v101-sidebar-search-toggle{
+  width:34px!important;height:34px!important;min-height:34px!important;
+  color:var(--ds-text-secondary)!important;
+  background:var(--ds-surface-raised)!important;border:1px solid var(--ds-line)!important;
+  border-radius:var(--ds-radius-sm)!important;
+}
+html .sidebar.v101-sidebar .v101-sidebar-search{border-radius:var(--ds-radius-sm)!important}
+html .sidebar.v101-sidebar .v101-sidebar-search input{font-size:14px!important;min-height:30px!important}
+html .sidebar.v101-sidebar .nav-menu{
+  flex:1 1 auto!important;min-width:0!important;
+  gap:8px!important;padding:0 2px 12px!important;
+  overflow-y:auto!important;overflow-x:hidden!important;
+  scrollbar-width:thin!important;scrollbar-color:var(--ds-line) transparent!important;
+}
+html .sidebar.v101-sidebar .nav-menu::-webkit-scrollbar{display:initial!important;width:5px}
+html .sidebar.v101-sidebar .nav-menu::-webkit-scrollbar-thumb{background:var(--ds-line);border-radius:5px}
+html .sidebar.v101-sidebar .v101-nav-group{
+  --v101-group-accent:var(--ds-accent)!important;
+  width:100%;overflow:visible!important;
+  border:0!important;background:transparent!important;
+  box-shadow:none!important;border-radius:0!important;
+  transition:none!important;min-width:0!important;
+}
+html .sidebar.v101-sidebar .v101-nav-group:hover{border:0!important}
+html .sidebar.v101-sidebar .v101-nav-group-head{
+  min-height:35px!important;max-height:none!important;
+  display:flex!important;align-items:center!important;
+  padding:5px 9px!important;gap:8px!important;
+  background:transparent!important;background-image:none!important;
+  border:0!important;border-radius:var(--ds-radius-sm)!important;
+  box-shadow:none!important;color:var(--ds-text-muted)!important;
+}
+html .sidebar.v101-sidebar .v101-nav-group-head:hover{
+  color:var(--ds-text)!important;background:var(--ds-surface-raised)!important;
+}
+html .sidebar.v101-sidebar .v101-nav-group-head-main{gap:8px!important}
+html .sidebar.v101-sidebar .v101-nav-group-icon{
+  width:23px!important;height:23px!important;flex:0 0 23px!important;
+  background:transparent!important;background-image:none!important;
+  color:var(--ds-text-muted)!important;border:0!important;
+  border-radius:var(--ds-radius-sm)!important;
+}
+html .sidebar.v101-sidebar .v101-nav-group-icon svg{width:17px!important;height:17px!important}
+html .sidebar.v101-sidebar .v101-nav-group-head-title{
+  color:var(--ds-text-muted)!important;font-size:11px!important;
+  line-height:1.3!important;letter-spacing:.09em!important;
+  text-transform:uppercase!important;font-weight:800!important;
+}
+html .sidebar.v101-sidebar .v101-nav-group-chevron{
+  color:var(--ds-text-muted)!important;opacity:.82!important;
+}
+html .sidebar.v101-sidebar .v101-nav-group-body{
+  min-width:0!important;
+  background:transparent!important;border:0!important;
+  border-top:0!important;padding:2px 3px 6px!important;gap:2px!important;
+}
+html .sidebar.v101-sidebar .nav-item{
+  display:grid!important;grid-template-columns:24px minmax(0,1fr) auto!important;
+  align-items:center!important;gap:9px!important;
+  width:100%!important;min-width:0!important;
+  min-height:39px!important;margin:0!important;padding:7px 9px!important;
+  border:1px solid transparent!important;border-left:2px solid transparent!important;
+  border-radius:var(--ds-radius-sm)!important;
+  background:transparent!important;box-shadow:none!important;
+  color:var(--ds-text-secondary)!important;
+  font-size:13px!important;font-weight:570!important;line-height:1.3!important;
+  text-align:left!important;
+}
+html .sidebar.v101-sidebar .nav-item:hover{
+  background:var(--ds-surface-raised)!important;
+  border-color:transparent!important;color:var(--ds-text)!important;
+}
+html .sidebar.v101-sidebar .nav-item.active{
+  background:var(--ds-accent-surface)!important;
+  border:1px solid var(--ds-line)!important;
+  border-left:3px solid var(--ds-accent)!important;
+  padding-left:8px!important;color:var(--ds-accent-ink)!important;
+  font-weight:750!important;
+}
+html .sidebar.v101-sidebar .nav-item .v101-nav-icon-wrap{
+  display:grid!important;place-items:center!important;
+  width:24px!important;height:24px!important;
+  background:transparent!important;background-image:none!important;
+  border:0!important;color:var(--ds-text-muted)!important;
+  border-radius:var(--ds-radius-sm)!important;
+}
+html .sidebar.v101-sidebar .nav-item.active .v101-nav-icon-wrap{color:var(--ds-accent-ink)!important}
+html .sidebar.v101-sidebar .nav-item .v101-nav-label{
+  display:block!important;font-size:13px!important;
+  min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  white-space:nowrap!important;color:inherit!important;
+}
+html .sidebar.v101-sidebar .v101-nav-badge.has-value{
+  border-radius:var(--ds-radius-xs)!important;
+  color:var(--ds-text-secondary)!important;
+  background:var(--ds-surface-raised)!important;border:1px solid var(--ds-line)!important;
+  min-width:20px!important;font-size:11px!important;
+}
+html .sidebar.v101-sidebar .nav-item:focus-visible,
+html .sidebar.v101-sidebar .v101-nav-group-head:focus-visible{
+  outline:2px solid var(--ds-focus)!important;outline-offset:-2px!important;
+}
+html .om2-sidebar-toggle{
+  display:inline-flex;align-items:center;justify-content:center;
+  flex:none;min-width:38px;min-height:38px;padding:8px;
+  border:1px solid var(--ds-line);border-radius:var(--ds-radius-sm);
+  color:var(--ds-text-secondary);background:var(--ds-surface-raised);
+  cursor:pointer;font-size:16px;line-height:1;
+}
+html .om2-sidebar-toggle:hover{background:var(--ds-surface-hover);color:var(--ds-text)}
+/* Compact desktop sidebar is icons-only but retains accessible labels/tooltips. */
+@media(min-width:761px){
+  html.om2-compact .sidebar.v101-sidebar{
+    width:var(--om2-side-compact-width)!important;
+    min-width:var(--om2-side-compact-width)!important;
+    padding:13px 8px!important;
+  }
+  html.om2-compact .sidebar.v101-sidebar>.logo{padding:5px 1px 12px!important}
+  html.om2-compact .sidebar.v101-sidebar .v101-sidebar-profile{
+    padding:5px 1px!important;display:flex!important;justify-content:center!important;
+  }
+  html.om2-compact .sidebar.v101-sidebar .v101-sidebar-profile-copy,
+  html.om2-compact .sidebar.v101-sidebar .v101-sidebar-search-toggle,
+  html.om2-compact .sidebar.v101-sidebar .v101-sidebar-search,
+  html.om2-compact .sidebar.v101-sidebar .v101-nav-group-head,
+  html.om2-compact .sidebar.v101-sidebar .nav-item .v101-nav-label,
+  html.om2-compact .sidebar.v101-sidebar .nav-item .v101-nav-badge{display:none!important}
+  html.om2-compact .sidebar.v101-sidebar .v101-nav-group{
+    padding:6px 0!important;border-bottom:1px solid var(--ds-line)!important;
+  }
+  html.om2-compact .sidebar.v101-sidebar .v101-nav-group-body{
+    display:flex!important;flex-direction:column!important;
+    gap:4px!important;padding:0!important;
+  }
+  html.om2-compact .sidebar.v101-sidebar .nav-item{
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    min-height:43px!important;min-width:43px!important;
+    padding:8px!important;
+  }
+  html.om2-compact .sidebar.v101-sidebar .nav-item .v101-nav-icon-wrap{
+    width:25px!important;height:25px!important;
+  }
+  html.om2-compact .sidebar.v101-sidebar .v101-nav-group:last-child{border:0!important}
+}
+/* One topbar language across all desktop views. */
+html .topbar{
+  display:flex!important;align-items:center!important;
+  gap:12px!important;min-width:0!important;
+  min-height:var(--om2-topbar-height)!important;
+  height:var(--om2-topbar-height)!important;
+  padding:0 var(--om2-page-gutter)!important;
+  border-bottom:1px solid var(--ds-line)!important;
+  background:var(--ds-canvas)!important;background-image:none!important;
+  box-shadow:none!important;backdrop-filter:none!important;
+}
+html .topbar-title{
+  color:var(--ds-text)!important;font-size:17px!important;
+  font-weight:770!important;letter-spacing:-.035em!important;
+  min-width:0!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+html #omni-unified-date{
+  color:var(--ds-text-muted)!important;font-size:12px!important;
+  margin-left:4px!important;margin-right:auto!important;white-space:nowrap!important;
+}
+html .topbar-actions{
+  display:flex!important;align-items:center!important;
+  margin-left:auto!important;gap:8px!important;flex:none!important;min-width:0!important;
+}
+html .topbar #save-status{
+  font-size:12px!important;color:var(--ds-text-muted)!important;
+  max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+html .topbar :where(#settings-topbar-btn,.om2-search-toggle){
+  display:inline-grid!important;place-items:center!important;
+  min-width:38px!important;width:38px!important;
+  min-height:38px!important;height:38px!important;padding:8px!important;
+  background:var(--ds-surface)!important;color:var(--ds-text-secondary)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-sm)!important;
+  box-shadow:none!important;cursor:pointer;
+}
+html .topbar .om2-search-toggle svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linejoin:round;stroke-linecap:round}
+html .topbar :where(#settings-topbar-btn,.om2-search-toggle):hover{
+  background:var(--ds-surface-hover)!important;color:var(--ds-text)!important;
+}
+html .topbar #global-add-btn{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  min-height:39px!important;padding:9px 14px!important;
+  border:1px solid var(--ds-primary)!important;background:var(--ds-primary)!important;
+  color:var(--ds-on-primary)!important;border-radius:var(--ds-radius-sm)!important;
+  font-size:13px!important;font-weight:700!important;box-shadow:none!important;
+}
+/* Search overlay: page navigation only, not a fake full-text search. */
+#om2-search-overlay[hidden]{display:none!important}
+#om2-search-overlay{
+  position:fixed;inset:0;z-index:110000;
+  background:var(--ds-overlay);
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:clamp(48px,13vh,135px) 16px 16px;box-sizing:border-box;
+}
+#om2-search-overlay .om2-search-dialog{
+  width:min(570px,100%);max-height:min(76dvh,700px);
+  display:flex;flex-direction:column;overflow:hidden;
+  background:var(--ds-surface);color:var(--ds-text);
+  border:1px solid var(--ds-line);border-radius:var(--ds-radius-lg);
+  box-shadow:none;
+}
+#om2-search-overlay .om2-search-top{
+  display:flex;align-items:center;gap:9px;padding:12px;
+  border-bottom:1px solid var(--ds-line);
+}
+#om2-search-overlay .om2-search-icon{
+  width:19px;height:19px;flex:none;color:var(--ds-text-muted);
+  fill:none;stroke:currentColor;stroke-width:1.8;
+}
+#om2-search-overlay .om2-search-input{
+  min-width:0;flex:1;width:100%;
+  padding:9px 6px;font:500 15px/1.35 var(--ds-font);
+  background:transparent;color:var(--ds-text);
+  border:0;outline:none;box-shadow:none;
+}
+#om2-search-overlay .om2-search-input::placeholder{color:var(--ds-text-muted);opacity:1}
+#om2-search-overlay .om2-search-dismiss{
+  background:var(--ds-surface-raised);border:1px solid var(--ds-line);
+  border-radius:var(--ds-radius-xs);color:var(--ds-text-muted);
+  padding:4px 8px;min-height:32px;cursor:pointer;font-size:12px;
+}
+#om2-search-overlay .om2-search-results{
+  display:flex;flex-direction:column;gap:2px;
+  min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  padding:9px;
+}
+#om2-search-overlay .om2-search-result{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;width:100%;min-height:43px;padding:9px 12px;
+  background:transparent;color:var(--ds-text-secondary);
+  border:1px solid transparent;border-radius:var(--ds-radius-sm);
+  font:600 14px/1.3 var(--ds-font);text-align:left;cursor:pointer;
+}
+#om2-search-overlay .om2-search-result:hover,
+#om2-search-overlay .om2-search-result[aria-selected="true"]{
+  background:var(--ds-accent-surface);border-color:var(--ds-line);
+  color:var(--ds-accent-ink);
+}
+#om2-search-overlay .om2-search-result small{font-size:11px;font-weight:600;color:var(--ds-text-muted)}
+#om2-search-overlay .om2-search-empty{
+  padding:18px 14px;color:var(--ds-text-muted);font-size:13px;line-height:1.5;
+}
+#om2-search-overlay .om2-search-help{
+  border-top:1px solid var(--ds-line);
+  padding:10px 15px;color:var(--ds-text-muted);font-size:12px;
+}
+/* Mobile dock: exactly five actions, readable icon+label, safe-area support. */
+@media(max-width:760px){
+  html .sidebar{display:none!important}
+  html .main-content{width:100%!important;max-width:100%!important;min-width:0!important}
+  html .topbar{
+    min-height:62px!important;height:auto!important;
+    padding:calc(7px + env(safe-area-inset-top,0px)) 13px 9px!important;
+    gap:9px!important;
+  }
+  html .topbar-title{font-size:16px!important;max-width:42vw!important}
+  html #omni-unified-date,html #save-status{display:none!important}
+  html .topbar .om2-sidebar-toggle{display:none!important}
+  html .topbar-actions{gap:6px!important}
+  html .topbar :where(#settings-topbar-btn,.om2-search-toggle){
+    min-width:40px!important;width:40px!important;height:40px!important;min-height:40px!important;
+  }
+  html .topbar #global-add-btn{
+    min-width:40px!important;width:40px!important;min-height:40px!important;
+    padding:4px!important;font-size:0!important;line-height:0!important;
+  }
+  html .topbar #global-add-btn::before{content:"+";font-size:23px!important;line-height:1!important}
+  html .view-container{
+    max-width:100%!important;width:100%!important;
+    padding:16px 13px calc(104px + env(safe-area-inset-bottom,0px))!important;
+    margin:0!important;
+  }
+  html .mobile-nav.omr-mobile-dock{
+    box-sizing:border-box!important;
+    position:fixed!important;left:12px!important;right:12px!important;
+    bottom:calc(9px + env(safe-area-inset-bottom,0px))!important;
+    width:auto!important;height:68px!important;min-height:68px!important;
+    display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    align-items:center!important;gap:3px!important;
+    padding:6px!important;background:var(--ds-surface)!important;
+    background-image:none!important;border:1px solid var(--ds-line)!important;
+    border-radius:var(--ds-radius-lg)!important;
+    box-shadow:none!important;backdrop-filter:none!important;z-index:480!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button{
+    min-width:0!important;max-width:100%!important;min-height:54px!important;
+    height:54px!important;display:flex!important;flex-direction:column!important;
+    align-items:center!important;justify-content:center!important;gap:4px!important;
+    padding:6px 2px!important;
+    background:transparent!important;color:var(--ds-text-muted)!important;
+    border:1px solid transparent!important;border-radius:var(--ds-radius-sm)!important;
+    box-shadow:none!important;
+  }
+  html .mobile-nav.omr-mobile-dock>button.active{
+    color:var(--ds-accent-ink)!important;background:var(--ds-accent-surface)!important;
+    border:1px solid var(--ds-line)!important;
+  }
+  html .mobile-nav.omr-mobile-dock .nav-icon{
+    display:grid!important;place-items:center!important;
+    width:23px!important;height:23px!important;
+    font-size:21px!important;line-height:1!important;
+  }
+  html .mobile-nav.omr-mobile-dock .nav-icon svg{width:21px!important;height:21px!important}
+  html .mobile-nav.omr-mobile-dock .nav-label{
+    display:block!important;max-width:100%!important;
+    white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important;
+    color:inherit!important;font-size:10px!important;
+    font-weight:700!important;line-height:1.2!important;letter-spacing:0!important;
+  }
+  #omr-mobile-drawer{
+    padding:10px 10px max(10px,env(safe-area-inset-bottom,0px))!important;
+    background:var(--ds-overlay)!important;
+  }
+  #omr-mobile-drawer .omr-sheet{
+    width:100%!important;max-width:580px!important;
+    max-height:min(86dvh,780px)!important;
+    background:var(--ds-surface)!important;
+    border:1px solid var(--ds-line)!important;
+    border-radius:var(--ds-radius-lg) var(--ds-radius-lg) 0 0!important;
+    box-shadow:none!important;
+  }
+  #omr-mobile-drawer .omr-sheet-head{
+    padding:17px 18px!important;border-bottom:1px solid var(--ds-line)!important;
+  }
+  #omr-mobile-drawer .omr-sheet-head h3{font-size:17px!important;font-weight:760!important;color:var(--ds-text)!important}
+  #omr-mobile-drawer .omr-sheet-head button{
+    width:39px!important;height:39px!important;min-height:39px!important;
+    background:var(--ds-surface-raised)!important;
+    color:var(--ds-text)!important;border:1px solid var(--ds-line)!important;
+    border-radius:var(--ds-radius-sm)!important;
+  }
+  #omr-mobile-drawer .omr-sheet-body{overflow-y:auto!important;overscroll-behavior:contain;padding:12px 14px 22px!important}
+  #omr-mobile-drawer .omr-sheet-group{
+    color:var(--ds-text-muted)!important;font-size:11px!important;
+    text-transform:uppercase!important;font-weight:800!important;
+    letter-spacing:.08em!important;margin:15px 4px 6px!important;
+  }
+  #omr-mobile-drawer .omr-sheet-links{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+  #omr-mobile-drawer .omr-sheet-links button{
+    min-height:43px!important;padding:10px!important;
+    font-size:13px!important;text-align:left!important;
+    color:var(--ds-text-secondary)!important;
+    background:var(--ds-surface-raised)!important;border:1px solid var(--ds-line)!important;
+    border-radius:var(--ds-radius-sm)!important;box-shadow:none!important;
+  }
+  #omr-mobile-drawer .omr-sheet-links button:focus-visible,
+  #omr-mobile-drawer .omr-sheet-links button:hover{
+    color:var(--ds-accent-ink)!important;background:var(--ds-accent-surface)!important;
+  }
+  #om2-search-overlay{padding:calc(70px + env(safe-area-inset-top,0px)) 11px 12px!important}
+  #om2-search-overlay .om2-search-dialog{max-height:min(76dvh,620px)}
+}
+@media(max-width:390px){
+  html .topbar{gap:4px!important;padding-inline:10px!important}
+  html .topbar-title{max-width:36vw!important;font-size:15px!important}
+  html .view-container{padding-left:10px!important;padding-right:10px!important}
+  html .mobile-nav.omr-mobile-dock{left:7px!important;right:7px!important;gap:1px!important}
+  html .mobile-nav.omr-mobile-dock>button .nav-label{font-size:9.5px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  html .sidebar :where(.nav-item,.v101-nav-group-head),
+  #om2-search-overlay .om2-search-result,
+  html .mobile-nav.omr-mobile-dock>button{transition:none!important}
+}
+/* END OMNIOS PHASE 2 APPLICATION SHELL / v1 */
 </style>
 
 <script id="omnios-unified-2026-controls">
@@ -14320,17 +14756,32 @@ html .ds-sr-only{position:absolute!important;width:1px;height:1px;padding:0;marg
     const body=document.createElement('div');body.className='omr-sheet-body';
     const source=document.querySelector('.sidebar .nav-menu');
     let container=null;
+    function addGroup(title){
+      const h=document.createElement('div');h.className='omr-sheet-group';
+      h.textContent=title||'Navigation';body.appendChild(h);
+      container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container);
+    }
+    function addPage(el){
+      const view=el.dataset.view;
+      if(!view)return;
+      if(!container){container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container)}
+      const b=document.createElement('button');b.type='button';b.dataset.omrGo=view;
+      b.textContent=el.querySelector('.v101-nav-label')?.textContent?.trim()||
+        el.textContent.trim().replace(/\s+/g,' ').replace(/^[\p{Extended_Pictographic}\s]+/u,'')||view;
+      if(el.classList.contains('active')){b.classList.add('active');b.setAttribute('aria-current','page')}
+      container.appendChild(b);
+    }
     if(source){
-      for(const el of source.children){
-        if(el.matches('.nav-section')){
-          const h=document.createElement('div');h.className='omr-sheet-group';h.textContent=el.dataset.v35Section||el.textContent.trim();body.appendChild(h);
-          container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container);
-        }else if(el.matches('button.nav-item[data-view]')){
-          if(!container){container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container)}
-          const b=document.createElement('button');b.type='button';b.dataset.omrGo=el.dataset.view;
-          const label=el.textContent.trim().replace(/\s+/g,' ').replace(/^[\p{Extended_Pictographic}\s]+/u,'');
-          b.textContent=label||el.dataset.view;
-          container.appendChild(b);
+      const groups=source.querySelectorAll(':scope > .v101-nav-group');
+      if(groups.length){
+        groups.forEach(group=>{
+          addGroup(group.dataset.group||group.querySelector('.v101-nav-group-head-title')?.textContent?.trim()||'Navigation');
+          group.querySelectorAll('.nav-item[data-view]').forEach(addPage);
+        });
+      }else{
+        for(const el of source.children){
+          if(el.matches('.nav-section'))addGroup(el.dataset.v35Section||el.textContent.trim());
+          else if(el.matches('button.nav-item[data-view]'))addPage(el);
         }
       }
     }
@@ -14379,5 +14830,162 @@ html .ds-sr-only{position:absolute!important;width:1px;height:1px;padding:0;marg
     if(more)more.setAttribute('aria-expanded','false');
   },{once:true});
   window.OmniRemakeNav={open,close,build};
+})();
+</script>
+
+
+<!-- OmniOS Phase 2 shell controls: uses existing route and mobile-sheet handlers. -->
+<script id="omnios-phase2-shell-controls">
+(function(){
+ 'use strict';
+ if(window.OmniPhase2Shell)return;
+ const STORAGE='omnios_phase2_sidebar_compact';
+ let initialized=false;
+ let priorFocus=null;
+ let picked=0;
+ let matches=[];
+ const $=selector=>document.querySelector(selector);
+ const icon='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.7" cy="10.7" r="6.5"/><path d="m16 16 4.4 4.4"/></svg>';
+ const isClassic=()=>document.documentElement.dataset.omniUi==='classic';
+ const compact=()=>document.documentElement.classList.contains('om2-compact');
+ function setCompact(on){
+   document.documentElement.classList.toggle('om2-compact',!!on);
+   try{localStorage.setItem(STORAGE,on?'1':'0')}catch(_){}
+   const toggle=$('#om2-sidebar-toggle');
+   if(toggle){
+     toggle.setAttribute('aria-pressed',String(!!on));
+     toggle.setAttribute('aria-label',on?'Expand sidebar':'Collapse sidebar');
+     toggle.title=on?'Expand sidebar':'Collapse sidebar';
+     toggle.textContent=on?'»':'«';
+   }
+ }
+ function routes(){
+   return Array.from(document.querySelectorAll('.sidebar .nav-item[data-view]'))
+     .filter(b=>b.dataset.view&&document.getElementById('view-'+b.dataset.view))
+     .map(b=>({view:b.dataset.view,label:(b.querySelector('.v101-nav-label')?.textContent||b.textContent||b.dataset.view).trim()}))
+     .filter(x=>x.label);
+ }
+ function open(){
+   if(isClassic())return;
+   const host=$('#om2-search-overlay');if(!host)return;
+   priorFocus=document.activeElement;host.hidden=false;
+   document.body.classList.add('om2-search-open');
+   const input=host.querySelector('.om2-search-input');
+   input.value='';picked=0;update('');
+   input.focus({preventScroll:true});
+ }
+ function close(){
+   const host=$('#om2-search-overlay');if(!host||host.hidden)return;
+   host.hidden=true;document.body.classList.remove('om2-search-open');
+   if(priorFocus?.isConnected&&typeof priorFocus.focus==='function')
+     priorFocus.focus({preventScroll:true});
+   priorFocus=null;
+ }
+ function update(value){
+   const host=$('#om2-search-overlay');if(!host)return;
+   const q=String(value||'').trim().toLocaleLowerCase();
+   matches=routes().filter(x=>(x.label+' '+x.view.replace(/-/g,' ')).toLocaleLowerCase().includes(q)).slice(0,35);
+   picked=Math.min(picked,Math.max(0,matches.length-1));
+   const results=host.querySelector('#om2-search-results');
+   results.replaceChildren();
+   if(!matches.length){
+     const empty=document.createElement('div');
+     empty.className='om2-search-empty';empty.textContent='No matching pages. Try a different page name.';
+     results.appendChild(empty);return;
+   }
+   matches.forEach((route,i)=>{
+     const btn=document.createElement('button');
+     btn.type='button';btn.className='om2-search-result';btn.dataset.om2Go=route.view;
+     btn.setAttribute('role','option');btn.setAttribute('aria-selected',String(i===picked));
+     const label=document.createElement('span');label.textContent=route.label;
+     const shortcut=document.createElement('small');shortcut.textContent=i===picked?'Enter':'↗';
+     btn.append(label,shortcut);
+     results.appendChild(btn);
+   });
+ }
+ function select(index){
+   const btn=$('#om2-search-results')?.querySelectorAll('.om2-search-result')[index];
+   if(!btn)return;
+   const target=btn.dataset.om2Go;
+   const page=document.getElementById('view-'+target);
+   if(!page)return;
+   close();
+   const nav=document.querySelector('.sidebar .nav-item[data-view="'+target+'"]');
+   const group=nav?.closest('.v101-nav-group');
+   if(group&&!compact()){
+     group.classList.remove('collapsed');
+     group.querySelector('.v101-nav-group-head')?.setAttribute('aria-expanded','true');
+   }
+   if(typeof window.switchView==='function')window.switchView(target);
+   else nav?.click();
+ }
+ function mount(){
+   if(initialized)return;
+   const bar=$('.topbar'), title=$('#view-title'),actions=$('.topbar-actions'),sidebar=$('.sidebar');
+   if(!bar||!actions||!title||!sidebar)return;
+   initialized=true;
+   const guard=document.createElement('style');guard.id='om2-classic-guard';
+   guard.textContent='html[data-omni-ui="classic"] #om2-sidebar-toggle,html[data-omni-ui="classic"] #om2-search-toggle,html[data-omni-ui="classic"] #om2-search-overlay{display:none!important}';
+   document.head.appendChild(guard);
+   const side=document.createElement('button');
+   side.id='om2-sidebar-toggle';side.type='button';side.className='om2-sidebar-toggle';
+   title.insertAdjacentElement('beforebegin',side);
+   const search=document.createElement('button');
+   search.id='om2-search-toggle';search.type='button';search.className='om2-search-toggle';
+   search.setAttribute('aria-label','Find pages');search.title='Find pages (Ctrl+K)';
+   search.innerHTML=icon;actions.insertBefore(search,actions.firstChild);
+   const add=$('#global-add-btn');
+   if(add&&!add.hasAttribute('aria-label'))add.setAttribute('aria-label','Quick Add');
+   const host=document.createElement('div');host.id='om2-search-overlay';host.hidden=true;
+   host.innerHTML='<div class="om2-search-dialog" role="dialog" aria-modal="true" aria-labelledby="om2-search-title">'+
+    '<div class="om2-search-top"><svg class="om2-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.5"/><path d="m16 16 4.4 4.4"/></svg>'+
+    '<label for="om2-search-input" id="om2-search-title" class="ds-sr-only">Find OmniOS pages</label>'+
+    '<input id="om2-search-input" class="om2-search-input" type="search" role="combobox" aria-autocomplete="list" aria-controls="om2-search-results" aria-expanded="true" autocomplete="off" placeholder="Find a page…" />'+
+    '<button type="button" class="om2-search-dismiss" aria-label="Close page search">Esc</button></div>'+
+    '<div id="om2-search-results" class="om2-search-results" role="listbox" aria-label="Matching OmniOS pages"></div>'+
+    '<div class="om2-search-help">Navigate with ↑ ↓ · Enter to open · Esc to close</div></div>';
+   document.body.appendChild(host);
+   side.addEventListener('click',()=>setCompact(!compact()));
+   search.addEventListener('click',open);
+   host.querySelector('.om2-search-dismiss').addEventListener('click',close);
+   host.addEventListener('click',e=>{
+     if(e.target===host){close();return}
+     const btn=e.target.closest?.('[data-om2-go]');
+     if(btn){select(Array.from(host.querySelectorAll('.om2-search-result')).indexOf(btn))}
+   });
+   const input=host.querySelector('.om2-search-input');
+   input.addEventListener('input',()=>{picked=0;update(input.value)});
+   host.addEventListener('keydown',e=>{
+     if(e.key==='Escape'){e.preventDefault();close();return}
+     if(e.key==='ArrowDown'&&matches.length){e.preventDefault();picked=(picked+1)%matches.length;update(input.value)}
+     if(e.key==='ArrowUp'&&matches.length){e.preventDefault();picked=(picked+matches.length-1)%matches.length;update(input.value)}
+     if(e.key==='Enter'&&matches.length){e.preventDefault();select(picked)}
+     if(e.key==='Tab'){
+       const buttons=Array.from(host.querySelectorAll('input:not([disabled]),button:not([disabled])'));
+       const first=buttons[0],last=buttons[buttons.length-1];
+       if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+       else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+     }
+   });
+   document.addEventListener('keydown',e=>{
+     if(isClassic())return;
+     const editing=!!e.target.closest?.('input,textarea,select,[contenteditable="true"]');
+     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){
+       e.preventDefault();host.hidden?open():close();
+     }else if(e.key==='/'&&!editing&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
+       e.preventDefault();open();
+     }
+   });
+   document.addEventListener('click',e=>{if(e.target.closest?.('#omni-unified-mode-toggle')&&isClassic())close()});
+   document.querySelectorAll('.sidebar .nav-item[data-view]').forEach(b=>{
+     b.title=b.querySelector('.v101-nav-label')?.textContent?.trim()||b.textContent.trim();
+   });
+   let saved=false;
+   try{saved=localStorage.getItem(STORAGE)==='1'}catch(_){}
+   setCompact(saved);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});
+ else mount();
+ window.OmniPhase2Shell={mount,open,close,setCompact,isCompact:compact};
 })();
 </script>

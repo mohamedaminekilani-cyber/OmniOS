@@ -66,3 +66,41 @@ test('primary blue action uses a contrast-safe color and workout illustrations s
  const home=readFileSync('js/home-workout.js','utf8');
  assert.doesNotMatch(home,/<img|@bryllim|cdn\.jsdelivr/);
 });
+
+function relativeLuminance(hex){
+ const v=hex.match(/[a-f0-9]{2}/gi).map(x=>parseInt(x,16)/255);
+ const [r,g,b]=v.map(x=>x<=.04045?x/12.92:Math.pow((x+.055)/1.055,2.4));
+ return .2126*r+.7152*g+.0722*b;
+}
+function contrast(a,b){
+ const x=relativeLuminance(a),y=relativeLuminance(b);
+ return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);
+}
+test('Tech SaaS colors are exact and all text foregrounds have WCAG AA contrast',()=>{
+ const colors=['#101114','#EEF0F2','#2547E8','#5F31C4','#C6F04A','#55606D'];
+ for(const color of colors) assert.ok(css.includes(color),'missing official palette color '+color);
+ for(const [fg,bg] of [
+  ['#EEF0F2','#101114'],['#101114','#EEF0F2'],
+  ['#FFFFFF','#2547E8'],['#EEF0F2','#2547E8'],
+  ['#FFFFFF','#5F31C4'],['#EEF0F2','#5F31C4'],
+  ['#101114','#C6F04A'],['#55606D','#EEF0F2'],
+  ['#B7C0CE','#101114'],['#D1D7E0','#1A1C21']
+ ]){
+  assert.ok(contrast(fg,bg)>=4.5,fg+' on '+bg+' contrast '+contrast(fg,bg).toFixed(2)+':1');
+ }
+ assert.ok(contrast('#C6F04A','#EEF0F2')<4.5,'lime must not be used for text on Mist');
+ assert.match(css,/background:var\(--omni-lime\)!important;/);
+ assert.match(css,/color:var\(--omni-carbon\)!important/);
+});
+test('flat theme removes gradients, shadows and blur from core application surfaces',()=>{
+ const start=css.indexOf('OmniOS FLAT / Tech SaaS');
+ assert.ok(start>0,'flat overrides inside switchable theme');
+ const flat=css.slice(start);
+ for(const element of ['.sidebar','.topbar','.mobile-nav','#view-dashboard','.v43-kpi','#view-habits','#view-master-calendar','#view-workout']){
+  assert.ok(flat.includes(element),'flat token rules missing '+element);
+ }
+ assert.match(flat,/box-shadow:none!important/);
+ assert.match(flat,/background-image:none!important/);
+ assert.match(flat,/backdrop-filter:none!important/);
+ assert.match(flat,/@media\(max-width:760px\)/);
+});

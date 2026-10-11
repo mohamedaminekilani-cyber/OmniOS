@@ -13712,3 +13712,94 @@ html .omr-mobile-dock>button .nav-icon{display:grid!important;place-items:center
  window.OmniUnifiedDesign2026={setMode:setMode,getMode:()=>mode,refresh:mount};
 })();
 </script>
+
+<script id="omnios-remake-mobile-nav">
+(function(){
+  'use strict';
+  if(window.__omniRemakeNav)return;
+  window.__omniRemakeNav=true;
+  let priorFocus=null;
+  function drawer(){return document.getElementById('omr-mobile-drawer')}
+  function close(){
+    const host=drawer();
+    if(!host||host.hidden)return;
+    host.hidden=true;
+    document.body.classList.remove('omr-sheet-open');
+    const btn=document.getElementById('omr-mobile-more');
+    if(btn){btn.setAttribute('aria-expanded','false');btn.classList.remove('active')}
+    if(priorFocus?.isConnected)priorFocus.focus({preventScroll:true});
+    priorFocus=null;
+  }
+  function build(){
+    if(drawer())return drawer();
+    const host=document.createElement('div');host.id='omr-mobile-drawer';host.hidden=true;host.setAttribute('role','presentation');
+    const panel=document.createElement('div');panel.className='omr-sheet';panel.setAttribute('role','dialog');
+    panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','omr-sheet-title');
+    const head=document.createElement('div');head.className='omr-sheet-head';
+    const title=document.createElement('h3');title.id='omr-sheet-title';title.textContent='Explore OmniOS';
+    const dismiss=document.createElement('button');dismiss.type='button';dismiss.textContent='✕';dismiss.setAttribute('aria-label','Close navigation');
+    head.append(title,dismiss);panel.appendChild(head);
+    const body=document.createElement('div');body.className='omr-sheet-body';
+    const source=document.querySelector('.sidebar .nav-menu');
+    let container=null;
+    if(source){
+      for(const el of source.children){
+        if(el.matches('.nav-section')){
+          const h=document.createElement('div');h.className='omr-sheet-group';h.textContent=el.dataset.v35Section||el.textContent.trim();body.appendChild(h);
+          container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container);
+        }else if(el.matches('button.nav-item[data-view]')){
+          if(!container){container=document.createElement('div');container.className='omr-sheet-links';body.appendChild(container)}
+          const b=document.createElement('button');b.type='button';b.dataset.omrGo=el.dataset.view;
+          const label=el.textContent.trim().replace(/\s+/g,' ').replace(/^[\p{Extended_Pictographic}\s]+/u,'');
+          b.textContent=label||el.dataset.view;
+          container.appendChild(b);
+        }
+      }
+    }
+    panel.appendChild(body);host.appendChild(panel);document.body.appendChild(host);
+    dismiss.addEventListener('click',close);
+    host.addEventListener('click',function(event){
+      if(event.target===host){close();return}
+      const item=event.target.closest('[data-omr-go]');
+      if(item){
+        const next=item.dataset.omrGo;close();
+        if(typeof window.switchView==='function')window.switchView(next);
+      }
+    });
+    return host;
+  }
+  function open(){
+    const host=build();
+    priorFocus=document.activeElement;
+    host.hidden=false;
+    document.body.classList.add('omr-sheet-open');
+    const btn=document.getElementById('omr-mobile-more');
+    if(btn){btn.setAttribute('aria-expanded','true');btn.classList.add('active')}
+    host.querySelector('.omr-sheet-head button')?.focus({preventScroll:true});
+  }
+  // Capture before legacy mobile listeners try navigating to a missing "More" view.
+  document.addEventListener('click',function(event){
+    const more=event.target.closest?.('#omr-mobile-more');
+    if(more){event.preventDefault();event.stopImmediatePropagation();drawer()&&!drawer().hidden?close():open();return}
+    const nav=event.target.closest?.('.mobile-nav button[data-mobile-view]');
+    if(nav&&drawer()&&!drawer().hidden)close();
+  },true);
+  document.addEventListener('keydown',function(event){
+    const host=drawer();
+    if(!host||host.hidden)return;
+    if(event.key==='Escape'){event.preventDefault();close();return}
+    if(event.key==='Tab'){
+      const available=Array.from(host.querySelectorAll('button:not([disabled])'));
+      if(!available.length)return;
+      const first=available[0],last=available[available.length-1];
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+      else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
+    }
+  },true);
+  document.addEventListener('DOMContentLoaded',function(){
+    const more=document.getElementById('omr-mobile-more');
+    if(more)more.setAttribute('aria-expanded','false');
+  },{once:true});
+  window.OmniRemakeNav={open,close,build};
+})();
+</script>

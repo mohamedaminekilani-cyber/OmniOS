@@ -57,8 +57,8 @@ test('Month renderer produces visible dates, accessible day counts, dots and ove
  'function eventSortV36(a,b){return a.title.localeCompare(b.title)}',
  'function eventColorV36(){return "#2547E8"}',
  'function dayLabelV36(k){return k}',
- 'function escapeHtml(x){return String(x).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll("\"","&quot;")}',
- 'function monthEventHTMLV36(e){return "<button type=\"button\" data-master-event=\""+e.id+"\">"+e.title+"</button>"}',
+ 'function escapeHtml(x){return String(x).replaceAll("&","&amp;").replaceAll("<","&lt;")}',
+ 'function monthEventHTMLV36(e){return "<button data-master-event="+e.id+">"+e.title+"</button>"}',
  'function isWeekendV36(d){return d.getDay()===0||d.getDay()===6}'
  ].join('\n'));
  w.eval(month);

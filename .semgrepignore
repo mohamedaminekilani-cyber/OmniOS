@@ -1,0 +1,9 @@
+# Generated, cached or downloaded output is not application source.
+node_modules/
+dist/
+.netlify/
+qa-artifacts/
+coverage/
+*.min.js
+# Do not ignore app-parts/*.html; registry generic rules may analyze them.
+# Temporary .semgrep-inline/ files are scanned in a separate pass.

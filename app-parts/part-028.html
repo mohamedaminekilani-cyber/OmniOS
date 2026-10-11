@@ -12741,3 +12741,392 @@ window.OmniDialog={confirm:(message,opts={})=>open('confirm',message,opts),alert
   }else setTimeout(forceMobileMonth,120);
 })();
 </script>
+
+
+<!-- OmniOS Unified Design System 2026: single final visual authority; disable this stylesheet for Classic appearance. -->
+<style id="omnios-unified-design-2026">
+/*
+ * OmniOS / Unified — source of truth for the October 2026 visual refresh.
+ * Dark: editorial charcoal + cool indigo. Light: porcelain cards + soft blue.
+ * Scoped to app chrome and canonical module surfaces; no data/render ownership.
+ */
+html:not([data-theme="light"]){
+  --bg-base:#111217;
+  --bg-surface:#1d1f27;
+  --bg-elevated:#272a35;
+  --bg-hover:#323645;
+  --border-color:#353844;
+  --border-light:#4b5060;
+  --text-primary:#f6f7fc;
+  --text-secondary:#c3c7d4;
+  --text-muted:#a2a8b9;
+  --accent-cyan:#7184ff;
+  --accent-blue:#637bff;
+  --accent-purple:#aa8af7;
+  --accent-green:#43d3a0;
+  --accent-yellow:#fac657;
+  --accent-red:#f08091;
+  --omni-side-bg:#181a21;
+  --omni-soft:rgba(113,132,255,.115);
+  --omni-shadow:0 8px 28px rgba(0,0,0,.11);
+  --omni-card-edge:rgba(255,255,255,.036);
+  color-scheme:dark;
+}
+html[data-theme="light"]{
+  --bg-base:#f4f5f9;
+  --bg-surface:#fff;
+  --bg-elevated:#f0f2f8;
+  --bg-hover:#e7eaf3;
+  --border-color:#e2e5ee;
+  --border-light:#cdd3e1;
+  --text-primary:#202433;
+  --text-secondary:#4b5468;
+  --text-muted:#657088;
+  --accent-cyan:#4868e7;
+  --accent-blue:#4868e7;
+  --accent-purple:#8255d6;
+  --accent-green:#148968;
+  --accent-yellow:#a76b17;
+  --accent-red:#c94f64;
+  --omni-side-bg:#fdfdff;
+  --omni-soft:rgba(72,104,231,.09);
+  --omni-shadow:0 5px 22px rgba(27,40,72,.042);
+  --omni-card-edge:rgba(255,255,255,.9);
+  color-scheme:light;
+}
+:root{
+  --radius-sm:9px;
+  --radius-md:12px;
+  --radius-lg:18px;
+  --omni-page-max:1540px;
+  --omni-focus-ring:0 0 0 3px color-mix(in srgb,var(--accent-cyan) 21%,transparent);
+}
+body{background:var(--bg-base)!important;color:var(--text-primary);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;-webkit-font-smoothing:antialiased}
+.main-content{background:var(--bg-base)!important}
+.view-container{max-width:var(--omni-page-max)!important;width:100%;padding:25px clamp(16px,2vw,34px) 42px!important;scrollbar-gutter:stable}
+.view{min-width:0}
+.view :is(h2,h3,h4){letter-spacing:-.025em}
+.view :is(.text-muted,.v43-card-sub,.v35-card-sub,.v36-cal-sub,.hw-session-sub){line-height:1.5}
+.sidebar{
+  flex-shrink:0!important;
+  width:252px;
+  padding:16px 10px!important;
+  background:var(--omni-side-bg)!important;
+  border-right:1px solid var(--border-color)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.sidebar .logo{padding:13px 12px 20px!important;margin-bottom:14px!important;border-bottom:1px solid var(--border-color)!important}
+.sidebar .logo h1{font-size:1.34rem!important;font-weight:790!important;letter-spacing:-.055em!important}
+.sidebar .logo h1 span{color:var(--accent-cyan)!important}
+.sidebar .logo p{color:var(--text-muted)!important;font-size:.7rem!important;letter-spacing:.012em}
+.sidebar .logo img{border-radius:10px!important}
+.sidebar .nav-menu{padding:0 2px!important;scrollbar-width:thin}
+.sidebar .nav-section{font-size:.65rem!important;font-weight:730!important;letter-spacing:.085em!important;color:var(--text-muted)!important;margin:17px 11px 7px!important;line-height:1.2}
+.sidebar .nav-item{
+  border:1px solid transparent!important;
+  border-radius:11px!important;
+  background:transparent!important;
+  color:var(--text-secondary)!important;
+  font-size:.78rem!important;
+  font-weight:620!important;
+  min-height:39px!important;
+  margin:2px 0!important;
+  padding:8px 13px!important;
+  gap:12px!important;
+  box-shadow:none!important;
+  transition:background .14s ease,color .14s ease,border-color .14s ease!important;
+}
+.sidebar .nav-item:hover{background:var(--bg-elevated)!important;color:var(--text-primary)!important}
+.sidebar .nav-item.active{
+  color:var(--accent-cyan)!important;
+  background:var(--omni-soft)!important;
+  border-color:color-mix(in srgb,var(--accent-cyan) 20%,transparent)!important;
+  font-weight:740!important;
+}
+.sidebar .nav-item:is(:focus-visible){outline:2px solid var(--accent-cyan);outline-offset:2px}
+.sidebar .sidebar-footer{border-top:1px solid var(--border-color);margin-top:10px;padding:14px 8px!important}
+.topbar{
+  height:72px!important;
+  min-height:72px!important;
+  border-bottom:1px solid var(--border-color)!important;
+  background:var(--bg-base)!important;
+  padding:0 clamp(16px,2.2vw,34px)!important;
+  gap:16px!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.topbar-title{font-size:1.08rem!important;font-weight:760!important;letter-spacing:-.032em!important;color:var(--text-primary)!important}
+.topbar-actions{gap:9px!important}
+#omni-unified-date{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:.72rem;font-weight:600;color:var(--text-muted);margin-right:auto}
+#omni-unified-date::before{content:"";width:5px;height:5px;border-radius:100%;background:var(--accent-cyan);opacity:.9}
+#save-status{color:var(--text-muted)!important;font-size:.68rem!important}
+#global-add-btn{border-radius:99px!important;padding:10px 17px!important}
+#settings-topbar-btn{min-width:40px!important;min-height:40px!important;border-radius:50%!important}
+:where(.btn,.view-btn,.tab-btn,.icon-btn,.v43-tab,.hw-chip){
+  font-family:inherit!important;
+  font-weight:660!important;
+  border-radius:11px!important;
+  transition:background .15s ease,color .15s ease,border-color .15s ease,box-shadow .15s ease!important;
+}
+:where(.btn,.view-btn,.tab-btn,.icon-btn):not(.btn-primary){background:var(--bg-elevated)!important;color:var(--text-primary)!important;border:1px solid var(--border-color)!important}
+:where(.btn,.view-btn,.tab-btn,.icon-btn):not(.btn-primary):hover{background:var(--bg-hover)!important;border-color:var(--border-light)!important}
+.btn-primary,.topbar .btn-primary,#hw-panel .btn-primary{
+  background:var(--accent-cyan)!important;
+  border-color:var(--accent-cyan)!important;
+  color:#fff!important;
+  font-weight:750!important;
+  box-shadow:0 4px 13px color-mix(in srgb,var(--accent-cyan) 20%,transparent)!important;
+}
+.btn-primary:hover{filter:brightness(1.06)}
+button:focus-visible,a:focus-visible,:where(input,select,textarea):focus-visible{outline:2px solid var(--accent-cyan)!important;outline-offset:2px!important}
+:where(.form-input,.form-select,.form-textarea,.search-input,.filter-select,input[type="date"],input[type="time"],input[type="datetime-local"],textarea){
+  border-color:var(--border-color)!important;
+  border-radius:10px!important;
+  color:var(--text-primary);
+  font-size:max(.78rem,13px);
+}
+:where(.form-input,.form-select,.form-textarea,.search-input,.filter-select):focus{border-color:var(--accent-cyan)!important;box-shadow:var(--omni-focus-ring)!important}
+:where(.card,.stat-card,.kpi-card,.note-card,.power-card,.org-card,.v35-card,.v43-card,.v43-kpi,.v35-stat,.workout-kpi,.workout-session-card,.workout-item-card,.habit-week-card,.v105-month-card,.habit-summary,.nut-surface,.v38-fin-card,.v38-card,.finance-card,.eq-box,.diet-card,.rt611-card){
+  background:var(--bg-surface)!important;
+  border:1px solid var(--border-color)!important;
+  border-radius:17px!important;
+  box-shadow:var(--omni-shadow)!important;
+  min-width:0;
+}
+:where(.v43-card,.v35-card,.org-card,.card,.workout-session-card,.habit-week-card){padding:clamp(14px,1.5vw,21px)!important}
+:where(.card,.v43-card,.v35-card,.org-card,.habit-week-card,.workout-session-card):hover{border-color:color-mix(in srgb,var(--border-color) 80%,var(--accent-cyan) 20%)!important}
+:where(.v43-card-title,.v35-card-title,.org-card-title,.card-title){font-size:.93rem!important;letter-spacing:-.023em!important;font-weight:760!important}
+:where(.v43-card-sub,.v35-card-sub,.org-card-sub,.v43-row-meta,.v43-kpi-meta,.kpi-meta){color:var(--text-muted)!important;font-size:.71rem!important}
+:where(.dashboard-toolbar,.habit-toolbar,.notes-toolbar,.org-toolbar,.master-cal-toolbar,.workout-hero,.v43-hero,.v35-page-head,.org-hero,.nut-hero,.v38-finance-head){
+  border-radius:18px!important;
+}
+:where(.dashboard-toolbar,.habit-toolbar,.notes-toolbar,.master-cal-toolbar,.toolbar){
+  padding:12px 16px!important;
+  background:var(--bg-surface)!important;
+  border:1px solid var(--border-color)!important;
+  box-shadow:none!important;
+}
+:where(.tab-btns,.v43-tabs,.workout-tabs,.v35-segmented,.v38-fin-tabs,.v58-seg,.rt611-tabs,.v36-cal-modes,.hw-nav){
+  background:var(--bg-elevated)!important;
+  border:1px solid var(--border-color)!important;
+  border-radius:13px!important;
+  padding:4px!important;
+  box-shadow:none!important;
+  gap:4px!important;
+}
+:where(.tab-btns,.v43-tabs,.workout-tabs,.v35-segmented,.v38-fin-tabs,.v58-seg,.rt611-tabs,.v36-cal-modes) :where(.view-btn,.tab-btn,.v43-tab,.active,.rt611-tab){
+  border-radius:9px!important;
+  font-size:.74rem!important;
+}
+:where(.v43-tab,.rt611-tab,.hw-nav-btn):not(.active){background:transparent!important;border-color:transparent!important;color:var(--text-secondary)!important}
+:where(.v43-tab,.rt611-tab,.hw-nav-btn).active{
+  background:var(--bg-surface)!important;
+  color:var(--accent-cyan)!important;
+  border-color:var(--border-color)!important;
+  box-shadow:var(--omni-shadow)!important;
+}
+/* Dashboard: quiet editorial welcome + bento progress panels */
+#view-dashboard .v431-hero{
+  padding:clamp(20px,2.2vw,31px)!important;
+  min-height:164px;
+  background:radial-gradient(370px 180px at 96% 7%,color-mix(in srgb,var(--accent-cyan) 12%,transparent),transparent 80%),var(--bg-surface)!important;
+  border:1px solid var(--border-color)!important;
+  border-radius:21px!important;
+  box-shadow:var(--omni-shadow)!important;
+  overflow:hidden;
+}
+#view-dashboard .v431-hero::after{display:none!important}
+#view-dashboard .v431-hero-main{max-width:760px}
+#view-dashboard .v43-kicker{font-size:.64rem!important;font-weight:750!important;letter-spacing:.13em!important;color:var(--accent-cyan)!important}
+#view-dashboard .v431-title-row h3{font-size:clamp(1.55rem,2.25vw,2.15rem)!important;font-weight:790!important;letter-spacing:-.049em!important;line-height:1.18!important}
+#view-dashboard .v43-hero-copy{font-size:.81rem!important;line-height:1.6!important;color:var(--text-secondary)!important;max-width:640px!important}
+#view-dashboard .v431-period-chip{border-radius:99px!important;background:var(--omni-soft)!important;color:var(--accent-cyan)!important;padding:5px 11px!important;border:1px solid color-mix(in srgb,var(--accent-cyan) 17%,transparent)!important;font-size:.7rem!important}
+#view-dashboard .v431-kpis{gap:12px!important}
+#view-dashboard .v43-kpi{padding:17px 18px!important;min-height:126px;border-radius:17px!important;background:var(--bg-surface)!important}
+#view-dashboard .v43-kpi-value{font-size:clamp(1.42rem,2.1vw,1.98rem)!important;font-weight:800!important;letter-spacing:-.045em!important;line-height:1.2}
+#view-dashboard .v431-kpi-icon{display:grid;place-items:center;min-width:29px;min-height:29px;border-radius:9px;background:var(--omni-soft);color:var(--accent-cyan)}
+#view-dashboard .v431-section-label{font-size:.75rem!important;font-weight:780!important;letter-spacing:-.01em}
+#view-dashboard .v431-board{gap:13px!important}
+#view-dashboard .v43-row{border-radius:11px!important}
+#view-dashboard .v43-progress{height:7px!important;border-radius:100px!important;background:var(--bg-elevated)!important}
+#view-dashboard .v43-progress i{background:var(--accent-cyan)!important;border-radius:100px!important}
+/* Today, finance, goals and other detail pages use the same surfaces */
+#view-today .v35-page-head,#view-life-hub .v43-hero,#view-workout .workout-hero,#view-routine .rt611-hero{
+  padding:clamp(17px,1.9vw,25px)!important;
+  background:var(--bg-surface)!important;
+  border:1px solid var(--border-color)!important;
+  border-radius:19px!important;
+  box-shadow:var(--omni-shadow)!important;
+}
+#view-today .v35-page-head::before,#view-today .v35-page-head::after,#view-workout .workout-hero::after{display:none!important}
+#view-today .v35-stat{background:var(--bg-elevated)!important;border:1px solid var(--border-color)!important;border-radius:13px!important;box-shadow:none!important}
+/* Habits: rounded cards + clean heatmap, no oversized empty columns */
+#view-habits .habit-toolbar{border-radius:17px!important}
+#view-habits .habit-summary-grid{gap:10px!important}
+#view-habits .habit-summary{background:var(--bg-surface)!important;padding:15px!important}
+#view-habits .habit-week-card,#view-habits .v105-month-card{background:var(--bg-surface)!important}
+#view-habits .v105-month-icon{border-radius:12px!important}
+#view-habits .v105-month-day,#view-habits .habit-week-day{border-radius:8px!important;transition:background .12s ease,border-color .12s ease!important}
+#view-habits .v105-month-day.done,#view-habits .habit-week-day.completed{background:color-mix(in srgb,var(--habit-accent,var(--accent-cyan)) 70%,var(--bg-elevated))!important}
+#view-habits .v105-month-toolbar{padding:11px!important}
+#view-habits .v105-month-title{font-weight:760!important}
+#view-habits .v105-month-card-head{padding-bottom:10px!important;border-bottom:1px solid var(--border-color)}
+/* Calendar: subtle events, professional spacing, consistent month and day canvas */
+#view-master-calendar .v36-cal-shell,#view-master-calendar .master-calendar-shell{
+  border-radius:20px!important;
+  border:1px solid var(--border-color)!important;
+  background:var(--bg-surface)!important;
+  box-shadow:var(--omni-shadow)!important;
+}
+#view-master-calendar .v36-cal-toolbar{padding:14px 17px!important;border-bottom:1px solid var(--border-color)!important}
+#view-master-calendar .v603-calendar-rail{background:var(--bg-surface)!important;border-right:1px solid var(--border-color)!important}
+#view-master-calendar .v603-calendar-stage{background:var(--bg-surface)!important}
+#view-master-calendar .v36-month-day{border-color:var(--border-color)!important}
+#view-master-calendar .v36-month-event{border-radius:6px!important}
+#view-master-calendar .v36-cal-title{font-weight:790!important;letter-spacing:-.02em!important}
+/* Task and inbox rows */
+:where(.list-item,.v43-row,.v35-record,.v58-row,.org-list-row,.kanban-card,.note-card,.power-item){
+  border-radius:12px!important;
+}
+:where(.list-item,.v35-record,.v43-row,.org-list-row,.v58-row):hover{background:var(--bg-elevated)!important}
+:where(.tag,.badge,.v35-chip,.v43-badge,.v58-badge){border-radius:999px!important;font-size:.66rem!important}
+/* Bodyweight workout intentionally remains illustration-free */
+#view-workout #hw-panel :where(.hw-plan,.hw-ex-card,.hw-main-card,.hw-queue,.hw-kpis>div,.hw-chart-card){
+  background:var(--bg-surface)!important;
+  border:1px solid var(--border-color)!important;
+  border-radius:18px!important;
+  box-shadow:var(--omni-shadow)!important;
+}
+#view-workout #hw-panel .hw-ex-card{border-top:3px solid var(--accent-cyan)!important}
+#view-workout #hw-panel .hw-top{background:var(--bg-surface)!important;border-radius:20px!important;border:1px solid var(--border-color)!important}
+#view-workout #hw-panel .hw-queue-row.current{background:var(--omni-soft)!important}
+#view-workout #hw-panel .hw-progress-track i{background:var(--accent-cyan)!important}
+/* Modals and inspectors: elevated, not translucent clutter */
+:where(.modal,.modal-content,.inspector-panel,.power-sidebar,#hw-builder .hw-modal){
+  background:var(--bg-surface)!important;
+  border:1px solid var(--border-color)!important;
+  border-radius:19px!important;
+  box-shadow:0 24px 70px rgba(0,0,0,.23)!important;
+}
+:where(.modal-overlay,.inspector-backdrop){background:rgba(8,9,17,.6)}
+.modal-header,.modal-footer{border-color:var(--border-color)!important}
+.modal-footer{background:var(--bg-surface)!important}
+:where(.empty-state,.v43-empty,.org-empty){color:var(--text-muted)}
+/* Settings: reversible theme comparison without touching saved app state */
+#omni-2026-appearance{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:17px 18px;margin-bottom:16px;border-radius:17px;background:var(--bg-surface);border:1px solid var(--border-color);box-shadow:var(--omni-shadow)}
+#omni-2026-appearance h3{margin:0 0 4px;font-size:.9rem}
+#omni-2026-appearance p{font-size:.74rem;color:var(--text-muted);margin:0;line-height:1.45}
+#omni-2026-appearance button{flex:none;min-height:40px;white-space:nowrap}
+@media(min-width:761px){
+  .view-container{min-width:0}
+  .sidebar{min-width:225px}
+  #view-dashboard .v431-board{align-items:start}
+}
+@media(max-width:1024px) and (min-width:761px){
+  .sidebar{width:220px!important}
+  .view-container{padding:18px!important}
+  #omni-unified-date{display:none}
+  #view-dashboard .v43-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:760px){
+  :root{--mobile-nav-h:82px!important}
+  html,body{max-width:100%;overflow-x:hidden!important}
+  .sidebar{display:none!important}
+  .main-content{height:100dvh!important;width:100%!important}
+  .topbar{
+    height:auto!important;
+    min-height:64px!important;
+    padding:max(10px,env(safe-area-inset-top)) 16px 10px!important;
+    background:var(--bg-base)!important;
+    position:relative!important;
+    border-bottom:1px solid var(--border-color)!important;
+    flex-wrap:nowrap!important;
+    gap:8px!important;
+  }
+  .topbar-title{font-size:1.03rem!important;font-weight:800!important;max-width:40vw!important}
+  #omni-unified-date{display:none!important}
+  #global-add-btn{min-width:42px!important;min-height:42px!important;padding:8px 12px!important;white-space:nowrap!important;font-size:.72rem!important}
+  #settings-topbar-btn{min-width:40px!important;min-height:40px!important}
+  #save-status{display:none!important}
+  .view-container{
+    width:100%!important;
+    max-width:100%!important;
+    padding:14px 13px calc(109px + env(safe-area-inset-bottom))!important;
+    overflow-x:hidden!important;
+    overscroll-behavior-y:contain;
+  }
+  .mobile-nav{
+    display:grid!important;
+    position:fixed!important;
+    left:12px!important;
+    right:12px!important;
+    bottom:calc(10px + env(safe-area-inset-bottom))!important;
+    width:auto!important;
+    height:66px!important;
+    min-height:66px!important;
+    border-radius:23px!important;
+    border:1px solid var(--border-color)!important;
+    padding:6px!important;
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:2px!important;
+    background:color-mix(in srgb,var(--bg-surface) 95%,var(--bg-base))!important;
+    box-shadow:0 12px 36px rgba(0,0,0,.23)!important;
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+    overflow:hidden!important;
+    z-index:490!important;
+  }
+  .mobile-nav>button{
+    min-width:0!important;max-width:100%!important;
+    height:53px!important;min-height:53px!important;
+    padding:6px 1px!important;
+    border:1px solid transparent!important;
+    border-radius:17px!important;
+    display:flex!important;flex-direction:column!important;
+    align-items:center!important;justify-content:center!important;gap:3px!important;
+    color:var(--text-muted)!important;
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+  .mobile-nav>button.active{background:var(--omni-soft)!important;border-color:color-mix(in srgb,var(--accent-cyan) 20%,transparent)!important;color:var(--accent-cyan)!important}
+  .mobile-nav>button .nav-icon{font-size:1.14rem!important;line-height:1.05!important;width:23px!important;height:23px!important;display:grid!important;place-items:center!important}
+  .mobile-nav>button .nav-label{font-size:9.6px!important;line-height:1.15!important;font-weight:710!important;color:inherit!important;white-space:nowrap!important;text-overflow:clip!important;letter-spacing:0!important}
+  :where(.card,.v43-card,.v35-card,.org-card,.workout-session-card){padding:15px!important;border-radius:17px!important}
+  :where(.dashboard-toolbar,.habit-toolbar,.toolbar){padding:11px 13px!important;border-radius:15px!important}
+  #view-dashboard .v431-hero{padding:19px!important;min-height:0}
+  #view-dashboard .v431-title-row{align-items:start!important;flex-wrap:wrap!important;gap:8px!important}
+  #view-dashboard .v431-title-row h3{font-size:1.75rem!important;letter-spacing:-.055em!important}
+  #view-dashboard .v431-hero-actions{width:100%!important;justify-content:space-between!important;gap:8px!important}
+  #view-dashboard .v43-hero-copy{font-size:.76rem!important}
+  #view-dashboard .v431-kpis{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  #view-dashboard .v43-kpi{padding:13px!important;min-height:110px!important}
+  #view-dashboard .v43-kpi-value{font-size:1.55rem!important}
+  #view-dashboard .v431-board{display:flex!important;flex-direction:column!important;gap:11px!important}
+  #view-dashboard .v431-board>*{width:100%!important;max-width:100%!important}
+  #view-dashboard .v431-tabs{overflow-x:auto!important;max-width:100%!important;scrollbar-width:none}
+  #view-dashboard .v431-tabs .v43-tab{white-space:nowrap;flex:0 0 auto}
+  #view-habits .habit-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #view-habits .v105-month-card{padding:12px!important}
+  #view-habits .v105-month-toolbar{gap:10px!important}
+  #view-master-calendar .v36-cal-shell{border-radius:19px!important;overflow:hidden}
+  #view-master-calendar .v36-cal-toolbar{padding:11px!important}
+  #view-master-calendar .v603-calendar-rail{background:var(--bg-surface)!important}
+  #view-workout #hw-panel .hw-top{padding:17px!important}
+  #view-workout #hw-panel .hw-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #omni-2026-appearance{align-items:stretch;flex-direction:column}
+  #omni-2026-appearance button{align-self:start}
+  :where(.modal,.modal-content,.inspector-panel){border-radius:18px 18px 0 0!important;max-width:100%!important}
+}
+@media(max-width:390px){
+  .view-container{padding-left:10px!important;padding-right:10px!important}
+  .mobile-nav{left:7px!important;right:7px!important}
+  .mobile-nav>button .nav-label{font-size:9px!important}
+  #view-dashboard .v431-hero{padding:15px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  :where(.btn,.view-btn,.tab-btn,.nav-item,.v43-tab,.mobile-nav>button){animation:none!important;transition:none!important}
+}
+</style>

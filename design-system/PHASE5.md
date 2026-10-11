@@ -58,3 +58,7 @@ CI: regenerate `source-release.json`, run `npm test` and `npm run test:runtime`;
 Human UI checks before merging: **360, 390, 760, 1024, 1440 px**, dark/light contrast, tap targets, habit date toggles, routine cycle reset, step links, gym set editing/RPE/rest, Home Workout timed sets + adjustable rest, history charts, modal close and no horizontal page overflow.
 
 Pull requests remain stacked: Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5. Merge each stage only after visual review and verified rollback, without overwriting personal app records. **Next planned phase:** remaining modules.
+
+## Stacked PR CI routing
+
+The repository's automated verification currently triggers only for pull requests targeting `main`. To verify this stacked Phase 5 PR, its target is temporarily set to `main` and this documentation-only commit triggers the PR `synchronize` event; no live GitHub Pages deployment occurs for PR events. Once CI completes, **restore the base to `feature/omnios-phase4-calendar-planner-2026-10-11`**.

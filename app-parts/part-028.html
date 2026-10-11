@@ -14673,6 +14673,162 @@ html .topbar #global-add-btn{
   html .mobile-nav.omr-mobile-dock>button{transition:none!important}
 }
 /* END OMNIOS PHASE 2 APPLICATION SHELL / v1 */
+
+/* ================================================================
+   OMNIOS PHASE 3 / DAILY WORKSPACE AND DASHBOARD / v1
+   Semantic, flat and responsive; no additional data state or observers.
+   ================================================================ */
+html #view-today,html #view-dashboard{min-width:0}
+html #view-today .om3-today-hero{
+  margin-bottom:17px!important;padding:6px 2px 18px!important;
+  display:flex;align-items:center!important;
+  background:transparent!important;border:0!important;border-bottom:1px solid var(--ds-line)!important;
+  box-shadow:none!important;border-radius:0!important;
+}
+html #view-today .om3-today-hero h3{font-size:clamp(1.65rem,3vw,2.65rem)!important;line-height:1.15!important}
+html #view-today .om3-today-hero p{font-size:var(--ds-text-md)!important;color:var(--ds-text-muted)!important}
+html #view-today .omr-day-hero-actions{display:flex;flex-wrap:wrap;gap:8px}
+html #view-today .om3-daily-glance{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;
+  margin-bottom:16px!important;min-width:0;
+}
+html #view-today .om3-daily-glance .omr-stat{
+  min-width:0;min-height:108px;display:flex;flex-direction:column;gap:7px;
+  padding:15px 17px!important;
+  background:var(--ds-surface)!important;background-image:none!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-lg)!important;
+  box-shadow:none!important;
+}
+html #view-today .om3-daily-glance .omr-stat span{
+  font-size:12px!important;color:var(--ds-text-muted)!important;font-weight:650;letter-spacing:.01em;
+}
+html #view-today .om3-daily-glance .omr-stat strong{
+  color:var(--ds-text)!important;font-size:clamp(1.2rem,1.9vw,1.65rem)!important;
+  line-height:1.15!important;letter-spacing:-.035em!important;
+}
+html #view-today .om3-daily-glance .omr-stat small{
+  color:var(--ds-text-secondary)!important;font-size:12px!important;line-height:1.3!important;
+}
+html #view-today .om3-today-grid{
+  display:grid!important;grid-template-columns:minmax(0,1.55fr) minmax(280px,.9fr)!important;
+  align-items:start;gap:12px!important;
+}
+html #view-today .om3-today-grid .omr-day-left,
+html #view-today .om3-today-grid .omr-day-right{display:flex;flex-direction:column;gap:12px!important;min-width:0}
+html #view-today .om3-today-grid .omr-panel,
+html #view-today .om3-today-grid .omr-feature{
+  padding:18px!important;background:var(--ds-surface)!important;
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-lg)!important;
+  box-shadow:none!important;color:var(--ds-text)!important;min-width:0;
+}
+html #view-today .om3-today-grid .omr-panel-head{margin-bottom:12px!important}
+html #view-today .om3-today-grid .omr-panel-head h4{font-size:1rem!important;color:var(--ds-text)!important}
+html #view-today .om3-today-grid .omr-eyebrow{color:var(--ds-accent)!important;font-size:11px!important;letter-spacing:.09em}
+html #view-today .om3-capture-panel{
+  background:var(--ds-accent-surface)!important;border-color:var(--ds-line)!important;
+}
+html #view-today .om3-capture-panel h4{font-size:1.15rem!important;color:var(--ds-text)!important}
+html #view-today .om3-capture-panel p{
+  color:var(--ds-text-secondary)!important;font-size:12px!important;margin:5px 0 15px!important;
+}
+html #view-today .om3-capture-panel .omr-capture-line{
+  display:flex!important;align-items:stretch!important;flex-wrap:wrap!important;gap:8px!important;
+}
+html #view-today .om3-capture-panel #v35-today-capture{
+  background:var(--ds-surface)!important;color:var(--ds-text)!important;
+  border-color:var(--ds-line)!important;min-height:42px!important;flex:1 1 155px!important;
+  border-radius:var(--ds-radius-sm)!important;
+}
+html #view-today .om3-capture-panel #v35-today-capture-btn{
+  background:var(--ds-primary)!important;color:var(--ds-on-primary)!important;
+  border:1px solid var(--ds-primary)!important;min-height:42px!important;border-radius:var(--ds-radius-sm)!important;
+}
+html #view-today .om3-today-grid .omr-priority-row,
+html #view-today .om3-today-grid .omr-timeline-row{
+  border-radius:8px!important;min-height:48px!important;
+  border-bottom:1px solid var(--ds-line)!important;
+}
+html #view-today .om3-today-grid .omr-priority-row:last-child,
+html #view-today .om3-today-grid .omr-timeline-row:last-child{border-bottom:0!important}
+html #view-today .om3-today-grid .omr-zero{min-height:0!important;padding:10px 0 5px!important}
+html #view-today .om3-today-grid .omr-zero strong{font-size:var(--ds-text-md)!important;color:var(--ds-text)!important}
+html #view-today .om3-today-grid .omr-zero p{font-size:var(--ds-text-sm)!important;line-height:1.55!important;color:var(--ds-text-muted)!important}
+html #view-today .om3-habit-progress{display:flex;align-items:center;justify-content:space-between;
+  gap:10px;margin:0 0 9px;font-size:var(--ds-text-sm);color:var(--ds-text-secondary)}
+html #view-today .om3-habit-progress strong{color:var(--ds-text);font-size:var(--ds-text-md)}
+html #view-today .omr-progress-track{height:7px!important;border-radius:5px!important;
+  background:var(--ds-surface-raised)!important;overflow:hidden;margin-bottom:11px!important}
+html #view-today .omr-progress-track>span{background:var(--ds-success)!important;border-radius:5px!important}
+html #view-today .om3-nutrition-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+html #view-today .om3-nutrition-row strong{color:var(--ds-text);font-size:1.3rem;letter-spacing:-.03em}
+html #view-today .om3-nutrition-row strong small{font-size:var(--ds-text-sm);color:var(--ds-text-muted);font-weight:600}
+html #view-today .om3-nutrition-row span{color:var(--ds-text-secondary);font-size:var(--ds-text-sm)}
+html #view-today .omr-habit-check.is-done{background:var(--ds-success)!important;color:var(--ds-on-success)!important;border-color:var(--ds-success)!important}
+html #view-dashboard .om3-dashboard-focus{
+  border:1px solid var(--ds-line)!important;border-radius:var(--ds-radius-lg)!important;
+  background:var(--ds-surface)!important;padding:18px!important;box-shadow:none!important;
+  margin:0 0 13px!important;min-width:0;
+}
+html #view-dashboard .om3-dashboard-focus-heading{
+  display:flex;justify-content:space-between;align-items:start;gap:16px;margin-bottom:9px;
+}
+html #view-dashboard .om3-dashboard-focus-heading h4{
+  margin:5px 0 0;color:var(--ds-text);font-size:1.1rem;letter-spacing:-.025em
+}
+html #view-dashboard .om3-dashboard-focus-heading p{margin:5px 0 0;font-size:var(--ds-text-sm);color:var(--ds-text-muted)}
+html #view-dashboard .om3-focus-today,html #view-dashboard .om3-focus-footer{
+  border:0;background:transparent;color:var(--ds-accent);font-weight:700;
+  font-size:var(--ds-text-sm);cursor:pointer;padding:8px 0;text-align:left;
+}
+html #view-dashboard .om3-priority-list{display:flex;flex-direction:column;gap:0;min-width:0}
+html #view-dashboard .om3-priority-item{
+  width:100%;display:flex;align-items:center;gap:12px;min-width:0;text-align:left;
+  background:transparent;border:0;border-bottom:1px solid var(--ds-line);
+  border-radius:0;padding:11px 3px;cursor:pointer;color:var(--ds-text);
+  min-height:50px;box-shadow:none!important;
+}
+html #view-dashboard .om3-priority-item:hover{background:var(--ds-surface-hover)}
+html #view-dashboard .om3-priority-item:last-child{border-bottom:0}
+html #view-dashboard .om3-priority-index{
+  flex:0 0 27px;width:27px;height:27px;display:grid;place-items:center;
+  background:var(--ds-accent-surface);border-radius:6px;color:var(--ds-accent-ink);
+  font-size:var(--ds-text-xs);font-weight:750;
+}
+html #view-dashboard .om3-priority-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+html #view-dashboard .om3-priority-body strong{
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ds-text);
+  font-size:var(--ds-text-md);font-weight:700;
+}
+html #view-dashboard .om3-priority-body small{font-size:var(--ds-text-xs);color:var(--ds-text-muted)}
+html #view-dashboard .om3-priority-arrow{flex:0 0 auto;color:var(--ds-accent)}
+html #view-dashboard .om3-priority-empty{padding:10px 0;color:var(--ds-text-muted);font-size:var(--ds-text-md)}
+html #view-dashboard .om3-focus-footer{margin-top:8px}
+html #view-dashboard .v431-board{gap:12px!important}
+html #view-dashboard .v43-empty{padding:12px 0!important;min-height:0!important;
+  border:0!important;background:transparent!important;text-align:left!important}
+@media(max-width:1050px){
+  html #view-today .om3-today-grid{grid-template-columns:minmax(0,1.2fr) minmax(260px,.85fr)!important}
+  html #view-today .om3-daily-glance{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  html #view-today .om3-today-hero{align-items:start!important;gap:12px!important}
+  html #view-today .om3-daily-glance{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  html #view-today .om3-daily-glance .omr-stat{min-height:95px;padding:12px!important}
+  html #view-today .om3-today-grid{grid-template-columns:minmax(0,1fr)!important;gap:10px!important}
+  html #view-today .om3-today-grid .omr-panel,
+  html #view-today .om3-today-grid .omr-feature{padding:14px!important}
+  html #view-today .om3-capture-panel #v35-today-capture{min-width:0}
+  html #view-today .om3-capture-panel #v35-today-capture-btn{min-height:44px!important}
+  html #view-dashboard .om3-dashboard-focus{padding:14px!important}
+  html #view-dashboard .om3-dashboard-focus-heading{flex-wrap:wrap}
+  html #view-dashboard .om3-priority-item{min-height:52px}
+}
+@media(max-width:390px){
+  html #view-today .om3-daily-glance .omr-stat{padding:10px!important}
+  html #view-today .om3-daily-glance .omr-stat strong{font-size:1.23rem!important}
+  html #view-dashboard .om3-priority-body strong{font-size:var(--ds-text-sm)}
+}
+/* END OMNIOS PHASE 3 / DAILY WORKSPACE AND DASHBOARD / v1 */
 </style>
 
 <script id="omnios-unified-2026-controls">

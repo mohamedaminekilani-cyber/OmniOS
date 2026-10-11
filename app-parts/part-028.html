@@ -16111,6 +16111,357 @@ html :where(.v35-drawer,.v55-drawer,.org-modal,.modal)
   html .mobile-nav.omr-mobile-dock>button{transition:none!important}
 }
 /* END OMNIOS PHASE 9 / BRAND + MOBILE DENSITY / v1 */
+
+/* ================================================================
+   OMNIOS PHASE 10 / APP-WIDE VISUAL CONSISTENCY / v1
+   Authoritative flat-theme rhythm; no data, navigation or handlers changed.
+   ================================================================ */
+html{
+  --om10-space-xs:6px;
+  --om10-space-sm:10px;
+  --om10-space-md:16px;
+  --om10-space-lg:22px;
+  --om10-surface:var(--ds-surface,var(--bg-surface));
+  --om10-subtle:var(--ds-surface-raised,var(--bg-elevated));
+  --om10-border:var(--ds-line,var(--border-color));
+}
+/* One compact, accessible switch. Earlier global button rules incorrectly
+   stretched 42x24 switches into 44x44 squares and left the dot at the top. */
+html :is(.settings-toggle,button.settings-toggle,[role="switch"].settings-toggle){
+  box-sizing:border-box!important;display:inline-block!important;
+  position:relative!important;vertical-align:middle!important;
+  width:50px!important;min-width:50px!important;max-width:50px!important;
+  height:30px!important;min-height:30px!important;max-height:30px!important;
+  flex:0 0 50px!important;margin:0!important;padding:0!important;
+  border:1px solid var(--ds-line-strong,var(--border-color))!important;
+  border-radius:999px!important;background:var(--om10-subtle)!important;
+  box-shadow:none!important;cursor:pointer!important;
+  overflow:visible!important;-webkit-appearance:none!important;appearance:none!important;
+}
+html .settings-toggle::after{
+  content:""!important;display:block!important;
+  position:absolute!important;top:4px!important;left:4px!important;
+  width:20px!important;height:20px!important;
+  border-radius:50%!important;
+  background:var(--ds-text-muted,var(--text-secondary))!important;
+  transform:none!important;box-shadow:none!important;
+  transition:left .17s ease,background .17s ease!important;
+}
+html .settings-toggle:is(.on,[aria-checked="true"]){
+  background:var(--ds-accent-surface,#27304d)!important;
+  border-color:var(--ds-accent,var(--accent-cyan))!important;
+}
+html .settings-toggle:is(.on,[aria-checked="true"])::after{
+  left:24px!important;background:var(--ds-accent-ink,var(--accent-cyan))!important;
+}
+html .settings-toggle:focus-visible{
+  outline:2px solid var(--ds-accent,var(--accent-cyan))!important;
+  outline-offset:3px!important;
+}
+html .settings-row{gap:14px!important;min-width:0;max-width:100%}
+html .settings-row>div:first-child{min-width:0;flex:1 1 auto}
+html .settings-row .settings-toggle{align-self:center!important}
+
+/* Page cover remains editable but no longer visually detaches from headings. */
+html .view > .v44-page-cover-shell:has(.v44-page-cover-empty){
+  min-height:0!important;height:auto!important;margin:0 0 6px!important;
+  padding:0!important;border:0!important;background:transparent!important;
+}
+html .view > .v44-page-cover-shell .v44-page-cover-empty{
+  min-height:24px!important;height:auto!important;display:flex!important;
+  align-items:center!important;margin:0!important;padding:0!important;
+}
+html .view .v44-add-cover{
+  font-size:12px!important;font-weight:580!important;
+  min-height:28px!important;height:28px!important;padding:4px 9px!important;
+  display:inline-flex!important;align-items:center!important;gap:6px!important;
+  border-radius:7px!important;
+}
+/* Canonical page header contract. It outranks old version-specific
+   0px/negative padding overrides, including dynamically rendered screens. */
+html body .view :is(.v35-page-head,.v43-page-head,.v55-page-head,.omx-page-heading,
+  .org-hero,.finance-hero,.v38-finance-head,.diet-hero,.v55-studio-head){
+  box-sizing:border-box!important;position:relative!important;
+  display:flex!important;align-items:center!important;
+  justify-content:space-between!important;flex-wrap:wrap!important;
+  width:100%!important;max-width:100%!important;min-width:0!important;
+  min-height:0!important;height:auto!important;
+  margin:0 0 14px!important;padding:20px 22px!important;
+  gap:14px 18px!important;
+  background:var(--om10-surface)!important;background-image:none!important;
+  border:1px solid var(--om10-border)!important;
+  border-radius:12px!important;box-shadow:none!important;
+  overflow:visible!important;
+}
+html body .view :is(.v35-page-head,.v43-page-head,.v55-page-head,.omx-page-heading,
+  .org-hero,.finance-hero,.v38-finance-head,.diet-hero,.v55-studio-head)>div:first-child{
+  display:flex!important;flex:1 1 270px!important;flex-direction:column!important;
+  align-items:flex-start!important;justify-content:center!important;
+  min-width:0!important;max-width:100%!important;gap:5px!important;
+  height:auto!important;min-height:0!important;margin:0!important;padding:0!important;
+}
+html body .view :is(.v35-page-head,.v43-page-head,.v55-page-head,.omx-page-heading,
+  .org-hero,.finance-hero,.v38-finance-head,.diet-hero,.v55-studio-head)
+  :is(.v35-kicker,.omx-eyebrow,.org-kicker,.eyebrow,.finance-eyebrow,.v55-kicker){
+  display:block!important;line-height:1.35!important;margin:0!important;
+  font-size:11px!important;letter-spacing:.075em!important;
+  font-weight:740!important;color:var(--ds-accent-ink,var(--accent-cyan))!important;
+}
+html body .view :is(.v35-page-head,.v43-page-head,.v55-page-head,.omx-page-heading,
+  .org-hero,.finance-hero,.v38-finance-head,.diet-hero,.v55-studio-head)
+  :is(h2,h3,.org-title){
+  display:block!important;line-height:1.16!important;
+  margin:0!important;padding:0!important;
+  font-size:clamp(21px,2.1vw,29px)!important;
+  letter-spacing:-.032em!important;color:var(--ds-text,var(--text-primary))!important;
+}
+html body .view :is(.v35-page-head,.v43-page-head,.v55-page-head,.omx-page-heading,
+  .org-hero,.finance-hero,.v38-finance-head,.diet-hero,.v55-studio-head)
+  :is(p,.text-muted,.org-sub){
+  line-height:1.5!important;min-width:0!important;
+  max-width:66ch!important;margin:0!important;padding:0!important;
+  font-size:13px!important;color:var(--ds-text-muted,var(--text-muted))!important;
+}
+html body .view :is(.v35-page-actions,.omx-page-actions,.finance-hero-actions,
+  .v38-finance-head-actions){
+  display:flex!important;align-items:center!important;
+  justify-content:flex-end!important;flex:0 1 auto!important;
+  flex-wrap:wrap!important;min-width:0!important;
+  gap:8px!important;margin:0!important;padding:0!important;
+}
+html body .view :is(.v35-page-head,.omx-page-heading,.org-hero,.v38-finance-head) .btn{
+  min-height:38px!important;padding:9px 14px!important;
+  border-radius:9px!important;
+}
+/* Navigation strips use the same flat segmented-control language. */
+html body .view :is(.v35-segmented,.v38-fin-tabs,.org-seg,.omx-tasks-toolbar,
+  .v43-tabs,.v55-tabs,.workout-tabs){
+  box-sizing:border-box!important;max-width:100%!important;
+  min-width:0!important;margin-bottom:14px!important;
+  padding:5px!important;gap:5px!important;
+  background:var(--om10-subtle)!important;
+  border:1px solid var(--om10-border)!important;
+  border-radius:11px!important;box-shadow:none!important;
+}
+html body .view :is(.v35-segmented,.v38-fin-tabs,.org-seg,.v43-tabs) :is(button,.v38-fin-tab){
+  min-height:36px!important;padding:8px 12px!important;
+  border-radius:8px!important;font-size:13px!important;
+  font-weight:670!important;line-height:1.2!important;
+  white-space:nowrap!important;
+}
+html body .view :is(.v35-segmented,.v38-fin-tabs,.org-seg,.v43-tabs)
+  :is(button.active,[aria-selected="true"],[aria-pressed="true"]){
+  color:var(--ds-accent-ink,var(--accent-cyan))!important;
+  background:var(--ds-accent-surface,var(--bg-hover))!important;
+  box-shadow:none!important;
+}
+/* Finance month picker: a bounded, predictable horizontal group. */
+html body #view-budget .v38-finance-head{align-items:center!important;gap:14px!important}
+html body #view-budget .v38-finance-head>div:first-child{
+  flex:1 1 270px!important;max-width:100%!important;
+}
+html body #view-budget .v38-finance-head-actions{
+  flex:0 1 auto!important;justify-content:flex-end!important;gap:8px!important;
+}
+html body #view-budget .v38-month-nav{
+  box-sizing:border-box!important;display:grid!important;align-items:center!important;
+  grid-template-columns:38px auto minmax(115px,1fr) 38px!important;
+  gap:5px!important;width:min(100%,420px)!important;min-width:0!important;
+  height:46px!important;min-height:46px!important;max-height:46px!important;
+  padding:4px!important;border:1px solid var(--om10-border)!important;
+  border-radius:10px!important;background:var(--om10-subtle)!important;
+  box-shadow:none!important;
+}
+html body #view-budget .v38-month-nav>:is(button,.v38-month-label){
+  grid-row:1!important;height:36px!important;min-height:36px!important;
+  max-height:36px!important;min-width:0!important;margin:0!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  padding:4px 8px!important;border-radius:7px!important;white-space:nowrap!important;
+}
+html body #view-budget .v38-month-nav .v38-month-label{
+  grid-column:3!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  font-size:13px!important;font-weight:730!important;color:var(--ds-text)!important;
+}
+html body #view-budget .v38-month-nav #v38-prev-month{grid-column:1!important}
+html body #view-budget .v38-month-nav #v38-today-month{grid-column:2!important}
+html body #view-budget .v38-month-nav #v38-next-month{grid-column:4!important}
+/* Settings/profile: remove oversized legacy modal footer drawn inside a card. */
+html body #view-settings #settings-content>.card.settings-section{
+  height:auto!important;min-height:0!important;padding:22px!important;
+  border:1px solid var(--om10-border)!important;
+  border-radius:12px!important;box-shadow:none!important;
+}
+html body #view-settings #settings-content .modal-footer:has(#profile-save){
+  box-sizing:border-box!important;position:static!important;
+  display:flex!important;justify-content:flex-end!important;align-items:center!important;
+  flex-wrap:wrap!important;width:100%!important;height:auto!important;
+  min-height:0!important;max-height:none!important;
+  margin:16px 0 0!important;padding:14px 0 0!important;
+  border:0!important;border-top:1px solid var(--om10-border)!important;
+  background:transparent!important;box-shadow:none!important;
+}
+html body #view-settings #profile-save{
+  min-height:40px!important;height:40px!important;
+  margin:0!important;padding:8px 16px!important;border-radius:9px!important;
+}
+/* Dashboard: KPI tiles have their own consistent surface instead of black blocks. */
+html body #view-dashboard .v43-card{
+  background:var(--om10-surface)!important;
+  border:1px solid var(--om10-border)!important;
+  border-radius:13px!important;padding:18px!important;
+  box-shadow:none!important;min-width:0!important;
+}
+html body #view-dashboard .v43-card-head{margin-bottom:12px!important;gap:10px!important}
+html body #view-dashboard :is(.v43-mini-grid,.v431-detail-grid){
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:9px!important;background:transparent!important;
+  border:0!important;border-radius:0!important;overflow:visible!important;
+}
+html body #view-dashboard :is(.v43-metric,.v431-detail){
+  box-sizing:border-box!important;min-width:0!important;
+  min-height:78px!important;margin:0!important;padding:12px 13px!important;
+  border:1px solid var(--om10-border)!important;
+  border-radius:10px!important;
+  background:var(--om10-subtle)!important;
+  box-shadow:none!important;
+}
+html body #view-dashboard :is(.v43-metric,.v431-detail) strong{
+  font-size:clamp(16px,1.3vw,20px)!important;line-height:1.22!important;
+}
+html body #view-dashboard :is(.v43-metric,.v431-detail) span{
+  display:block!important;margin-top:5px!important;
+  font-size:12px!important;line-height:1.35!important;
+}
+html body #view-dashboard .v431-area-row{
+  box-sizing:border-box!important;display:block!important;
+  padding:12px 13px!important;margin:0 0 8px!important;
+  background:var(--om10-subtle)!important;
+  border:1px solid var(--om10-border)!important;border-radius:10px!important;
+  box-shadow:none!important;
+}
+html body #view-dashboard .v431-area-row+.v431-area-row{border-top:1px solid var(--om10-border)!important}
+html body #view-dashboard .v431-area-row:hover{
+  padding:12px 13px!important;border-color:var(--ds-line-strong)!important;
+}
+html body #view-dashboard .v431-area-head{
+  font-size:13px!important;line-height:1.45!important;font-weight:690!important;
+}
+html body #view-dashboard .v431-area-meta{
+  margin:7px 0 0!important;font-size:12px!important;line-height:1.35!important;
+}
+html body #view-dashboard .v431-area-row .v43-progress{
+  display:block!important;height:6px!important;min-height:6px!important;
+  margin:9px 0 0!important;border-radius:999px!important;
+  overflow:hidden!important;background:var(--om10-border)!important;
+}
+html body #view-dashboard .v431-area-row .v43-progress>i{
+  display:block!important;height:100%!important;
+  border-radius:999px!important;background:var(--ds-primary)!important;
+}
+/* Planner: empty days are shorter but remain valid drag/drop targets. */
+html body #view-planner .v35-week-grid{
+  grid-template-columns:repeat(7,minmax(125px,1fr))!important;gap:9px!important;
+}
+html body #view-planner .v35-day-col{
+  min-height:176px!important;height:auto!important;padding:13px!important;
+  border-radius:11px!important;box-shadow:none!important;
+}
+html body #view-planner .v35-day-col.is-today{
+  border-color:var(--ds-primary)!important;
+  background:var(--ds-accent-surface)!important;
+}
+html body #view-planner .v35-day-head{padding-bottom:10px!important;margin-bottom:10px!important}
+html body #view-planner .v35-day-add{
+  margin-top:8px!important;min-height:38px!important;border-radius:8px!important;
+}
+/* Habit rows: text hierarchy and compact annual heatmap gutters. */
+html body #view-habits .v95-habit-card{border-radius:12px!important;box-shadow:none!important}
+html body #view-habits .v95-habit-head{gap:11px!important;min-width:0!important}
+html body #view-habits .v95-habit-name{
+  font-size:14px!important;line-height:1.3!important;overflow-wrap:anywhere!important;
+}
+html body #view-habits .v95-habit-footer{gap:6px!important;min-width:0!important}
+html body #view-habits .v103-year-heatmap{max-width:100%!important;overflow:hidden!important}
+/* Welcome screen belongs to the same visual system as the app it launches. */
+html body #welcome63{padding:clamp(12px,2vw,26px)!important}
+html body #welcome63 .w63-shell{
+  width:min(980px,100%)!important;
+  max-height:calc(100dvh - 28px)!important;
+  border:1px solid var(--om10-border)!important;
+  border-radius:16px!important;
+  background:var(--om10-surface)!important;box-shadow:none!important;
+}
+html body #welcome63 .w63-top{
+  padding:14px 20px!important;
+  background:var(--om10-surface)!important;
+  border-bottom:1px solid var(--om10-border)!important;
+  backdrop-filter:none!important;
+}
+html body #welcome63 .w63-main{padding:16px 20px 20px!important}
+html body #welcome63 .w63-hero{gap:12px!important}
+html body #welcome63 :is(.w63-intro,.w63-next,.w63-card){
+  border:1px solid var(--om10-border)!important;
+  border-radius:12px!important;background:var(--om10-subtle)!important;
+  box-shadow:none!important;
+}
+html body #welcome63 .w63-intro{
+  min-height:200px!important;padding:22px!important;
+}
+html body #welcome63 .w63-intro h1{
+  font-size:clamp(32px,4vw,54px)!important;
+  line-height:1.04!important;margin:12px 0 10px!important;
+}
+html body #welcome63 .w63-actions{margin-top:17px!important}
+html body #welcome63 .w63-next{padding:20px!important}
+html body #welcome63 .w63-btn{
+  border-radius:9px!important;box-shadow:none!important;
+  font-size:12px!important;
+}
+html body #welcome63 .w63-stats{border-radius:11px!important}
+@media(max-width:760px){
+  html body .view :is(.v35-page-head,.v43-page-head,.v55-page-head,.omx-page-heading,
+    .org-hero,.finance-hero,.v38-finance-head,.diet-hero,.v55-studio-head){
+    padding:16px!important;gap:10px!important;
+    flex-direction:column!important;align-items:stretch!important;
+  }
+  html body .view :is(.v35-page-head,.v43-page-head,.v55-page-head,.omx-page-heading,
+    .org-hero,.finance-hero,.v38-finance-head,.diet-hero,.v55-studio-head)>div:first-child{
+    flex:0 1 auto!important;width:100%!important;
+  }
+  html body .view :is(.v35-page-actions,.omx-page-actions,.finance-hero-actions,
+    .v38-finance-head-actions){width:100%!important;justify-content:flex-start!important}
+  html body #view-budget .v38-finance-head-actions{width:100%!important}
+  html body #view-budget .v38-month-nav{width:100%!important}
+  html body #view-planner .v35-week-grid{
+    grid-template-columns:minmax(0,1fr)!important;gap:8px!important;
+  }
+  html body #view-planner .v35-day-col{min-height:94px!important;padding:12px!important}
+  html body #view-dashboard .v43-card{padding:14px!important}
+  html body #welcome63{padding:0!important}
+  html body #welcome63 .w63-shell{
+    height:100dvh!important;max-height:100dvh!important;
+    border:0!important;border-radius:0!important;
+  }
+  html body #welcome63 .w63-main{padding:12px 14px 24px!important}
+  html body #welcome63 .w63-top{padding:12px 14px!important}
+  html body #welcome63 .w63-intro{min-height:0!important;padding:19px!important}
+}
+@media(max-width:430px){
+  html body #view-budget .v38-month-nav{
+    grid-template-columns:32px max-content minmax(0,1fr) 32px!important;
+    gap:3px!important;
+  }
+  html body #view-budget .v38-month-nav>:is(button,.v38-month-label){
+    padding:4px!important;font-size:12px!important;
+  }
+  html body #view-dashboard :is(.v43-metric,.v431-detail){
+    min-height:75px!important;padding:11px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  html .settings-toggle::after{transition:none!important}
+}
+/* END OMNIOS PHASE 10 / APP-WIDE VISUAL CONSISTENCY / v1 */
 </style>
 
 <script id="omnios-unified-2026-controls">

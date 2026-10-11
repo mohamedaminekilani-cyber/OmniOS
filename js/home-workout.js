@@ -58,7 +58,7 @@ function nav(){
 function ensureUI(){
  var view=document.getElementById('view-workout');if(!view)return null;
  var tabs=view.querySelector('.workout-tabs');if(tabs&&!tabs.querySelector('[data-workout-tab="home"]')){
-  var button=document.createElement('button');button.type='button';button.className='view-btn';button.dataset.workoutTab='home';button.textContent='Home workout';tabs.appendChild(button);
+  var button=document.createElement('button');button.type='button';button.className='view-btn';button.dataset.workoutTab='home';button.textContent='Home workout';button.setAttribute('aria-label','Home bodyweight workout');tabs.appendChild(button);
  }
  var panel=document.getElementById('hw-panel');if(!panel){panel=document.createElement('section');panel.id='hw-panel';panel.setAttribute('aria-label','Home workout');panel.setAttribute('aria-live','off');view.appendChild(panel)}
  return panel;
@@ -67,7 +67,7 @@ function syncView(){
  var v=document.getElementById('view-workout');if(!v)return;
  var home=typeof workoutTab!=='undefined'&&workoutTab==='home';
  v.classList.toggle('hw-active',home);
- v.querySelectorAll('[data-workout-tab]').forEach(function(b){b.classList.toggle('active',b.dataset.workoutTab===(home?'home':workoutTab))});
+ v.querySelectorAll('[data-workout-tab]').forEach(function(b){b.classList.toggle('active',b.dataset.workoutTab===(home?'home':workoutTab));b.setAttribute('aria-pressed',String(b.dataset.workoutTab===(home?'home':workoutTab)))});
  if(home)render();
 }
 function render(){
@@ -122,12 +122,12 @@ function sessionView(a){
  a.entries.forEach(function(it){it.sets.forEach(function(st){total++;if(st.done)done++})});
  var i=idx?idx.exercise:Math.max(0,a.entries.length-1),j=idx?idx.set:0,item=a.entries[i],e=getExercise(item.id)||CATALOG[0],set=item.sets[j],remain=clockRemaining(a);
  var complete=done===total;
- var meta='<div class="hw-session-status"><span>'+done+' / '+total+' sets</span><span>'+Math.round(done/Math.max(1,total)*100)+'% complete</span></div><div class="hw-progress-track"><i style="width:'+Math.round(done/Math.max(1,total)*100)+'%"></i></div>';
+ var pct=Math.round(done/Math.max(1,total)*100);var meta='<div class="hw-session-status"><span>'+done+' / '+total+' sets</span><span>'+pct+'% complete</span></div><div class="hw-progress-track" role="progressbar" aria-label="Home workout set completion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><i style="width:'+pct+'%"></i></div>';
  return '<div class="hw-session"><div class="hw-session-header"><div><div class="hw-overline">ACTIVE WORKOUT</div><h4>'+esc(a.name)+'</h4><p>Started '+esc(new Date(a.startedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</p></div><div class="hw-session-tools">'+cardButton('finish','Finish session','btn-primary')+cardButton('discard','Discard','hw-danger')+'</div></div>'+meta+
  '<div class="hw-session-layout"><div class="hw-main-card"><div class="hw-overline">'+esc(e.group)+' · '+esc(e.muscle)+'</div><h3>'+(complete?'All sets completed':esc(e.name))+'</h3><p class="hw-session-sub">'+(complete?'You can finish and save your results.':'Set '+(j+1)+' of '+item.sets.length+' · '+esc(e.equipment))+'</p>'+
  (complete?'<div class="hw-empty">Great work — save this session to update your progress charts.</div>':'<div class="hw-actual"><label>Actual '+(e.mode==='time'?'seconds':'reps')+'<input id="hw-actual" type="number" inputmode="numeric" min="0" max="1800" value="'+esc(set.actual==null?item.target:set.actual)+'"></label>'+cardButton('complete-set','✓ Complete set','btn-primary')+'</div>')+
- (complete?'':(e.mode==='time'?'<div class="hw-timed-tools">'+cardButton('exercise-clock',(c&&c.kind==='exercise'?'Pause / resume':'Start set timer'))+ '<strong id="hw-work-timer">'+(c&&c.kind==='exercise'?fmt(remain):fmt(item.target))+'</strong></div>':''))+
- '<div class="hw-rest"><div><small>REST TIMER</small><strong id="hw-rest-timer">'+(c&&c.kind==='rest'?fmt(remain):fmt(item.rest))+'</strong><p>'+(c&&c.kind==='rest'?'Rest until your next set':'Rest after each set · '+item.rest+' sec')+'</p></div><div class="hw-rest-actions">'+cardButton('rest-toggle',c&&c.kind==='rest'&&c.until?'Pause':c&&c.kind==='rest'?'Resume':'Start rest')+cardButton('rest-minus','−15s')+cardButton('rest-plus','+15s')+cardButton('rest-skip','Skip')+'</div></div></div>'+
+ (complete?'':(e.mode==='time'?'<div class="hw-timed-tools" role="group" aria-label="Exercise set timer">'+cardButton('exercise-clock',(c&&c.kind==='exercise'?'Pause / resume':'Start set timer'))+ '<strong id="hw-work-timer" role="timer" aria-live="off">'+(c&&c.kind==='exercise'?fmt(remain):fmt(item.target))+'</strong></div>':''))+
+ '<div class="hw-rest" role="group" aria-label="Rest timer and controls"><div><small>REST TIMER</small><strong id="hw-rest-timer" role="timer" aria-live="off">'+(c&&c.kind==='rest'?fmt(remain):fmt(item.rest))+'</strong><p>'+(c&&c.kind==='rest'?'Rest until your next set':'Rest after each set · '+item.rest+' sec')+'</p></div><div class="hw-rest-actions">'+cardButton('rest-toggle',c&&c.kind==='rest'&&c.until?'Pause':c&&c.kind==='rest'?'Resume':'Start rest')+cardButton('rest-minus','−15s')+cardButton('rest-plus','+15s')+cardButton('rest-skip','Skip')+'</div></div></div>'+
  '<aside class="hw-queue"><div class="hw-heading"><div><h4>Workout queue</h4><p>Each set saved as you go.</p></div></div>'+
  a.entries.map(function(it,n){var x=getExercise(it.id)||CATALOG[0],d=it.sets.filter(function(st){return st.done}).length;return '<div class="hw-queue-row '+(n===i?'current':'')+'"><span class="hw-queue-index" aria-hidden="true">'+(n+1)+'</span><div><strong>'+esc(x.name)+'</strong><small>'+d+'/'+it.sets.length+' sets · '+esc(x.mode==='time'?'seconds':'reps')+'</small><div class="hw-set-dots">'+it.sets.map(function(st,k){return '<span title="Set '+(k+1)+(st.done?': complete':': pending')+'" class="'+(st.done?'done':'')+'"></span>'}).join('')+'</div></div></div>'}).join('')+'</aside></div></div>';
 }

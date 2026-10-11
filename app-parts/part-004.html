@@ -160,13 +160,13 @@ function renderHabitMonthlyV105(container){
       <div class="v105-month-card-head">
         <div class="v105-month-icon">${escapeHtml(h.icon||'✨')}</div>
         <div class="v105-month-copy"><strong>${escapeHtml(h.name||'Habit')}</strong><span>${escapeHtml(h.goal||target+'x per week')}</span></div>
-        <div class="v105-month-stat"><strong>${completed}</strong><span>/ ${days}</span></div>
+        <div class="v105-month-stat"><strong>${completed}</strong><span>/ ${days} days</span></div>
       </div>
       <div class="v105-month-weekdays">${labels.map(x=>`<span>${x.slice(0,1)}</span>`).join('')}</div>
       <div class="v105-month-days">${'<span class="v105-month-blank"></span>'.repeat(offset)}`;
     for(let day=1;day<=days;day++){
       const k=`${habitYear}-${String(habitMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`,done=!!h.log?.[k];
-      html+=`<button type="button" class="v105-month-day ${done?'done':''} ${k===today?'today':''}" data-habit-day="${escapeHtml(String(h.id))}|${k}" title="${escapeHtml(h.name||'Habit')} · ${k}">${day}</button>`;
+      html+=`<button type="button" class="v105-month-day ${done?'done':''} ${k===today?'today':''}" data-habit-day="${escapeHtml(String(h.id))}|${k}" title="${escapeHtml(h.name||'Habit')} · ${k}" aria-label="${escapeHtml(h.name||'Habit')}, ${k}, ${done?'completed':'not completed'}" aria-pressed="${done}" ${k===today?'aria-current="date"':''}>${day}</button>`;
     }
     html+=`</div><div class="v105-month-foot"><span>🔥 ${getStreak(h)}d streak</span><button type="button" class="v105-month-open" data-v105-open="${escapeHtml(String(h.id))}">Details</button></div></section>`;
   });
@@ -183,7 +183,7 @@ const habitBtn=document.querySelector('[data-habitview="calendar"]');if(habitBtn
 const habitOverviewBtnV95=document.querySelector('[data-habitview="week"]');if(habitOverviewBtnV95)habitOverviewBtnV95.innerHTML='▦ Overview';
 
 /* ---------- v95 Habit cards + detail sheet ---------- */
-const HABIT_ACCENTS_V95=['#7c83ff','#f2a84b','#43b8d6','#52b788','#d46bc8','#ef6f6c','#9a7bd1','#6ea8fe'];
+const HABIT_ACCENTS_V95=['#2547E8','#5F31C4','#C6F04A','#55606D'];
 let habitDetailIdV95=null,habitDetailMonthV95=new Date();
 
 function habitAccentV95(h){
@@ -216,13 +216,13 @@ function habitHeatmapV95(h,weeks=13,detail=false){
 }
 function renderHabitOverviewV95(container){
   const today=localDateString();
-  if(!state.habits.length){container.innerHTML='<div class="v95-habit-empty">No habits yet. Add your first habit to start building a consistency map.</div>';return}
+  if(!state.habits.length){container.innerHTML='<div class="v95-habit-empty om5-empty-state"><strong>No habits yet</strong><p>Start with one daily action and build consistency over time.</p><button type="button" class="btn btn-primary" onclick="openHabitModal()">+ Create a habit</button></div>';return}
   container.innerHTML=`<div class="v95-habit-list">${state.habits.map(h=>{const target=habitTargetV95(h),week=habitWeekCountV95(h),done=!!h.log?.[today],accent=habitAccentV95(h);return `
     <article class="v95-habit-card ${done?'is-done-today':''}" data-v95-habit="${escapeHtml(String(h.id))}" style="--habit-accent:${accent}">
       <div class="v95-habit-head">
         <div class="v95-habit-icon">${escapeHtml(h.icon||'✨')}</div>
         <div class="v95-habit-title-wrap"><div class="v95-habit-name">${escapeHtml(h.name||'Habit')}</div><div class="v95-habit-goal">${escapeHtml(h.goal||target+'x per week')}</div></div>
-        <button type="button" class="v95-habit-done-btn ${done?'active':''}" data-v95-toggle-today="${escapeHtml(String(h.id))}" aria-label="${done?'Mark not complete today':'Mark complete today'}">✓</button>
+        <button type="button" class="v95-habit-done-btn ${done?'active':''}" data-v95-toggle-today="${escapeHtml(String(h.id))}" aria-label="${done?'Mark not complete today':'Mark complete today'}" aria-pressed="${done}">✓</button>
       </div>
       ${habitHeatmapV95(h,13,false)}
       <div class="v95-habit-footer">
@@ -237,7 +237,7 @@ window.renderHabitWeek=renderHabitOverviewV95;
 window.renderHabits=function(){
   const container=document.getElementById('habits-container');if(!container)return;
   renderHabitSummary();
-  if(!state.habits.length){container.innerHTML='<div class="v95-habit-empty">No habits yet. Add your first habit to start building a consistency map.</div>';return}
+  if(!state.habits.length){container.innerHTML='<div class="v95-habit-empty om5-empty-state"><strong>No habits yet</strong><p>Start with one daily action and build consistency over time.</p><button type="button" class="btn btn-primary" onclick="openHabitModal()">+ Create a habit</button></div>';return}
   if(habitView==='week')renderHabitOverviewV95(container);else renderHabitCalendar(container)
 };
 

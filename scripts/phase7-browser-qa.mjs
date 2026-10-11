@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
 import http from 'node:http';
 import path from 'node:path';
 import os from 'node:os';
@@ -19,7 +20,7 @@ const url='http://127.0.0.1:'+server.address().port+'/'+release.file;
 const profile=fs.mkdtempSync(path.join(os.tmpdir(),'omnios-qa-'));
 const port=9229;
 const browser=spawn(chrome,['--headless=new','--no-sandbox','--disable-gpu','--no-proxy-server','--disable-extensions','--no-first-run','--user-data-dir='+profile,'--remote-debugging-port='+port,'--remote-allow-origins=*','about:blank'],{stdio:'ignore'});
-const report={release:release.file,sha256:release.sha256,checks:[],screenshots:[],errors:[],startedAt:new Date().toISOString()};
+const report={release:release.file,sha256:release.sha256,checks:[],screenshots:[],screenshotSignatures:[],errors:[],startedAt:new Date().toISOString()};
 let ws,id=0;const awaiting=new Map(),browserErrors=[];
 function send(method,params={}){return new Promise((resolve,reject)=>{
  const key=++id,timer=setTimeout(()=>{awaiting.delete(key);reject(Error('CDP timeout '+method))},18000);
@@ -38,11 +39,15 @@ async function visit(view,theme,width){
  await delay(450);
  const expression='(()=>{const e=document.getElementById('+JSON.stringify('view-'+view)+'),d=document.documentElement,r=e?.getBoundingClientRect();return {exists:!!e,active:!!e?.classList.contains("active"),visible:!!r&&r.width>0&&r.height>0,overflow:d.scrollWidth-d.clientWidth,content:(e?.innerText||"").trim().length}})()';
  const state=await evaluate(expression);
+ const modal=await evaluate('!!document.querySelector("#welcome63")');
+ check(width+' '+theme+' '+view+' has no blocking welcome overlay',!modal);
  check(width+' '+theme+' '+view+' renders',state.exists&&state.active&&state.visible,{content:state.content});
  check(width+' '+theme+' '+view+' fits viewport',state.overflow<=5,{overflow:state.overflow});
  const png=(await send('Page.captureScreenshot',{format:'jpeg',quality:70,captureBeyondViewport:false,fromSurface:true})).result.data;
  const name=output+'/'+width+'-'+theme+'-'+view+'.jpg';
- fs.writeFileSync(name,Buffer.from(png,'base64'));report.screenshots.push(name);
+ const bytes=Buffer.from(png,'base64');
+ fs.writeFileSync(name,bytes);report.screenshots.push(name);
+ report.screenshotSignatures.push({view,theme,width,sha256:createHash('sha256').update(bytes).digest('hex')});
 }
 try{
  const endpoint=await poll(async()=>{try{const r=await fetch('http://127.0.0.1:'+port+'/json');return r.ok?(await r.json()).find(x=>x.type==='page')?.webSocketDebuggerUrl:null}catch{return null}},20000);
@@ -54,16 +59,28 @@ try{
  const nav=(await send('Page.navigate',{url})).result;if(nav.errorText)throw Error('Navigation '+nav.errorText);
  await poll(()=>evaluate('typeof window.switchView==="function" && !!document.querySelector("#view-dashboard") && !!document.getElementById("omnios-unified-design-2026")'),45000);
  await delay(1000);
+ const welcoming=await evaluate('!!document.querySelector("#welcome63")');
+ if(welcoming){
+   const closed=await evaluate('(()=>{const button=document.querySelector("#welcome63 [data-w63close]");if(!button)return false;button.click();return true})()');
+   check('Welcome screen dismissed through real UI action',closed);
+   await poll(()=>evaluate('!document.getElementById("welcome63")'),7000);
+ }
  const pages=['dashboard','today','master-calendar','tasks','habits','workout','budget','diet','notes','projects','reminders','settings'];
  for(const page of pages)await visit(page,'dark',1440);
  await setViewport(390,844);for(const page of pages)await visit(page,'light',390);
  await setViewport(360,780);for(const page of ['today','master-calendar','tasks','habits','budget','notes'])await visit(page,'dark',360);
+ for(const [width,theme] of [[1440,'dark'],[390,'light']]){
+   const hashes=report.screenshotSignatures.filter(x=>x.width===width&&x.theme===theme).map(x=>x.sha256);
+   const distinct=new Set(hashes).size;
+   check(width+' '+theme+' snapshots differ across real modules',distinct>=Math.ceil(hashes.length/2),{unique:distinct,total:hashes.length});
+ }
  const classic=await evaluate('(()=>{const sheet=document.getElementById("omnios-unified-design-2026"),btn=document.getElementById("omni-unified-mode-toggle");if(!btn)return {found:false};if(sheet.disabled)btn.click();const before=!sheet.disabled;btn.click();const classic=sheet.disabled;btn.click();return {found:true,before,classic,restored:!sheet.disabled,mode:localStorage.getItem("omnios_visual_style_2026")}})()');
  check('Classic appearance toggles safely',classic.found&&classic.before&&classic.classic&&classic.restored&&classic.mode==='modern',classic);
  await evaluate('window.switchView("master-calendar")');await delay(500);
  const cal=await evaluate('document.getElementById("view-master-calendar")?.innerText?.trim().length||0');
  check('Calendar is not blank',cal>30,{characters:cal});
  report.browserExceptions=browserErrors.slice(0,30);
+ check('No uncaught browser runtime exceptions',browserErrors.length===0,{errors:report.browserExceptions});
 }catch(e){report.errors.push('Browser QA error: '+String(e?.message||e))}
 finally{
  report.finishedAt=new Date().toISOString();

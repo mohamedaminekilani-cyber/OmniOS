@@ -13462,7 +13462,7 @@ html .omni-flat-primary{
    document.documentElement.dataset.omniUi=mode;
    try{localStorage.setItem(KEY,mode)}catch(_){}
    const toggle=document.getElementById('omni-unified-mode-toggle');
-   if(toggle){toggle.textContent=mode==='classic'?'Use refreshed design':'Use Classic appearance';toggle.setAttribute('aria-pressed',String(mode==='classic'))}
+   if(toggle){toggle.textContent=mode==='classic'?'Use Flat design':'Use Classic appearance';toggle.setAttribute('aria-pressed',String(mode==='classic'))}
  }
  // Apply the user's prior choice immediately, before the first app render.
  setMode(mode);
@@ -13473,7 +13473,7 @@ html .omni-flat-primary{
      el.id='omni-2026-appearance';
      el.setAttribute('role','group');
      el.setAttribute('aria-label','OmniOS interface appearance');
-     el.innerHTML='<div><h3>Interface style</h3><p>Compare the new OmniOS look with your original interface. Your saved data stays the same.</p></div><button type="button" class="btn" id="omni-unified-mode-toggle" aria-pressed="false">Use Classic appearance</button>';
+     el.innerHTML='<div><h3>Interface style</h3><p>Flat Tech SaaS palette · Carbon, Mist, Electric, Violet and Lime. Switch to Classic without changing saved data.</p></div><button type="button" class="btn" id="omni-unified-mode-toggle" aria-pressed="false">Use Classic appearance</button>';
      settings.insertBefore(el,settings.firstChild);
      setMode(mode);
    }

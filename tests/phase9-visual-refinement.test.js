@@ -58,7 +58,7 @@ test('Mobile dock has one canonical SVG or custom icon and readable labels',()=>
  assert.match(own,/\.v48-mobile-icon/);
  assert.match(own,/\.omni-mobile-custom-icon\.omni-custom-icon-active/);
  assert.match(own,/\.nav-label/);
- assert.match(own,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)!important/);
+ assert.match(own,/grid-template-columns:repeat\(6,minmax\(0,1fr\)\)!important/);
  assert.match(own,/font-size:11px!important/);
 });
 

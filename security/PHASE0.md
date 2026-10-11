@@ -32,7 +32,7 @@ P1 = investigate first; P2 = planned hardening; P3 = lower-priority validation; 
 2. The 10 mutable-action findings are in `.github/workflows/pages.yml` and `.github/workflows/phase7-qa.yml`. Semgrep's own workflow was already pinned and did not appear in this main-branch scan. Pin the remaining references to reviewed full-length action SHAs in Phase 3 without altering release permissions or triggers accidentally.
 3. The nine `java.lang.security.audit.xss.jsf.autoescape-disabled` alerts fire on OmniOS **HTML and inline JavaScript**, not a JavaServer Faces application. The rule may not apply semantically. Nevertheless, the app has dynamic `innerHTML` rendering; independently test untrusted user strings, imported backup content, synced records, and URLs for XSS. Do not auto-suppress the warnings.
 4. `index.html` uses `document.write` during initial load and in the update flow. The surrounding code checks a release digest before activation, but full trust-boundary review is still required.
-5. The extraction manifest maps findings to generated `.semgrep-inline/app-assembled-NNN.js` or `pwa-loader-004.js` with a script index and **assembled HTML start line**. These are *not* original file line numbers; generated script files are not committed. Phase 1/2 should resolve each embedded finding to its underlying `app-parts` or `js` source before making edits.
+5. The extraction manifest maps findings to generated `.semgrep-inline/app-assembled-NNN.js` or `pwa-loader-004.js` with a script index and **assembled HTML start line**. These are *not* original file line numbers; generated script files are not committed. All **23/23** extracted alerts have now been reverse-mapped in the CSV to an original `app-parts` or `index.html` source line, using the recorded script start lines and an assembly reconstruction checked against the scan manifest. Phase 1/2 should still re-check local source context and the end-to-end data path before any change.
 6. The inline scan also returned **one partial parsing warning** on `.semgrep-inline/app-assembled-049.js`, at lines 267 and 758. The count of 43 excludes this coverage warning; Phase 5 must address it. A green scanner job does not prove complete analysis.
 
 ## Verification tasks and safety controls
@@ -42,7 +42,7 @@ P1 = investigate first; P2 = planned hardening; P3 = lower-priority validation; 
 - [x] Classify the suspected JSF rule mismatch and localhost exception without prematurely marking issues fixed.
 - [x] Preserve app release source, current manifest, navigation, local data and production workflows (documentation-only pull request).
 - [ ] Validate XSS and prototype-pollution reachability with non-production, disposable test data in Phases 1–2.
-- [ ] Precisely reverse-map each generated inline JavaScript warning to its original source location before editing.
+- [x] Reverse-map all 23 generated inline JavaScript warnings to original source files and lines and retain both coordinates in the triage CSV.
 - [ ] Repair incomplete inline script parsing in Phase 5.
 - [ ] **User action required:** export browser/PWA data from **Data Center → Export Backup**, keep a private copy, and test importing into an isolated disposable browser profile before any behavior-changing release. **No browser data is present in GitHub**; the source-only backup does not protect local records.
 - [ ] Confirm owner acceptance of the triage before Phase 1 remediation.
@@ -55,4 +55,4 @@ P1 = investigate first; P2 = planned hardening; P3 = lower-priority validation; 
 - Rollback to the exact commit above via a reviewed revert or deployment of the verified historical build. Do not delete IndexedDB, localStorage, caches of user assets, or vault contents as part of source rollback.
 
 ## Definition of done
-**Documentary baseline and initial triage are complete.** The exploitability investigation, full original-file mapping, and test restore of private user data are explicitly outstanding. Therefore this Phase 0 PR must not be represented as full security remediation or a security clearance.
+**Documentary baseline, initial triage and all 23 original-file mappings are complete.** The exploitability investigation, partial-script-parser repair, and isolated test restore of private user data are explicitly outstanding. Therefore this Phase 0 PR must not be represented as full security remediation or a security clearance.

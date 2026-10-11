@@ -12,5 +12,5 @@ for(const [name,source]of [['application',html],['loader',fs.readFileSync('index
 for(const name of fs.readdirSync('js'))new vm.Script(fs.readFileSync('js/'+name,'utf8'),{filename:name});
 new vm.Script(fs.readFileSync('sw.js','utf8'),{filename:'sw.js'});
 const manifest=JSON.parse(fs.readFileSync('manifest.webmanifest','utf8'));
-if(manifest.name!=='Second Brain')throw Error('Inconsistent application branding');
+if(manifest.name!=='OmniOS — Personal OS'||manifest.short_name!=='OmniOS')throw Error('Inconsistent OmniOS application branding');
 console.log(`Parsed ${count} assembled scripts, modules and service worker.`);

@@ -1516,7 +1516,6 @@ function renderDashboard43(){
     if(scope==='all'||scope==='productivity'){
         push('Tasks',taskRate+'%',`${d.completed.length} completed · ${d.open.length} open`,'tasks');
         push('Focus',d.focus+'m','protected attention','focus');
-        push('Inbox',String(arr(state.life?.inbox).length),'captures to process','inbox');
     }
     if(scope==='all'||scope==='wellness'){
         push('Habits',habitRate+'%',d.habitPossible?`${d.habitChecks}/${d.habitPossible} checks`:'no tracked days','habits');
@@ -1543,6 +1542,7 @@ function renderDashboard43(){
     const greeting43=greetingHour<12?'Good morning':greetingHour<17?'Good afternoon':'Good evening';
     const firstName43=String(state.settingsProfile?.name||state.settings?.profile?.name||'').trim().split(/\s+/)[0].slice(0,32);
     const friendlyDate43=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+    const nextFocusTask43=d.open.find(t=>t.urgency==='urgent'||t.importance==='high')||d.open[0]||null;
     sec.innerHTML=`
     <div class="v43-hero v431-hero">
       <div class="v431-hero-main">
@@ -1550,6 +1550,7 @@ function renderDashboard43(){
         <div class="v431-title-row"><h3>${greeting43}${firstName43?', '+E(firstName43):''}!</h3><span class="v431-period-chip">${E(d.r.label)}</span></div>
         <div class="v43-hero-copy">Your priorities, plans and progress — all in one calm place.</div>
         <button type="button" class="omni-dashboard-capture" id="omni-dashboard-capture" aria-label="Open quick add to capture your next priority"><span>What’s your next priority?</span><span class="omni-dashboard-capture-arrow" aria-hidden="true">↗</span></button>
+        <div class="omx-quick-actions" role="group" aria-label="Quick navigation"><button type="button" data-v43-open="tasks">✓ Tasks</button><button type="button" data-v43-open="master-calendar">▦ Calendar</button><button type="button" data-v43-open="habits">◉ Habits</button></div>
       </div>
       <div class="v43-hero-actions v431-hero-actions">
         <label class="v431-period-control"><span>Period</span><select class="filter-select" id="v43-dash-period" aria-label="Dashboard period"><option value="today">Today</option><option value="week">This week</option><option value="month">This month</option><option value="all">All time</option></select></label>
@@ -1558,7 +1559,8 @@ function renderDashboard43(){
       </div>
     </div>
     <nav class="v43-tabs v431-tabs" id="v43-dash-scopes" aria-label="Dashboard scope">${[['all','Overview'],['productivity','Productivity'],['wellness','Wellness'],['finance','Finance'],['life','Life']].map(([k,l])=>`<button type="button" class="v43-tab ${scope===k?'active':''}" data-v43-scope="${k}">${l}</button>`).join('')}</nav>
-    <section class="v431-glance" aria-label="At a glance"><div class="v431-section-label">At a glance</div><div class="v43-kpis v431-kpis">${kpis.join('')}</div></section>
+    ${(scope==='all'||scope==='productivity')?`<section class="omx-next-focus" aria-label="Suggested next priority"><div class="omx-next-focus-mark" aria-hidden="true">01</div><div class="omx-next-focus-text"><span class="omx-eyebrow">START HERE</span><strong>${nextFocusTask43?E(nextFocusTask43.title||'Task'):'Your next important thing'}</strong><p>${nextFocusTask43?'One action at a time keeps things moving.':'No outstanding tasks. Make room for your next idea.'}</p></div><button type="button" data-v43-open="tasks" class="omx-focus-link">${nextFocusTask43?'Open tasks':'Plan a task'} ↗</button></section>`:''}
+    <section class="v431-glance" aria-label="At a glance"><div class="omx-section-title"><div><span class="omx-eyebrow">YOUR MOMENTUM</span><h4>At a glance</h4></div><span class="omx-context-label">${E(d.r.label)}</span></div><div class="v43-kpis v431-kpis">${kpis.join('')}</div></section>
     ${att.length&&(scope==='all'||scope==='life'||scope==='productivity')?`<section class="v43-card v43-attention v431-attention"><div class="v43-card-head"><div><div class="v43-card-title">Needs attention <span class="v431-count">${att.length}</span></div><div class="v43-card-sub">Only overdue and time-sensitive items</div></div>${openButton('reminders','Attention Center')}</div><div class="v43-list">${att.slice(0,4).map((x,i)=>row43({...x,key:'att-'+i,badge:x.tone==='bad'?'Overdue':'Soon'})).join('')}</div></section>`:''}
     <div class="v431-board">
       <div class="v431-main">

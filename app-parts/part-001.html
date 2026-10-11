@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#18181b">
+<meta name="theme-color" content="#101114">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Second Brain">
+<meta name="apple-mobile-web-app-title" content="OmniOS">
 <link id="omnios-apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="./icons/icon-192.png">
 <script id="omnios-performance-runtime-v100">
 (function(){
@@ -167,7 +167,7 @@ window.OmniPerformanceRuntime={
 })();
 </script>
 <link rel="manifest" href="./manifest.webmanifest">
-<title>Second Brain</title>
+<title>OmniOS — Personal OS</title>
 <script id="omnios-accent-early">
 (function(){
   try{
@@ -2228,14 +2228,15 @@ img,svg{max-width:100%}
 
                 <!-- TASKS -->
         <section id="view-tasks" class="view">
-            <div class="toolbar">
+            <header class="omx-page-heading"><div><span class="omx-eyebrow">MAKE SPACE FOR WHAT MATTERS</span><h3>Tasks</h3><p>See what needs action. Switch views without losing your filters.</p></div><button type="button" class="btn btn-primary" id="omx-task-quick-add">+ New task</button></header>
+            <div class="toolbar omx-tasks-toolbar">
                 <div class="toolbar-group">
-                    <button type="button" class="view-btn active" data-taskview="kanban">📋 Kanban</button>
-                    <button type="button" class="view-btn" data-taskview="matrix">⚡ Matrix</button>
-                    <button type="button" class="view-btn" data-taskview="list">📝 List</button>
-                    <button type="button" class="view-btn" data-taskview="gallery">🖼️ Gallery</button>
-                    <button type="button" class="view-btn" data-taskview="calendar">📅 Calendar View</button>
-                    <button type="button" class="view-btn" data-taskview="groups">🗂 Groups</button>
+                    <button type="button" class="view-btn active" data-taskview="kanban">Kanban</button>
+                    <button type="button" class="view-btn" data-taskview="matrix">Matrix</button>
+                    <button type="button" class="view-btn" data-taskview="list">List</button>
+                    <button type="button" class="view-btn" data-taskview="gallery">Gallery</button>
+                    <button type="button" class="view-btn" data-taskview="calendar">Calendar</button>
+                    <button type="button" class="view-btn" data-taskview="groups">Groups</button>
                 </div>
                 <div class="toolbar-divider"></div>
                 <div class="toolbar-group">
@@ -2258,11 +2259,11 @@ img,svg{max-width:100%}
                     </select>
                     <select class="filter-select" id="filter-category">
                         <option value="all">All Categories</option>
-                        <option value="work">💼 Work</option>
-                        <option value="hobby">🎨 Hobbies</option>
-                        <option value="routine">🔄 Routine</option>
-                        <option value="gym">🏋️ Gym</option>
-                        <option value="meal">🥗 Meals</option>
+                        <option value="work">Work</option>
+                        <option value="hobby">Hobbies</option>
+                        <option value="routine">Routine</option>
+                        <option value="gym">Gym</option>
+                        <option value="meal">Meals</option>
                     </select>
                 </div>
                 <div class="toolbar-divider"></div>
@@ -2388,12 +2389,15 @@ img,svg{max-width:100%}
 
         <!-- HABITS -->
         <section id="view-habits" class="view">
-            <div class="habit-toolbar">
-                <div><h3 style="margin:0 0 3px;">Habits</h3><div class="text-muted text-sm">Weekly execution first. Switch to calendar for long-term consistency.</div></div>
-                <div class="toolbar-group">
-                    <button type="button" class="view-btn active" data-habitview="week">▦ Weekly</button>
-                    <button type="button" class="view-btn" data-habitview="calendar">▦ Monthly</button>
-                    <button type="button" class="btn btn-primary" onclick="openHabitModal()">+ New Habit</button>
+            <header class="omx-page-heading omx-habits-head">
+                <div><span class="omx-eyebrow">SMALL STEPS, BIG MOMENTUM</span><h3>My habits</h3><p>Build consistency one day at a time. Your history stays right here.</p></div>
+                <button type="button" class="btn btn-primary" onclick="openHabitModal()">+ New habit</button>
+            </header>
+            <div class="habit-toolbar omx-habit-switch">
+                <div class="omx-habit-switch-copy">Track your rhythm <span>·</span> Week by week or across the month</div>
+                <div class="toolbar-group" role="group" aria-label="Habit history view">
+                    <button type="button" class="view-btn active" data-habitview="week">Week</button>
+                    <button type="button" class="view-btn" data-habitview="calendar">Month</button>
                 </div>
             </div>
             <div id="habit-summary" class="habit-summary-grid"></div>
@@ -2404,9 +2408,9 @@ img,svg{max-width:100%}
         <section id="view-workout" class="view">
             <div class="workout-hero">
                 <div>
-                    <div class="eyebrow">TRAINING HQ</div>
-                    <h3>Workout Command Center</h3>
-                    <p>Build sessions, log every set, chase performance, and keep your entire training history in one place.</p>
+                    <div class="eyebrow">YOUR TRAINING</div>
+                    <h3>Workout</h3>
+                    <p>Your sessions, sets, recovery and strength progress — in one focused workspace.</p>
                 </div>
                 <div class="workout-hero-actions">
                     <button type="button" class="btn" id="workout-open-history-btn">History</button>
@@ -2521,10 +2525,10 @@ img,svg{max-width:100%}
 
         <!-- NOTES -->
         <section id="view-notes" class="view">
-            <div class="flex-between mb-6">
-                <div><h3 style="margin-bottom:4px;">Notes</h3><div class="text-muted text-sm">Capture ideas, write freely, and organize everything in cards.</div></div>
-                <button type="button" class="btn btn-primary" onclick="openNoteModal()">+ New Note</button>
-            </div>
+            <header class="omx-page-heading">
+                <div><span class="omx-eyebrow">YOUR SECOND BRAIN</span><h3>Notes</h3><p>Collect what matters, find it quickly, and pick up where you left off.</p></div>
+                <button type="button" class="btn btn-primary" onclick="openNoteModal()">+ New note</button>
+            </header>
             <div class="notes-toolbar">
                 <button type="button" class="btn btn-sm" data-v25-select="note">☑ Select</button>
                 <button type="button" class="btn btn-sm" data-v25-manage="note">🗂 Groups</button>
@@ -3267,6 +3271,7 @@ document.querySelectorAll('.mobile-nav button').forEach(item => {
 });
 
 document.getElementById('global-add-btn').addEventListener('click',()=>openModal('quick-add-modal'));
+document.getElementById('omx-task-quick-add')?.addEventListener('click',()=>{resetTaskForm();openModal('task-modal')});
 document.querySelectorAll('[data-quick-type]').forEach(btn=>btn.addEventListener('click',()=>{
     closeModal('quick-add-modal');
     const t=btn.dataset.quickType;

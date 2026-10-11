@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Second Brain",
-  "short_name": "Second Brain",
-  "description": "Local-first Second Brain for tasks, calendar, finance, habits, notes and planning.",
+  "name": "OmniOS — Personal OS",
+  "short_name": "OmniOS",
+  "description": "Your personal operating system for tasks, calendar, habits, workout, finances, notes and daily planning.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -10,8 +10,8 @@
     "standalone",
     "minimal-ui"
   ],
-  "background_color": "#0f0f11",
-  "theme_color": "#18181b",
+  "background_color": "#101114",
+  "theme_color": "#101114",
   "categories": [
     "productivity",
     "utilities",

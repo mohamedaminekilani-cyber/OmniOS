@@ -14817,3 +14817,160 @@ html .topbar #global-add-btn{
   window.OmniRemakeNav={open,close,build};
 })();
 </script>
+
+
+<!-- OmniOS Phase 2 shell controls: uses existing route and mobile-sheet handlers. -->
+<script id="omnios-phase2-shell-controls">
+(function(){
+ 'use strict';
+ if(window.OmniPhase2Shell)return;
+ const STORAGE='omnios_phase2_sidebar_compact';
+ let initialized=false;
+ let priorFocus=null;
+ let picked=0;
+ let matches=[];
+ const $=selector=>document.querySelector(selector);
+ const icon='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.7" cy="10.7" r="6.5"/><path d="m16 16 4.4 4.4"/></svg>';
+ const isClassic=()=>document.documentElement.dataset.omniUi==='classic';
+ const compact=()=>document.documentElement.classList.contains('om2-compact');
+ function setCompact(on){
+   document.documentElement.classList.toggle('om2-compact',!!on);
+   try{localStorage.setItem(STORAGE,on?'1':'0')}catch(_){}
+   const toggle=$('#om2-sidebar-toggle');
+   if(toggle){
+     toggle.setAttribute('aria-pressed',String(!!on));
+     toggle.setAttribute('aria-label',on?'Expand sidebar':'Collapse sidebar');
+     toggle.title=on?'Expand sidebar':'Collapse sidebar';
+     toggle.textContent=on?'»':'«';
+   }
+ }
+ function routes(){
+   return Array.from(document.querySelectorAll('.sidebar .nav-item[data-view]'))
+     .filter(b=>b.dataset.view&&document.getElementById('view-'+b.dataset.view))
+     .map(b=>({view:b.dataset.view,label:(b.querySelector('.v101-nav-label')?.textContent||b.textContent||b.dataset.view).trim()}))
+     .filter(x=>x.label);
+ }
+ function open(){
+   if(isClassic())return;
+   const host=$('#om2-search-overlay');if(!host)return;
+   priorFocus=document.activeElement;host.hidden=false;
+   document.body.classList.add('om2-search-open');
+   const input=host.querySelector('.om2-search-input');
+   input.value='';picked=0;update('');
+   input.focus({preventScroll:true});
+ }
+ function close(){
+   const host=$('#om2-search-overlay');if(!host||host.hidden)return;
+   host.hidden=true;document.body.classList.remove('om2-search-open');
+   if(priorFocus?.isConnected&&typeof priorFocus.focus==='function')
+     priorFocus.focus({preventScroll:true});
+   priorFocus=null;
+ }
+ function update(value){
+   const host=$('#om2-search-overlay');if(!host)return;
+   const q=String(value||'').trim().toLocaleLowerCase();
+   matches=routes().filter(x=>(x.label+' '+x.view.replace(/-/g,' ')).toLocaleLowerCase().includes(q)).slice(0,35);
+   picked=Math.min(picked,Math.max(0,matches.length-1));
+   const results=host.querySelector('#om2-search-results');
+   results.replaceChildren();
+   if(!matches.length){
+     const empty=document.createElement('div');
+     empty.className='om2-search-empty';empty.textContent='No matching pages. Try a different page name.';
+     results.appendChild(empty);return;
+   }
+   matches.forEach((route,i)=>{
+     const btn=document.createElement('button');
+     btn.type='button';btn.className='om2-search-result';btn.dataset.om2Go=route.view;
+     btn.setAttribute('role','option');btn.setAttribute('aria-selected',String(i===picked));
+     const label=document.createElement('span');label.textContent=route.label;
+     const shortcut=document.createElement('small');shortcut.textContent=i===picked?'Enter':'↗';
+     btn.append(label,shortcut);
+     results.appendChild(btn);
+   });
+ }
+ function select(index){
+   const btn=$('#om2-search-results')?.querySelectorAll('.om2-search-result')[index];
+   if(!btn)return;
+   const target=btn.dataset.om2Go;
+   const page=document.getElementById('view-'+target);
+   if(!page)return;
+   close();
+   const nav=document.querySelector('.sidebar .nav-item[data-view="'+target+'"]');
+   const group=nav?.closest('.v101-nav-group');
+   if(group&&!compact()){
+     group.classList.remove('collapsed');
+     group.querySelector('.v101-nav-group-head')?.setAttribute('aria-expanded','true');
+   }
+   if(typeof window.switchView==='function')window.switchView(target);
+   else nav?.click();
+ }
+ function mount(){
+   if(initialized)return;
+   const bar=$('.topbar'), title=$('#view-title'),actions=$('.topbar-actions'),sidebar=$('.sidebar');
+   if(!bar||!actions||!title||!sidebar)return;
+   initialized=true;
+   const guard=document.createElement('style');guard.id='om2-classic-guard';
+   guard.textContent='html[data-omni-ui="classic"] #om2-sidebar-toggle,html[data-omni-ui="classic"] #om2-search-toggle,html[data-omni-ui="classic"] #om2-search-overlay{display:none!important}';
+   document.head.appendChild(guard);
+   const side=document.createElement('button');
+   side.id='om2-sidebar-toggle';side.type='button';side.className='om2-sidebar-toggle';
+   title.insertAdjacentElement('beforebegin',side);
+   const search=document.createElement('button');
+   search.id='om2-search-toggle';search.type='button';search.className='om2-search-toggle';
+   search.setAttribute('aria-label','Find pages');search.title='Find pages (Ctrl+K)';
+   search.innerHTML=icon;actions.insertBefore(search,actions.firstChild);
+   const add=$('#global-add-btn');
+   if(add&&!add.hasAttribute('aria-label'))add.setAttribute('aria-label','Quick Add');
+   const host=document.createElement('div');host.id='om2-search-overlay';host.hidden=true;
+   host.innerHTML='<div class="om2-search-dialog" role="dialog" aria-modal="true" aria-labelledby="om2-search-title">'+
+    '<div class="om2-search-top"><svg class="om2-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.5"/><path d="m16 16 4.4 4.4"/></svg>'+
+    '<label for="om2-search-input" id="om2-search-title" class="ds-sr-only">Find OmniOS pages</label>'+
+    '<input id="om2-search-input" class="om2-search-input" type="search" role="combobox" aria-autocomplete="list" aria-controls="om2-search-results" aria-expanded="true" autocomplete="off" placeholder="Find a page…" />'+
+    '<button type="button" class="om2-search-dismiss" aria-label="Close page search">Esc</button></div>'+
+    '<div id="om2-search-results" class="om2-search-results" role="listbox" aria-label="Matching OmniOS pages"></div>'+
+    '<div class="om2-search-help">Navigate with ↑ ↓ · Enter to open · Esc to close</div></div>';
+   document.body.appendChild(host);
+   side.addEventListener('click',()=>setCompact(!compact()));
+   search.addEventListener('click',open);
+   host.querySelector('.om2-search-dismiss').addEventListener('click',close);
+   host.addEventListener('click',e=>{
+     if(e.target===host){close();return}
+     const btn=e.target.closest?.('[data-om2-go]');
+     if(btn){select(Array.from(host.querySelectorAll('.om2-search-result')).indexOf(btn))}
+   });
+   const input=host.querySelector('.om2-search-input');
+   input.addEventListener('input',()=>{picked=0;update(input.value)});
+   host.addEventListener('keydown',e=>{
+     if(e.key==='Escape'){e.preventDefault();close();return}
+     if(e.key==='ArrowDown'&&matches.length){e.preventDefault();picked=(picked+1)%matches.length;update(input.value)}
+     if(e.key==='ArrowUp'&&matches.length){e.preventDefault();picked=(picked+matches.length-1)%matches.length;update(input.value)}
+     if(e.key==='Enter'&&matches.length){e.preventDefault();select(picked)}
+     if(e.key==='Tab'){
+       const buttons=Array.from(host.querySelectorAll('input:not([disabled]),button:not([disabled])'));
+       const first=buttons[0],last=buttons[buttons.length-1];
+       if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+       else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+     }
+   });
+   document.addEventListener('keydown',e=>{
+     if(isClassic())return;
+     const editing=!!e.target.closest?.('input,textarea,select,[contenteditable="true"]');
+     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){
+       e.preventDefault();host.hidden?open():close();
+     }else if(e.key==='/'&&!editing&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
+       e.preventDefault();open();
+     }
+   });
+   document.addEventListener('click',e=>{if(e.target.closest?.('#omni-unified-mode-toggle')&&isClassic())close()});
+   document.querySelectorAll('.sidebar .nav-item[data-view]').forEach(b=>{
+     b.title=b.querySelector('.v101-nav-label')?.textContent?.trim()||b.textContent.trim();
+   });
+   let saved=false;
+   try{saved=localStorage.getItem(STORAGE)==='1'}catch(_){}
+   setCompact(saved);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});
+ else mount();
+ window.OmniPhase2Shell={mount,open,close,setCompact,isCompact:compact};
+})();
+</script>

@@ -1,0 +1,41 @@
+name: OmniOS Phase 7 Browser QA
+on:
+  pull_request:
+    branches: ["main", "feature/**"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify exact assembled release
+        run: npm run release:source && npm test && npm run test:runtime
+      - name: Browser navigation, responsive UI and screenshots
+        run: npm run test:browser
+      - name: Publish QA artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: omnios-phase7-visual-qa
+          path: qa-artifacts/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Summarize browser results
+        if: always()
+        shell: bash
+        run: |
+          if test -f qa-artifacts/phase7-report.json; then
+            echo '### Browser QA report' >> "$GITHUB_STEP_SUMMARY"
+            node -e "const r=require('./qa-artifacts/phase7-report.json');console.log('Checks: '+r.checks.length+'; errors: '+r.errors.length+'; screenshots: '+r.screenshots.length);if(r.errors.length)console.log(r.errors.join('\n'))" >> "$GITHUB_STEP_SUMMARY"
+          fi

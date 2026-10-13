@@ -1,11 +1,12 @@
 # OmniOS Phase 01 — design system contract
 
-Status: **foundation staged on UX branch; not yet activated**.
+Status: **foundation integrated via UX-branch shell; legacy page migration incomplete**.
 
 This document and `styles/omnios-ux-foundation.css` are standalone source assets.
-They do not alter the running application, because OmniOS uses a content-addressed
-source-release manifest. Activating the CSS requires coordinated manifest regeneration,
-automated checks, screenshots and a reviewed pull request.
+The stylesheet is linked from the UX-branch index and copied to dist by the build script.
+Existing assembled app-parts and source-release.json remain byte-identical: their
+content-addressed checksum does not change. The new selectors are opt-in (.ux-*),
+with a few narrowly scoped compatibility fixes. No main-branch deployment occurs.
 
 ## Rules
 1. Preserve the current flat palette and user-selected accent.

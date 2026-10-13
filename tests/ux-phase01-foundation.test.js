@@ -44,3 +44,9 @@ test('existing page header and tab selectors have a non-destructive compatibilit
   assert.doesNotMatch(section,/!important/);
   assert.doesNotMatch(section,/display\s*:\s*none/i);
 });
+
+test('PWA shell precaches the UX stylesheet for offline use',()=>{
+  const sw=fs.readFileSync('sw.js','utf8');
+  assert.match(sw,/second-brain-shell-v5/);
+  assert.match(sw,/\.\/styles\/omnios-ux-foundation\.css/);
+});

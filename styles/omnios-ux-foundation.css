@@ -1,0 +1,78 @@
+/* OmniOS UX foundation v1 — opt-in tokens and components.
+   Loaded by the UX branch shell and copied into dist. Scoped .ux-* primitives
+   coexist with legacy pages without rewriting existing UI authority layers. */
+:root {
+  --ux-space-1:4px;--ux-space-2:8px;--ux-space-3:12px;--ux-space-4:16px;
+  --ux-space-5:20px;--ux-space-6:24px;--ux-space-8:32px;
+  --ux-radius-sm:8px;--ux-radius-md:12px;--ux-radius-lg:16px;
+  --ux-text-xs:12px;--ux-text-sm:14px;--ux-text-base:16px;
+  --ux-target:44px;
+  --ux-surface:var(--bg-surface,#18181b);
+  --ux-canvas:var(--bg-base,#0f0f11);
+  --ux-border:var(--border-color,#3f3f46);
+  --ux-text:var(--text-primary,#f4f4f5);
+  --ux-muted:var(--text-secondary,#a1a1aa);
+  --ux-accent:var(--accent-cyan,#06b6d4);
+}
+.ux-page{min-width:0;display:flex;flex-direction:column;gap:var(--ux-space-6)}
+.ux-page-header{display:flex;align-items:start;justify-content:space-between;flex-wrap:wrap;gap:var(--ux-space-4)}
+.ux-page-heading{min-width:0;display:grid;gap:var(--ux-space-1)}
+.ux-page-title{font-size:clamp(1.35rem,1.1rem + .6vw,1.75rem);line-height:1.22;font-weight:750;color:var(--ux-text);margin:0}
+.ux-page-subtitle{font-size:var(--ux-text-sm);line-height:1.5;color:var(--ux-muted);margin:0}
+.ux-page-actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--ux-space-2)}
+.ux-card{background:var(--ux-surface);border:1px solid var(--ux-border);border-radius:var(--ux-radius-lg);padding:var(--ux-space-5);min-width:0}
+.ux-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:var(--ux-space-2);min-width:0}
+.ux-field{display:grid;gap:var(--ux-space-2);min-width:0}
+.ux-field-label{font-size:var(--ux-text-sm);font-weight:600;color:var(--ux-text)}
+.ux-input{width:100%;max-width:100%;min-height:var(--ux-target);padding:var(--ux-space-2) var(--ux-space-3);font:inherit;font-size:var(--ux-text-base);color:var(--ux-text);background:var(--ux-canvas);border:1px solid var(--ux-border);border-radius:var(--ux-radius-sm)}
+.ux-button{display:inline-flex;align-items:center;justify-content:center;gap:var(--ux-space-2);min-height:var(--ux-target);padding:var(--ux-space-2) var(--ux-space-4);border-radius:var(--ux-radius-sm);font:inherit;font-size:var(--ux-text-sm);font-weight:650;cursor:pointer;border:1px solid var(--ux-border);color:var(--ux-text);background:var(--ux-surface)}
+.ux-button-primary{background:var(--ux-accent);border-color:var(--ux-accent);color:#061015}
+.ux-tablist{display:flex;gap:var(--ux-space-1);overflow-x:auto;scrollbar-width:thin}
+.ux-tab{min-height:var(--ux-target);padding:var(--ux-space-2) var(--ux-space-3);border:0;border-radius:var(--ux-radius-sm);background:transparent;color:var(--ux-muted);font:inherit;font-size:var(--ux-text-sm);white-space:nowrap;cursor:pointer}
+.ux-tab[aria-selected="true"]{background:var(--ux-surface);color:var(--ux-text);font-weight:700}
+:where(.ux-button,.ux-input,.ux-tab):focus-visible{outline:3px solid var(--ux-accent);outline-offset:2px}
+@media(max-width:760px){.ux-page{gap:var(--ux-space-4)}.ux-card{padding:var(--ux-space-4)}.ux-page-header{flex-direction:column;align-items:stretch}.ux-page-actions>.ux-button{flex:1}}
+@media(prefers-reduced-motion:reduce){.ux-page *{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Shared production-shell bridge. These selectors target existing markup,
+   preserving existing JS listeners, IDs and state contracts. Zero !important. */
+:where(.main-content,.view-container,.view,.card,.toolbar,.topbar,.sidebar){min-width:0}
+:where(.topbar-actions,.toolbar-group,.page-header,.card-header){min-width:0}
+:where(.view-container) :where(img,svg,canvas){max-width:100%}
+/* Existing surface and border authority remains owned by the current theme. */
+:where(.nav-menu,.sidebar-footer){min-width:0}
+:where(.nav-item){border-radius:var(--ux-radius-sm)}
+:where(.topbar){gap:var(--ux-space-3)}
+:where(.topbar-title){line-height:1.3;overflow-wrap:anywhere}
+:where(.topbar-actions,.toolbar,.toolbar-group,.card-header){gap:var(--ux-space-2)}
+:where(.toolbar){border-radius:var(--ux-radius-md)}
+:where(.form-group,.form-row,.form-grid){min-width:0}
+:where(.form-input,.form-select,.form-textarea,.filter-select){max-width:100%;min-width:0}
+:where(.form-label,.form-group label){line-height:1.4}
+:where(.btn,.icon-btn,.view-btn,.nav-item,.form-input,.form-select,.form-textarea,.filter-select):focus-visible{
+  outline:2px solid var(--ux-accent);outline-offset:2px
+}
+:where(.btn,.icon-btn,.view-btn,.nav-item){-webkit-tap-highlight-color:transparent}
+@media(hover:none) and (pointer:coarse){
+  :where(.topbar-actions .btn,.toolbar .btn,.toolbar .view-btn,.toolbar .filter-select,.sidebar-footer .btn){min-height:var(--ux-target)}
+}
+@media(max-width:760px){
+  :where(.topbar-actions,.toolbar-group){max-width:100%}
+}
+
+/* Phase 01: page-header and tab compatibility, deliberately low specificity.
+   No legacy block is removed until visual geometry is compared. */
+:where(.v35-page-head,.v58-page-head,.omx-page-heading,.v38-finance-head,.sb-authority-head){
+  min-width:0;max-width:100%;
+}
+:where(.v35-page-actions,.v38-finance-head-actions){min-width:0;flex-wrap:wrap}
+:where(.v35-page-head,.v58-page-head,.omx-page-heading,.v38-finance-head) :where(h1,h2,h3,p){
+  overflow-wrap:break-word;
+}
+:where(.v35-segmented,.bib-tabs,.v38-month-nav){max-width:100%;min-width:0}
+:where(.v35-segmented,.bib-tabs) :where(button,[role="tab"]):focus-visible{
+  outline:2px solid var(--ux-accent);outline-offset:2px;
+}
+:where(.v35-page-actions,.v38-finance-head-actions) :where(button):focus-visible{
+  outline:2px solid var(--ux-accent);outline-offset:2px;
+}

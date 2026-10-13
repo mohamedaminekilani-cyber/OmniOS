@@ -102,6 +102,26 @@ try{
  await evaluate('window.switchView("master-calendar")');await delay(500);
  const cal=await evaluate('document.getElementById("view-master-calendar")?.innerText?.trim().length||0');
  check('Calendar is not blank',cal>30,{characters:cal});
+
+ // Phase 01: verify the *real* loader path, not just the assembled HTML.
+ // This catches stylesheets lost when index.html replaces its document.
+ await setViewport(1440,900);
+ const loaderUrl='http://127.0.0.1:'+server.address().port+'/index.html';
+ const loaderNav=(await send('Page.navigate',{url:loaderUrl})).result;
+ if(loaderNav.errorText)throw Error('Loader navigation '+loaderNav.errorText);
+ await poll(()=>evaluate('typeof window.switchView==="function" && !!document.querySelector("#view-dashboard") && !!document.getElementById("omnios-ux-foundation-styles")'),60000);
+ const uxLoaded=await evaluate('(()=>{const link=document.getElementById("omnios-ux-foundation-styles");const style=[...document.styleSheets].find(s=>s.ownerNode===link);return {link:!!link,loaded:!!style,href:link?.href||"",space:getComputedStyle(document.documentElement).getPropertyValue("--ux-space-4").trim()}})()');
+ check('Phase 01 design system survives real loader and is parsed',uxLoaded.link&&uxLoaded.loaded&&uxLoaded.space==='16px',uxLoaded);
+ for(const width of [1440,390,360]){
+   await setViewport(width,width<500?844:900);
+   await evaluate('window.switchView("today")');await delay(450);
+   const geom=await evaluate('(()=>{const doc=document.documentElement,view=document.querySelector(".view.active"),title=document.querySelector(".topbar-title"),link=document.getElementById("omnios-ux-foundation-styles");return {active:!!view,link:!!link,overflow:doc.scrollWidth-doc.clientWidth,title:title?.innerText||"",width:innerWidth}})()');
+   check('Phase 01 loader Today fits '+width+'px',geom.active&&geom.link&&geom.overflow<=5,geom);
+   const shot=(await send('Page.captureScreenshot',{format:'jpeg',quality:75,captureBeyondViewport:false,fromSurface:true})).result.data;
+   const name=output+'/phase01-loader-'+width+'-today.jpg';
+   const bytes=Buffer.from(shot,'base64');fs.writeFileSync(name,bytes);report.screenshots.push(name);
+   report.screenshotSignatures.push({view:'today-loader',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
+ }
  report.browserExceptions=browserErrors.slice(0,30);
  check('No uncaught browser runtime exceptions',browserErrors.length===0,{errors:report.browserExceptions});
 }catch(e){report.errors.push('Browser QA error: '+String(e?.message||e))}

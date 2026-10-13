@@ -35,3 +35,8 @@ test('Phase 03 loader and offline assets are included exactly once',()=>{
  assert.ok(sw.includes("'./styles/omnios-ux-phase03.css'"));
 });
 test('Phase 03 JavaScript parses under Node',()=>assert.doesNotThrow(()=>new vm.Script(js)));
+
+test('Phase 03 command strip follows the existing Today greeting',()=>{
+ assert.match(js,/host\.querySelector\('\.omr-day-hero'\)/);
+ assert.match(js,/hero\.after\(bar\)/);
+});

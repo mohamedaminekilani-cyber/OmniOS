@@ -59,3 +59,8 @@ test('Phase 02 Today group keeps Dashboard and Inbox reachable in mobile drawer'
 test('Phase 02 build ships navigation JavaScript in dist',()=>{
   assert.match(build,/['"]icons['"],['"]data['"],['"]js['"],['"]styles['"]/);
 });
+
+test('Phase 02 defaults non-active sidebar groups closed and avoids duplicate Add on mobile',()=>{
+  assert.match(js,/panel\.hidden=true/);
+  assert.match(css,/#v35-mobile-add\{display:none!important\}/);
+});

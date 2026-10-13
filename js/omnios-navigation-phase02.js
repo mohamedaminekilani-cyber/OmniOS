@@ -73,7 +73,7 @@
       toggle.append(icon(g.icon),el('span','ux02-side-title',g.label));
       const count=el('span','ux02-side-count',String(rows.length));count.setAttribute('aria-hidden','true');
       toggle.append(count,el('span','ux02-side-chevron','⌄'));
-      const panel=el('div','ux02-side-links');panel.id='ux02-side-'+g.id;
+      const panel=el('div','ux02-side-links');panel.id='ux02-side-'+g.id;panel.hidden=true;
       toggle.setAttribute('aria-controls',panel.id);
       rows.forEach(b=>{b.classList.add('ux02-side-link');panel.appendChild(b)});
       section.append(toggle,panel);fragment.appendChild(section);

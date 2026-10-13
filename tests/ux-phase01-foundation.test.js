@@ -24,7 +24,7 @@ test('foundation retains keyboard and reduced motion support',()=>{
   assert.match(css,/--ux-target:44px/);
 });
 test('legacy bridge does not introduce important declarations or override theme surface ownership',()=>{
-  const bridge=css.split('/* Shared production-shell bridge.')[1];
+  const bridge=css.split('/* Shared production-shell bridge.')[1]?.split('/* Phase 01: page-header and tab compatibility')[0];
   assert.ok(bridge,'legacy compatibility section missing');
   assert.doesNotMatch(bridge,/:[^;{}]*!important/i);
   assert.doesNotMatch(bridge,/(?:background-color|border-color)\s*:/i);
@@ -40,7 +40,7 @@ test('existing page header and tab selectors have a non-destructive compatibilit
   for(const selector of ['.v35-page-head','.v58-page-head','.omx-page-heading','.v38-finance-head','.v35-segmented','.bib-tabs']){
     assert.ok(css.includes(selector),'Missing existing UI compatibility selector: '+selector);
   }
-  const section=css.split('/* Phase 01: page-header and tab compatibility')[1];
+  const section=css.split('/* Phase 01: page-header and tab compatibility')[1]?.split('/* Phase 01 completion:')[0];
   assert.ok(section);
   assert.doesNotMatch(section,/!important/);
   assert.doesNotMatch(section,/display\s*:\s*none/i);

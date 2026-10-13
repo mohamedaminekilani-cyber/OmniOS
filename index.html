@@ -276,10 +276,12 @@ function carryLoaderIntoApp(html){
   let out=addRootClass(html,rootClasses);
   out=out.replace(/<\/head>/i,gateCss+currentUiAuthorityCss+'\n'+
     '<link rel="stylesheet" href="./styles/omnios-ux-foundation.css" id="omnios-ux-foundation-styles">\n'+
-    '<link rel="stylesheet" href="./styles/omnios-ux-phase02.css" id="omnios-ux-phase02-styles">\n</head>');
+    '<link rel="stylesheet" href="./styles/omnios-ux-phase02.css" id="omnios-ux-phase02-styles">\n'+
+    '<link rel="stylesheet" href="./styles/omnios-ux-phase03.css" id="omnios-ux-phase03-styles">\n</head>');
   out=out.replace(/<body([^>]*)>/i,function(m,attrs){return '<body'+attrs+'>\n'+bootHtml});
   out=out.replace(/<\/body>/i,currentUiAuthorityScript+'\n'+
-    '<script src="./js/omnios-navigation-phase02.js" defer></scr'+'ipt>\n</body>');
+    '<script src="./js/omnios-navigation-phase02.js" defer></scr'+'ipt>\n'+
+    '<script src="./js/omnios-today-phase03.js" defer></scr'+'ipt>\n</body>');
   return out;
 }
 

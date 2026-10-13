@@ -148,9 +148,9 @@
       const b=el('button','ux02-mobile-tab');
       b.type='button';b.dataset.ux02Group=g.id;
       b.append(icon(g.icon),el('span','ux02-tab-label',g.label));
-      if(g.id!=='today'){b.setAttribute('aria-haspopup','dialog');b.setAttribute('aria-expanded','false')}
+      b.setAttribute('aria-haspopup','dialog');b.setAttribute('aria-expanded','false');
       b.addEventListener('click',()=>{
-        if(g.id==='today'){closeDrawer();navigate('today');return}
+        // Every group opens the same destination sheet so no legacy page is stranded.
         if(!state.dialog?.hidden&&state.dialog.dataset.ux02Group===g.id){closeDrawer();return}
         showDrawer(g.id,b);
       });

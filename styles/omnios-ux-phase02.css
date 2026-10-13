@@ -1,0 +1,116 @@
+/* OmniOS UX Phase 02: four intent groups, no replacement of application screens. */
+html body .sidebar .nav-menu[data-ux02-ready="1"]{
+  display:flex!important;flex-direction:column!important;gap:7px!important;
+  min-width:0;padding:0 2px 18px!important;
+}
+html body .sidebar .ux02-side-group{
+  display:block;min-width:0;border:0;background:transparent;
+}
+html body .sidebar .ux02-side-toggle{
+  display:flex;align-items:center;gap:9px;width:100%;min-height:42px;
+  padding:9px 10px;border:1px solid transparent;border-radius:9px;
+  background:transparent;color:var(--text-primary,var(--omx-copy,#eef0f2));
+  font:inherit;font-size:13px;font-weight:750;text-align:left;cursor:pointer;
+}
+html body .sidebar .ux02-side-toggle:hover,
+html body .sidebar .ux02-side-toggle.ux02-active{
+  background:var(--omx-raised,var(--bg-elevated,#24272f));
+}
+html body .sidebar .ux02-side-toggle:focus-visible{
+  outline:2px solid var(--omx-focus,var(--accent-cyan,#06b6d4));outline-offset:2px;
+}
+html body .sidebar .ux02-side-title{min-width:0;flex:1}
+html body .sidebar .ux02-side-count{font-size:11px;font-weight:600;color:var(--text-secondary,var(--omx-sub,#b7c0ce))}
+html body .sidebar .ux02-side-chevron{font-size:15px;transition:transform .16s ease}
+html body .sidebar .ux02-side-toggle[aria-expanded="true"] .ux02-side-chevron{transform:rotate(180deg)}
+html body .sidebar .ux02-side-links{display:grid;gap:2px;padding:1px 0 6px 12px}
+html body .sidebar .ux02-side-links[hidden]{display:none!important}
+html body .sidebar .ux02-side-links>.nav-item{width:100%;min-width:0;text-align:left}
+html body .ux02-nav-icon{flex:none;display:grid;place-items:center;width:21px;height:21px}
+html body .ux02-nav-icon svg{width:20px;height:20px}
+html body .ux02-mobile-nav,html body .ux02-drawer{display:none}
+@media(max-width:760px){
+  /* Existing mobile nav remains in DOM for legacy handlers but is not interactive. */
+  html body .mobile-nav.omr-mobile-dock,
+  html body .mobile-nav:not(.ux02-mobile-nav){display:none!important}
+  html body .ux02-mobile-nav{
+    display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));
+    position:fixed;left:11px;right:11px;bottom:calc(9px + env(safe-area-inset-bottom));
+    width:auto;min-height:66px;padding:5px;gap:3px;z-index:2147480500;
+    border:1px solid var(--omx-edge,var(--border-color,#363c47));
+    border-radius:15px;background:var(--omx-card,var(--bg-surface,#1a1c21));
+    box-shadow:none;box-sizing:border-box;
+  }
+  html body .ux02-mobile-tab{
+    min-width:0;min-height:54px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:3px;padding:3px 1px;
+    border:1px solid transparent;border-radius:9px;background:transparent;
+    color:var(--text-secondary,var(--omx-sub,#b7c0ce));cursor:pointer;
+    font:inherit;
+  }
+  html body .ux02-mobile-tab.active{
+    color:var(--text-primary,var(--omx-copy,#eef0f2));
+    background:var(--omx-soft,var(--bg-elevated,#282632));
+    border-color:var(--omx-edge,var(--border-color,#363c47));
+  }
+  html body .ux02-mobile-tab:focus-visible,
+  html body .ux02-drawer button:focus-visible{outline:2px solid var(--omx-focus,var(--accent-cyan,#06b6d4));outline-offset:2px}
+  html body .ux02-mobile-nav .ux02-tab-label{font-size:10px;line-height:1.15;font-weight:700;white-space:nowrap}
+  html body .ux02-mobile-nav .ux02-nav-icon{height:23px;width:23px}
+  html body .ux02-mobile-nav .ux02-nav-icon svg{width:21px;height:21px}
+  html body .ux02-mobile-nav .ux02-capture{color:var(--omx-copy,var(--text-primary,#eef0f2))}
+  html body .ux02-mobile-nav .ux02-capture .ux02-nav-icon{
+    background:var(--omx-blue,#2547e8);color:#fff;border-radius:8px;
+  }
+  /* Phase 01 hid this FAB on Today. Phase 02 supplies capture in the dock on all mobile pages. */
+  html body #v55-capture-fab{display:none!important}
+  html body .ux02-drawer:not([hidden]){
+    display:flex!important;position:fixed;inset:0;z-index:2147481500;
+    align-items:flex-end;justify-content:center;
+    padding:12px 12px max(14px,env(safe-area-inset-bottom));
+    box-sizing:border-box;
+  }
+  html body .ux02-drawer[hidden]{display:none!important}
+  html body .ux02-drawer-shade{position:absolute;inset:0;background:rgba(0,0,0,.60);border:0}
+  html body .ux02-drawer-sheet{
+    position:relative;display:flex;flex-direction:column;min-width:0;width:min(540px,100%);
+    max-height:min(80dvh,740px);overflow:hidden;
+    border:1px solid var(--omx-edge,var(--border-color,#363c47));
+    border-radius:17px;background:var(--omx-card,var(--bg-surface,#1a1c21));
+    color:var(--text-primary,var(--omx-copy,#eef0f2));
+  }
+  html body .ux02-drawer-head{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    padding:13px 15px;border-bottom:1px solid var(--omx-edge,var(--border-color,#363c47));
+  }
+  html body .ux02-drawer-title{margin:0;font-size:1.06rem;font-weight:750}
+  html body .ux02-drawer-close{
+    min-height:40px;padding:7px 12px;border-radius:9px;
+    border:1px solid var(--omx-edge,var(--border-color,#363c47));
+    background:var(--omx-raised,var(--bg-elevated,#24272f));
+    color:inherit;cursor:pointer;font:inherit;font-size:.8rem;
+  }
+  html body .ux02-drawer-content{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+    overflow-y:auto;overscroll-behavior:contain;padding:14px;
+  }
+  html body .ux02-drawer-destination{
+    width:100%;min-width:0;min-height:46px;padding:11px 12px;
+    border:1px solid var(--omx-edge,var(--border-color,#363c47));border-radius:9px;
+    background:var(--omx-raised,var(--bg-elevated,#24272f));
+    color:inherit;font:inherit;font-size:13px;font-weight:600;text-align:left;
+    overflow-wrap:anywhere;cursor:pointer;
+  }
+  html body .ux02-drawer-destination[aria-current="page"]{
+    border-color:var(--omx-violet,#5f31c4);background:var(--omx-soft,#282632);
+  }
+  html body .view-container{padding-bottom:calc(102px + env(safe-area-inset-bottom))!important}
+}
+@media(max-width:370px){
+  html body .ux02-mobile-nav{left:7px;right:7px}
+  html body .ux02-drawer-content{gap:6px;padding:10px}
+  html body .ux02-drawer-destination{font-size:12px;padding:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  html body .ux02-side-chevron{transition:none}
+}

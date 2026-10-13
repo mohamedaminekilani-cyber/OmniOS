@@ -5,6 +5,7 @@ import fs from 'node:fs';
 const js=fs.readFileSync('js/omnios-navigation-phase02.js','utf8');
 const css=fs.readFileSync('styles/omnios-ux-phase02.css','utf8');
 const loader=fs.readFileSync('index.html','utf8');
+const build=fs.readFileSync('scripts/build.mjs','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 const base=fs.readFileSync('app-parts/part-001.html','utf8');
 
@@ -53,4 +54,8 @@ test('Phase 02 navigation supports keyboard and dialog dismissal',()=>{
 test('Phase 02 Today group keeps Dashboard and Inbox reachable in mobile drawer',()=>{
   assert.match(js,/views:\['today','dashboard','inbox'\]/);
   assert.match(js,/b\.setAttribute\('aria-haspopup','dialog'\)/);
+});
+
+test('Phase 02 build ships navigation JavaScript in dist',()=>{
+  assert.match(build,/['"]icons['"],['"]data['"],['"]js['"],['"]styles['"]/);
 });

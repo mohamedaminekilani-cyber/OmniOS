@@ -34,3 +34,13 @@ test('shared components are opt-in and preserve canonical source release manifes
   const manifest=JSON.parse(fs.readFileSync('source-release.json','utf8'));
   assert.equal(manifest.sha256,sourceRelease().manifest.sha256);
 });
+
+test('existing page header and tab selectors have a non-destructive compatibility bridge',()=>{
+  for(const selector of ['.v35-page-head','.v58-page-head','.omx-page-heading','.v38-finance-head','.v35-segmented','.bib-tabs']){
+    assert.ok(css.includes(selector),'Missing existing UI compatibility selector: '+selector);
+  }
+  const section=css.split('/* Phase 01: page-header and tab compatibility')[1];
+  assert.ok(section);
+  assert.doesNotMatch(section,/!important/);
+  assert.doesNotMatch(section,/display\s*:\s*none/i);
+});

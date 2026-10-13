@@ -39,8 +39,7 @@
 :where(.main-content,.view-container,.view,.card,.toolbar,.topbar,.sidebar){min-width:0}
 :where(.topbar-actions,.toolbar-group,.page-header,.card-header){min-width:0}
 :where(.view-container) :where(img,svg,canvas){max-width:100%}
-:where(.sidebar,.topbar,.card,.toolbar,.stat-card,.kanban-col){border-color:var(--ux-border)}
-:where(.sidebar,.topbar,.card,.stat-card,.kanban-col){background-color:var(--ux-surface)}
+/* Existing surface and border authority remains owned by the current theme. */
 :where(.nav-menu,.sidebar-footer){min-width:0}
 :where(.nav-item){border-radius:var(--ux-radius-sm)}
 :where(.topbar){gap:var(--ux-space-3)}
@@ -59,5 +58,4 @@
 }
 @media(max-width:760px){
   :where(.topbar-actions,.toolbar-group){max-width:100%}
-  :where(.form-row,.form-grid){min-width:0}
 }

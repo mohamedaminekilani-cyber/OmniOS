@@ -196,9 +196,9 @@ try{
  for(const width of [1440,390,360]){
    await setViewport(width,width===1440?900:844);
    await evaluate('window.switchView("today")');await delay(200);
-   const layout=await evaluate('(()=>{const host=document.getElementById("ux03-today-controls"),toggle=document.getElementById("ux03-connected-toggle"),oldNew=document.getElementById("v35-today-add");const r=host?.getBoundingClientRect();return {present:!!host,visible:!!r&&r.width>0,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,collapsed:toggle?.getAttribute("aria-expanded")==="false",oldNewHidden:!!oldNew&&getComputedStyle(oldNew).display==="none",width:innerWidth}})()');
+   const layout=await evaluate('(()=>{const host=document.getElementById("ux03-today-controls"),toggle=document.getElementById("ux03-connected-toggle"),oldNew=document.getElementById("v35-today-add");const r=host?.getBoundingClientRect(),hero=document.querySelector("#view-today .omr-day-hero"),h=hero?.getBoundingClientRect();return {order:!!h&&!!r&&r.top>=h.bottom-3,present:!!host,visible:!!r&&r.width>0,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,collapsed:toggle?.getAttribute("aria-expanded")==="false",oldNewHidden:!!oldNew&&getComputedStyle(oldNew).display==="none",width:innerWidth}})()');
    check('Phase 03 Today command center is responsive at '+width+'px',
-     layout.present&&layout.visible&&layout.overflow<=5&&layout.collapsed&&(width>760||layout.oldNewHidden),layout);
+     layout.order&&layout.present&&layout.visible&&layout.overflow<=5&&layout.collapsed&&(width>760||layout.oldNewHidden),layout);
    const base64=(await send('Page.captureScreenshot',{format:'jpeg',quality:76,fromSurface:true,captureBeyondViewport:false})).result.data;
    const filename=output+'/phase03-'+width+'-today.jpg',bytes=Buffer.from(base64,'base64');
    fs.writeFileSync(filename,bytes);report.screenshots.push(filename);

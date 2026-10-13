@@ -49,3 +49,8 @@ test('Phase 02 navigation supports keyboard and dialog dismissal',()=>{
   assert.match(js,/aria-modal/);
   assert.match(js,/aria-current/);
 });
+
+test('Phase 02 Today group keeps Dashboard and Inbox reachable in mobile drawer',()=>{
+  assert.match(js,/views:\['today','dashboard','inbox'\]/);
+  assert.match(js,/b\.setAttribute\('aria-haspopup','dialog'\)/);
+});

@@ -43,3 +43,11 @@ with a few narrowly scoped compatibility fixes. No main-branch deployment occurs
 - Added `tests/ux-phase01-foundation.test.js` to existing Node test-glob.
 - Full `npm test`, runtime and browser validation remains pending until execution against a complete checkout.
 - Activation changes remain isolated to the UX branch; no app data schema changes.
+
+## Phase 01 visual QA continuation (2026-10-13)
+- Added low-specificity compatibility rules for actual v35/v38/v58 and Bible headings, action rows and tabs.
+- Preserved legacy declarations and existing renderer IDs; no global display/hide changes.
+- Added a regression assertion guarding real selectors and destructive hiding.
+- The existing `scripts/phase7-browser-qa.mjs` generates screenshots at 1440, 1024, 760, 390 and 360 px in selected views. It opens the content-addressed app HTML directly, not `index.html`, so those screenshots alone DO NOT prove the loader-injected UX stylesheet is present.
+- Required follow-up: run the browser suite against a built checkout and add a separate index-loader launch check verifying computed style and an attached stylesheet before accepting visual QA.
+- The connected GitHub tool does not execute arbitrary Node/Chromium commands; browser screenshots, `npm test`, `npm run test:runtime` and `npm run test:browser` have not been executed in this session.

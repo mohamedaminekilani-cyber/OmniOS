@@ -64,3 +64,9 @@ test('injected loader authority is valid JavaScript and closes its HTML script t
   const inner=emitted.slice(emitted.indexOf('>')+1,-'</script>'.length);
   assert.doesNotThrow(()=>new vm.Script(inner));
 });
+
+test('Today mobile does not expose two competing capture affordances',()=>{
+  assert.match(css,/html body:has\(#view-today\.active\) #v55-capture-fab\{display:none!important\}/);
+  assert.match(css,/#view-today #v58-attention/);
+  assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+});

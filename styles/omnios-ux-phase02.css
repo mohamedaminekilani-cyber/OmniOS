@@ -64,6 +64,8 @@ html body .ux02-mobile-nav,html body .ux02-drawer{display:none}
   }
   /* Phase 01 hid this FAB on Today. Phase 02 supplies capture in the dock on all mobile pages. */
   html body #v55-capture-fab{display:none!important}
+  /* The dock owns universal Add. Keep context-specific page creation controls. */
+  html body #v35-mobile-add{display:none!important}
   html body .ux02-drawer:not([hidden]){
     display:flex!important;position:fixed;inset:0;z-index:2147481500;
     align-items:flex-end;justify-content:center;

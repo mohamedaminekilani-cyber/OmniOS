@@ -143,6 +143,37 @@ try{
    const bytes=Buffer.from(shot,'base64');fs.writeFileSync(name,bytes);report.screenshots.push(name);
    report.screenshotSignatures.push({view:'today-loader',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
  }
+
+ // Phase 02 tests MUST run after navigating through the actual index.html loader,
+ // because the navigation assets are an opt-in overlay beyond the hashed app HTML.
+ await setViewport(1440,900);
+ await poll(()=>evaluate('!!window.OmniNav02 && document.querySelectorAll(".sidebar .ux02-side-group").length===4'),12000);
+ const desktopNav02=await evaluate('(()=>{const groups=[...document.querySelectorAll(".sidebar .ux02-side-group")].map(e=>e.dataset.ux02Group);const links=[...document.querySelectorAll(".sidebar .nav-item[data-view]")].map(e=>e.dataset.view);const unique=new Set(links);const s=document.getElementById("omnios-ux-phase02-styles");return {groups,links:links.length,unique:unique.size,styleLoaded:!!s&&[...document.styleSheets].some(x=>x.ownerNode===s)}})()');
+ check('Phase 02 desktop preserves routes and displays four navigation groups',
+   desktopNav02.groups.join(',')==='today,plan,life,library'&&desktopNav02.links>=30&&desktopNav02.unique===desktopNav02.links&&desktopNav02.styleLoaded,desktopNav02);
+ const libraryRoute02=await evaluate('(()=>{window.switchView("bible");const active=document.getElementById("view-bible")?.classList.contains("active"),open=document.querySelector("[data-ux02-group=library] .ux02-side-links")?.hidden===false;window.switchView("today");return {active,open}})()');
+ check('Phase 02 uses original Bible route and opens Library group',libraryRoute02.active&&libraryRoute02.open,libraryRoute02);
+ await setViewport(390,844);await delay(350);
+ const dock02=await evaluate('(()=>{const dock=document.getElementById("ux02-mobile-nav"),old=document.querySelector(".mobile-nav.omr-mobile-dock");return {labels:[...(dock?.querySelectorAll(".ux02-tab-label")||[])].map(x=>x.textContent),dockVisible:!!dock&&getComputedStyle(dock).display!=="none",legacyHidden:!!old&&getComputedStyle(old).display==="none",fabHidden:getComputedStyle(document.getElementById("v55-capture-fab")).display==="none",overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+ check('Phase 02 mobile dock has four sections and a capture slot',
+   dock02.labels.join(',')==='Today,Plan,Life,Library,Add'&&dock02.dockVisible&&dock02.legacyHidden&&dock02.fabHidden&&dock02.overflow<=5,dock02);
+ const plan02=await evaluate('(()=>{document.querySelector("#ux02-mobile-nav [data-ux02-group=plan]").click();const d=document.getElementById("ux02-nav-drawer"),pages=[...d.querySelectorAll("[data-ux02-view]")].map(x=>x.dataset.ux02View);const open=!d.hidden;d.querySelector("[data-ux02-view=tasks]")?.click();return {open,pages,active:document.getElementById("view-tasks")?.classList.contains("active"),closed:d.hidden,selected:document.querySelector("#ux02-mobile-nav [data-ux02-group=plan]")?.getAttribute("aria-current")}})()');
+ check('Phase 02 Plan sheet navigates to existing Tasks without breaking original ID',
+   plan02.open&&plan02.pages.includes('tasks')&&plan02.active&&plan02.closed&&plan02.selected==='page',plan02);
+ const quick02=await evaluate('(()=>{document.querySelector("#ux02-mobile-nav [data-ux02-capture]")?.click();const modal=document.getElementById("quick-add-modal"),open=!!modal?.classList.contains("active");if(open&&typeof window.closeModal==="function")window.closeModal("quick-add-modal");else modal?.classList.remove("active");return {open,options:modal?.querySelectorAll("[data-quick-type]").length||0}})()');
+ check('Phase 02 Capture tab opens existing Quick Add options',quick02.open&&quick02.options>=4,quick02);
+ await setViewport(360,780);
+ await evaluate('window.switchView("today")');await delay(350);
+ const narrow02=await evaluate('(()=>{const dock=document.getElementById("ux02-mobile-nav"),rect=dock?.getBoundingClientRect(),buttons=[...(dock?.querySelectorAll("button")||[])].map(x=>x.getBoundingClientRect());return {visible:!!rect&&rect.width>0&&rect.left>=0&&rect.right<=innerWidth+1,minButton:Math.min(...buttons.map(x=>x.width)),overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+ check('Phase 02 bottom navigation fits a 360px phone',narrow02.visible&&narrow02.minButton>=45&&narrow02.overflow<=5,narrow02);
+ for(const width of [1440,390,360]){
+   await setViewport(width,width===1440?900:844);
+   await evaluate('window.switchView("today")');await delay(150);
+   const base64=(await send('Page.captureScreenshot',{format:'jpeg',quality:76,fromSurface:true,captureBeyondViewport:false})).result.data;
+   const name=output+'/phase02-'+width+'-today.jpg',bytes=Buffer.from(base64,'base64');
+   fs.writeFileSync(name,bytes);report.screenshots.push(name);
+   report.screenshotSignatures.push({view:'today-phase02',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
+ }
  report.browserExceptions=browserErrors.slice(0,30);
  check('No uncaught browser runtime exceptions',browserErrors.length===0,{errors:report.browserExceptions});
 }catch(e){report.errors.push('Browser QA error: '+String(e?.message||e))}

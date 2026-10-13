@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import vm from 'node:vm';
 import {sourceRelease} from '../scripts/release-source.mjs';
 
 const loader=fs.readFileSync('index.html','utf8');
@@ -49,4 +50,18 @@ test('PWA shell precaches the UX stylesheet for offline use',()=>{
   const sw=fs.readFileSync('sw.js','utf8');
   assert.match(sw,/second-brain-shell-v5/);
   assert.match(sw,/\.\/styles\/omnios-ux-foundation\.css/);
+});
+
+test('injected loader authority is valid JavaScript and closes its HTML script tag',()=>{
+  const marker='  const currentUiAuthorityScript=';
+  const start=loader.indexOf(marker);
+  const end=loader.indexOf(';\n  const bootHtml=',start);
+  assert.ok(start>=0&&end>start,'missing loader-injected authority source');
+  const expression=loader.slice(start+marker.length,end);
+  const emitted=vm.runInNewContext(expression);
+  assert.match(emitted,/^<script\\b/);
+  assert.match(emitted,/<\\/script>$/);
+  assert.doesNotMatch(emitted,/<\\\\\\/script>/);
+  const inner=emitted.replace(/^<script[^>]*>/,'').replace(/<\\/script>$/,'');
+  assert.doesNotThrow(()=>new vm.Script(inner));
 });

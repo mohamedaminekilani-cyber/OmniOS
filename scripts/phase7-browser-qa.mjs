@@ -131,6 +131,12 @@ try{
    check('Phase 01 '+width+'px snapshot is free of startup and welcome overlays',
      await evaluate('!document.getElementById("omnios-boot-screen") && !document.getElementById("welcome63") && !document.documentElement.classList.contains("omnios-startup-gate")'));
 
+
+   if(width===360){
+     const mobileGeometry=await evaluate('(()=>{const anchor=document.querySelector("#view-today .omr-priority-panel .omr-text-link");if(!anchor)return {found:false};const r=anchor.getBoundingClientRect();const intersect=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;const near=[...document.querySelectorAll("button,a,[role=button]")].filter(e=>e!==anchor&&e.getBoundingClientRect().width>5&&e.getBoundingClientRect().height>5).map(e=>{const b=e.getBoundingClientRect();let p=e,fixed=false;for(let n=0;p&&n<12;n++,p=p.parentElement){if(getComputedStyle(p).position==="fixed"){fixed=true;break}}return {e,b,fixed}}).filter(x=>x.fixed&&intersect(x.b,r)).map(x=>({tag:x.e.tagName,id:x.e.id,cls:String(x.e.className).slice(0,180),text:x.e.innerText?.trim().slice(0,70),aria:x.e.getAttribute("aria-label"),rect:{x:Math.round(x.b.x),y:Math.round(x.b.y),w:Math.round(x.b.width),h:Math.round(x.b.height)}}));return {found:true,anchor:{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)},overlappingFixedControls:near}})()');
+     report.phase01MobileOverlap=mobileGeometry;
+     check('Phase 01 360px priority link is not covered by fixed controls',mobileGeometry.found&&mobileGeometry.overlappingFixedControls.length===0,mobileGeometry);
+   }
    const shot=(await send('Page.captureScreenshot',{format:'jpeg',quality:75,captureBeyondViewport:false,fromSurface:true})).result.data;
    const name=output+'/phase01-loader-'+width+'-today.jpg';
    const bytes=Buffer.from(shot,'base64');fs.writeFileSync(name,bytes);report.screenshots.push(name);

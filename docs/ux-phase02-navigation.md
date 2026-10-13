@@ -25,3 +25,9 @@ Status: **four-group navigation implemented on isolated branch; review/QA pendin
 
 ## Rollback
 Remove Phase 02 loader tags, CSS/JS resources and service-worker v6 asset references. No data migration is required.
+
+## Visual QA refinement
+- The desktop sidebar starts with only the active intent expanded; a group heading expands the selected section without deleting original page buttons.
+- On mobile, the Phase 02 dock is the single global Quick Add entry point. The legacy topbar `#v35-mobile-add` and floating `#v55-capture-fab` are hidden visually; contextual creation inside Today and individual modules remains available.
+- Build packaging now includes `js/`, required for the real-loader navigation script. The hashed assembled application and data format remain unchanged.
+- CI screenshot checks assert active-only desktop expansion, absence of redundant mobile Add, and no phone-width overflow.

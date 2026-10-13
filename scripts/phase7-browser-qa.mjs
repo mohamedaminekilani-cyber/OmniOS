@@ -182,6 +182,28 @@ try{
    fs.writeFileSync(name,bytes);report.screenshots.push(name);
    report.screenshotSignatures.push({view:'today-phase02',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
  }
+
+ // Phase 03 — focus-first Today retains underlying widgets and Dashboard.
+ await setViewport(1440,900);
+ await evaluate('window.switchView("today")');
+ await poll(()=>evaluate('!!window.OmniToday03 && !!document.querySelector("#ux03-today-controls") && !!document.querySelector("#v58-today-intelligence")'),12000);
+ const today03=await evaluate('(()=>{const t=document.getElementById("view-today"),extra=t.querySelector("#v58-today-intelligence"),bar=t.querySelector("#ux03-today-controls"),old={priorities:!!t.querySelector(".omr-priority-panel"),agenda:!!t.querySelector(".omr-agenda-panel"),capture:!!t.querySelector("#v35-today-capture"),habits:!!t.querySelector(".omr-habits-panel")};const initial={present:!!extra,hidden:getComputedStyle(extra).display==="none",expanded:bar.querySelector("#ux03-connected-toggle").getAttribute("aria-expanded")};bar.querySelector("#ux03-connected-toggle").click();const opened={expanded:bar.querySelector("#ux03-connected-toggle").getAttribute("aria-expanded"),visible:getComputedStyle(extra).display!=="none"};bar.querySelector("#ux03-connected-toggle").click();return {old,initial,opened,restored:getComputedStyle(extra).display==="none",commandCount:bar.querySelectorAll(".ux03-command").length}})()');
+ check('Phase 03 Today retains action panels and collapses additional intelligence',
+   Object.values(today03.old).every(Boolean)&&today03.initial.present&&today03.initial.hidden&&today03.initial.expanded==="false"&&today03.opened.expanded==="true"&&today03.opened.visible&&today03.restored&&today03.commandCount===4,today03);
+ const dash03=await evaluate('(async()=>{document.querySelector("#view-today .ux03-command-actions .ux03-command:last-child").click();await new Promise(r=>setTimeout(r,0));const d=document.getElementById("view-dashboard"),active=d?.classList.contains("active"),banner=d?.querySelector("#ux03-dashboard-return"),count=d?.querySelectorAll("#ux03-dashboard-return").length||0;banner?.querySelector(".ux03-return-button")?.click();await new Promise(r=>setTimeout(r,0));return {active,count,returned:document.getElementById("view-today")?.classList.contains("active")}})()');
+ check('Phase 03 Insights opens existing Dashboard and returns to Today once',
+   dash03.active&&dash03.count===1&&dash03.returned,dash03);
+ for(const width of [1440,390,360]){
+   await setViewport(width,width===1440?900:844);
+   await evaluate('window.switchView("today")');await delay(200);
+   const layout=await evaluate('(()=>{const host=document.getElementById("ux03-today-controls"),toggle=document.getElementById("ux03-connected-toggle"),oldNew=document.getElementById("v35-today-add");const r=host?.getBoundingClientRect();return {present:!!host,visible:!!r&&r.width>0,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,collapsed:toggle?.getAttribute("aria-expanded")==="false",oldNewHidden:!!oldNew&&getComputedStyle(oldNew).display==="none",width:innerWidth}})()');
+   check('Phase 03 Today command center is responsive at '+width+'px',
+     layout.present&&layout.visible&&layout.overflow<=5&&layout.collapsed&&(width>760||layout.oldNewHidden),layout);
+   const base64=(await send('Page.captureScreenshot',{format:'jpeg',quality:76,fromSurface:true,captureBeyondViewport:false})).result.data;
+   const filename=output+'/phase03-'+width+'-today.jpg',bytes=Buffer.from(base64,'base64');
+   fs.writeFileSync(filename,bytes);report.screenshots.push(filename);
+   report.screenshotSignatures.push({view:'today-phase03',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
+ }
  report.browserExceptions=browserErrors.slice(0,30);
  check('No uncaught browser runtime exceptions',browserErrors.length===0,{errors:report.browserExceptions});
 }catch(e){report.errors.push('Browser QA error: '+String(e?.message||e));report.browserExceptions=browserErrors.slice(-20)}

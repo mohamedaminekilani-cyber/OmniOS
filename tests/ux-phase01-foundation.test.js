@@ -55,9 +55,9 @@ test('PWA shell precaches the UX stylesheet for offline use',()=>{
 test('injected loader authority is valid JavaScript and closes its HTML script tag',()=>{
   const marker='  const currentUiAuthorityScript=';
   const start=loader.indexOf(marker);
-  const end=loader.indexOf(';\\n  const bootHtml=',start);
+  const end=loader.indexOf('  const bootHtml=',start);
   assert.ok(start>=0&&end>start,'missing loader-injected authority source');
-  const expression=loader.slice(start+marker.length,end);
+  const expression=loader.slice(start+marker.length,end).trim().replace(/;$/,'');
   const emitted=vm.runInNewContext(expression);
   assert.ok(emitted.startsWith('<script '),'injected script wrapper missing');
   assert.ok(emitted.endsWith('</script>'),'injected script must end with a real HTML closing tag');

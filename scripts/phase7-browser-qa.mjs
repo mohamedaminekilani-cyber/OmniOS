@@ -110,6 +110,17 @@ try{
  const loaderNav=(await send('Page.navigate',{url:loaderUrl})).result;
  if(loaderNav.errorText)throw Error('Loader navigation '+loaderNav.errorText);
  await poll(()=>evaluate('(()=>{const l=document.getElementById("omnios-ux-foundation-styles");return typeof window.switchView==="function" && !!document.querySelector("#view-dashboard") && !!l && [...document.styleSheets].some(s=>s.ownerNode===l) && getComputedStyle(document.documentElement).getPropertyValue("--ux-space-4").trim()==="16px"})()'),60000);
+ // Do not record visual success while the startup screen still occludes content.
+ await poll(()=>evaluate('!document.getElementById("omnios-boot-screen") && !document.documentElement.classList.contains("omnios-startup-gate")'),15000);
+ await delay(900); // allow deferred first-run welcome UI to appear
+ const welcomeOnLoader=await evaluate('!!document.getElementById("welcome63")');
+ if(welcomeOnLoader){
+   const dismissed=await evaluate('(()=>{const b=document.querySelector("#welcome63 [data-w63close]");if(!b)return false;b.click();return true})()');
+   check('Phase 01 real-loader welcome closes through its real button',dismissed);
+   await poll(()=>evaluate('!document.getElementById("welcome63")'),8000);
+ }
+ check('Phase 01 loader has no remaining blocking startup overlay',
+   await evaluate('!document.getElementById("omnios-boot-screen") && !document.getElementById("welcome63") && !document.documentElement.classList.contains("omnios-startup-gate")'));
  const uxLoaded=await evaluate('(()=>{const link=document.getElementById("omnios-ux-foundation-styles");const style=[...document.styleSheets].find(s=>s.ownerNode===link);return {link:!!link,loaded:!!style,href:link?.href||"",space:getComputedStyle(document.documentElement).getPropertyValue("--ux-space-4").trim()}})()');
  check('Phase 01 design system survives real loader and is parsed',uxLoaded.link&&uxLoaded.loaded&&uxLoaded.space==='16px',uxLoaded);
  for(const width of [1440,390,360]){
@@ -117,6 +128,9 @@ try{
    await evaluate('window.switchView("today")');await delay(450);
    const geom=await evaluate('(()=>{const doc=document.documentElement,view=document.querySelector(".view.active"),title=document.querySelector(".topbar-title"),link=document.getElementById("omnios-ux-foundation-styles");return {active:!!view?.classList.contains("active"),visible:!!view?.getBoundingClientRect().height,link:!!link,overflow:doc.scrollWidth-doc.clientWidth,title:title?.innerText||"",width:innerWidth}})()');
    check('Phase 01 loader Today fits '+width+'px',geom.active&&geom.visible&&geom.link&&geom.overflow<=5,geom);
+   check('Phase 01 '+width+'px snapshot is free of startup and welcome overlays',
+     await evaluate('!document.getElementById("omnios-boot-screen") && !document.getElementById("welcome63") && !document.documentElement.classList.contains("omnios-startup-gate")'));
+
    const shot=(await send('Page.captureScreenshot',{format:'jpeg',quality:75,captureBeyondViewport:false,fromSurface:true})).result.data;
    const name=output+'/phase01-loader-'+width+'-today.jpg';
    const bytes=Buffer.from(shot,'base64');fs.writeFileSync(name,bytes);report.screenshots.push(name);

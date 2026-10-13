@@ -27,10 +27,12 @@ function renderToday(){
      state.expanded=!state.expanded;renderToday();
    });
    bar.append(label,actions,toggle);
-   const insertion=host.querySelector('.om3-daily-glance');
-   if(insertion)insertion.after(bar);
-   else host.prepend(bar);
+   const hero=host.querySelector('.omr-day-hero');
+   if(hero)hero.after(bar);
+   else host.appendChild(bar);
  }
+ const bar=host.querySelector('#ux03-today-controls'),hero=host.querySelector('.omr-day-hero');
+ if(hero&&bar&&bar.previousElementSibling!==hero)hero.after(bar);
  const toggle=host.querySelector('#ux03-connected-toggle');
  if(toggle){
    toggle.textContent=state.expanded?'Hide connected insights':'Show connected insights';

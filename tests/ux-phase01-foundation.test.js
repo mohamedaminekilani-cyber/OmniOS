@@ -16,7 +16,7 @@ test('UX stylesheet is inserted in assembled application document exactly once',
   assert.match(loader,/href="\.\/styles\/omnios-ux-foundation\.css"/);
 });
 test('built distribution contains UX stylesheet through styles directory',()=>{
-  assert.match(build,/['"]icons['"],['"]data['"],['"]styles['"]/);
+  assert.match(build,/['"]icons['"],['"]data['"],['"]js['"],['"]styles['"]/);
 });
 test('foundation retains keyboard and reduced motion support',()=>{
   assert.match(css,/:focus-visible/);

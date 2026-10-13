@@ -1,6 +1,6 @@
 /* OmniOS UX foundation v1 — opt-in tokens and components.
-   This stylesheet is intentionally not loaded by production until the
-   source-release manifest and visual regressions are updated together. */
+   Loaded by the UX branch shell and copied into dist. Scoped .ux-* primitives
+   coexist with legacy pages without rewriting existing UI authority layers. */
 :root {
   --ux-space-1:4px;--ux-space-2:8px;--ux-space-3:12px;--ux-space-4:16px;
   --ux-space-5:20px;--ux-space-6:24px;--ux-space-8:32px;
@@ -33,3 +33,9 @@
 :where(.ux-button,.ux-input,.ux-tab):focus-visible{outline:3px solid var(--ux-accent);outline-offset:2px}
 @media(max-width:760px){.ux-page{gap:var(--ux-space-4)}.ux-card{padding:var(--ux-space-4)}.ux-page-header{flex-direction:column;align-items:stretch}.ux-page-actions>.ux-button{flex:1}}
 @media(prefers-reduced-motion:reduce){.ux-page *{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Compatibility: subtle improvements to existing shell without replacing it. */
+:where(.main-content,.view-container,.view,.card,.toolbar,.topbar){min-width:0}
+:where(.topbar-actions,.toolbar-group){min-width:0}
+:where(.btn,.nav-item,.view-btn):focus-visible{outline:2px solid var(--ux-accent);outline-offset:2px}
+:where(.view-container) :where(img,svg,canvas){max-width:100%}

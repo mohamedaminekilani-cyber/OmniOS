@@ -59,3 +59,20 @@
 @media(max-width:760px){
   :where(.topbar-actions,.toolbar-group){max-width:100%}
 }
+
+/* Phase 01: page-header and tab compatibility, deliberately low specificity.
+   No legacy block is removed until visual geometry is compared. */
+:where(.v35-page-head,.v58-page-head,.omx-page-heading,.v38-finance-head,.sb-authority-head){
+  min-width:0;max-width:100%;
+}
+:where(.v35-page-actions,.v38-finance-head-actions){min-width:0;flex-wrap:wrap}
+:where(.v35-page-head,.v58-page-head,.omx-page-heading,.v38-finance-head) :where(h1,h2,h3,p){
+  overflow-wrap:break-word;
+}
+:where(.v35-segmented,.bib-tabs,.v38-month-nav){max-width:100%;min-width:0}
+:where(.v35-segmented,.bib-tabs) :where(button,[role="tab"]):focus-visible{
+  outline:2px solid var(--ux-accent);outline-offset:2px;
+}
+:where(.v35-page-actions,.v38-finance-head-actions) :where(button):focus-visible{
+  outline:2px solid var(--ux-accent);outline-offset:2px;
+}

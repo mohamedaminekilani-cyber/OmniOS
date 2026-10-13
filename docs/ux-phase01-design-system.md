@@ -35,3 +35,11 @@ with a few narrowly scoped compatibility fixes. No main-branch deployment occurs
 - Check light/dark modes, localization, zoom, contrast and touch targets.
 - Confirm no user data migration occurs as part of visual work.
 - No push to `main` and no production deployment during Phase 01.
+
+## Phase 01 continued — compatible cleanup
+- Removed redundant `.form-row,.form-grid` min-width compatibility duplication.
+- Removed bridge rules that could compete with active theme background and border-color ownership.
+- Kept canonical legacy renderers and required CSS IDs intact; no unsafe blanket deletion.
+- Added `tests/ux-phase01-foundation.test.js` to existing Node test-glob.
+- Full `npm test`, runtime and browser validation remains pending until execution against a complete checkout.
+- Activation changes remain isolated to the UX branch; no app data schema changes.

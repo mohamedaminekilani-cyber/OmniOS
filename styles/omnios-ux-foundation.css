@@ -96,3 +96,9 @@
     white-space:normal;
   }
 }
+
+/* Today exposes + Add in its topbar. Suppress the redundant global capture
+   FAB only on the active Today view, preserving Quick capture on other pages. */
+@media (max-width:760px){
+  html body:has(#view-today.active) #v55-capture-fab{display:none!important}
+}

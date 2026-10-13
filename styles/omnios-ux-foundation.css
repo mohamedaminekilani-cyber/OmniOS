@@ -34,8 +34,30 @@
 @media(max-width:760px){.ux-page{gap:var(--ux-space-4)}.ux-card{padding:var(--ux-space-4)}.ux-page-header{flex-direction:column;align-items:stretch}.ux-page-actions>.ux-button{flex:1}}
 @media(prefers-reduced-motion:reduce){.ux-page *{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
-/* Compatibility: subtle improvements to existing shell without replacing it. */
-:where(.main-content,.view-container,.view,.card,.toolbar,.topbar){min-width:0}
-:where(.topbar-actions,.toolbar-group){min-width:0}
-:where(.btn,.nav-item,.view-btn):focus-visible{outline:2px solid var(--ux-accent);outline-offset:2px}
+/* Shared production-shell bridge. These selectors target existing markup,
+   preserving existing JS listeners, IDs and state contracts. Zero !important. */
+:where(.main-content,.view-container,.view,.card,.toolbar,.topbar,.sidebar){min-width:0}
+:where(.topbar-actions,.toolbar-group,.page-header,.card-header){min-width:0}
 :where(.view-container) :where(img,svg,canvas){max-width:100%}
+:where(.sidebar,.topbar,.card,.toolbar,.stat-card,.kanban-col){border-color:var(--ux-border)}
+:where(.sidebar,.topbar,.card,.stat-card,.kanban-col){background-color:var(--ux-surface)}
+:where(.nav-menu,.sidebar-footer){min-width:0}
+:where(.nav-item){border-radius:var(--ux-radius-sm)}
+:where(.topbar){gap:var(--ux-space-3)}
+:where(.topbar-title){line-height:1.3;overflow-wrap:anywhere}
+:where(.topbar-actions,.toolbar,.toolbar-group,.card-header){gap:var(--ux-space-2)}
+:where(.toolbar){border-radius:var(--ux-radius-md)}
+:where(.form-group,.form-row,.form-grid){min-width:0}
+:where(.form-input,.form-select,.form-textarea,.filter-select){max-width:100%;min-width:0}
+:where(.form-label,.form-group label){line-height:1.4}
+:where(.btn,.icon-btn,.view-btn,.nav-item,.form-input,.form-select,.form-textarea,.filter-select):focus-visible{
+  outline:2px solid var(--ux-accent);outline-offset:2px
+}
+:where(.btn,.icon-btn,.view-btn,.nav-item){-webkit-tap-highlight-color:transparent}
+@media(hover:none) and (pointer:coarse){
+  :where(.topbar-actions .btn,.toolbar .btn,.toolbar .view-btn,.toolbar .filter-select,.sidebar-footer .btn){min-height:var(--ux-target)}
+}
+@media(max-width:760px){
+  :where(.topbar-actions,.toolbar-group){max-width:100%}
+  :where(.form-row,.form-grid){min-width:0}
+}

@@ -51,3 +51,9 @@ with a few narrowly scoped compatibility fixes. No main-branch deployment occurs
 - The existing `scripts/phase7-browser-qa.mjs` generates screenshots at 1440, 1024, 760, 390 and 360 px in selected views. It opens the content-addressed app HTML directly, not `index.html`, so those screenshots alone DO NOT prove the loader-injected UX stylesheet is present.
 - Required follow-up: run the browser suite against a built checkout and add a separate index-loader launch check verifying computed style and an attached stylesheet before accepting visual QA.
 - The connected GitHub tool does not execute arbitrary Node/Chromium commands; browser screenshots, `npm test`, `npm run test:runtime` and `npm run test:browser` have not been executed in this session.
+
+## Phase 01 real-loader visual QA gate
+- Browser QA now loads `dist/index.html` after the legacy assembled-release checks, checking that the stylesheet survives document replacement.
+- It asserts the external CSS is parsed, `--ux-space-4` resolves to `16px`, and Today renders without document-level overflow at 1440, 390, and 360 pixels.
+- It saves `qa-artifacts/phase01-loader-{1440,390,360}-today.jpg` for visual review.
+- **Not yet executed:** the added QA script requires a checkout, built `dist/`, Node, and Chrome/Chromium. Screenshots and final browser acceptance remain pending.

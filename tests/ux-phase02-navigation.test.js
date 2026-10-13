@@ -14,7 +14,7 @@ test('Phase 02 navigation has four intents with stable landing destinations',()=
   assert.match(js,/id:'life', label:'Life'/);
   assert.match(js,/id:'library', label:'Library'/);
   for(const id of ['today','planner','life-hub','notes'])
-    assert.ok(base.includes('id="view-'+id+'"')||id==='life-hub','Missing core landing: '+id);
+    assert.ok(base.includes('data-view="'+id+'"'),'Missing preserved navigation route: '+id);
 });
 test('Phase 02 keeps legacy app routing and all original sidebar destination nodes',()=>{
   assert.match(js,/window\.switchView\(id\)/);

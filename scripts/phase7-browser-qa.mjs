@@ -147,7 +147,12 @@ try{
  // Phase 02 tests MUST run after navigating through the actual index.html loader,
  // because the navigation assets are an opt-in overlay beyond the hashed app HTML.
  await setViewport(1440,900);
- await poll(()=>evaluate('!!window.OmniNav02 && document.querySelectorAll(".sidebar .ux02-side-group").length===4'),12000);
+ await delay(650);
+ const nav02Startup=await evaluate('(()=>{const script=document.querySelector("script[src*=omnios-navigation-phase02]"),style=document.getElementById("omnios-ux-phase02-styles"),nav=document.querySelector(".sidebar .nav-menu");return {script:!!script,scriptSrc:script?.src||"",style:!!style,api:!!window.OmniNav02,sidebar:!!nav,groupCount:document.querySelectorAll(".sidebar .ux02-side-group").length,sidebarLinks:nav?.querySelectorAll("[data-view]").length||0,readyState:document.readyState,boot:document.documentElement.dataset.omniosBoot}})()');
+ report.phase02Startup=nav02Startup;
+ check('Phase 02 script and navigation mounted in real app',
+   nav02Startup.script&&nav02Startup.style&&nav02Startup.api&&nav02Startup.sidebar&&nav02Startup.groupCount===4,nav02Startup);
+
  const desktopNav02=await evaluate('(()=>{const groups=[...document.querySelectorAll(".sidebar .ux02-side-group")].map(e=>e.dataset.ux02Group);const links=[...document.querySelectorAll(".sidebar .nav-item[data-view]")].map(e=>e.dataset.view);const unique=new Set(links);const s=document.getElementById("omnios-ux-phase02-styles");return {groups,links:links.length,unique:unique.size,styleLoaded:!!s&&[...document.styleSheets].some(x=>x.ownerNode===s)}})()');
  check('Phase 02 desktop preserves routes and displays four navigation groups',
    desktopNav02.groups.join(',')==='today,plan,life,library'&&desktopNav02.links>=30&&desktopNav02.unique===desktopNav02.links&&desktopNav02.styleLoaded,desktopNav02);
@@ -176,7 +181,7 @@ try{
  }
  report.browserExceptions=browserErrors.slice(0,30);
  check('No uncaught browser runtime exceptions',browserErrors.length===0,{errors:report.browserExceptions});
-}catch(e){report.errors.push('Browser QA error: '+String(e?.message||e))}
+}catch(e){report.errors.push('Browser QA error: '+String(e?.message||e));report.browserExceptions=browserErrors.slice(-20)}
 finally{
  report.finishedAt=new Date().toISOString();
  fs.writeFileSync(output+'/phase7-report.json',JSON.stringify(report,null,2)+'\n');

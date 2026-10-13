@@ -1,4 +1,4 @@
-const SHELL_CACHE='second-brain-shell-v4';
+const SHELL_CACHE='second-brain-shell-v5';
 const USER_ASSET_CACHE='omnios-user-assets-v1';
 const SNAPSHOT_PREFIX='omnios-app-snapshot-v1-';
 const CORE=[
@@ -10,7 +10,8 @@ const CORE=[
   './icons/icon-512.png',
   './icons/icon-maskable-192.png',
   './icons/icon-maskable-512.png',
-  './pwa-personalization.js'
+  './pwa-personalization.js',
+  './styles/omnios-ux-foundation.css'
 ];
 
 self.addEventListener('install',event=>{

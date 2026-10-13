@@ -109,14 +109,35 @@ try{
  const loaderUrl='http://127.0.0.1:'+server.address().port+'/index.html';
  const loaderNav=(await send('Page.navigate',{url:loaderUrl})).result;
  if(loaderNav.errorText)throw Error('Loader navigation '+loaderNav.errorText);
- await poll(()=>evaluate('typeof window.switchView==="function" && !!document.querySelector("#view-dashboard") && !!document.getElementById("omnios-ux-foundation-styles")'),60000);
+ await poll(()=>evaluate('(()=>{const l=document.getElementById("omnios-ux-foundation-styles");return typeof window.switchView==="function" && !!document.querySelector("#view-dashboard") && !!l && [...document.styleSheets].some(s=>s.ownerNode===l) && getComputedStyle(document.documentElement).getPropertyValue("--ux-space-4").trim()==="16px"})()'),60000);
+ // Do not record visual success while the startup screen still occludes content.
+ await poll(()=>evaluate('!document.getElementById("omnios-boot-screen") && !document.documentElement.classList.contains("omnios-startup-gate")'),15000);
+ await delay(900); // allow deferred first-run welcome UI to appear
+ const welcomeOnLoader=await evaluate('!!document.getElementById("welcome63")');
+ if(welcomeOnLoader){
+   const dismissed=await evaluate('(()=>{const b=document.querySelector("#welcome63 [data-w63close]");if(!b)return false;b.click();return true})()');
+   check('Phase 01 real-loader welcome closes through its real button',dismissed);
+   await poll(()=>evaluate('!document.getElementById("welcome63")'),8000);
+ }
+ check('Phase 01 loader has no remaining blocking startup overlay',
+   await evaluate('!document.getElementById("omnios-boot-screen") && !document.getElementById("welcome63") && !document.documentElement.classList.contains("omnios-startup-gate")'));
  const uxLoaded=await evaluate('(()=>{const link=document.getElementById("omnios-ux-foundation-styles");const style=[...document.styleSheets].find(s=>s.ownerNode===link);return {link:!!link,loaded:!!style,href:link?.href||"",space:getComputedStyle(document.documentElement).getPropertyValue("--ux-space-4").trim()}})()');
  check('Phase 01 design system survives real loader and is parsed',uxLoaded.link&&uxLoaded.loaded&&uxLoaded.space==='16px',uxLoaded);
  for(const width of [1440,390,360]){
    await setViewport(width,width<500?844:900);
    await evaluate('window.switchView("today")');await delay(450);
-   const geom=await evaluate('(()=>{const doc=document.documentElement,view=document.querySelector(".view.active"),title=document.querySelector(".topbar-title"),link=document.getElementById("omnios-ux-foundation-styles");return {active:!!view,link:!!link,overflow:doc.scrollWidth-doc.clientWidth,title:title?.innerText||"",width:innerWidth}})()');
-   check('Phase 01 loader Today fits '+width+'px',geom.active&&geom.link&&geom.overflow<=5,geom);
+   const geom=await evaluate('(()=>{const doc=document.documentElement,view=document.querySelector(".view.active"),title=document.querySelector(".topbar-title"),link=document.getElementById("omnios-ux-foundation-styles");return {active:!!view?.classList.contains("active"),visible:!!view?.getBoundingClientRect().height,link:!!link,overflow:doc.scrollWidth-doc.clientWidth,title:title?.innerText||"",width:innerWidth}})()');
+   check('Phase 01 loader Today fits '+width+'px',geom.active&&geom.visible&&geom.link&&geom.overflow<=5,geom);
+   check('Phase 01 '+width+'px snapshot is free of startup and welcome overlays',
+     await evaluate('!document.getElementById("omnios-boot-screen") && !document.getElementById("welcome63") && !document.documentElement.classList.contains("omnios-startup-gate")'));
+
+
+   if(width===360){
+     const mobileGeometry=await evaluate('(()=>{const anchor=document.querySelector("#view-today .omr-priority-panel .omr-text-link");const fab=document.getElementById("v55-capture-fab"),panel=document.getElementById("v58-attention");if(!anchor||!fab||!panel)return {found:false};const r=anchor.getBoundingClientRect(),f=fab.getBoundingClientRect();const fabVisible=getComputedStyle(fab).display!=="none"&&getComputedStyle(fab).visibility!=="hidden";const overlap=fabVisible&&r.left<f.right&&r.right>f.left&&r.top<f.bottom&&r.bottom>f.top;const buttons=[panel.querySelector("#v58-attention-open"),panel.querySelector("#v58-automation-open")];const bounds=buttons.map(e=>e?.getBoundingClientRect()).filter(Boolean);const sameRow=bounds.length===2&&Math.abs(bounds[0].top-bounds[1].top)<=3&&bounds.every(b=>b.width>70);const sample=document.elementFromPoint(Math.min(innerWidth-6,r.right-7),r.top+r.height/2);const linkClickable=sample===anchor||anchor.contains(sample);return {found:true,fabVisible,overlap,sameRow,linkClickable,linkRect:{x:r.x,y:r.y,w:r.width,h:r.height},fabRect:{x:f.x,y:f.y,w:f.width,h:f.height},buttonRects:bounds.map(b=>({x:b.x,y:b.y,w:b.width,h:b.height})),hitTag:sample?.tagName,hitId:sample?.id,hitClass:sample?.className}})()');
+     report.phase01MobileOverlap=mobileGeometry;
+     check('Phase 01 360px Today hides duplicate capture FAB and exposes priority link',mobileGeometry.found&&!mobileGeometry.fabVisible&&!mobileGeometry.overlap&&mobileGeometry.linkClickable,mobileGeometry);
+     check('Phase 01 360px attention actions share a readable row',mobileGeometry.found&&mobileGeometry.sameRow,mobileGeometry);
+   }
    const shot=(await send('Page.captureScreenshot',{format:'jpeg',quality:75,captureBeyondViewport:false,fromSurface:true})).result.data;
    const name=output+'/phase01-loader-'+width+'-today.jpg';
    const bytes=Buffer.from(shot,'base64');fs.writeFileSync(name,bytes);report.screenshots.push(name);

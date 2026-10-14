@@ -75,3 +75,9 @@ test('Phase 05 restores the existing mobile calendar mode row after legacy rende
  assert.match(js,/center\.style\.removeProperty\('display'\)/);
  assert.match(js,/requestAnimationFrame\(decorate\)/);
 });
+
+test('Phase 05 mobile renders all five existing view buttons, not just the active one',()=>{
+ assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)!important/);
+ assert.match(js,/b\.style\.setProperty\('display','inline-flex','important'\)/);
+ assert.match(js,/b\.style\.removeProperty\('display'\)/);
+});

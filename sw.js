@@ -1,4 +1,4 @@
-const SHELL_CACHE='second-brain-shell-v8';
+const SHELL_CACHE='second-brain-shell-v9';
 const USER_ASSET_CACHE='omnios-user-assets-v1';
 const SNAPSHOT_PREFIX='omnios-app-snapshot-v1-';
 const CORE=[
@@ -17,6 +17,8 @@ const CORE=[
   './js/omnios-today-phase03.js',
   './styles/omnios-ux-phase03.css',
   './styles/omnios-ux-phase04.css',
+  './styles/omnios-ux-phase05.css',
+  './js/omnios-calendar-phase05.js',
   './js/omnios-capture-phase04.js'
 ];
 

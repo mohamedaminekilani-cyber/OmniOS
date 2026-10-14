@@ -40,7 +40,7 @@ test('Phase 02 replaces legacy mobile dock only visually and delegates capture t
   assert.match(css,/#v55-capture-fab\{display:none!important\}/);
 });
 test('Phase 02 PWA cache includes script and stylesheet',()=>{
-  assert.match(sw,/second-brain-shell-v7/);
+  assert.match(sw,/second-brain-shell-v8/);
   assert.ok(sw.includes("'./styles/omnios-ux-phase02.css'"));
   assert.ok(sw.includes("'./js/omnios-navigation-phase02.js'"));
 });

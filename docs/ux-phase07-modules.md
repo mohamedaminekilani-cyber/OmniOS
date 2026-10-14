@@ -25,3 +25,8 @@ Status: **staged on ux/phase07-modules-2026-10-14; QA pending**. Stacked on vali
 
 ## Rollback
 Remove Phase 07 loader and service-worker asset references; no user data migration.
+
+## Canonical renderer clarification
+- Visual browser evidence confirms the active Finance UI is **V38 Finance Hub**, not the older hidden `.finance-hero` section. The visible primary action is `#v38-add-txn` and Finance tabs are `.v38-fin-tabs`.
+- The active Notes UI is **V40 Notes & Knowledge**, not the hidden original `.notes-toolbar` section. Use `#org-note-search` and `#org-note-new` for interactive QA.
+- Phase 07 compatibility styles and labels now target these canonical components as well; the legacy DOM remains untouched for compatibility. 

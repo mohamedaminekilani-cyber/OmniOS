@@ -309,6 +309,10 @@ try{
    }
  }
  await setViewport(390,844);
+
+ const notesHero07=await evaluate('(()=>{const r=document.getElementById("view-notes");window.switchView("notes");const hero=r.querySelector(".org-hero"),newNote=r.querySelector("#org-note-new");const h=hero?.getBoundingClientRect(),b=newNote?.getBoundingClientRect();return {hero:!!h,create:!!b,within:!!h&&!!b&&b.left>=h.left-3&&b.right<=h.right+3,display:newNote&&getComputedStyle(newNote).display}})()');
+ check('Phase 07 Notes primary create action stays inside its mobile hero',
+   notesHero07.hero&&notesHero07.create&&notesHero07.within,notesHero07);
  const interactions07=await evaluate('(()=>{const out=[];const tests=[["workout","#workout-start-btn"],["diet","#nut-log-now"],["budget","#v38-add-txn"],["habits",".omx-habits-head .btn-primary"],["notes","#org-note-new"]];for(const [view,button] of tests){window.switchView(view);const root=document.getElementById("view-"+view),target=root?.querySelector(button);if(!target){out.push({view,found:false});continue}const before=[...document.querySelectorAll(".modal-overlay.active,#nut-entry-modal")].length;target.click();const after=[...document.querySelectorAll(".modal-overlay.active,#nut-entry-modal")].length;out.push({view,found:true,opened:after>before,before,after});document.querySelectorAll(".modal-overlay.active").forEach(e=>e.classList.remove("active"));const nut=document.getElementById("nut-entry-modal");if(nut)nut.remove();}return out})()');
  check('Phase 07 original modal actions open for Workout, Nutrition, Finance, Habits and Notes',
    interactions07.length===5&&interactions07.every(x=>x.found&&x.opened),interactions07);

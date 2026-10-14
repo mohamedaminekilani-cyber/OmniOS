@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {spawnSync} from 'node:child_process';
 
 const js=fs.readFileSync('js/omnios-calendar-phase05.js','utf8');
 const css=fs.readFileSync('styles/omnios-ux-phase05.css','utf8');
@@ -64,7 +65,6 @@ test('Phase 05 overrides legacy hidden mobile view tabs on the original Calendar
 });
 
 test('Browser QA runner source parses before expensive browser checks',()=>{
- const {spawnSync}=require('node:child_process');
  const result=spawnSync(process.execPath,['--check','scripts/phase7-browser-qa.mjs'],{encoding:'utf8'});
  assert.equal(result.status,0,result.stderr||'Browser QA runner syntax invalid');
 });

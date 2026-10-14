@@ -1,0 +1,45 @@
+/* Phase 04: enhance V55 Quick Capture; no replacement form or storage. */
+html body .ux04-capture-modal{max-width:min(720px,calc(100vw - 24px))!important}
+html body #ux04-capture-tools{display:flex;flex-direction:column;gap:9px;padding:0 2px 12px;min-width:0}
+html body .ux04-capture-heading{display:flex;flex-direction:column;gap:3px;min-width:0}
+html body .ux04-capture-heading strong{font-size:13px;font-weight:780;color:var(--text-primary)}
+html body .ux04-capture-heading span{font-size:12px;line-height:1.5;color:var(--text-secondary)}
+html body .ux04-chip-row{display:flex;flex-wrap:wrap;gap:7px}
+html body .ux04-type-chip{
+ min-height:38px;padding:8px 12px;
+ border:1px solid var(--omx-edge,var(--border-color));border-radius:999px;
+ color:var(--text-primary);background:var(--omx-raised,var(--bg-elevated));
+ font-size:12px;font-weight:680;line-height:1.25;cursor:pointer;
+}
+html body .ux04-type-chip.active{
+ border-color:var(--omx-focus,var(--accent-cyan));
+ background:var(--omx-soft,var(--bg-elevated));
+}
+html body .ux04-more-row{display:flex;justify-content:flex-start}
+html body .ux04-all-types{
+ min-height:40px;padding:8px 0;color:var(--omx-focus,var(--accent-cyan));
+ background:transparent;border:0;font:inherit;font-size:12px;font-weight:720;cursor:pointer;
+}
+html body :is(.ux04-type-chip,.ux04-all-types):focus-visible{
+ outline:2px solid var(--omx-focus,var(--accent-cyan));outline-offset:2px;
+}
+@media(max-width:760px){
+ html body .ux04-capture-modal{max-width:calc(100vw - 24px)!important}
+ html body .ux04-type-chip{min-height:44px;padding:9px 12px}
+ html body #ux04-capture-tools{padding-bottom:10px}
+}
+
+/* Compact mobile capture sheet: preserve legacy modal behavior elsewhere. */
+@media(max-width:760px){
+ html body .modal-overlay:has(#ux04-capture-tools){
+   display:flex!important;align-items:flex-end!important;justify-content:center!important;
+   padding:12px 12px max(12px,env(safe-area-inset-bottom))!important;
+   box-sizing:border-box!important;
+ }
+ html body .modal-overlay:has(#ux04-capture-tools) .modal.ux04-capture-modal{
+   width:100%!important;max-width:100%!important;
+   height:auto!important;min-height:0!important;max-height:85dvh!important;
+   overflow-y:auto!important;overscroll-behavior:contain;
+   border-radius:16px!important;
+ }
+}

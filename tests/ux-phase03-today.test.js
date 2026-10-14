@@ -40,3 +40,9 @@ test('Phase 03 command strip follows the existing Today greeting',()=>{
  assert.match(js,/host\.querySelector\('\.omr-day-hero'\)/);
  assert.match(js,/hero\.after\(bar\)/);
 });
+
+test('Dashboard return control is restored after delayed legacy rendering',()=>{
+ assert.ok(js.includes('requestAnimationFrame(schedule)'));
+ assert.ok(js.includes('setTimeout(schedule,120)'));
+ assert.ok(js.includes('previousSwitch.apply(this,args)'));
+});

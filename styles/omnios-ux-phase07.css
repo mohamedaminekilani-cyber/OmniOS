@@ -80,3 +80,16 @@ html #view-notes .org-toolbar #org-note-sort{min-width:0;max-width:100%}
  html #view-notes .org-toolbar :is(.org-segmented,.org-view-switch){grid-column:1/-1;max-width:100%;min-width:0;overflow-x:auto}
  html #view-notes #org-note-new{min-height:44px}
 }
+
+/* The V40 Notes hero has five existing actions; wrap instead of clipping New Note. */
+@media(max-width:760px){
+ html #view-notes .org-hero{display:flex;flex-direction:column;align-items:stretch;min-width:0}
+ html #view-notes .org-hero-main{min-width:0;max-width:100%}
+ html #view-notes .org-hero .org-actions{
+   display:flex;flex-wrap:wrap!important;justify-content:flex-start;align-items:center;
+   gap:6px;width:100%;min-width:0;max-width:100%;overflow:visible;
+ }
+ html #view-notes .org-hero .org-actions>button{
+   flex:1 1 auto;min-width:0;min-height:42px;white-space:normal;
+ }
+}

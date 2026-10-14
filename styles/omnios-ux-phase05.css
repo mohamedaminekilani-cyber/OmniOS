@@ -65,3 +65,28 @@ html #view-master-calendar .v36-event-title{overflow:hidden;text-overflow:ellips
 @media(prefers-reduced-motion:reduce){
  html #view-master-calendar .v36-cal-modes{scroll-behavior:auto}
 }
+
+/* Phase 05 mobile view-mode restoration: a legacy rule hides the entire .v36-cal-center.
+   Re-enable the existing five original tabs; do not duplicate their handlers. */
+@media(max-width:760px){
+  html body #view-master-calendar .v36-cal-center{
+    display:flex!important;
+    flex:0 1 auto!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    min-width:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    height:auto!important;
+    overflow:hidden!important;
+    visibility:visible!important;
+  }
+  html body #view-master-calendar .v36-cal-modes{
+    display:flex!important;
+    min-width:0!important;
+    max-width:100%!important;
+    width:100%!important;
+    overflow-x:auto!important;
+    overscroll-behavior-inline:contain;
+  }
+}

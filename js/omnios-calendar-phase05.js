@@ -37,6 +37,20 @@ function decorate(){
  if(!host||!isActive())return;
  const toolbar=host.querySelector('.v36-cal-toolbar');
  if(!toolbar)return;
+ // Older mobile presentation scripts suppress the mode row after the base
+ // renderer runs. Reuse that same row instead of introducing duplicate controls.
+ const center=toolbar.querySelector('.v36-cal-center');
+ if(center){
+   if(window.matchMedia('(max-width:760px)').matches){
+     center.hidden=false;
+     center.removeAttribute('aria-hidden');
+     center.style.setProperty('display','flex','important');
+     center.dataset.ux05Restored='1';
+   }else if(center.dataset.ux05Restored==='1'){
+     center.style.removeProperty('display');
+     delete center.dataset.ux05Restored;
+   }
+ }
  const mode=currentMode();
  const buttons=[...toolbar.querySelectorAll('[data-v36-mode]')];
  buttons.forEach(b=>{
@@ -69,6 +83,7 @@ function schedule(){
  if(state.scheduled)return;
  state.scheduled=true;
  queueMicrotask(decorate);
+ requestAnimationFrame(decorate);
 }
 function onClick(e){
  const b=e.target.closest?.(ROOT+' #v36-cal-prev,'+ROOT+' #v36-cal-next,'+ROOT+' [data-v602-mini-nav]');
@@ -99,6 +114,7 @@ function install(){
  state.installed=true;
  document.addEventListener('click',onClick,true);
  document.addEventListener('keydown',onKeys);
+ window.addEventListener('resize',schedule,{passive:true});
  new MutationObserver(schedule).observe(host,{childList:true});
  document.addEventListener('click',e=>{
    if(e.target.closest?.('[data-view="master-calendar"],[data-mobile-view="master-calendar"],[data-ux02-view="master-calendar"]'))queueMicrotask(schedule);

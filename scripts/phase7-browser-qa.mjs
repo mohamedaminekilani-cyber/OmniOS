@@ -257,6 +257,35 @@ try{
  await setViewport(390,844);
  const modes05=await evaluate('(()=>{const v=document.querySelector("#view-master-calendar"),out=[];for(const name of ["week","agenda","day"]){v.querySelector("[data-v36-mode="+name+"]")?.click();out.push({mode:window.OmniCalendar05.mode(),host:!!v.querySelector("#v603-mode-host"),content:v.querySelector("#v603-mode-host")?.childElementCount||0})}return out})()');
  check('Phase 05 Week, Agenda and Day modes still render through the original engine',modes05.length===3&&modes05.every(x=>x.content>0&&x.host&&['week','agenda','day'].includes(x.mode)),modes05);
+
+ // Phase 06: verify V43 remains the only Life Hub renderer on desktop/mobile.
+ await setViewport(1440,900);
+ await evaluate('window.switchView("life-hub")');
+ await poll(()=>evaluate('!!window.OmniLife06 && !!document.querySelector("#view-life-hub .v43-hero") && !!document.querySelector("#ux06-life-tools")'),10000);
+ const initial06=await evaluate('(()=>{const r=document.getElementById("view-life-hub"),tools=r.querySelectorAll("#ux06-life-tools [data-ux06-view]"),rail=r.querySelector(".v43-life-rail"),domainButtons=r.querySelectorAll(".v43-life-btn[data-v43-life]"),hero=r.querySelectorAll(".v43-hero");return {canonical:window.OmniLife06.canonical,heroCount:hero.length,railVisible:!!rail&&getComputedStyle(rail).display!=="none",domainCount:domainButtons.length,tools:[...tools].map(b=>b.dataset.ux06View),oldRoot:!!r.querySelector("#v35-life-body")}})()');
+ check('Phase 06 desktop uses one V43 Life Hub renderer and ten domains',
+   initial06.canonical==='v43'&&initial06.heroCount===1&&initial06.railVisible&&initial06.domainCount===11&&!initial06.oldRoot&&initial06.tools.join(',')==='workout,diet,budget,grocery,pantry,wishlist',initial06);
+ const keyboard06=await evaluate('(async()=>{const r=document.getElementById("view-life-hub");r.querySelector("#v43-life-overview")?.click();await new Promise(t=>setTimeout(t,0));const card=r.querySelector(".v43-domain[data-v43-life=people]");const focusable=card?.getAttribute("role")==="button"&&card?.tabIndex===0;card?.focus();card?.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true,cancelable:true}));await new Promise(t=>setTimeout(t,0));const selected=r.querySelector("#v43-life-select")?.value,view=r.classList.contains("active"),detail=!!r.querySelector(".v43-record-grid,.v43-people-list,.v97-people-grid");r.querySelector("#v43-life-overview")?.click();await new Promise(t=>setTimeout(t,0));return {focusable,selected,view,detail,returned:!!r.querySelector(".v43-domain-grid")}})()');
+ check('Phase 06 keyboard opens the existing People domain and returns to Overview',
+   keyboard06.focusable&&keyboard06.selected==='people'&&keyboard06.view&&keyboard06.detail&&keyboard06.returned,keyboard06);
+ const link06=await evaluate('(async()=>{const r=document.getElementById("view-life-hub");r.querySelector("#ux06-life-tools [data-ux06-view=budget]")?.click();await new Promise(t=>setTimeout(t,0));const opened=document.getElementById("view-budget")?.classList.contains("active");window.switchView("life-hub");await new Promise(t=>setTimeout(t,0));return {opened,returned:r.classList.contains("active"),tools:r.querySelectorAll("#ux06-life-tools").length}})()');
+ check('Phase 06 related Finance shortcut uses the existing budget route',
+   link06.opened&&link06.returned&&link06.tools===1,link06);
+ for(const width of [1440,390,360]){
+   await setViewport(width,width===1440?900:844);
+   await evaluate('window.switchView("life-hub")');await delay(200);
+   const geometry=await evaluate('(()=>{const r=document.getElementById("view-life-hub"),rail=r.querySelector(".v43-life-rail"),select=r.querySelector("#v43-life-select"),cards=r.querySelectorAll(".v43-domain"),tools=r.querySelector("#ux06-life-tools"),tr=tools?.getBoundingClientRect(),hero=r.querySelectorAll(".v43-hero");return {active:r.classList.contains("active"),heroCount:hero.length,railVisible:!!rail&&getComputedStyle(rail).display!=="none",selectVisible:!!select&&getComputedStyle(select).display!=="none",toolsVisible:!!tr&&tr.width>0&&tr.height>0,cardCount:cards.length,accessibleCards:[...cards].filter(c=>c.tabIndex===0).length,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+   check('Phase 06 canonical Life Hub fits '+width+'px',
+     geometry.active&&geometry.heroCount===1&&geometry.toolsVisible&&geometry.cardCount===9&&geometry.accessibleCards===geometry.cardCount&&geometry.overflow<=5&&(width>760?geometry.railVisible:!geometry.railVisible&&geometry.selectVisible),geometry);
+   const shot=(await send('Page.captureScreenshot',{format:'jpeg',quality:76,captureBeyondViewport:false,fromSurface:true})).result.data;
+   const name=output+'/phase06-'+width+'-life-hub.jpg',bytes=Buffer.from(shot,'base64');
+   fs.writeFileSync(name,bytes);report.screenshots.push(name);
+   report.screenshotSignatures.push({view:'life-hub-phase06',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
+ }
+ await setViewport(390,844);
+ const domains06=await evaluate('(async()=>{const r=document.getElementById("view-life-hub"),sel=r.querySelector("#v43-life-select");if(!sel)return {error:"missing select"};sel.value="documents";sel.dispatchEvent(new Event("change",{bubbles:true}));await new Promise(t=>setTimeout(t,0));const selected=r.querySelector("#v43-life-select")?.value;const count=r.querySelectorAll(".v43-life-btn[data-v43-life]").length;r.querySelector("#v43-life-overview")?.click();return {selected,count,returned:!!r.querySelector(".v43-domain-grid")}})()');
+ check('Phase 06 native mobile select opens Documents and restores Overview',
+   domains06.selected==='documents'&&domains06.count===11&&domains06.returned,domains06);
  report.browserExceptions=browserErrors.slice(0,30);
  check('No uncaught browser runtime exceptions',browserErrors.length===0,{errors:report.browserExceptions});
 }catch(e){report.errors.push('Browser QA error: '+String(e?.message||e));report.browserExceptions=browserErrors.slice(-20)}

@@ -1,0 +1,41 @@
+/* OmniOS UX Phase 05: Calendar view coherence and touch/readability. */
+html #view-master-calendar{min-width:0}
+html #view-master-calendar :is(.v36-cal-shell,.v36-cal-body,.v603-calendar-stage,.v603-calendar-stage-inner,#v603-mode-host){min-width:0;max-width:100%}
+html #view-master-calendar .v36-cal-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;min-width:0}
+html #view-master-calendar .v36-cal-nav{display:flex;align-items:center;flex-wrap:wrap;gap:7px;min-width:0}
+html #view-master-calendar .v36-cal-period{min-width:0;overflow-wrap:anywhere}
+html #view-master-calendar .v36-cal-center{min-width:0;max-width:100%}
+html #view-master-calendar .v36-cal-modes{display:flex;gap:3px;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin}
+html #view-master-calendar .v36-cal-mode{flex:0 0 auto;min-height:39px;white-space:nowrap}
+html #view-master-calendar :is(.v36-cal-mode,.v36-cal-nav button,.v36-cal-actions button,.v602-mini-day,.v36-month-date,.v36-day-add):focus-visible{outline:2px solid var(--omx-focus,var(--accent-cyan));outline-offset:2px}
+html #view-master-calendar .ux05-empty-hint{padding:12px 15px;margin:10px 0;border:1px dashed var(--omx-edge,var(--border-color));border-radius:9px;font-size:12px;color:var(--text-secondary);line-height:1.5}
+html #view-master-calendar .v36-month-grid{min-width:0}
+html #view-master-calendar .v36-month-day{min-width:0;overflow:hidden}
+html #view-master-calendar .v36-month-events{min-width:0}
+html #view-master-calendar .v36-month-event{min-width:0;max-width:100%;overflow:hidden}
+html #view-master-calendar .v36-event-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:760px){
+ html #view-master-calendar .v36-cal-toolbar{display:grid;grid-template-columns:minmax(0,1fr);gap:9px;padding:10px}
+ html #view-master-calendar .v36-cal-nav{justify-content:flex-start}
+ html #view-master-calendar .v36-cal-center{width:100%}
+ html #view-master-calendar .v36-cal-modes{width:100%;padding-bottom:3px}
+ html #view-master-calendar .v36-cal-mode{min-height:44px;padding:9px 12px;font-size:12px}
+ html #view-master-calendar .v36-cal-actions{display:flex;align-items:center;gap:7px;min-width:0}
+ html #view-master-calendar #v36-cal-search{min-width:0;flex:1}
+ html #view-master-calendar .v36-month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));max-width:100%}
+ html #view-master-calendar .v36-month-weekday{min-width:0;text-align:center;font-size:10px}
+ html #view-master-calendar .v36-month-day{min-width:0;padding:3px}
+ html #view-master-calendar .v36-month-day-head{gap:2px}
+ html #view-master-calendar .v36-month-date{font-size:12px;min-width:24px;min-height:28px}
+ html #view-master-calendar .v36-day-add{min-width:22px;min-height:28px}
+ html #view-master-calendar .v36-month-events{display:none}
+ html #view-master-calendar .om4-month-indicators{display:flex;min-height:7px;gap:2px;align-items:center;justify-content:center}
+}
+@media(max-width:375px){
+ html #view-master-calendar .v36-month-day{padding:2px}
+ html #view-master-calendar .v36-month-weekday{font-size:9px}
+ html #view-master-calendar .v36-cal-nav{gap:5px}
+}
+@media(prefers-reduced-motion:reduce){
+ html #view-master-calendar .v36-cal-modes{scroll-behavior:auto}
+}

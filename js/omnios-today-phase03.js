@@ -67,6 +67,20 @@ function install(){
  // Only direct child changes: rerendered views replace their children. Avoid subtree observers.
  new MutationObserver(schedule).observe(today,{childList:true});
  new MutationObserver(schedule).observe(dashboard,{childList:true});
+ // Legacy dashboard renderers can run in deferred tasks after switchView().
+ // Reinstate only the lightweight command/header UI once those renders settle.
+ const previousSwitch=window.switchView;
+ if(typeof previousSwitch==='function'&&!previousSwitch.__ux03){
+   const wrapped=function(...args){
+     const result=previousSwitch.apply(this,args);
+     schedule();
+     requestAnimationFrame(schedule);
+     if(args[0]==='dashboard')setTimeout(schedule,120);
+     return result;
+   };
+   wrapped.__ux03=true;
+   window.switchView=wrapped;
+ }
  window.addEventListener('hashchange',schedule);
  schedule();
 }

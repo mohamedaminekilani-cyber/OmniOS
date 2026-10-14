@@ -33,7 +33,7 @@ test('Browse all types delegates to existing quick-add-modal',()=>{
 test('Capture app assets load in real shell and are precached offline',()=>{
  assert.equal(loader.split('id="omnios-ux-phase04-styles"').length-1,1);
  assert.equal(loader.split('src="./js/omnios-capture-phase04.js"').length-1,1);
- assert.match(sw,/second-brain-shell-v8/);
+ assert.match(sw,/second-brain-shell-v9/);
  for(const asset of ['omnios-capture-phase04.js','omnios-ux-phase04.css'])
    assert.ok(sw.includes(asset));
 });

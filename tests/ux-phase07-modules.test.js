@@ -49,10 +49,10 @@ test('Phase 07 loaders and offline shell include both assets',()=>{
  assert.ok(sw.includes("'./js/omnios-modules-phase07.js'"));
 });
 
-test('Phase 07 enhances canonical Finance V38 and Notes V40, not hidden v1 controls',()=>{
+test('Phase 07 enhances canonical Finance V38 and Notes V40, not hidden legacy controls',()=>{
  const modules=fs.readFileSync('app-parts/part-005.html','utf8');
- assert.match(modules,/id=\\"v38-add-txn\\"/);
- assert.match(modules,/id=\\"org-note-new\\"/);
+ assert.ok(modules.includes('id="v38-add-txn"'));
+ assert.ok(modules.includes('id="org-note-new"'));
  assert.match(js,/\.v38-month-nav,\.finance-period-nav/);
  assert.match(js,/#org-note-search,#notes-search/);
  assert.match(css,/#view-budget\.v38-finance-active #finance-v38-root/);

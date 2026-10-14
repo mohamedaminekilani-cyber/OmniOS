@@ -68,3 +68,10 @@ test('Browser QA runner source parses before expensive browser checks',()=>{
  const result=spawnSync(process.execPath,['--check','scripts/phase7-browser-qa.mjs'],{encoding:'utf8'});
  assert.equal(result.status,0,result.stderr||'Browser QA runner syntax invalid');
 });
+
+test('Phase 05 restores the existing mobile calendar mode row after legacy renderers',()=>{
+ assert.match(js,/center\.style\.setProperty\('display','flex','important'\)/);
+ assert.match(js,/center\.hidden=false/);
+ assert.match(js,/center\.style\.removeProperty\('display'\)/);
+ assert.match(js,/requestAnimationFrame\(decorate\)/);
+});

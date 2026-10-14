@@ -222,7 +222,7 @@ try{
  await evaluate('window.closeModal?.("quick-add-modal")');await delay(50);
  for(const width of [390,360]){
    await setViewport(width,844);await evaluate('window.switchView("today")');
-   const mobile04=await evaluate('(()=>{const add=document.querySelector("#ux02-mobile-nav [data-ux02-capture]");add?.click();const input=document.getElementById("v55-capture-text"),modal=input?.closest(".modal"),rect=modal?.getBoundingClientRect();const valid=!!rect&&rect.left>=-1&&rect.right<=innerWidth+1&&rect.width>=280;return {opened:!!input,chipCount:modal?.querySelectorAll("[data-ux04-type]").length||0,valid,scrollOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,rect:rect?{left:rect.left,right:rect.right,width:rect.width}:null}})()');
+   const mobile04=await evaluate('(()=>{const add=document.querySelector("#ux02-mobile-nav [data-ux02-capture]");add?.click();const input=document.getElementById("v55-capture-text"),modal=input?.closest(".modal"),rect=modal?.getBoundingClientRect();const valid=!!rect&&rect.left>=-1&&rect.right<=innerWidth+1&&rect.width>=280&&rect.height<=innerHeight*.87;return {opened:!!input,chipCount:modal?.querySelectorAll("[data-ux04-type]").length||0,valid,scrollOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,rect:rect?{left:rect.left,right:rect.right,width:rect.width}:null}})()');
    check('Phase 04 mobile dock opens universal capture without overflow at '+width+'px',
      mobile04.opened&&mobile04.chipCount===9&&mobile04.valid&&mobile04.scrollOverflow<=5,mobile04);
    const shot=(await send('Page.captureScreenshot',{format:'jpeg',quality:75,fromSurface:true,captureBeyondViewport:false})).result.data;

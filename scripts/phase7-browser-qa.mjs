@@ -291,9 +291,9 @@ try{
  const modules07=[
    {id:'workout',control:'#workout-start-btn',name:'Workout'},
    {id:'diet',control:'#nut-log-now',name:'Nutrition'},
-   {id:'budget',control:'.finance-hero-actions .btn-primary',name:'Finance'},
+   {id:'budget',control:'#v38-add-txn',name:'Finance'},
    {id:'habits',control:'.omx-habits-head .btn-primary',name:'Habits'},
-   {id:'notes',control:'#notes-search',name:'Notes'}
+   {id:'notes',control:'#org-note-search',name:'Notes'}
  ];
  for(const width of [1440,390,360]){
    await setViewport(width,width===1440?900:844);
@@ -309,7 +309,7 @@ try{
    }
  }
  await setViewport(390,844);
- const interactions07=await evaluate('(()=>{const out=[];const tests=[["workout","#workout-start-btn"],["diet","#nut-log-now"],["budget",".finance-hero-actions .btn-primary"],["habits",".omx-habits-head .btn-primary"],["notes",".omx-page-heading .btn-primary"]];for(const [view,button] of tests){window.switchView(view);const root=document.getElementById("view-"+view),target=root?.querySelector(button);if(!target){out.push({view,found:false});continue}const before=[...document.querySelectorAll(".modal-overlay.active,#nut-entry-modal")].length;target.click();const after=[...document.querySelectorAll(".modal-overlay.active,#nut-entry-modal")].length;out.push({view,found:true,opened:after>before,before,after});document.querySelectorAll(".modal-overlay.active").forEach(e=>e.classList.remove("active"));const nut=document.getElementById("nut-entry-modal");if(nut)nut.remove();}return out})()');
+ const interactions07=await evaluate('(()=>{const out=[];const tests=[["workout","#workout-start-btn"],["diet","#nut-log-now"],["budget","#v38-add-txn"],["habits",".omx-habits-head .btn-primary"],["notes","#org-note-new"]];for(const [view,button] of tests){window.switchView(view);const root=document.getElementById("view-"+view),target=root?.querySelector(button);if(!target){out.push({view,found:false});continue}const before=[...document.querySelectorAll(".modal-overlay.active,#nut-entry-modal")].length;target.click();const after=[...document.querySelectorAll(".modal-overlay.active,#nut-entry-modal")].length;out.push({view,found:true,opened:after>before,before,after});document.querySelectorAll(".modal-overlay.active").forEach(e=>e.classList.remove("active"));const nut=document.getElementById("nut-entry-modal");if(nut)nut.remove();}return out})()');
  check('Phase 07 original modal actions open for Workout, Nutrition, Finance, Habits and Notes',
    interactions07.length===5&&interactions07.every(x=>x.found&&x.opened),interactions07);
  report.browserExceptions=browserErrors.slice(0,30);

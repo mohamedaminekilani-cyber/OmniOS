@@ -28,3 +28,18 @@ html body :is(.ux04-type-chip,.ux04-all-types):focus-visible{
  html body .ux04-type-chip{min-height:44px;padding:9px 12px}
  html body #ux04-capture-tools{padding-bottom:10px}
 }
+
+/* Compact mobile capture sheet: preserve legacy modal behavior elsewhere. */
+@media(max-width:760px){
+ html body .modal-overlay:has(#ux04-capture-tools){
+   display:flex!important;align-items:flex-end!important;justify-content:center!important;
+   padding:12px 12px max(12px,env(safe-area-inset-bottom))!important;
+   box-sizing:border-box!important;
+ }
+ html body .modal-overlay:has(#ux04-capture-tools) .modal.ux04-capture-modal{
+   width:100%!important;max-width:100%!important;
+   height:auto!important;min-height:0!important;max-height:85dvh!important;
+   overflow-y:auto!important;overscroll-behavior:contain;
+   border-radius:16px!important;
+ }
+}

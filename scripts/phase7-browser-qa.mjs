@@ -286,6 +286,32 @@ try{
  const domains06=await evaluate('(async()=>{const r=document.getElementById("view-life-hub"),sel=r.querySelector("#v43-life-select");if(!sel)return {error:"missing select"};sel.value="documents";sel.dispatchEvent(new Event("change",{bubbles:true}));await new Promise(t=>setTimeout(t,0));const selected=r.querySelector("#v43-life-select")?.value;const count=r.querySelectorAll(".v43-life-btn[data-v43-life]").length;r.querySelector("#v43-life-overview")?.click();return {selected,count,returned:!!r.querySelector(".v43-domain-grid")}})()');
  check('Phase 06 native mobile select opens Documents and restores Overview',
    domains06.selected==='documents'&&domains06.count===11&&domains06.returned,domains06);
+
+ // Phase 07 — exercise original routes and responsive module surfaces through index.html.
+ const modules07=[
+   {id:'workout',control:'#workout-start-btn',name:'Workout'},
+   {id:'diet',control:'#nut-log-now',name:'Nutrition'},
+   {id:'budget',control:'.finance-hero-actions .btn-primary',name:'Finance'},
+   {id:'habits',control:'.omx-habits-head .btn-primary',name:'Habits'},
+   {id:'notes',control:'#notes-search',name:'Notes'}
+ ];
+ for(const width of [1440,390,360]){
+   await setViewport(width,width===1440?900:844);
+   for(const item of modules07){
+     await evaluate('window.switchView('+JSON.stringify(item.id)+')');await delay(140);
+     const layout=await evaluate('(()=>{const id='+JSON.stringify(item.id)+',sel='+JSON.stringify(item.control)+',root=document.getElementById("view-"+id),c=root?.querySelector(sel),r=c?.getBoundingClientRect(),visible=!!r&&r.width>0&&r.height>0,css=root&&getComputedStyle(root);return {id,active:!!root?.classList.contains("active"),visible,control:c?.textContent?.trim().slice(0,70)||sel,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,prepared:!!window.OmniModules07,rendered:!!css&&css.display!=="none"}})()');
+     check('Phase 07 '+item.name+' renders and primary action fits '+width+'px',
+       layout.active&&layout.visible&&layout.prepared&&layout.rendered&&layout.overflow<=5,layout);
+     const image=(await send('Page.captureScreenshot',{format:'jpeg',quality:72,captureBeyondViewport:false,fromSurface:true})).result.data;
+     const filename=output+'/phase07-'+width+'-'+item.id+'.jpg',bytes=Buffer.from(image,'base64');
+     fs.writeFileSync(filename,bytes);report.screenshots.push(filename);
+     report.screenshotSignatures.push({view:item.id+'-phase07',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
+   }
+ }
+ await setViewport(390,844);
+ const interactions07=await evaluate('(()=>{const out=[];const tests=[["workout","#workout-start-btn"],["diet","#nut-log-now"],["budget",".finance-hero-actions .btn-primary"],["habits",".omx-habits-head .btn-primary"],["notes",".omx-page-heading .btn-primary"]];for(const [view,button] of tests){window.switchView(view);const root=document.getElementById("view-"+view),target=root?.querySelector(button);if(!target){out.push({view,found:false});continue}const before=[...document.querySelectorAll(".modal-overlay.active,#nut-entry-modal")].length;target.click();const after=[...document.querySelectorAll(".modal-overlay.active,#nut-entry-modal")].length;out.push({view,found:true,opened:after>before,before,after});document.querySelectorAll(".modal-overlay.active").forEach(e=>e.classList.remove("active"));const nut=document.getElementById("nut-entry-modal");if(nut)nut.remove();}return out})()');
+ check('Phase 07 original modal actions open for Workout, Nutrition, Finance, Habits and Notes',
+   interactions07.length===5&&interactions07.every(x=>x.found&&x.opened),interactions07);
  report.browserExceptions=browserErrors.slice(0,30);
  check('No uncaught browser runtime exceptions',browserErrors.length===0,{errors:report.browserExceptions});
 }catch(e){report.errors.push('Browser QA error: '+String(e?.message||e));report.browserExceptions=browserErrors.slice(-20)}

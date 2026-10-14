@@ -90,3 +90,31 @@ html #view-master-calendar .v36-event-title{overflow:hidden;text-overflow:ellips
     overscroll-behavior-inline:contain;
   }
 }
+
+/* Phase 05: display every original view mode on mobile: previous mobile CSS only displayed the active button. */
+@media(max-width:760px){
+ html body #view-master-calendar .v36-cal-modes{
+   display:grid!important;
+   grid-template-columns:repeat(5,minmax(0,1fr))!important;
+   gap:2px!important;
+   overflow:visible!important;
+   padding:3px!important;
+   width:100%!important;
+   min-width:0!important;
+ }
+ html body #view-master-calendar .v36-cal-modes .v36-cal-mode,
+ html body #view-master-calendar .v36-cal-modes .v36-cal-mode:not(.active){
+   display:inline-flex!important;
+   align-items:center!important;
+   justify-content:center!important;
+   flex:1 1 0!important;
+   width:100%!important;
+   min-width:0!important;
+   min-height:42px!important;
+   padding:7px 1px!important;
+   font-size:10.5px!important;
+   white-space:nowrap!important;
+   opacity:1!important;
+   visibility:visible!important;
+ }
+}

@@ -204,6 +204,32 @@ try{
    fs.writeFileSync(filename,bytes);report.screenshots.push(filename);
    report.screenshotSignatures.push({view:'today-phase03',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
  }
+
+ // Phase 04: one universal Add dialog, without writing user data in the test.
+ await setViewport(1440,900);
+ await evaluate('window.switchView("today")');
+ await poll(()=>evaluate('!!window.OmniCapture04 && !!document.getElementById("global-add-btn")'),6000);
+ const desktopCapture04=await evaluate('(()=>{document.getElementById("global-add-btn").click();const input=document.getElementById("v55-capture-text"),modal=input?.closest(".modal"),chips=[...(modal?.querySelectorAll("[data-ux04-type]")||[])];return {opened:!!input,role:modal?.getAttribute("role"),labelledBy:modal?.getAttribute("aria-labelledby"),chips:chips.length,legacyOpen:document.getElementById("quick-add-modal")?.classList.contains("active")}})()');
+ check('Phase 04 desktop Add opens accessible universal capture with nine type chips',
+   desktopCapture04.opened&&desktopCapture04.role==="dialog"&&desktopCapture04.labelledBy==="ux04-capture-title"&&desktopCapture04.chips===9&&!desktopCapture04.legacyOpen,desktopCapture04);
+ const typed04=await evaluate('(()=>{const chip=document.querySelector("[data-ux04-type=event]");chip?.click();const input=document.getElementById("v55-capture-text");input.value+=" Team meeting tomorrow at 10am #work";input.dispatchEvent(new Event("input",{bubbles:true}));return {text:input.value,pressed:chip?.getAttribute("aria-pressed"),preview:document.getElementById("v55-capture-preview")?.textContent?.slice(0,160)}})()');
+ check('Phase 04 chips update original V55 parser preview without saving',
+   typed04.text.startsWith('event ')&&typed04.pressed==='true'&&typed04.preview?.includes('Parsed as event'),typed04);
+ const allTypes04=await evaluate('(()=>{document.getElementById("ux04-all-types")?.click();const menu=document.getElementById("quick-add-modal");return {captureClosed:!document.getElementById("v55-capture-text"),menuOpen:!!menu?.classList.contains("active"),choices:menu?.querySelectorAll("[data-quick-type]").length||0}})()');
+ check('Phase 04 Browse all creation types uses existing full Quick Add menu',
+   allTypes04.captureClosed&&allTypes04.menuOpen&&allTypes04.choices>=19,allTypes04);
+ await evaluate('window.closeModal?.("quick-add-modal")');await delay(50);
+ for(const width of [390,360]){
+   await setViewport(width,844);await evaluate('window.switchView("today")');
+   const mobile04=await evaluate('(()=>{const add=document.querySelector("#ux02-mobile-nav [data-ux02-capture]");add?.click();const input=document.getElementById("v55-capture-text"),modal=input?.closest(".modal"),rect=modal?.getBoundingClientRect();const valid=!!rect&&rect.left>=-1&&rect.right<=innerWidth+1&&rect.width>=280;return {opened:!!input,chipCount:modal?.querySelectorAll("[data-ux04-type]").length||0,valid,scrollOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,rect:rect?{left:rect.left,right:rect.right,width:rect.width}:null}})()');
+   check('Phase 04 mobile dock opens universal capture without overflow at '+width+'px',
+     mobile04.opened&&mobile04.chipCount===9&&mobile04.valid&&mobile04.scrollOverflow<=5,mobile04);
+   const shot=(await send('Page.captureScreenshot',{format:'jpeg',quality:75,fromSurface:true,captureBeyondViewport:false})).result.data;
+   const name=output+'/phase04-'+width+'-capture.jpg',bytes=Buffer.from(shot,'base64');
+   fs.writeFileSync(name,bytes);report.screenshots.push(name);
+   report.screenshotSignatures.push({view:'capture-phase04',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
+   await evaluate('document.querySelector("#v55-capture-text")?.closest(".modal-overlay")?.querySelector("[data-v55-close]")?.click()');
+ }
  report.browserExceptions=browserErrors.slice(0,30);
  check('No uncaught browser runtime exceptions',browserErrors.length===0,{errors:report.browserExceptions});
 }catch(e){report.errors.push('Browser QA error: '+String(e?.message||e));report.browserExceptions=browserErrors.slice(-20)}

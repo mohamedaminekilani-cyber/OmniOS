@@ -57,6 +57,14 @@ function decorate(){
    const selected=b.dataset.v36Mode===mode;
    b.setAttribute('aria-pressed',String(selected));
    b.setAttribute('aria-label',b.textContent.trim()+' calendar view');
+   if(window.matchMedia('(max-width:760px)').matches){
+     b.hidden=false;
+     b.style.setProperty('display','inline-flex','important');
+     b.dataset.ux05ModeRestored='1';
+   }else if(b.dataset.ux05ModeRestored==='1'){
+     b.style.removeProperty('display');
+     delete b.dataset.ux05ModeRestored;
+   }
  });
  const grid=host.querySelector('.v36-month-grid');
  if(grid){

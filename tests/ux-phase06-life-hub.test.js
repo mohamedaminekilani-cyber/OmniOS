@@ -51,7 +51,7 @@ test('Phase 06 mobile surfaces remain responsive and restore existing navigation
 test('Phase 06 app shell includes offline Life Hub assets once',()=>{
   assert.equal(loader.split('id="omnios-ux-phase06-styles"').length-1,1);
   assert.equal(loader.split('src="./js/omnios-life-phase06.js"').length-1,1);
-  assert.match(sw,/second-brain-shell-v10/);
+  assert.match(sw,/second-brain-shell-v11/);
   assert.ok(sw.includes("'./styles/omnios-ux-phase06.css'"));
   assert.ok(sw.includes("'./js/omnios-life-phase06.js'"));
 });

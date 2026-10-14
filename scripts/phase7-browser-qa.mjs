@@ -231,6 +231,32 @@ try{
    report.screenshotSignatures.push({view:'capture-phase04',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
    await evaluate('document.querySelector("#v55-capture-text")?.closest(".modal-overlay")?.querySelector("[data-v55-close]")?.click()');
  }
+
+ // Phase 05: Verify the actual V36/V603 Calendar engine through index.html.
+ await setViewport(1440,900);
+ await evaluate('window.switchView("master-calendar")');await delay(300);
+ const cal05=await evaluate('(()=>{const v=document.getElementById("view-master-calendar"),modes=[...v.querySelectorAll("[data-v36-mode]")].map(b=>b.dataset.v36Mode);return {api:!!window.OmniCalendar05,active:v.classList.contains("active"),modes,host:!!v.querySelector("#v603-mode-host"),eventCount:document.querySelectorAll("#master-calendar-content [data-master-event]").length}})()');
+ check('Phase 05 Calendar keeps all five original modes and mount',cal05.api&&cal05.active&&cal05.host&&cal05.modes.join(',')==='workspace,week,month,day,agenda',cal05);
+ const month05=await evaluate('(()=>{document.querySelector("#view-master-calendar [data-v36-mode=month]")?.click();const grid=document.querySelector("#view-master-calendar .v36-month-grid"),days=[...(grid?.querySelectorAll(".v36-month-day")||[])];return {mode:window.OmniCalendar05.mode(),grid:!!grid,days:days.length,columns:getComputedStyle(grid).gridTemplateColumns,dates:days.filter(x=>!!x.dataset.masterDate).length}})()');
+ check('Phase 05 Month renders a valid date grid',month05.mode==='month'&&month05.grid&&month05.days>=28&&month05.days<=42&&month05.days===month05.dates,month05);
+ const rollover05=await evaluate('(()=>{const previousDate=new Date(masterCalendarDate),previousMode=masterCalendarMode;masterCalendarDate=new Date(2026,0,31,12);masterCalendarMode="month";window.renderMasterCalendar();document.getElementById("v36-cal-next")?.click();const first={year:masterCalendarDate.getFullYear(),month:masterCalendarDate.getMonth()+1,day:masterCalendarDate.getDate()};masterCalendarDate=new Date(2028,0,31,12);window.renderMasterCalendar();document.getElementById("v36-cal-next")?.click();const leap={year:masterCalendarDate.getFullYear(),month:masterCalendarDate.getMonth()+1,day:masterCalendarDate.getDate()};masterCalendarDate=previousDate;masterCalendarMode=previousMode;window.renderMasterCalendar();return {first,leap}})()');
+ check('Phase 05 month navigation clamps Jan 31 into February including leap years',
+   rollover05.first.year===2026&&rollover05.first.month===2&&rollover05.first.day===28&&rollover05.leap.year===2028&&rollover05.leap.month===2&&rollover05.leap.day===29,rollover05);
+ for(const width of [1440,390,360]){
+   await setViewport(width,width===1440?900:844);
+   await evaluate('window.switchView("master-calendar")');
+   await evaluate('document.querySelector("#view-master-calendar [data-v36-mode=month]")?.click()');
+   await delay(250);
+   const measure=await evaluate('(()=>{const grid=document.querySelector("#view-master-calendar .v36-month-grid"),r=grid?.getBoundingClientRect(),modes=document.querySelector("#view-master-calendar .v36-cal-modes"),cells=grid?.querySelectorAll(".v36-month-day").length||0,mode=window.OmniCalendar05?.mode();return {mode,cells,gridVisible:!!r&&r.width>0&&r.height>0,gridFits:!!r&&r.left>=-2&&r.right<=innerWidth+3,tabsVisible:!!modes&&modes.getBoundingClientRect().height>0,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+   check('Phase 05 Month grid and modes fit '+width+'px',measure.mode==='month'&&measure.cells>=28&&measure.gridVisible&&measure.gridFits&&measure.tabsVisible&&measure.overflow<=5,measure);
+   const shot=(await send('Page.captureScreenshot',{format:'jpeg',quality:76,captureBeyondViewport:false,fromSurface:true})).result.data;
+   const name=output+'/phase05-'+width+'-month.jpg',bytes=Buffer.from(shot,'base64');
+   fs.writeFileSync(name,bytes);report.screenshots.push(name);
+   report.screenshotSignatures.push({view:'month-phase05',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
+ }
+ await setViewport(390,844);
+ const modes05=await evaluate('(()=>{const v=document.querySelector("#view-master-calendar"),out=[];for(const name of ["week","agenda","day"]){v.querySelector("[data-v36-mode="+name+"]")?.click();out.push({mode:window.OmniCalendar05.mode(),host:!!v.querySelector("#v603-mode-host"),content:v.querySelector("#v603-mode-host")?.childElementCount||0})}return out})()');
+ check('Phase 05 Week, Agenda and Day modes still render through the original engine',modes05.length===3&&modes05.every(x=>x.content>0&&x.host&&['week','agenda','day'].includes(x.mode)),modes05);
  report.browserExceptions=browserErrors.slice(0,30);
  check('No uncaught browser runtime exceptions',browserErrors.length===0,{errors:report.browserExceptions});
 }catch(e){report.errors.push('Browser QA error: '+String(e?.message||e));report.browserExceptions=browserErrors.slice(-20)}

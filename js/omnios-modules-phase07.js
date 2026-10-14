@@ -28,12 +28,14 @@ function decorate(){
  const start=workout?.querySelector('#workout-start-btn');
  if(start)start.setAttribute('aria-label','Start a workout session');
  const finance=document.getElementById('view-budget');
- const month=finance?.querySelector('.finance-period-nav');
+ const month=finance?.querySelector('.v38-month-nav,.finance-period-nav');
  if(month){month.setAttribute('role','group');month.setAttribute('aria-label','Finance month navigation');}
+ const finTabs=finance?.querySelector('.v38-fin-tabs');
+ if(finTabs){finTabs.setAttribute('role','group');finTabs.setAttribute('aria-label','Finance sections');}
  const notes=document.getElementById('view-notes');
- const toolbar=notes?.querySelector('.notes-toolbar');
+ const toolbar=notes?.querySelector('.org-toolbar,.notes-toolbar');
  if(toolbar)toolbar.setAttribute('role','search');
- const search=notes?.querySelector('#notes-search');
+ const search=notes?.querySelector('#org-note-search,#notes-search');
  if(search)search.setAttribute('aria-label','Search notes');
 }
 function refresh(){
@@ -46,6 +48,11 @@ function install(){
  // Nutrition replaces its own root children; observe only that root, never all descendants.
  const diet=document.getElementById('view-diet');
  if(diet)new MutationObserver(refresh).observe(diet,{childList:true});
+ // Finance V38 and Notes V40 rebuild direct view children; never observe subtrees.
+ for(const id of ['budget','notes']){
+   const root=document.getElementById('view-'+id);
+   if(root)new MutationObserver(refresh).observe(root,{childList:true});
+ }
  document.addEventListener('click',e=>{
    if(e.target.closest?.('[data-view],[data-ux02-view],[data-habitview],[data-workout-tab],[data-nut-tab]'))requestAnimationFrame(refresh);
  },false);

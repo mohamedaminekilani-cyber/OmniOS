@@ -57,3 +57,8 @@ test('Phase 05 JS parses and uses one bounded child-list observer',()=>{
  assert.match(js,/observe\(host,\{childList:true\}\)/);
  assert.doesNotMatch(js,/subtree:true/);
 });
+
+test('Phase 05 overrides legacy hidden mobile view tabs on the original Calendar',()=>{
+ assert.match(css,/html body #view-master-calendar \.v36-cal-center\{\s*display:flex!important/);
+ assert.match(css,/html body #view-master-calendar \.v36-cal-modes\{\s*display:flex!important/);
+});

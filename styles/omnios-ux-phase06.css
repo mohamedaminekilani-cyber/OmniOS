@@ -1,0 +1,53 @@
+/* Phase 06: extend the existing canonical V43 Life Hub; do not replace it. */
+html #view-life-hub.ux06-life-ready{min-width:0}
+html #view-life-hub .v43-hero,
+html #view-life-hub .v43-life-shell,
+html #view-life-hub .v43-life-main,
+html #view-life-hub .v43-life-toolbar{min-width:0;max-width:100%}
+html #view-life-hub #ux06-life-tools{
+  display:flex;align-items:center;flex-wrap:wrap;gap:6px;
+  padding:9px 11px;margin:0 0 12px;border-radius:11px;
+  border:1px solid var(--omx-edge,var(--border-color,#363c47));
+  background:var(--omx-card,var(--bg-surface,#1a1c21));
+}
+html #view-life-hub .ux06-tools-label{
+  flex:0 0 auto;margin-right:5px;
+  color:var(--text-secondary,var(--text-muted,#b9c0cb));
+  font-size:12px;font-weight:700;
+}
+html #view-life-hub .ux06-tool{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:0;min-height:36px;padding:7px 11px;
+  background:var(--omx-raised,var(--bg-elevated,#24272f));
+  color:var(--text-primary,#eef0f2);font:inherit;
+  font-size:12px;font-weight:650;line-height:1.3;
+  border:1px solid var(--omx-edge,var(--border-color,#363c47));
+  border-radius:9px;cursor:pointer;
+}
+html #view-life-hub .ux06-tool:hover{border-color:var(--omx-focus,var(--accent-cyan,#06b6d4))}
+html #view-life-hub :is(.ux06-tool,.v43-domain[data-v43-life],.v43-row.clickable[data-v43-life],.v43-life-btn):focus-visible{
+  outline:2px solid var(--omx-focus,var(--accent-cyan,#06b6d4));outline-offset:2px;
+}
+html #view-life-hub :is(.v43-domain-grid,.v43-record-grid,.v43-kpis){min-width:0}
+html #view-life-hub .v43-domain{min-width:0}
+html #view-life-hub .v43-domain-meta{overflow-wrap:anywhere}
+html #view-life-hub .v43-life-btn[aria-current="page"]{font-weight:800}
+@media(max-width:760px){
+  html #view-life-hub .v43-hero{padding:14px;gap:10px}
+  html #view-life-hub .v43-hero-copy{line-height:1.45}
+  html #view-life-hub #ux06-life-tools{display:flex;flex-wrap:nowrap;overflow-x:auto;
+    overscroll-behavior-x:contain;padding:7px;scrollbar-width:thin}
+  html #view-life-hub .ux06-tools-label{position:sticky;left:0;z-index:1;
+    padding:6px 8px;margin-right:0;
+    border-radius:7px;background:var(--omx-card,var(--bg-surface,#1a1c21))}
+  html #view-life-hub .ux06-tool{flex:0 0 auto;min-height:44px}
+  html #view-life-hub .v43-life-select{min-height:44px;width:100%;margin-bottom:10px}
+  html #view-life-hub .v43-life-toolbar .search-input{min-height:44px;min-width:0}
+  html #view-life-hub .v43-domain-grid{grid-template-columns:minmax(0,1fr);gap:8px}
+  html #view-life-hub .v43-domain{min-height:0;padding:12px;border-radius:11px}
+  html #view-life-hub .v43-domain-title{font-size:13px;margin-top:5px}
+  html #view-life-hub .v43-domain-meta{display:-webkit-box;-webkit-line-clamp:2;
+    -webkit-box-orient:vertical;overflow:hidden;font-size:12px;line-height:1.4}
+  html #view-life-hub .v43-domain-foot{margin-top:8px}
+  html #view-life-hub .v43-record-grid{grid-template-columns:minmax(0,1fr)}
+}

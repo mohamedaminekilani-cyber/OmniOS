@@ -280,14 +280,16 @@ function carryLoaderIntoApp(html){
     '<link rel="stylesheet" href="./styles/omnios-ux-phase03.css" id="omnios-ux-phase03-styles">\n'+
     '<link rel="stylesheet" href="./styles/omnios-ux-phase04.css" id="omnios-ux-phase04-styles">\n'+
     '<link rel="stylesheet" href="./styles/omnios-ux-phase05.css" id="omnios-ux-phase05-styles">\n'+
-    '<link rel="stylesheet" href="./styles/omnios-ux-phase06.css" id="omnios-ux-phase06-styles">\n</head>');
+    '<link rel="stylesheet" href="./styles/omnios-ux-phase06.css" id="omnios-ux-phase06-styles">\n'+
+    '<link rel="stylesheet" href="./styles/omnios-ux-phase07.css" id="omnios-ux-phase07-styles">\n</head>');
   out=out.replace(/<body([^>]*)>/i,function(m,attrs){return '<body'+attrs+'>\n'+bootHtml});
   out=out.replace(/<\/body>/i,currentUiAuthorityScript+'\n'+
     '<script src="./js/omnios-navigation-phase02.js" defer></scr'+'ipt>\n'+
     '<script src="./js/omnios-today-phase03.js" defer></scr'+'ipt>\n'+
     '<script src="./js/omnios-capture-phase04.js" defer></scr'+'ipt>\n'+
     '<script src="./js/omnios-calendar-phase05.js" defer></scr'+'ipt>\n'+
-    '<script src="./js/omnios-life-phase06.js" defer></scr'+'ipt>\n</body>');
+    '<script src="./js/omnios-life-phase06.js" defer></scr'+'ipt>\n'+
+    '<script src="./js/omnios-modules-phase07.js" defer></scr'+'ipt>\n</body>');
   return out;
 }
 

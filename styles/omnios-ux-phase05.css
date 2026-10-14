@@ -15,6 +15,32 @@ html #view-master-calendar .v36-month-events{min-width:0}
 html #view-master-calendar .v36-month-event{min-width:0;max-width:100%;overflow:hidden}
 html #view-master-calendar .v36-event-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:760px){
+ /* Final, narrowly scoped authority over legacy calendar grid-area conflicts. */
+ html body #view-master-calendar .v36-cal-toolbar{
+   display:flex!important;flex-direction:column!important;align-items:stretch!important;
+   grid-template-areas:none!important;grid-template-columns:none!important;gap:8px!important;
+ }
+ html body #view-master-calendar .v36-cal-nav{
+   display:flex!important;order:0!important;justify-content:flex-start!important;
+   width:100%!important;grid-area:auto!important;grid-column:auto!important;grid-row:auto!important;
+ }
+ html body #view-master-calendar .v36-cal-center{
+   display:flex!important;order:1!important;width:100%!important;min-height:44px!important;
+   visibility:visible!important;opacity:1!important;position:relative!important;
+   grid-area:auto!important;grid-column:auto!important;grid-row:auto!important;
+   overflow-x:auto!important;
+ }
+ html body #view-master-calendar .v36-cal-modes{
+   display:flex!important;width:100%!important;max-width:100%!important;min-width:0!important;
+   min-height:44px!important;height:auto!important;visibility:visible!important;opacity:1!important;
+   overflow-x:auto!important;overflow-y:hidden!important;
+   grid-template-columns:none!important;flex-wrap:nowrap!important;
+ }
+ html body #view-master-calendar .v36-cal-actions{
+   display:flex!important;order:2!important;width:100%!important;min-width:0!important;
+   grid-area:auto!important;grid-column:auto!important;grid-row:auto!important;
+ }
+
  html #view-master-calendar .v36-cal-toolbar{display:grid;grid-template-columns:minmax(0,1fr);gap:9px;padding:10px}
  html #view-master-calendar .v36-cal-nav{justify-content:flex-start}
  html #view-master-calendar .v36-cal-center{width:100%}

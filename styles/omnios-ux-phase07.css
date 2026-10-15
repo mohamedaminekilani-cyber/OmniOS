@@ -77,7 +77,8 @@ html #view-notes .org-toolbar #org-note-sort{min-width:0;max-width:100%}
  html #view-notes .org-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
  html #view-notes .org-toolbar #org-note-search,
  html #view-notes .org-toolbar #org-note-sort{grid-column:1/-1;width:100%;min-height:44px}
- html #view-notes .org-toolbar :is(.org-segmented,.org-view-switch){grid-column:1/-1;max-width:100%;min-width:0;overflow-x:auto}
+ html #view-notes .org-toolbar .org-seg{grid-column:1/-1;display:flex;max-width:100%;min-width:0;width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}
+ html #view-notes .org-toolbar .org-seg>[data-org-view]{flex:1 0 auto;white-space:nowrap;min-height:44px}
  html #view-notes #org-note-new{min-height:44px}
 }
 

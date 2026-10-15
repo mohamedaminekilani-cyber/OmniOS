@@ -396,7 +396,7 @@ try{
 
  // Test synthetic persisted user-like records across the rollback. Never touch
  // OmniOS's real state store or personal records, only isolated CI canaries.
- const canary08=await evaluate('(async()=>{const rows=Array.from({length:1000},(_,i)=>({id:i,title:"Synthetic item "+i,done:i%3===0}));localStorage.setItem("omnios_ux08_synthetic_canary",JSON.stringify(rows));return rows.length})()');
+ const canary08=await evaluate('(async()=>{const rows=Array.from({length:1000},(_,i)=>({id:i,title:"Synthetic item "+i,done:i%3===0}));localStorage.setItem("ux08_synthetic_storage_canary",JSON.stringify(rows));return rows.length})()');
  check('Phase 08.4 seeds 1000 synthetic persistent records without modifying OmniOS data',canary08===1000);
 
  // Phase 08.4: damage ONLY the synthetic browser profile's active pointer,
@@ -411,7 +411,7 @@ try{
  await send('Network.setBlockedURLs',{urls:[]});
  // Repair the active pointer in the synthetic profile after the test.
  const restored08=await evaluate('(async()=>{const c=await caches.open("secondbrain-releases-v1"),a=new URL("./__active_release__",location.href).href,b=new URL("./__previous_valid_release__",location.href).href,r=await c.match(b);if(!r)return false;await c.put(a,r.clone());return true})()');
- const canaryAfter08=await evaluate('(()=>{const text=localStorage.getItem("omnios_ux08_synthetic_canary"),rows=text&&JSON.parse(text);localStorage.removeItem("omnios_ux08_synthetic_canary");return {length:rows?.length||0,first:rows?.[0]?.title,last:rows?.[999]?.title}})()');
+ const canaryAfter08=await evaluate('(()=>{const text=localStorage.getItem("ux08_synthetic_storage_canary"),rows=text&&JSON.parse(text);localStorage.removeItem("ux08_synthetic_storage_canary");return {length:rows?.length||0,first:rows?.[0]?.title,last:rows?.[999]?.title}})()');
  report.startup08.recovery=recovery08;
  check('Phase 08.4 corrupted active release falls back to the SHA-verified previous release',
    seeded08&&restored08&&recovery08.app&&recovery08.activeView.startsWith('view-')&&recovery08.overflow<=5,recovery08);

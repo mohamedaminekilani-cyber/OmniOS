@@ -131,7 +131,7 @@
   }
   function navigate(id){
     if(!viewNode(id)||typeof window.switchView!=='function')return;
-    closeDrawer();window.switchView(id);queueMicrotask(sync);
+    closeDrawer();window.switchView(id);scheduleSync();
   }
   function quickCapture(){
     closeDrawer();
@@ -185,6 +185,12 @@
     });
     return true;
   }
+  let syncQueued=false;
+  function scheduleSync(){
+    if(syncQueued)return;
+    syncQueued=true;
+    queueMicrotask(()=>{syncQueued=false;sync()});
+  }
   function sync(){
     const current=visibleView(),id=groupId(current);
     state.active=id;
@@ -208,17 +214,17 @@
     if(typeof original==='function'){
       const wrapped=function(){
         const result=original.apply(this,arguments);
-        queueMicrotask(sync);
+        scheduleSync();
         return result;
       };
       wrapped.__ux02Original=original;window.switchView=wrapped;
     }
     const title=byId('view-title');
-    if(title)new MutationObserver(()=>queueMicrotask(sync)).observe(title,{childList:true,characterData:true,subtree:true});
-    window.addEventListener('hashchange',()=>queueMicrotask(sync));
-    window.addEventListener('popstate',()=>queueMicrotask(sync));
+    if(title)new MutationObserver(()=>scheduleSync()).observe(title,{childList:true,characterData:true,subtree:true});
+    window.addEventListener('hashchange',()=>scheduleSync());
+    window.addEventListener('popstate',()=>scheduleSync());
     document.addEventListener('click',e=>{
-      if(e.target.closest('.nav-item[data-view]'))queueMicrotask(sync);
+      if(e.target.closest('.nav-item[data-view]'))scheduleSync();
     });
     sync();
   }

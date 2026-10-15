@@ -355,10 +355,12 @@ try{
  // Phase 08: exercise the REAL index.html startup gate rather than timing only
  // the prebuilt app.*.html used by the visual suite. A first visit populates the
  // validated release cache; a reload measures the warm cached path.
- const appReady='typeof window.switchView==="function"&&!!window.OmniNav02&&!!window.OmniToday03&&!!document.getElementById("omnios-unified-design-2026")';
+ const appReady='typeof window.switchView==="function"&&!!window.OmniNav02&&!!window.OmniToday03&&!!window.OmniModules07&&!!window.OmniLife06&&!!window.OmniCalendar05&&!!document.querySelector(".view.active[id^=view-]")&&!!document.getElementById("omnios-unified-design-2026")';
  const loaderURL=new URL('index.html',url).href;
  async function loaderMetric(kind){
    await poll(()=>evaluate(appReady),75000);
+   // Wait for the first stable painted frame after all deferred UX bridges install.
+   await evaluate('new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)))');
    const info=await evaluate('(async()=>{const nav=performance.getEntriesByType("navigation")[0],resources=performance.getEntriesByType("resource"),pointer=await (async()=>{try{const c=await caches.open("secondbrain-releases-v1");return !!(await c.match(new URL("./__active_release__",location.href).href))}catch{return false}})();return {readyMs:Math.round(performance.now()),domContentLoadedMs:nav?Math.round(nav.domContentLoadedEventEnd):null,resourceCount:resources.length,releaseRequests:resources.filter(e=>/\\/release\\.json(?:$|\\?)/.test(e.name)).length,appRequests:resources.filter(e=>/\\/app\\.[a-f0-9]{20}\\.html(?:$|\\?)/.test(e.name)).length,cachePointer: pointer,app:!!window.OmniModules07&&!!window.OmniLife06&&!!window.OmniCalendar05,activeView:document.querySelector(".view.active[id^=view-]")?.id||"",overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
    return {kind,...info};
  }

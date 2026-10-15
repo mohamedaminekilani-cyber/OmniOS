@@ -258,6 +258,15 @@ try{
  const modes05=await evaluate('(()=>{const v=document.querySelector("#view-master-calendar"),out=[];for(const name of ["week","agenda","day"]){v.querySelector("[data-v36-mode="+name+"]")?.click();out.push({mode:window.OmniCalendar05.mode(),host:!!v.querySelector("#v603-mode-host"),content:v.querySelector("#v603-mode-host")?.childElementCount||0})}return out})()');
  check('Phase 05 Week, Agenda and Day modes still render through the original engine',modes05.length===3&&modes05.every(x=>x.content>0&&x.host&&['week','agenda','day'].includes(x.mode)),modes05);
 
+ // Phase 08: simulate a late legacy script hiding Calendar's real mobile toolbar.
+ // The compatibility adapter must repair those same nodes, not duplicate controls.
+ await evaluate('window.switchView("master-calendar")');
+ await evaluate('document.querySelector("#view-master-calendar [data-v36-mode=month]")?.click()');
+ await delay(150);
+ const calendarRepair08=await evaluate('(async()=>{const root=document.getElementById("view-master-calendar"),bar=root.querySelector(".v36-cal-toolbar"),center=bar?.querySelector(".v36-cal-center"),button=bar?.querySelector("[data-v36-mode=month]");if(!center||!button)return {found:false};const original=bar.querySelectorAll("[data-v36-mode]").length;center.hidden=true;center.setAttribute("aria-hidden","true");center.style.setProperty("display","none","important");button.hidden=true;button.style.setProperty("display","none","important");window.OmniCalendar05.refresh();await new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));return {found:true,sameToolbar:bar===root.querySelector(".v36-cal-toolbar"),buttonCount:bar.querySelectorAll("[data-v36-mode]").length,original,centerVisible:!center.hidden&&center.getAttribute("aria-hidden")!=="true"&&getComputedStyle(center).display!=="none",buttonVisible:!button.hidden&&getComputedStyle(button).display!=="none",selected:button.getAttribute("aria-pressed"),overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+ check('Phase 08 Calendar repairs late-hidden mobile tabs without duplicate toolbar',
+   calendarRepair08.found&&calendarRepair08.sameToolbar&&calendarRepair08.original===5&&calendarRepair08.buttonCount===5&&calendarRepair08.centerVisible&&calendarRepair08.buttonVisible&&calendarRepair08.selected==='true'&&calendarRepair08.overflow<=5,calendarRepair08);
+
  // Phase 06 — canonical Life Hub remains the only record renderer.
  await setViewport(1440,900);
  await evaluate('window.switchView("life-hub")');

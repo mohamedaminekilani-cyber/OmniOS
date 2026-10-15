@@ -395,8 +395,12 @@ try{
  // keep a verified previous release and verify the app boots without network.
  const seeded08=await evaluate('(async()=>{const c=await caches.open("secondbrain-releases-v1"),a=new URL("./__active_release__",location.href).href,b=new URL("./__previous_valid_release__",location.href).href,r=await c.match(a);if(!r)return false;await c.put(b,r.clone());await c.put(a,new Response("corrupt-active-release",{headers:{"Content-Type":"application/json"}}));return true})()');
  check('Phase 08.4 seeds recoverable damaged active pointer in isolated browser profile',seeded08);
+ // Prohibit downloading a replacement app or manifest; the rollback must rely
+ // solely on the previously verified cached release in this synthetic profile.
+ await send('Network.setBlockedURLs',{urls:['*release.json*','*source-release.json*','*/app-parts/*','*/app.*.html']});
  await send('Page.reload',{ignoreCache:false});
  const recovery08=await loaderMetric('verified-backup-recovery');
+ await send('Network.setBlockedURLs',{urls:[]});
  // Repair the active pointer in the synthetic profile after the test.
  const restored08=await evaluate('(async()=>{const c=await caches.open("secondbrain-releases-v1"),a=new URL("./__active_release__",location.href).href,b=new URL("./__previous_valid_release__",location.href).href,r=await c.match(b);if(!r)return false;await c.put(a,r.clone());return true})()');
  const canaryAfter08=await evaluate('(()=>{const text=localStorage.getItem("omnios_ux08_synthetic_canary"),rows=text&&JSON.parse(text);localStorage.removeItem("omnios_ux08_synthetic_canary");return {length:rows?.length||0,first:rows?.[0]?.title,last:rows?.[999]?.title}})()');

@@ -357,6 +357,15 @@ try{
  // validated release cache; a reload measures the warm cached path.
  const appReady='typeof window.switchView==="function"&&!!window.OmniNav02&&!!window.OmniToday03&&!!window.OmniModules07&&!!window.OmniLife06&&!!window.OmniCalendar05&&!!document.querySelector(".view.active[id^=view-]")&&!!document.getElementById("omnios-unified-design-2026")';
  const loaderURL=new URL('index.html',url).href;
+ let loaderReloadSerial=0;
+ async function reloadFreshDocument08(){
+   // CDP Page.reload resolves before the old document is discarded. Mark that
+   // window first so a stale OmniNav02 cannot satisfy startup readiness.
+   const serial=++loaderReloadSerial;
+   await evaluate('window.__omniosQAOldDocument='+serial+';true');
+   await send('Page.reload',{ignoreCache:false});
+   await poll(()=>evaluate('window.__omniosQAOldDocument!=='+serial+'&&'+appReady),75000);
+ }
  async function loaderMetric(kind){
    await poll(()=>evaluate(appReady),75000);
    // Wait for the first stable painted frame after all deferred UX bridges install.
@@ -371,14 +380,13 @@ try{
  const startedCold=await send('Page.navigate',{url:loaderURL});
  if(startedCold.result?.errorText)throw Error('Cold index loader navigation: '+startedCold.result.errorText);
  const cold08=await loaderMetric('cold');
- const startedWarm=await send('Page.reload',{ignoreCache:false});
- if(startedWarm.result?.errorText)throw Error('Warm index loader reload: '+startedWarm.result.errorText);
+ await reloadFreshDocument08();
  const warm08=await loaderMetric('warm');
  // Sample two more warm loads to avoid treating one CI scheduling spike
  // as a reproducible startup regression or improvement.
  const warmRuns=[warm08];
  for(let i=0;i<2;i++){
-   await send('Page.reload',{ignoreCache:false});
+   await reloadFreshDocument08();
    warmRuns.push(await loaderMetric('warm-'+(i+2)));
  }
  const warmMedianMs=[...warmRuns].map(x=>x.readyMs).sort((a,b)=>a-b)[1];
@@ -398,7 +406,7 @@ try{
  // Prohibit downloading a replacement app or manifest; the rollback must rely
  // solely on the previously verified cached release in this synthetic profile.
  await send('Network.setBlockedURLs',{urls:['*release.json*','*source-release.json*','*/app-parts/*','*/app.*.html']});
- await send('Page.reload',{ignoreCache:false});
+ await reloadFreshDocument08();
  const recovery08=await loaderMetric('verified-backup-recovery');
  await send('Network.setBlockedURLs',{urls:[]});
  // Repair the active pointer in the synthetic profile after the test.

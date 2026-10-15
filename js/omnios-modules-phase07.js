@@ -8,17 +8,20 @@ const MODULES=[
   {id:'habits',tab:'.habit-toolbar .toolbar-group',button:'[data-habitview]',label:'Habit history views'}
 ];
 const state={installed:false,pending:false};
+function setAttr(node,name,value){
+ if(node&&node.getAttribute(name)!==value)node.setAttribute(name,value);
+}
 function updateGroup(spec){
   const root=document.getElementById('view-'+spec.id);
   if(!root)return;
   const group=root.querySelector(spec.tab);
   if(!group)return;
-  group.setAttribute('role','group');
-  group.setAttribute('aria-label',spec.label);
+  setAttr(group,'role','group');
+  setAttr(group,'aria-label',spec.label);
   group.querySelectorAll(spec.button).forEach(b=>{
     const active=b.classList.contains('active');
-    b.setAttribute('aria-pressed',String(active));
-    if(!b.getAttribute('aria-label'))b.setAttribute('aria-label',b.textContent.trim());
+    setAttr(b,'aria-pressed',String(active));
+    if(!b.getAttribute('aria-label'))setAttr(b,'aria-label',b.textContent.trim());
   });
 }
 function decorate(){
@@ -26,31 +29,31 @@ function decorate(){
  MODULES.forEach(updateGroup);
  const workout=document.getElementById('view-workout');
  const start=workout?.querySelector('#workout-start-btn');
- if(start)start.setAttribute('aria-label','Start a workout session');
+ setAttr(start,'aria-label','Start a workout session');
  const finance=document.getElementById('view-budget');
  const month=finance?.querySelector('.v38-month-nav,.finance-period-nav');
- if(month){month.setAttribute('role','group');month.setAttribute('aria-label','Finance month navigation');}
+ if(month){setAttr(month,'role','group');setAttr(month,'aria-label','Finance month navigation');}
  const finTabs=finance?.querySelector('.v38-fin-tabs');
- if(finTabs){finTabs.setAttribute('role','group');finTabs.setAttribute('aria-label','Finance sections');}
+ if(finTabs){setAttr(finTabs,'role','group');setAttr(finTabs,'aria-label','Finance sections');}
  const notes=document.getElementById('view-notes');
  const toolbar=notes?.querySelector('.org-toolbar,.notes-toolbar');
- if(toolbar)toolbar.setAttribute('role','search');
+ setAttr(toolbar,'role','search');
  const search=notes?.querySelector('#org-note-search,#notes-search');
- if(search)search.setAttribute('aria-label','Search notes');
+ setAttr(search,'aria-label','Search notes');
  // Notes V40 uses .org-seg (not .org-segmented). Keep the original layout handlers.
  const views=notes?.querySelector('.org-toolbar .org-seg');
  if(views){
-   views.setAttribute('role','group');
-   views.setAttribute('aria-label','Notes layout');
+   setAttr(views,'role','group');
+   setAttr(views,'aria-label','Notes layout');
    views.querySelectorAll('[data-org-view]').forEach(button=>{
-     button.setAttribute('aria-pressed',String(button.classList.contains('active')));
+     setAttr(button,'aria-pressed',String(button.classList.contains('active')));
    });
  }
  const collections=notes?.querySelector('.org-rail');
  if(collections){
-   collections.setAttribute('aria-label','Note collections');
+   setAttr(collections,'aria-label','Note collections');
    collections.querySelectorAll('[data-note-scope]').forEach(button=>{
-     button.setAttribute('aria-pressed',String(button.classList.contains('active')));
+     setAttr(button,'aria-pressed',String(button.classList.contains('active')));
    });
  }
 }
@@ -62,12 +65,13 @@ function install(){
  if(state.installed)return;
  state.installed=true;
  // Nutrition replaces its own root children; observe only that root, never all descendants.
+ const observer=new MutationObserver(refresh);
  const diet=document.getElementById('view-diet');
- if(diet)new MutationObserver(refresh).observe(diet,{childList:true});
- // Finance V38 and Notes V40 rebuild direct view children; never observe subtrees.
+ if(diet)observer.observe(diet,{childList:true});
+ // One observer covers three direct-child containers; no subtree observation.
  for(const id of ['budget','notes']){
    const root=document.getElementById('view-'+id);
-   if(root)new MutationObserver(refresh).observe(root,{childList:true});
+   if(root)observer.observe(root,{childList:true});
  }
  document.addEventListener('click',e=>{
    if(e.target.closest?.('[data-view],[data-ux02-view],[data-habitview],[data-workout-tab],[data-nut-tab],[data-org-view],[data-note-scope],[data-v38-tab]'))requestAnimationFrame(refresh);

@@ -386,6 +386,11 @@ try{
  check('Phase 08 real index loader cold/warm startup preserves validated cache and routes',
    [cold08,...warmRuns].every(x=>Number.isFinite(x.readyMs)&&x.readyMs>=0&&x.cachePointer&&x.app&&x.activeView.startsWith('view-')&&x.overflow<=5),report.startup08);
 
+ // Test synthetic persisted user-like records across the rollback. Never touch
+ // OmniOS's real state store or personal records, only isolated CI canaries.
+ const canary08=await evaluate('(async()=>{const rows=Array.from({length:1000},(_,i)=>({id:i,title:"Synthetic item "+i,done:i%3===0}));localStorage.setItem("omnios_ux08_synthetic_canary",JSON.stringify(rows));return rows.length})()');
+ check('Phase 08.4 seeds 1000 synthetic persistent records without modifying OmniOS data',canary08===1000);
+
  // Phase 08.4: damage ONLY the synthetic browser profile's active pointer,
  // keep a verified previous release and verify the app boots without network.
  const seeded08=await evaluate('(async()=>{const c=await caches.open("secondbrain-releases-v1"),a=new URL("./__active_release__",location.href).href,b=new URL("./__previous_valid_release__",location.href).href,r=await c.match(a);if(!r)return false;await c.put(b,r.clone());await c.put(a,new Response("corrupt-active-release",{headers:{"Content-Type":"application/json"}}));return true})()');
@@ -394,9 +399,12 @@ try{
  const recovery08=await loaderMetric('verified-backup-recovery');
  // Repair the active pointer in the synthetic profile after the test.
  const restored08=await evaluate('(async()=>{const c=await caches.open("secondbrain-releases-v1"),a=new URL("./__active_release__",location.href).href,b=new URL("./__previous_valid_release__",location.href).href,r=await c.match(b);if(!r)return false;await c.put(a,r.clone());return true})()');
+ const canaryAfter08=await evaluate('(()=>{const text=localStorage.getItem("omnios_ux08_synthetic_canary"),rows=text&&JSON.parse(text);localStorage.removeItem("omnios_ux08_synthetic_canary");return {length:rows?.length||0,first:rows?.[0]?.title,last:rows?.[999]?.title}})()');
  report.startup08.recovery=recovery08;
  check('Phase 08.4 corrupted active release falls back to the SHA-verified previous release',
    seeded08&&restored08&&recovery08.app&&recovery08.activeView.startsWith('view-')&&recovery08.overflow<=5,recovery08);
+ check('Phase 08.4 preserves 1000 synthetic records through verified-cache recovery',
+   canaryAfter08.length===1000&&canaryAfter08.first==='Synthetic item 0'&&canaryAfter08.last==='Synthetic item 999',canaryAfter08);
  // Timings are diagnostic, not a brittle CI budget. No claim of a speedup
  // without a comparable user-device baseline and repeated samples.
  report.browserExceptions=browserErrors.slice(0,30);

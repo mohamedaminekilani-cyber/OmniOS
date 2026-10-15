@@ -58,3 +58,18 @@ test('Phase 07 enhances canonical Finance V38 and Notes V40, not hidden legacy c
  assert.match(css,/#view-budget\.v38-finance-active #finance-v38-root/);
  assert.match(css,/#view-notes \.org-toolbar/);
 });
+
+
+test('Phase 07 exposes the actual Notes V40 layout and collection selection controls',()=>{
+ const modules=fs.readFileSync('app-parts/part-005.html','utf8');
+ assert.match(modules,/function seg40\(view,items\)/);
+ assert.match(modules,/class="org-seg"/);
+ assert.match(modules,/data-org-view=/);
+ assert.match(js,/querySelector\('\.org-toolbar \.org-seg'\)/);
+ assert.match(js,/querySelectorAll\('\[data-org-view\]'\)/);
+ assert.match(js,/querySelectorAll\('\[data-note-scope\]'\)/);
+ assert.match(js,/Note collections/);
+ assert.match(css,/#view-notes \.org-toolbar \.org-seg/);
+ assert.match(css,/min-height:44px/);
+ assert.doesNotMatch(css,/org-segmented|org-view-switch/);
+});

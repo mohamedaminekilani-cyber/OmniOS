@@ -45,3 +45,11 @@ Run `npm test`, `npm run test:runtime`, `npm run test:browser`, and Semgrep for 
 - Continue expanding persistence recovery tests with synthetic data only.
 
 **Validation:** Node `npm test`, runtime, 1440/390/360 browser QA, Semgrep and screenshot comparison must all pass on the exact Phase 08 continuation commit. No merge or deploy.
+
+
+## Phase 08 continuation — startup and render-scope audit (2026-10-15)
+
+- The original Phase 03 Today adapter wrapped `switchView` and scheduled Today/Dashboard DOM reconciliation for **every** routed module. Scope its existing microtask/frame/delayed recovery to actual `today` and `dashboard` navigation, while retaining direct-child mutation observation so genuine legacy renders still restore the controls.
+- Add behavioral Node tests that navigate through Notes, Nutrition, Finance, Workout, Life Hub and Calendar and verify these unrelated routes generate **zero** Today refreshes. Tests also cover real Today/Dashboard navigation and mutation-triggered recovery. No views, navigation destinations or persistence contracts changed.
+- The previous Phase 08 timing suite measured only a direct `app.<hash>.html` load and therefore did not measure the loader actually used by users. The new end-of-suite browser scenario opens `index.html` on a fresh browser profile for a **cold validated load**, then reloads it using its validated CacheStorage release for a **warm load**. Record time to actual app availability, resource count, release requests and release-cache pointer. Preserve the original full responsive module, Calendar, data-editing, and offline checks; do not impose unstable numerical latency thresholds on CI hosts.
+- Do not change the atomic source release, `app-parts`, cache schemas, source checksum, service-worker fetch behavior, or real user data. Timing data is a single CI-device diagnostic and must **not** be advertised as proof of an end-user speedup.

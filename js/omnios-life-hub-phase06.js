@@ -19,15 +19,21 @@ function route(id){
  if(!existing(id)||typeof window.switchView!=='function')return false;
  return window.switchView(id)!==false;
 }
-function domain(id){
- if(!DOMAINS.includes(id))return false;
- if(!host()?.classList.contains('active'))route('life-hub');
+function activateDomain(id){
  const tab=host()?.querySelector('.v43-life-rail [data-v43-life="'+id+'"]');
  if(tab){tab.click();return true}
  const select=host()?.querySelector('#v43-life-select');
  if(!select)return false;
  select.value=id;
  select.dispatchEvent(new Event('change',{bubbles:true}));
+ return true;
+}
+function domain(id){
+ if(!DOMAINS.includes(id))return false;
+ if(host()?.classList.contains('active'))return activateDomain(id);
+ if(!route('life-hub'))return false;
+ // The original v43 switchView schedules its renderer; run after that render.
+ setTimeout(()=>activateDomain(id),60);
  return true;
 }
 function createLinks(){

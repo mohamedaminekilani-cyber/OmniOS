@@ -29,8 +29,9 @@ test('Phase 06 only decorates existing renderer and never writes personal data',
  assert.doesNotMatch(js,/\.innerHTML\s*=/);
  assert.match(js,/observe\(root,\{childList:true\}\)/);
  assert.doesNotMatch(js,/subtree:true/);
- assert.match(js,/observedContent:new WeakSet/);
- assert.match(js,/observe\(content,\{childList:true\}\)/);
+ assert.match(js,/contentObserver:null/);
+ assert.match(js,/state06\.contentObserver\?\.disconnect\(\)/);
+ assert.match(js,/observer\.observe\(content,\{childList:true\}\)/);
  assert.match(js,/canonical:'v43'/);
 });
 test('Phase 06 offers accessible cards and mobile domain select',()=>{

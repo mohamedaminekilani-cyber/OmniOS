@@ -85,7 +85,12 @@ function install(){
    wrapped.__ux03=true;
    window.switchView=wrapped;
  }
- window.addEventListener('hashchange',schedule);
+ window.addEventListener('hashchange',()=>{
+   // Deep links to Today or Dashboard still restore controls. Hash changes
+   // while viewing another module must not trigger unrelated work.
+   const active=document.querySelector('.view.active[id^="view-"]')?.id;
+   if(active==='view-today'||active==='view-dashboard')schedule();
+ });
  schedule();
 }
 window.OmniToday03={showInsights:()=>{state.expanded=true;renderToday()},hideInsights:()=>{state.expanded=false;renderToday()},get expanded(){return state.expanded},refresh:schedule};

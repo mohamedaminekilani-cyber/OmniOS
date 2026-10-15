@@ -352,6 +352,28 @@ try{
  report.performance08=perf08;
  check('Phase 08 collects painted navigation timings with original routes',
    perf08?.samples?.length===6&&perf08.samples.every(x=>Number.isFinite(x.paintMs)&&x.paintMs>=0&&x.active&&x.overflow<=5),perf08);
+ // Phase 08: exercise the REAL index.html startup gate rather than timing only
+ // the prebuilt app.*.html used by the visual suite. A first visit populates the
+ // validated release cache; a reload measures the warm cached path.
+ const appReady='typeof window.switchView==="function"&&!!window.OmniNav02&&!!window.OmniToday03&&!!document.getElementById("omnios-unified-design-2026")';
+ const loaderURL=new URL('index.html',url).href;
+ async function loaderMetric(kind){
+   await poll(()=>evaluate(appReady),75000);
+   const info=await evaluate('(async()=>{const nav=performance.getEntriesByType("navigation")[0],resources=performance.getEntriesByType("resource"),pointer=await (async()=>{try{const c=await caches.open("secondbrain-releases-v1");return !!(await c.match(new URL("./__active_release__",location.href).href))}catch{return false}})();return {readyMs:Math.round(performance.now()),domContentLoadedMs:nav?Math.round(nav.domContentLoadedEventEnd):null,resourceCount:resources.length,releaseRequests:resources.filter(e=>/\\/release\\.json(?:$|\\?)/.test(e.name)).length,appRequests:resources.filter(e=>/\\/app\\.[a-f0-9]{20}\\.html(?:$|\\?)/.test(e.name)).length,cachePointer: pointer,app:!!window.OmniModules07&&!!window.OmniLife06&&!!window.OmniCalendar05,activeView:document.querySelector(".view.active[id^=view-]")?.id||"",overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+   return {kind,...info};
+ }
+ await setViewport(390,844);
+ const startedCold=await send('Page.navigate',{url:loaderURL});
+ if(startedCold.result?.errorText)throw Error('Cold index loader navigation: '+startedCold.result.errorText);
+ const cold08=await loaderMetric('cold');
+ const startedWarm=await send('Page.reload',{ignoreCache:false});
+ if(startedWarm.result?.errorText)throw Error('Warm index loader reload: '+startedWarm.result.errorText);
+ const warm08=await loaderMetric('warm');
+ report.startup08={cold:cold08,warm:warm08};
+ check('Phase 08 real index loader cold/warm startup preserves validated cache and routes',
+   [cold08,warm08].every(x=>Number.isFinite(x.readyMs)&&x.readyMs>=0&&x.cachePointer&&x.app&&x.activeView.startsWith('view-')&&x.overflow<=5),report.startup08);
+ // Timings are diagnostic, not a brittle CI budget. No claim of a speedup
+ // without a comparable user-device baseline and repeated samples.
  report.browserExceptions=browserErrors.slice(0,30);
  check('No uncaught browser runtime exceptions',browserErrors.length===0,{errors:report.browserExceptions});
 }catch(e){report.errors.push('Browser QA error: '+String(e?.message||e));report.browserExceptions=browserErrors.slice(-20)}

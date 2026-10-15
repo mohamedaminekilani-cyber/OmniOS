@@ -6,7 +6,8 @@ import vm from 'node:vm';
 const js=fs.readFileSync('js/omnios-today-phase03.js','utf8');
 
 test('Phase 08 refreshes Today decorations only for Today/Dashboard routes and real rerenders',()=>{
-  const microtasks=[],frames=[],delayed=[],listeners={},observed=[],routed=[];
+  const microtasks=[],frames=[],delayed=[],listeners={},observed=[],routed=[],windowEvents={};
+  let active='today';
   const today={
     classList:{toggle(){today.toggles=(today.toggles||0)+1}},
     querySelector(selector){return selector==='#ux03-today-controls'?{previousElementSibling:null}:null}
@@ -15,11 +16,11 @@ test('Phase 08 refreshes Today decorations only for Today/Dashboard routes and r
   const document={
     readyState:'loading',
     addEventListener(name,fn){listeners[name]=fn},
-    querySelector(selector){return {'#view-today':today,'#view-dashboard':dashboard}[selector]||null}
+    querySelector(selector){return selector==='.view.active[id^="view-"]'?{id:'view-'+active}:({'#view-today':today,'#view-dashboard':dashboard}[selector]||null)}
   };
   const window={
-    switchView(id){routed.push(id);return id},
-    addEventListener(){}
+    switchView(id){routed.push(id);active=id;return id},
+    addEventListener(name,fn){windowEvents[name]=fn}
   };
   class Observer {
     constructor(fn){this.fn=fn}
@@ -44,6 +45,8 @@ test('Phase 08 refreshes Today decorations only for Today/Dashboard routes and r
   assert.equal(delayed.length,0);
   assert.equal(today.toggles,initial);
   assert.deepEqual(routed,['notes','diet','budget','workout','life-hub','master-calendar']);
+  windowEvents.hashchange();
+  assert.equal(microtasks.length,0,'hash changes for other views must be ignored');
   window.switchView('today');
   assert.equal(microtasks.length,1);
   assert.equal(frames.length,1);
@@ -56,6 +59,7 @@ test('Phase 08 refreshes Today decorations only for Today/Dashboard routes and r
   const before=today.toggles;
   flush();assert.equal(today.toggles,before+1);
   // The original legacy renderer may replace a root without switchView.
+  windowEvents.hashchange(); // active Dashboard hash deep link may refresh
   observed[0].observer.fn();
   flush();
   assert.equal(today.toggles,before+2);

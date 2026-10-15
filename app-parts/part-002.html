@@ -14,10 +14,10 @@ function renderGallery(entries, container) {
     container.innerHTML = `
         <div class="gallery-grid">
             ${entries.map(e => `
-                <div class="gallery-card priority-${e.importance === 'high' ? 'high' : e.importance === 'medium' ? 'med' : 'low'}" data-entry-id="${e.id}">
+                <div class="gallery-card priority-${e.importance === 'high' ? 'high' : e.importance === 'medium' ? 'med' : 'low'}" data-entry-id="${escapeHtml(String(e.id))}">
                     <div class="gallery-card-title">${escapeHtml(e.title)}</div>
-                    <div class="gallery-card-cat">${catLabels[e.category] || '💼 Work'}</div>
-                    ${e.notes ? `<div style="font-size:0.76rem; color:var(--text-secondary); margin-bottom:6px;">${e.notes.substring(0,70)}${e.notes.length > 70 ? '...' : ''}</div>` : ''}
+                    <div class="gallery-card-cat">${escapeHtml(catLabels[e.category] || '💼 Work')}</div>
+                    ${e.notes ? `<div style="font-size:0.76rem; color:var(--text-secondary); margin-bottom:6px;">${escapeHtml(String(e.notes).substring(0,70))}${e.notes.length > 70 ? '...' : ''}</div>` : ''}
                     <div class="gallery-card-footer">
                         <span class="tag ${e.importance === 'high' ? 'tag-high' : e.importance === 'medium' ? 'tag-med' : 'tag-low'}">${impLabels[e.importance] || 'Med'}</span>
                         <span class="tag ${e.urgency === 'urgent' ? 'tag-urgent' : 'tag-not-urgent'}">${e.urgency === 'urgent' ? 'Urgent' : 'Not Urgent'}</span>
@@ -2404,7 +2404,23 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalon
   function dueLabel(k){const d=daysUntil(k);if(d===null)return '';if(d<0)return `Overdue ${Math.abs(d)}d`;if(d===0)return 'Due today';if(d===1)return 'Due tomorrow';return `Due in ${d}d`;}
   function addDays(k,n){const d=dayStart(k);d.setDate(d.getDate()+n);return localDateString(d);}
   function advanceDate(k,freq){const d=dayStart(k);if(freq==='daily')d.setDate(d.getDate()+1);else if(freq==='weekly')d.setDate(d.getDate()+7);else if(freq==='quarterly')d.setMonth(d.getMonth()+3);else if(freq==='yearly')d.setFullYear(d.getFullYear()+1);else d.setMonth(d.getMonth()+1);return localDateString(d);}
-  function imgTags(images){return (images||[]).map(src=>`<img class="image-thumb" src="${src}" alt="Attachment" data-image-view="${src}">`).join('');}
+  function safeAttachmentURL(src){
+    const value=String(src??'').trim();
+    if(!value)return '';
+    if(/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(value))return value;
+    try{
+      const url=new URL(value,location.href);
+      if(url.protocol==='https:'||(url.protocol==='http:'&&url.origin===location.origin)||(url.protocol==='blob:'&&url.origin===location.origin))return url.href;
+    }catch(_){}
+    return '';
+  }
+  function imageAttrEscape(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+  function imgTags(images){return (images||[]).map(src=>{
+    const safe=safeAttachmentURL(src);
+    if(!safe)return '';
+    const attr=imageAttrEscape(safe);
+    return `<img class="image-thumb" src="${attr}" alt="Attachment" data-image-view="${attr}">`;
+  }).join('');}
   function compressImage(file){return new Promise((resolve,reject)=>{if(!file||!file.type.startsWith('image/'))return reject(new Error('Not an image'));const r=new FileReader();r.onload=e=>{const im=new Image();im.onload=()=>{const max=1100,s=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*s));c.height=Math.max(1,Math.round(im.height*s));c.getContext('2d').drawImage(im,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.72));};im.onerror=reject;im.src=e.target.result;};r.onerror=reject;r.readAsDataURL(file);});}
   async function handleImageFiles(input,target){const files=[...input.files].filter(f=>f.type.startsWith('image/')).slice(0,6);for(const f of files){try{target.images=target.images||[];target.images.push(await compressImage(f));}catch(e){}}input.value='';renderRelevantAfterChange();}
   function renderRelevantAfterChange(){saveState();}
@@ -2443,7 +2459,7 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalon
     panel.classList.add('open');back.classList.add('active');content.querySelector('#ext-edit').onclick=()=>{closeInspector();editFn();};content.querySelector('#ext-delete').onclick=()=>deleteFn();content.querySelector('#ext-pay')?.addEventListener('click',()=>{closeInspector();kind==='bill'?markBillPaid(id):markPaymentPlanPaid(id)});content.querySelector('#ext-contrib')?.addEventListener('click',()=>{closeInspector();addGoalContribution(id)});content.querySelectorAll('[data-image-view]').forEach(im=>im.onclick=()=>openImageViewer(im.dataset.imageView));
       }
     window.openUniversalExtensionItem=quickSidebar;
-  window.openImageViewer=function(src){const ov=document.createElement('div');ov.className='modal-overlay active';ov.style.zIndex='1300';ov.innerHTML=`<div class="modal" style="max-width:900px;text-align:center"><div class="modal-header"><h3 class="modal-title">Attachment</h3><button type="button" class="icon-btn" aria-label="Close">✕</button></div><img src="${src}" style="max-width:100%;max-height:75vh;border-radius:10px;border:1px solid var(--border-color);object-fit:contain"><div style="margin-top:12px"><button type="button" class="btn">Close</button></div></div>`;ov.querySelectorAll('button').forEach(b=>b.onclick=()=>ov.remove());document.body.appendChild(ov);}
+  window.openImageViewer=function(src){const safe=safeAttachmentURL(src);if(!safe)return;const ov=document.createElement('div');ov.className='modal-overlay active';ov.style.zIndex='1300';ov.innerHTML='<div class="modal" style="max-width:900px;text-align:center"><div class="modal-header"><h3 class="modal-title">Attachment</h3><button type="button" class="icon-btn" aria-label="Close">✕</button></div><img alt="Attachment" style="max-width:100%;max-height:75vh;border-radius:10px;border:1px solid var(--border-color);object-fit:contain"><div style="margin-top:12px"><button type="button" class="btn">Close</button></div></div>';ov.querySelector('img').src=safe;ov.querySelectorAll('button').forEach(b=>b.onclick=()=>ov.remove());document.body.appendChild(ov);}
 
   function renderFinanceExtension(){
     ensure();
@@ -2606,13 +2622,27 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalon
   function adultReference(){const p=state.settings.profile||{},age=Number(p.age),w=Number(p.weightKg),h=Number(p.heightCm);if(!age||age<18||!w||!h||!p.sex)return null;const bmr=p.sex==='male'?10*w+6.25*h-5*age+5:10*w+6.25*h-5*age-161;const mult={sedentary:1.2,light:1.375,moderate:1.55,active:1.725,veryActive:1.9}[p.activity]||1.55;return{bmr,tdee:bmr*mult}};
   function conditionForDay(k){const x=dayData(k),ref=adultReference();if(!x.logged)return ['neutral','Not logged'];if(!ref)return x.logged>=daySlots().length?['complete','Logged'] : ['neutral','Partially logged'];const ratio=x.totals.calories/ref.tdee; if(ratio>1.25)return['high','Above reference'];if(ratio>=.75)return['reference','Near reference'];return['neutral','Below reference'];}
   function imgDataURL(files){return Promise.all([...files].filter(f=>f.type.startsWith('image/')).slice(0,6).map(f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{const im=new Image();im.onload=()=>{const max=1000,s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,im.width*s);c.height=Math.max(1,im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.72))};im.onerror=rej;im.src=e.target.result};r.onerror=rej;r.readAsDataURL(f)})))}
-  function imagesHtml(images){return(images||[]).map(src=>`<img src="${src}" class="diet-image-thumb" data-diet-image="${src}" alt="Food image">`).join('')}
+  function safeDietImageURL(src){
+    const value=String(src??'').trim();
+    if(!value)return '';
+    if(/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(value))return value;
+    try{const u=new URL(value,location.href);if(u.protocol==='https:'||(u.protocol==='http:'&&u.origin===location.origin)||(u.protocol==='blob:'&&u.origin===location.origin))return u.href}catch(_){}
+    return '';
+  }
+  function dietImageAttr(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+  function imagesHtml(images){return(images||[]).map(src=>{const safe=safeDietImageURL(src);if(!safe)return '';const attr=dietImageAttr(safe);
+    return `<img src="${attr}" class="diet-image-thumb" data-diet-image="${attr}" alt="Food image">`;
+  }).join('')}
   function showDietInspector(title,html,buttons=''){
     const p=document.getElementById('inspector-panel'),b=document.getElementById('inspector-backdrop'),c=document.getElementById('inspector-content');if(!p||!b||!c)return;
     c.innerHTML=`<div class="calendar-item-preview"><div class="calendar-preview-icon">🥗</div><div class="calendar-preview-type">Diet</div><h2 class="calendar-preview-title">${esc(title)}</h2>${html}<div class="calendar-preview-actions">${buttons}<button type="button" class="btn" id="diet-inspector-close">Close</button></div></div>`;p.classList.add('open');b.classList.add('active');document.getElementById('diet-inspector-close').onclick=closeInspector;
   }
   function openDietImage(src){
-    const p=document.createElement('div');p.className='modal-overlay active';p.innerHTML=`<div class="modal" style="max-width:860px;text-align:center"><div class="modal-header"><h3 class="modal-title">Image</h3><button class="icon-btn" type="button">✕</button></div><img src="${src}" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:10px"><div class="modal-footer"><button class="btn" type="button">Close</button></div></div>`;document.body.appendChild(p);p.querySelectorAll('button').forEach(b=>b.onclick=()=>p.remove());
+    const safe=safeDietImageURL(src);if(!safe)return;
+    const p=document.createElement('div');p.className='modal-overlay active';
+    p.innerHTML='<div class="modal" style="max-width:860px;text-align:center"><div class="modal-header"><h3 class="modal-title">Image</h3><button class="icon-btn" type="button">✕</button></div><img alt="Food image" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:10px"><div class="modal-footer"><button class="btn" type="button">Close</button></div></div>';
+    p.querySelector('img').src=safe;
+    document.body.appendChild(p);p.querySelectorAll('button').forEach(b=>b.onclick=()=>p.remove());
   }
   document.addEventListener('click',e=>{const x=e.target.closest('[data-diet-image]');if(x){e.stopPropagation();openDietImage(x.dataset.dietImage)}});
 

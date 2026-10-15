@@ -334,6 +334,15 @@ try{
  const interactions07=await evaluate('(()=>{const out=[];const tests=[["workout","#workout-start-btn"],["diet","#nut-log-now"],["budget","#v38-add-txn"],["habits",".omx-habits-head .btn-primary"],["notes","#org-note-new"]];for(const [view,button] of tests){window.switchView(view);const root=document.getElementById("view-"+view),target=root?.querySelector(button);if(!target){out.push({view,found:false});continue}const before=[...document.querySelectorAll(".modal-overlay.active,#nut-entry-modal")].length;target.click();const after=[...document.querySelectorAll(".modal-overlay.active,#nut-entry-modal")].length;out.push({view,found:true,opened:after>before,before,after});document.querySelectorAll(".modal-overlay.active").forEach(e=>e.classList.remove("active"));const nut=document.getElementById("nut-entry-modal");if(nut)nut.remove();}return out})()');
  check('Phase 07 original modal actions open for Workout, Nutrition, Finance, Habits and Notes',
    interactions07.length===5&&interactions07.every(x=>x.found&&x.opened),interactions07);
+
+ // Phase 08 telemetry: record real-loader startup and route-to-painted-frame timing.
+ // Informational performance samples are deliberately not rigid time budgets:
+ // CI host variability must not create false positives. Functional checks still gate.
+ await setViewport(390,844);
+ const perf08=await evaluate('(async()=>{const nav=performance.getEntriesByType("navigation")[0],samples=[];for(const view of ["today","life-hub","workout","diet","budget","notes"]){const t=performance.now();window.switchView(view);await new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));const root=document.getElementById("view-"+view);samples.push({view,paintMs:Math.round((performance.now()-t)*10)/10,active:!!root?.classList.contains("active"),overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth})}return {navigation:{domContentLoadedMs:nav?Math.round(nav.domContentLoadedEventEnd):null,loadEventMs:nav?Math.round(nav.loadEventEnd):null,transferBytes:nav?.transferSize??null},samples,heapBytes:performance.memory?.usedJSHeapSize??null,visibility:document.visibilityState}})()');
+ report.performance08=perf08;
+ check('Phase 08 collects painted navigation timings with original routes',
+   perf08?.samples?.length===6&&perf08.samples.every(x=>Number.isFinite(x.paintMs)&&x.paintMs>=0&&x.active&&x.overflow<=5),perf08);
  report.browserExceptions=browserErrors.slice(0,30);
  check('No uncaught browser runtime exceptions',browserErrors.length===0,{errors:report.browserExceptions});
 }catch(e){report.errors.push('Browser QA error: '+String(e?.message||e));report.browserExceptions=browserErrors.slice(-20)}

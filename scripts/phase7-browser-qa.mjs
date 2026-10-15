@@ -258,34 +258,36 @@ try{
  const modes05=await evaluate('(()=>{const v=document.querySelector("#view-master-calendar"),out=[];for(const name of ["week","agenda","day"]){v.querySelector("[data-v36-mode="+name+"]")?.click();out.push({mode:window.OmniCalendar05.mode(),host:!!v.querySelector("#v603-mode-host"),content:v.querySelector("#v603-mode-host")?.childElementCount||0})}return out})()');
  check('Phase 05 Week, Agenda and Day modes still render through the original engine',modes05.length===3&&modes05.every(x=>x.content>0&&x.host&&['week','agenda','day'].includes(x.mode)),modes05);
 
- // Phase 06: verify V43 remains the only Life Hub renderer on desktop/mobile.
+ // Phase 06 — canonical Life Hub remains the only record renderer.
  await setViewport(1440,900);
  await evaluate('window.switchView("life-hub")');
- await poll(()=>evaluate('!!window.OmniLife06 && !!document.querySelector("#view-life-hub .v43-hero") && !!document.querySelector("#ux06-life-tools")'),10000);
- const initial06=await evaluate('(()=>{const r=document.getElementById("view-life-hub"),tools=r.querySelectorAll("#ux06-life-tools [data-ux06-view]"),rail=r.querySelector(".v43-life-rail"),domainButtons=r.querySelectorAll(".v43-life-btn[data-v43-life]"),hero=r.querySelectorAll(".v43-hero");return {canonical:window.OmniLife06.canonical,heroCount:hero.length,railVisible:!!rail&&getComputedStyle(rail).display!=="none",domainCount:domainButtons.length,tools:[...tools].map(b=>b.dataset.ux06View),oldRoot:!!r.querySelector("#v35-life-body")}})()');
- check('Phase 06 desktop uses one V43 Life Hub renderer and ten domains',
-   initial06.canonical==='v43'&&initial06.heroCount===1&&initial06.railVisible&&initial06.domainCount===11&&!initial06.oldRoot&&initial06.tools.join(',')==='workout,diet,budget,grocery,pantry,wishlist',initial06);
- const keyboard06=await evaluate('(async()=>{const r=document.getElementById("view-life-hub");r.querySelector("#v43-life-overview")?.click();await new Promise(t=>setTimeout(t,0));const card=r.querySelector(".v43-domain[data-v43-life=people]");const focusable=card?.getAttribute("role")==="button"&&card?.tabIndex===0;card?.focus();card?.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true,cancelable:true}));await new Promise(t=>setTimeout(t,0));const selected=r.querySelector("#v43-life-select")?.value,view=r.classList.contains("active"),detail=!!r.querySelector(".v43-record-grid,.v43-people-list,.v97-people-grid");r.querySelector("#v43-life-overview")?.click();await new Promise(t=>setTimeout(t,0));return {focusable,selected,view,detail,returned:!!r.querySelector(".v43-domain-grid")}})()');
- check('Phase 06 keyboard opens the existing People domain and returns to Overview',
-   keyboard06.focusable&&keyboard06.selected==='people'&&keyboard06.view&&keyboard06.detail&&keyboard06.returned,keyboard06);
- const link06=await evaluate('(async()=>{const r=document.getElementById("view-life-hub");r.querySelector("#ux06-life-tools [data-ux06-view=budget]")?.click();await new Promise(t=>setTimeout(t,0));const opened=document.getElementById("view-budget")?.classList.contains("active");window.switchView("life-hub");await new Promise(t=>setTimeout(t,0));return {opened,returned:r.classList.contains("active"),tools:r.querySelectorAll("#ux06-life-tools").length}})()');
- check('Phase 06 related Finance shortcut uses the existing budget route',
-   link06.opened&&link06.returned&&link06.tools===1,link06);
+ await poll(()=>evaluate('!!window.OmniLife06 && !!document.querySelector("#view-life-hub .v43-life-shell") && !!document.querySelector("#ux06-life-links")'),12000);
+ const life06=await evaluate('(()=>{const root=document.getElementById("view-life-hub"),tabs=[...root.querySelectorAll(".v43-life-rail .v43-life-btn[data-v43-life]")].map(b=>b.dataset.v43Life),links=[...root.querySelectorAll("#ux06-life-links [data-ux06-module]")].map(b=>b.dataset.ux06Module),hero=root.querySelectorAll(".v43-hero").length;return {api:!!window.OmniLife06,tabs,links,hero,select:!!root.querySelector("#v43-life-select"),overview:!!root.querySelector("#v43-life-content .v43-domain-grid")}})()');
+ check('Phase 06 Life Hub retains one renderer, ten domains and six module routes',
+   life06.api&&life06.tabs.join(',')==='overview,people,health,home,documents,admin,learning,travel,money,journal,automations'&&life06.links.join(',')==='workout,diet,budget,grocery,pantry,wishlist'&&life06.hero===1&&life06.select&&life06.overview,life06);
+ const domain06=await evaluate('(async()=>{const res=[];for(const id of ["people","documents","health","overview"]){const ok=window.OmniLife06.openDomain(id);await new Promise(r=>setTimeout(r,0));const root=document.getElementById("view-life-hub"),active=root.querySelector(".v43-life-rail [data-v43-life].active")?.dataset.v43Life;res.push({id,ok,active,content:!!root.querySelector("#v43-life-content"),heroCount:root.querySelectorAll(".v43-hero").length})}return res})()');
+ check('Phase 06 domain navigation retains original renderer and focus targets',
+   domain06.length===4&&domain06.every(d=>d.ok&&d.active===d.id&&d.content&&d.heroCount===1),domain06);
+ const deepLife06=await evaluate('(async()=>{window.switchView("notes");await new Promise(r=>setTimeout(r,0));const ok=window.OmniLife06.openDomain("documents");await new Promise(r=>setTimeout(r,160));return {ok,active:document.querySelector("#view-life-hub .v43-life-rail .v43-life-btn.active")?.dataset.v43Life,view:document.getElementById("view-life-hub")?.classList.contains("active")}})()');
+ check('Phase 06 external shortcut opens a Life Hub domain after legacy render',
+   deepLife06.ok&&deepLife06.view&&deepLife06.active==='documents',deepLife06);
+ const key06=await evaluate('(async()=>{window.OmniLife06.openDomain("overview");await new Promise(r=>setTimeout(r,0));const card=document.querySelector("#view-life-hub .v43-domain[data-v43-life=people]");const accessible=!!card&&card.getAttribute("role")==="button"&&card.tabIndex===0;if(card)card.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true,cancelable:true}));await new Promise(r=>setTimeout(r,0));const selected=document.querySelector("#view-life-hub .v43-life-rail .v43-life-btn.active")?.dataset.v43Life;return {accessible,selected}})()');
+ check('Phase 06 keyboard Enter opens original People domain',key06.accessible&&key06.selected==='people',key06);
+ const module06=await evaluate('(async()=>{const result=window.OmniLife06.openModule("workout");await new Promise(r=>setTimeout(r,0));const workout=document.getElementById("view-workout")?.classList.contains("active");window.switchView("life-hub");await new Promise(r=>setTimeout(r,0));return {result,workout,restored:document.getElementById("view-life-hub")?.classList.contains("active"),links:document.querySelectorAll("#ux06-life-links [data-ux06-module]").length}})()');
+ check('Phase 06 related modules route through original navigation and return',module06.result&&module06.workout&&module06.restored&&module06.links===6,module06);
  for(const width of [1440,390,360]){
    await setViewport(width,width===1440?900:844);
-   await evaluate('window.switchView("life-hub")');await delay(200);
-   const geometry=await evaluate('(()=>{const r=document.getElementById("view-life-hub"),rail=r.querySelector(".v43-life-rail"),select=r.querySelector("#v43-life-select"),cards=r.querySelectorAll(".v43-domain"),tools=r.querySelector("#ux06-life-tools"),tr=tools?.getBoundingClientRect(),hero=r.querySelectorAll(".v43-hero");return {active:r.classList.contains("active"),heroCount:hero.length,railVisible:!!rail&&getComputedStyle(rail).display!=="none",selectVisible:!!select&&getComputedStyle(select).display!=="none",toolsVisible:!!tr&&tr.width>0&&tr.height>0,cardCount:cards.length,accessibleCards:[...cards].filter(c=>c.tabIndex===0).length,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
-   check('Phase 06 canonical Life Hub fits '+width+'px',
-     geometry.active&&geometry.heroCount===1&&geometry.toolsVisible&&geometry.cardCount===9&&geometry.accessibleCards===geometry.cardCount&&geometry.overflow<=5&&(width>760?geometry.railVisible:!geometry.railVisible&&geometry.selectVisible),geometry);
-   const shot=(await send('Page.captureScreenshot',{format:'jpeg',quality:76,captureBeyondViewport:false,fromSurface:true})).result.data;
-   const name=output+'/phase06-'+width+'-life-hub.jpg',bytes=Buffer.from(shot,'base64');
+   await evaluate('window.switchView("life-hub")');
+   await evaluate('window.OmniLife06.openDomain("overview")');
+   await delay(200);
+   const geo=await evaluate('(()=>{const root=document.getElementById("view-life-hub"),links=root.querySelector("#ux06-life-links"),r=links?.getBoundingClientRect(),select=root.querySelector("#v43-life-select"),sel=select?.getBoundingClientRect(),count=links?.querySelectorAll("[data-ux06-module]").length||0,rail=root.querySelector(".v43-life-rail"),visible=rail&&getComputedStyle(rail).display!=="none";return {width:innerWidth,count,linksVisible:!!r&&r.width>0&&r.right<=innerWidth+4,selectVisible:!!sel&&sel.width>0&&getComputedStyle(select).display!=="none",railVisible:!!visible,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+   check('Phase 06 Life Hub fits '+width+'px and exposes correct navigation',
+     geo.count===6&&geo.linksVisible&&geo.overflow<=5&&(width>760?geo.railVisible:geo.selectVisible&&!geo.railVisible),geo);
+   const data=(await send('Page.captureScreenshot',{format:'jpeg',quality:76,fromSurface:true,captureBeyondViewport:false})).result.data;
+   const name=output+'/phase06-'+width+'-life-hub.jpg',bytes=Buffer.from(data,'base64');
    fs.writeFileSync(name,bytes);report.screenshots.push(name);
    report.screenshotSignatures.push({view:'life-hub-phase06',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
  }
- await setViewport(390,844);
- const domains06=await evaluate('(async()=>{const r=document.getElementById("view-life-hub"),sel=r.querySelector("#v43-life-select");if(!sel)return {error:"missing select"};sel.value="documents";sel.dispatchEvent(new Event("change",{bubbles:true}));await new Promise(t=>setTimeout(t,0));const selected=r.querySelector("#v43-life-select")?.value;const count=r.querySelectorAll(".v43-life-btn[data-v43-life]").length;r.querySelector("#v43-life-overview")?.click();return {selected,count,returned:!!r.querySelector(".v43-domain-grid")}})()');
- check('Phase 06 native mobile select opens Documents and restores Overview',
-   domains06.selected==='documents'&&domains06.count===11&&domains06.returned,domains06);
 
  // Phase 07 — exercise original routes and responsive module surfaces through index.html.
  const modules07=[

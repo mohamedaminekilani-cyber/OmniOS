@@ -109,22 +109,232 @@ try{
  const loaderUrl='http://127.0.0.1:'+server.address().port+'/index.html';
  const loaderNav=(await send('Page.navigate',{url:loaderUrl})).result;
  if(loaderNav.errorText)throw Error('Loader navigation '+loaderNav.errorText);
- await poll(()=>evaluate('typeof window.switchView==="function" && !!document.querySelector("#view-dashboard") && !!document.getElementById("omnios-ux-foundation-styles")'),60000);
+ await poll(()=>evaluate('(()=>{const l=document.getElementById("omnios-ux-foundation-styles");return typeof window.switchView==="function" && !!document.querySelector("#view-dashboard") && !!l && [...document.styleSheets].some(s=>s.ownerNode===l) && getComputedStyle(document.documentElement).getPropertyValue("--ux-space-4").trim()==="16px"})()'),60000);
+ // Do not record visual success while the startup screen still occludes content.
+ await poll(()=>evaluate('!document.getElementById("omnios-boot-screen") && !document.documentElement.classList.contains("omnios-startup-gate")'),15000);
+ await delay(900); // allow deferred first-run welcome UI to appear
+ const welcomeOnLoader=await evaluate('!!document.getElementById("welcome63")');
+ if(welcomeOnLoader){
+   const dismissed=await evaluate('(()=>{const b=document.querySelector("#welcome63 [data-w63close]");if(!b)return false;b.click();return true})()');
+   check('Phase 01 real-loader welcome closes through its real button',dismissed);
+   await poll(()=>evaluate('!document.getElementById("welcome63")'),8000);
+ }
+ check('Phase 01 loader has no remaining blocking startup overlay',
+   await evaluate('!document.getElementById("omnios-boot-screen") && !document.getElementById("welcome63") && !document.documentElement.classList.contains("omnios-startup-gate")'));
  const uxLoaded=await evaluate('(()=>{const link=document.getElementById("omnios-ux-foundation-styles");const style=[...document.styleSheets].find(s=>s.ownerNode===link);return {link:!!link,loaded:!!style,href:link?.href||"",space:getComputedStyle(document.documentElement).getPropertyValue("--ux-space-4").trim()}})()');
  check('Phase 01 design system survives real loader and is parsed',uxLoaded.link&&uxLoaded.loaded&&uxLoaded.space==='16px',uxLoaded);
  for(const width of [1440,390,360]){
    await setViewport(width,width<500?844:900);
    await evaluate('window.switchView("today")');await delay(450);
-   const geom=await evaluate('(()=>{const doc=document.documentElement,view=document.querySelector(".view.active"),title=document.querySelector(".topbar-title"),link=document.getElementById("omnios-ux-foundation-styles");return {active:!!view,link:!!link,overflow:doc.scrollWidth-doc.clientWidth,title:title?.innerText||"",width:innerWidth}})()');
-   check('Phase 01 loader Today fits '+width+'px',geom.active&&geom.link&&geom.overflow<=5,geom);
+   const geom=await evaluate('(()=>{const doc=document.documentElement,view=document.querySelector(".view.active"),title=document.querySelector(".topbar-title"),link=document.getElementById("omnios-ux-foundation-styles");return {active:!!view?.classList.contains("active"),visible:!!view?.getBoundingClientRect().height,link:!!link,overflow:doc.scrollWidth-doc.clientWidth,title:title?.innerText||"",width:innerWidth}})()');
+   check('Phase 01 loader Today fits '+width+'px',geom.active&&geom.visible&&geom.link&&geom.overflow<=5,geom);
+   check('Phase 01 '+width+'px snapshot is free of startup and welcome overlays',
+     await evaluate('!document.getElementById("omnios-boot-screen") && !document.getElementById("welcome63") && !document.documentElement.classList.contains("omnios-startup-gate")'));
+
+
+   if(width===360){
+     const mobileGeometry=await evaluate('(()=>{const anchor=document.querySelector("#view-today .omr-priority-panel .omr-text-link");const fab=document.getElementById("v55-capture-fab"),panel=document.getElementById("v58-attention");if(!anchor||!fab||!panel)return {found:false};const scroller=document.querySelector(".view-container"),previousScroll=scroller?.scrollTop||0,previousPageScroll=document.documentElement.scrollTop;anchor.scrollIntoView({block:"center",inline:"nearest"});const r=anchor.getBoundingClientRect(),f=fab.getBoundingClientRect();const fabVisible=getComputedStyle(fab).display!=="none"&&getComputedStyle(fab).visibility!=="hidden";const overlap=fabVisible&&r.left<f.right&&r.right>f.left&&r.top<f.bottom&&r.bottom>f.top;const buttons=[panel.querySelector("#v58-attention-open"),panel.querySelector("#v58-automation-open")];const bounds=buttons.map(e=>e?.getBoundingClientRect()).filter(Boolean);const sameRow=bounds.length===2&&Math.abs(bounds[0].top-bounds[1].top)<=3&&bounds.every(b=>b.width>70);const sample=document.elementFromPoint(Math.min(innerWidth-6,r.right-7),r.top+r.height/2);const linkClickable=sample===anchor||anchor.contains(sample);if(scroller)scroller.scrollTop=previousScroll;document.documentElement.scrollTop=previousPageScroll;return {found:true,fabVisible,overlap,sameRow,linkClickable,linkRect:{x:r.x,y:r.y,w:r.width,h:r.height},fabRect:{x:f.x,y:f.y,w:f.width,h:f.height},buttonRects:bounds.map(b=>({x:b.x,y:b.y,w:b.width,h:b.height})),hitTag:sample?.tagName,hitId:sample?.id,hitClass:sample?.className}})()');
+     report.phase01MobileOverlap=mobileGeometry;
+     check('Phase 01 360px Today hides duplicate capture FAB and exposes priority link',mobileGeometry.found&&!mobileGeometry.fabVisible&&!mobileGeometry.overlap&&mobileGeometry.linkClickable,mobileGeometry);
+     check('Phase 01 360px attention actions share a readable row',mobileGeometry.found&&mobileGeometry.sameRow,mobileGeometry);
+   }
    const shot=(await send('Page.captureScreenshot',{format:'jpeg',quality:75,captureBeyondViewport:false,fromSurface:true})).result.data;
    const name=output+'/phase01-loader-'+width+'-today.jpg';
    const bytes=Buffer.from(shot,'base64');fs.writeFileSync(name,bytes);report.screenshots.push(name);
    report.screenshotSignatures.push({view:'today-loader',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
  }
+
+ // Phase 02 tests MUST run after navigating through the actual index.html loader,
+ // because the navigation assets are an opt-in overlay beyond the hashed app HTML.
+ await setViewport(1440,900);
+ await delay(650);
+ const nav02Startup=await evaluate('(()=>{const script=document.querySelector("script[src*=omnios-navigation-phase02]"),style=document.getElementById("omnios-ux-phase02-styles"),nav=document.querySelector(".sidebar .nav-menu");return {script:!!script,scriptSrc:script?.src||"",style:!!style,api:!!window.OmniNav02,sidebar:!!nav,groupCount:document.querySelectorAll(".sidebar .ux02-side-group").length,sidebarLinks:nav?.querySelectorAll("[data-view]").length||0,readyState:document.readyState,boot:document.documentElement.dataset.omniosBoot}})()');
+ report.phase02Startup=nav02Startup;
+ check('Phase 02 script and navigation mounted in real app',
+   nav02Startup.script&&nav02Startup.style&&nav02Startup.api&&nav02Startup.sidebar&&nav02Startup.groupCount===4,nav02Startup);
+
+ const desktopNav02=await evaluate('(()=>{const groups=[...document.querySelectorAll(".sidebar .ux02-side-group")].map(e=>e.dataset.ux02Group);const expanded=[...document.querySelectorAll(".sidebar .ux02-side-toggle[aria-expanded=true]")].map(e=>e.dataset.ux02Toggle);const links=[...document.querySelectorAll(".sidebar .nav-item[data-view]")].map(e=>e.dataset.view);const unique=new Set(links);const s=document.getElementById("omnios-ux-phase02-styles");return {groups,expanded,links:links.length,unique:unique.size,styleLoaded:!!s&&[...document.styleSheets].some(x=>x.ownerNode===s)}})()');
+ check('Phase 02 desktop preserves routes and displays four navigation groups',
+   desktopNav02.groups.join(',')==='today,plan,life,library'&&desktopNav02.expanded.join(',')==='today'&&desktopNav02.links>=30&&desktopNav02.unique===desktopNav02.links&&desktopNav02.styleLoaded,desktopNav02);
+ const libraryRoute02=await evaluate('(async()=>{window.switchView("bible");await new Promise(r=>setTimeout(r,0));const active=document.getElementById("view-bible")?.classList.contains("active"),open=document.querySelector("[data-ux02-group=library] .ux02-side-links")?.hidden===false;window.switchView("today");return {active,open}})()');
+ check('Phase 02 uses original Bible route and opens Library group',libraryRoute02.active&&libraryRoute02.open,libraryRoute02);
+ await setViewport(390,844);await delay(350);
+ const dock02=await evaluate('(()=>{const dock=document.getElementById("ux02-mobile-nav"),old=document.querySelector(".mobile-nav.omr-mobile-dock");return {labels:[...(dock?.querySelectorAll(".ux02-tab-label")||[])].map(x=>x.textContent),dockVisible:!!dock&&getComputedStyle(dock).display!=="none",legacyHidden:!!old&&getComputedStyle(old).display==="none",fabHidden:getComputedStyle(document.getElementById("v55-capture-fab")).display==="none",topAddHidden:getComputedStyle(document.getElementById("v35-mobile-add")).display==="none",overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+ check('Phase 02 mobile dock has four sections and a capture slot',
+   dock02.labels.join(',')==='Today,Plan,Life,Library,Add'&&dock02.dockVisible&&dock02.legacyHidden&&dock02.fabHidden&&dock02.topAddHidden&&dock02.overflow<=5,dock02);
+ const today02=await evaluate('(()=>{document.querySelector("#ux02-mobile-nav [data-ux02-group=today]").click();const d=document.getElementById("ux02-nav-drawer"),pages=[...d.querySelectorAll("[data-ux02-view]")].map(x=>x.dataset.ux02View);const open=!d.hidden;d.querySelector(".ux02-drawer-close")?.click();return {open,pages,closed:d.hidden}})()');
+ check('Phase 02 Today group exposes Dashboard and Inbox on mobile',
+   today02.open&&today02.closed&&['today','dashboard','inbox'].every(x=>today02.pages.includes(x)),today02);
+ const plan02=await evaluate('(async()=>{document.querySelector("#ux02-mobile-nav [data-ux02-group=plan]").click();const d=document.getElementById("ux02-nav-drawer"),pages=[...d.querySelectorAll("[data-ux02-view]")].map(x=>x.dataset.ux02View);const open=!d.hidden;d.querySelector("[data-ux02-view=tasks]")?.click();await new Promise(r=>setTimeout(r,0));return {open,pages,active:document.getElementById("view-tasks")?.classList.contains("active"),closed:d.hidden,selected:document.querySelector("#ux02-mobile-nav [data-ux02-group=plan]")?.getAttribute("aria-current")}})()');
+ check('Phase 02 Plan sheet navigates to existing Tasks without breaking original ID',
+   plan02.open&&plan02.pages.includes('tasks')&&plan02.active&&plan02.closed&&plan02.selected==='page',plan02);
+ const quick02=await evaluate('(()=>{document.querySelector("#ux02-mobile-nav [data-ux02-capture]")?.click();const menu=document.getElementById("quick-add-modal"),input=document.getElementById("v55-capture-text"),v4=!!window.OmniCapture04;const result={v4,legacyOpen:!!menu?.classList.contains("active"),captureOpen:!!input,chipCount:document.querySelectorAll(".ux04-type-chip").length,options:menu?.querySelectorAll("[data-quick-type]").length||0};input?.closest(".modal-overlay")?.querySelector("[data-v55-close]")?.click();if(result.legacyOpen&&typeof window.closeModal==="function")window.closeModal("quick-add-modal");return result})()');
+ check('Phase 02 Add preserves legacy choices and uses current Phase 04 capture entry',
+   quick02.options>=4&&(quick02.v4?quick02.captureOpen&&quick02.chipCount===9:quick02.legacyOpen),quick02);
+ await setViewport(360,780);
+ await evaluate('window.switchView("today")');await delay(350);
+ const narrow02=await evaluate('(()=>{const dock=document.getElementById("ux02-mobile-nav"),rect=dock?.getBoundingClientRect(),buttons=[...(dock?.querySelectorAll("button")||[])].map(x=>x.getBoundingClientRect());return {visible:!!rect&&rect.width>0&&rect.left>=0&&rect.right<=innerWidth+1,minButton:Math.min(...buttons.map(x=>x.width)),overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+ check('Phase 02 bottom navigation fits a 360px phone',narrow02.visible&&narrow02.minButton>=45&&narrow02.overflow<=5,narrow02);
+ for(const width of [1440,390,360]){
+   await setViewport(width,width===1440?900:844);
+   await evaluate('window.switchView("today")');await delay(150);
+   const base64=(await send('Page.captureScreenshot',{format:'jpeg',quality:76,fromSurface:true,captureBeyondViewport:false})).result.data;
+   const name=output+'/phase02-'+width+'-today.jpg',bytes=Buffer.from(base64,'base64');
+   fs.writeFileSync(name,bytes);report.screenshots.push(name);
+   report.screenshotSignatures.push({view:'today-phase02',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
+ }
+
+ // Phase 03 — focus-first Today retains underlying widgets and Dashboard.
+ await setViewport(1440,900);
+ await evaluate('window.switchView("today")');
+ await poll(()=>evaluate('!!window.OmniToday03 && !!document.querySelector("#ux03-today-controls") && !!document.querySelector("#v58-today-intelligence")'),12000);
+ const today03=await evaluate('(()=>{const t=document.getElementById("view-today"),extra=t.querySelector("#v58-today-intelligence"),bar=t.querySelector("#ux03-today-controls"),old={priorities:!!t.querySelector(".omr-priority-panel"),agenda:!!t.querySelector(".omr-agenda-panel"),capture:!!t.querySelector("#v35-today-capture"),habits:!!t.querySelector(".omr-habits-panel")};const initial={present:!!extra,hidden:getComputedStyle(extra).display==="none",expanded:bar.querySelector("#ux03-connected-toggle").getAttribute("aria-expanded")};bar.querySelector("#ux03-connected-toggle").click();const opened={expanded:bar.querySelector("#ux03-connected-toggle").getAttribute("aria-expanded"),visible:getComputedStyle(extra).display!=="none"};bar.querySelector("#ux03-connected-toggle").click();return {old,initial,opened,restored:getComputedStyle(extra).display==="none",commandCount:bar.querySelectorAll(".ux03-command").length}})()');
+ check('Phase 03 Today retains action panels and collapses additional intelligence',
+   Object.values(today03.old).every(Boolean)&&today03.initial.present&&today03.initial.hidden&&today03.initial.expanded==="false"&&today03.opened.expanded==="true"&&today03.opened.visible&&today03.restored&&today03.commandCount===4,today03);
+ const dash03=await evaluate('(async()=>{document.querySelector("#view-today .ux03-command-actions .ux03-command:last-child").click();await new Promise(r=>setTimeout(r,190));const d=document.getElementById("view-dashboard"),active=d?.classList.contains("active"),banner=d?.querySelector("#ux03-dashboard-return"),count=d?.querySelectorAll("#ux03-dashboard-return").length||0;banner?.querySelector(".ux03-return-button")?.click();await new Promise(r=>setTimeout(r,0));return {active,count,returned:document.getElementById("view-today")?.classList.contains("active")}})()');
+ check('Phase 03 Insights opens existing Dashboard and returns to Today once',
+   dash03.active&&dash03.count===1&&dash03.returned,dash03);
+ for(const width of [1440,390,360]){
+   await setViewport(width,width===1440?900:844);
+   await evaluate('window.switchView("today")');await delay(200);
+   const layout=await evaluate('(()=>{const host=document.getElementById("ux03-today-controls"),toggle=document.getElementById("ux03-connected-toggle"),oldNew=document.getElementById("v35-today-add");const r=host?.getBoundingClientRect(),hero=document.querySelector("#view-today .omr-day-hero"),h=hero?.getBoundingClientRect();return {order:!!h&&!!r&&r.top>=h.bottom-3,present:!!host,visible:!!r&&r.width>0,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,collapsed:toggle?.getAttribute("aria-expanded")==="false",oldNewHidden:!!oldNew&&getComputedStyle(oldNew).display==="none",width:innerWidth}})()');
+   check('Phase 03 Today command center is responsive at '+width+'px',
+     layout.order&&layout.present&&layout.visible&&layout.overflow<=5&&layout.collapsed&&(width>760||layout.oldNewHidden),layout);
+   const base64=(await send('Page.captureScreenshot',{format:'jpeg',quality:76,fromSurface:true,captureBeyondViewport:false})).result.data;
+   const filename=output+'/phase03-'+width+'-today.jpg',bytes=Buffer.from(base64,'base64');
+   fs.writeFileSync(filename,bytes);report.screenshots.push(filename);
+   report.screenshotSignatures.push({view:'today-phase03',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
+ }
+
+ // Phase 04: one universal Add dialog, without writing user data in the test.
+ await setViewport(1440,900);
+ await evaluate('window.switchView("today")');
+ await poll(()=>evaluate('!!window.OmniCapture04 && !!document.getElementById("global-add-btn")'),6000);
+ const desktopCapture04=await evaluate('(()=>{document.getElementById("global-add-btn").click();const input=document.getElementById("v55-capture-text"),modal=input?.closest(".modal"),chips=[...(modal?.querySelectorAll("[data-ux04-type]")||[])];return {opened:!!input,role:modal?.getAttribute("role"),labelledBy:modal?.getAttribute("aria-labelledby"),chips:chips.length,legacyOpen:document.getElementById("quick-add-modal")?.classList.contains("active")}})()');
+ check('Phase 04 desktop Add opens accessible universal capture with nine type chips',
+   desktopCapture04.opened&&desktopCapture04.role==="dialog"&&desktopCapture04.labelledBy==="ux04-capture-title"&&desktopCapture04.chips===9&&!desktopCapture04.legacyOpen,desktopCapture04);
+ const typed04=await evaluate('(()=>{const chip=document.querySelector("[data-ux04-type=event]");chip?.click();const input=document.getElementById("v55-capture-text");input.value+=" Team meeting tomorrow at 10am #work";input.dispatchEvent(new Event("input",{bubbles:true}));return {text:input.value,pressed:chip?.getAttribute("aria-pressed"),preview:document.getElementById("v55-capture-preview")?.textContent?.slice(0,160)}})()');
+ check('Phase 04 chips update original V55 parser preview without saving',
+   typed04.text.startsWith('event ')&&typed04.pressed==='true'&&typed04.preview?.includes('Parsed as event'),typed04);
+ const allTypes04=await evaluate('(()=>{document.getElementById("ux04-all-types")?.click();const menu=document.getElementById("quick-add-modal");return {captureClosed:!document.getElementById("v55-capture-text"),menuOpen:!!menu?.classList.contains("active"),choices:menu?.querySelectorAll("[data-quick-type]").length||0}})()');
+ check('Phase 04 Browse all creation types uses existing full Quick Add menu',
+   allTypes04.captureClosed&&allTypes04.menuOpen&&allTypes04.choices>=19,allTypes04);
+ await evaluate('window.closeModal?.("quick-add-modal")');await delay(50);
+ for(const width of [390,360]){
+   await setViewport(width,844);await evaluate('window.switchView("today")');
+   const mobile04=await evaluate('(()=>{const add=document.querySelector("#ux02-mobile-nav [data-ux02-capture]");add?.click();const input=document.getElementById("v55-capture-text"),modal=input?.closest(".modal"),rect=modal?.getBoundingClientRect();const valid=!!rect&&rect.left>=-1&&rect.right<=innerWidth+1&&rect.width>=280&&rect.height<=innerHeight*.87;return {opened:!!input,chipCount:modal?.querySelectorAll("[data-ux04-type]").length||0,valid,scrollOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,rect:rect?{left:rect.left,right:rect.right,width:rect.width}:null}})()');
+   check('Phase 04 mobile dock opens universal capture without overflow at '+width+'px',
+     mobile04.opened&&mobile04.chipCount===9&&mobile04.valid&&mobile04.scrollOverflow<=5,mobile04);
+   const shot=(await send('Page.captureScreenshot',{format:'jpeg',quality:75,fromSurface:true,captureBeyondViewport:false})).result.data;
+   const name=output+'/phase04-'+width+'-capture.jpg',bytes=Buffer.from(shot,'base64');
+   fs.writeFileSync(name,bytes);report.screenshots.push(name);
+   report.screenshotSignatures.push({view:'capture-phase04',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
+   await evaluate('document.querySelector("#v55-capture-text")?.closest(".modal-overlay")?.querySelector("[data-v55-close]")?.click()');
+ }
+
+ // Phase 05: Verify the actual V36/V603 Calendar engine through index.html.
+ await setViewport(1440,900);
+ await evaluate('window.switchView("master-calendar")');await delay(300);
+ const cal05=await evaluate('(()=>{const v=document.getElementById("view-master-calendar"),modes=[...v.querySelectorAll("[data-v36-mode]")].map(b=>b.dataset.v36Mode);return {api:!!window.OmniCalendar05,active:v.classList.contains("active"),modes,host:!!v.querySelector("#v603-mode-host"),eventCount:document.querySelectorAll("#master-calendar-content [data-master-event]").length}})()');
+ check('Phase 05 Calendar keeps all five original modes and mount',cal05.api&&cal05.active&&cal05.host&&cal05.modes.join(',')==='workspace,week,month,day,agenda',cal05);
+ const month05=await evaluate('(()=>{document.querySelector("#view-master-calendar [data-v36-mode=month]")?.click();const grid=document.querySelector("#view-master-calendar .v36-month-grid"),days=[...(grid?.querySelectorAll(".v36-month-day")||[])];return {mode:window.OmniCalendar05.mode(),grid:!!grid,days:days.length,columns:getComputedStyle(grid).gridTemplateColumns,dates:days.filter(x=>!!x.dataset.masterDate).length}})()');
+ check('Phase 05 Month renders a valid date grid',month05.mode==='month'&&month05.grid&&month05.days>=28&&month05.days<=42&&month05.days===month05.dates,month05);
+ const rollover05=await evaluate('(()=>{const previousDate=new Date(masterCalendarDate),previousMode=masterCalendarMode;masterCalendarDate=new Date(2026,0,31,12);masterCalendarMode="month";window.renderMasterCalendar();document.getElementById("v36-cal-next")?.click();const first={year:masterCalendarDate.getFullYear(),month:masterCalendarDate.getMonth()+1,day:masterCalendarDate.getDate()};masterCalendarDate=new Date(2028,0,31,12);window.renderMasterCalendar();document.getElementById("v36-cal-next")?.click();const leap={year:masterCalendarDate.getFullYear(),month:masterCalendarDate.getMonth()+1,day:masterCalendarDate.getDate()};masterCalendarDate=previousDate;masterCalendarMode=previousMode;window.renderMasterCalendar();return {first,leap}})()');
+ check('Phase 05 month navigation clamps Jan 31 into February including leap years',
+   rollover05.first.year===2026&&rollover05.first.month===2&&rollover05.first.day===28&&rollover05.leap.year===2028&&rollover05.leap.month===2&&rollover05.leap.day===29,rollover05);
+ for(const width of [1440,390,360]){
+   await setViewport(width,width===1440?900:844);
+   await evaluate('window.switchView("master-calendar")');
+   await evaluate('document.querySelector("#view-master-calendar [data-v36-mode=month]")?.click()');
+   await delay(250);
+   const measure=await evaluate('(()=>{const grid=document.querySelector("#view-master-calendar .v36-month-grid"),r=grid?.getBoundingClientRect(),modes=document.querySelector("#view-master-calendar .v36-cal-modes"),cells=grid?.querySelectorAll(".v36-month-day").length||0,mode=window.OmniCalendar05?.mode();return {mode,cells,gridVisible:!!r&&r.width>0&&r.height>0,gridFits:!!r&&r.left>=-2&&r.right<=innerWidth+3,tabsVisible:!!modes&&modes.getBoundingClientRect().height>=35&&getComputedStyle(modes.parentElement).display!=="none",tabsDisplay:modes?getComputedStyle(modes).display:null,tabsRect:modes?{x:modes.getBoundingClientRect().x,y:modes.getBoundingClientRect().y,w:modes.getBoundingClientRect().width,h:modes.getBoundingClientRect().height}:null,centerDisplay:modes?.parentElement?getComputedStyle(modes.parentElement).display:null,centerInline:modes?.parentElement?.style.getPropertyValue("display"),modeButtons:modes?[...modes.querySelectorAll("[data-v36-mode]")].map(b=>{const z=b.getBoundingClientRect(),s=getComputedStyle(b);return {name:b.dataset.v36Mode,w:z.width,h:z.height,display:s.display,visible:s.visibility,inside:z.left>=modes.getBoundingClientRect().left-2&&z.right<=modes.getBoundingClientRect().right+2}}):[],overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+   check('Phase 05 Month grid and modes fit '+width+'px',measure.mode==='month'&&measure.cells>=28&&measure.gridVisible&&measure.gridFits&&measure.tabsVisible&&measure.modeButtons.length===5&&measure.modeButtons.every(b=>b.w>=43&&b.h>=32&&b.display!=="none"&&b.visible!=="hidden"&&b.inside)&&measure.overflow<=5,measure);
+   const shot=(await send('Page.captureScreenshot',{format:'jpeg',quality:76,captureBeyondViewport:false,fromSurface:true})).result.data;
+   const name=output+'/phase05-'+width+'-month.jpg',bytes=Buffer.from(shot,'base64');
+   fs.writeFileSync(name,bytes);report.screenshots.push(name);
+   report.screenshotSignatures.push({view:'month-phase05',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
+ }
+ await setViewport(390,844);
+ const modes05=await evaluate('(()=>{const v=document.querySelector("#view-master-calendar"),out=[];for(const name of ["week","agenda","day"]){v.querySelector("[data-v36-mode="+name+"]")?.click();out.push({mode:window.OmniCalendar05.mode(),host:!!v.querySelector("#v603-mode-host"),content:v.querySelector("#v603-mode-host")?.childElementCount||0})}return out})()');
+ check('Phase 05 Week, Agenda and Day modes still render through the original engine',modes05.length===3&&modes05.every(x=>x.content>0&&x.host&&['week','agenda','day'].includes(x.mode)),modes05);
+
+ // Phase 06: verify V43 remains the only Life Hub renderer on desktop/mobile.
+ await setViewport(1440,900);
+ await evaluate('window.switchView("life-hub")');
+ await poll(()=>evaluate('!!window.OmniLife06 && !!document.querySelector("#view-life-hub .v43-hero") && !!document.querySelector("#ux06-life-tools")'),10000);
+ const initial06=await evaluate('(()=>{const r=document.getElementById("view-life-hub"),tools=r.querySelectorAll("#ux06-life-tools [data-ux06-view]"),rail=r.querySelector(".v43-life-rail"),domainButtons=r.querySelectorAll(".v43-life-btn[data-v43-life]"),hero=r.querySelectorAll(".v43-hero");return {canonical:window.OmniLife06.canonical,heroCount:hero.length,railVisible:!!rail&&getComputedStyle(rail).display!=="none",domainCount:domainButtons.length,tools:[...tools].map(b=>b.dataset.ux06View),oldRoot:!!r.querySelector("#v35-life-body")}})()');
+ check('Phase 06 desktop uses one V43 Life Hub renderer and ten domains',
+   initial06.canonical==='v43'&&initial06.heroCount===1&&initial06.railVisible&&initial06.domainCount===11&&!initial06.oldRoot&&initial06.tools.join(',')==='workout,diet,budget,grocery,pantry,wishlist',initial06);
+ const keyboard06=await evaluate('(async()=>{const r=document.getElementById("view-life-hub");r.querySelector("#v43-life-overview")?.click();await new Promise(t=>setTimeout(t,0));const card=r.querySelector(".v43-domain[data-v43-life=people]");const focusable=card?.getAttribute("role")==="button"&&card?.tabIndex===0;card?.focus();card?.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true,cancelable:true}));await new Promise(t=>setTimeout(t,0));const selected=r.querySelector("#v43-life-select")?.value,view=r.classList.contains("active"),detail=!!r.querySelector(".v43-record-grid,.v43-people-list,.v97-people-grid");r.querySelector("#v43-life-overview")?.click();await new Promise(t=>setTimeout(t,0));return {focusable,selected,view,detail,returned:!!r.querySelector(".v43-domain-grid")}})()');
+ check('Phase 06 keyboard opens the existing People domain and returns to Overview',
+   keyboard06.focusable&&keyboard06.selected==='people'&&keyboard06.view&&keyboard06.detail&&keyboard06.returned,keyboard06);
+ const link06=await evaluate('(async()=>{const r=document.getElementById("view-life-hub");r.querySelector("#ux06-life-tools [data-ux06-view=budget]")?.click();await new Promise(t=>setTimeout(t,0));const opened=document.getElementById("view-budget")?.classList.contains("active");window.switchView("life-hub");await new Promise(t=>setTimeout(t,0));return {opened,returned:r.classList.contains("active"),tools:r.querySelectorAll("#ux06-life-tools").length}})()');
+ check('Phase 06 related Finance shortcut uses the existing budget route',
+   link06.opened&&link06.returned&&link06.tools===1,link06);
+ for(const width of [1440,390,360]){
+   await setViewport(width,width===1440?900:844);
+   await evaluate('window.switchView("life-hub")');await delay(200);
+   const geometry=await evaluate('(()=>{const r=document.getElementById("view-life-hub"),rail=r.querySelector(".v43-life-rail"),select=r.querySelector("#v43-life-select"),cards=r.querySelectorAll(".v43-domain"),tools=r.querySelector("#ux06-life-tools"),tr=tools?.getBoundingClientRect(),hero=r.querySelectorAll(".v43-hero");return {active:r.classList.contains("active"),heroCount:hero.length,railVisible:!!rail&&getComputedStyle(rail).display!=="none",selectVisible:!!select&&getComputedStyle(select).display!=="none",toolsVisible:!!tr&&tr.width>0&&tr.height>0,cardCount:cards.length,accessibleCards:[...cards].filter(c=>c.tabIndex===0).length,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+   check('Phase 06 canonical Life Hub fits '+width+'px',
+     geometry.active&&geometry.heroCount===1&&geometry.toolsVisible&&geometry.cardCount===9&&geometry.accessibleCards===geometry.cardCount&&geometry.overflow<=5&&(width>760?geometry.railVisible:!geometry.railVisible&&geometry.selectVisible),geometry);
+   const shot=(await send('Page.captureScreenshot',{format:'jpeg',quality:76,captureBeyondViewport:false,fromSurface:true})).result.data;
+   const name=output+'/phase06-'+width+'-life-hub.jpg',bytes=Buffer.from(shot,'base64');
+   fs.writeFileSync(name,bytes);report.screenshots.push(name);
+   report.screenshotSignatures.push({view:'life-hub-phase06',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
+ }
+ await setViewport(390,844);
+ const domains06=await evaluate('(async()=>{const r=document.getElementById("view-life-hub"),sel=r.querySelector("#v43-life-select");if(!sel)return {error:"missing select"};sel.value="documents";sel.dispatchEvent(new Event("change",{bubbles:true}));await new Promise(t=>setTimeout(t,0));const selected=r.querySelector("#v43-life-select")?.value;const count=r.querySelectorAll(".v43-life-btn[data-v43-life]").length;r.querySelector("#v43-life-overview")?.click();return {selected,count,returned:!!r.querySelector(".v43-domain-grid")}})()');
+ check('Phase 06 native mobile select opens Documents and restores Overview',
+   domains06.selected==='documents'&&domains06.count===11&&domains06.returned,domains06);
+
+ // Phase 07 — exercise original routes and responsive module surfaces through index.html.
+ const modules07=[
+   {id:'workout',control:'#workout-start-btn',name:'Workout'},
+   {id:'diet',control:'#nut-log-now',name:'Nutrition'},
+   {id:'budget',control:'#v38-add-txn',name:'Finance'},
+   {id:'habits',control:'.omx-habits-head .btn-primary',name:'Habits'},
+   {id:'notes',control:'#org-note-search',name:'Notes'}
+ ];
+ for(const width of [1440,390,360]){
+   await setViewport(width,width===1440?900:844);
+   for(const item of modules07){
+     await evaluate('window.switchView('+JSON.stringify(item.id)+')');await delay(140);
+     const layout=await evaluate('(()=>{const id='+JSON.stringify(item.id)+',sel='+JSON.stringify(item.control)+',root=document.getElementById("view-"+id),c=root?.querySelector(sel),r=c?.getBoundingClientRect(),visible=!!r&&r.width>0&&r.height>0,css=root&&getComputedStyle(root);return {id,active:!!root?.classList.contains("active"),visible,control:c?.textContent?.trim().slice(0,70)||sel,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,prepared:!!window.OmniModules07,rendered:!!css&&css.display!=="none"}})()');
+     check('Phase 07 '+item.name+' renders and primary action fits '+width+'px',
+       layout.active&&layout.visible&&layout.prepared&&layout.rendered&&layout.overflow<=5,layout);
+     const image=(await send('Page.captureScreenshot',{format:'jpeg',quality:72,captureBeyondViewport:false,fromSurface:true})).result.data;
+     const filename=output+'/phase07-'+width+'-'+item.id+'.jpg',bytes=Buffer.from(image,'base64');
+     fs.writeFileSync(filename,bytes);report.screenshots.push(filename);
+     report.screenshotSignatures.push({view:item.id+'-phase07',theme:'active',width,sha256:createHash('sha256').update(bytes).digest('hex')});
+   }
+ }
+ await setViewport(390,844);
+
+ const notesHero07=await evaluate('(()=>{const r=document.getElementById("view-notes");window.switchView("notes");const hero=r.querySelector(".org-hero"),newNote=r.querySelector("#org-note-new");const h=hero?.getBoundingClientRect(),b=newNote?.getBoundingClientRect();return {hero:!!h,create:!!b,within:!!h&&!!b&&b.left>=h.left-3&&b.right<=h.right+3,display:newNote&&getComputedStyle(newNote).display}})()');
+ check('Phase 07 Notes primary create action stays inside its mobile hero',
+   notesHero07.hero&&notesHero07.create&&notesHero07.within,notesHero07);
+ // Notes V40 renders .org-seg, not the legacy .org-view-switch. Check actual
+ // phone-width geometry and accessible selection without creating records.
+ for(const width of [390,360]){
+   await setViewport(width,844);
+   await evaluate('window.switchView("notes")');await delay(140);
+   const notesControls=await evaluate('(()=>{const root=document.getElementById("view-notes"),group=root?.querySelector(".org-toolbar .org-seg"),rail=root?.querySelector(".org-rail"),search=root?.querySelector("#org-note-search"),rect=group?.getBoundingClientRect(),tabs=[...(group?.querySelectorAll("[data-org-view]")||[])].map(b=>({active:b.classList.contains("active"),pressed:b.getAttribute("aria-pressed"),h:b.getBoundingClientRect().height})),scope=[...(rail?.querySelectorAll("[data-note-scope]")||[])].map(b=>({active:b.classList.contains("active"),pressed:b.getAttribute("aria-pressed")}));return {width:innerWidth,groupLabel:group?.getAttribute("aria-label"),groupRole:group?.getAttribute("role"),rect:rect?{left:rect.left,right:rect.right}:null,searchLabel:search?.getAttribute("aria-label"),railLabel:rail?.getAttribute("aria-label"),tabs,scope,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+   check('Phase 07 Notes mobile layout tabs are visible and accessible at '+width+'px',
+     notesControls.groupRole==='group'&&notesControls.groupLabel==='Notes layout'&&notesControls.searchLabel==='Search notes'&&notesControls.railLabel==='Note collections'&&notesControls.tabs.length===3&&notesControls.tabs.every(x=>x.h>=43&&x.pressed===String(x.active))&&notesControls.tabs.filter(x=>x.active).length===1&&notesControls.scope.every(x=>x.pressed===String(x.active))&&notesControls.rect?.left>=-2&&notesControls.rect?.right<=width+3&&notesControls.overflow<=5,notesControls);
+ }
+ await setViewport(390,844);
+ await evaluate('document.querySelector("#view-notes [data-org-view=\'notes|list\']")?.click()');
+ await delay(140);
+ const notesListState=await evaluate('(()=>{const root=document.getElementById("view-notes"),list=root?.querySelector("[data-org-view=\'notes|list\']"),cards=root?.querySelector("[data-org-view=\'notes|cards\']");return {listActive:list?.classList.contains("active"),listPressed:list?.getAttribute("aria-pressed"),cardsPressed:cards?.getAttribute("aria-pressed"),rendered:!!root?.querySelector("#notes-grid")}})()');
+ check('Phase 07 Notes selection updates when the original List renderer runs',
+   notesListState.listActive&&notesListState.listPressed==='true'&&notesListState.cardsPressed==='false'&&notesListState.rendered,notesListState);
+ await evaluate('document.querySelector("#view-notes [data-org-view=\'notes|cards\']")?.click()');
+ const interactions07=await evaluate('(()=>{const out=[];const tests=[["workout","#workout-start-btn"],["diet","#nut-log-now"],["budget","#v38-add-txn"],["habits",".omx-habits-head .btn-primary"],["notes","#org-note-new"]];for(const [view,button] of tests){window.switchView(view);const root=document.getElementById("view-"+view),target=root?.querySelector(button);if(!target){out.push({view,found:false});continue}const before=[...document.querySelectorAll(".modal-overlay.active,#nut-entry-modal")].length;target.click();const after=[...document.querySelectorAll(".modal-overlay.active,#nut-entry-modal")].length;out.push({view,found:true,opened:after>before,before,after});document.querySelectorAll(".modal-overlay.active").forEach(e=>e.classList.remove("active"));const nut=document.getElementById("nut-entry-modal");if(nut)nut.remove();}return out})()');
+ check('Phase 07 original modal actions open for Workout, Nutrition, Finance, Habits and Notes',
+   interactions07.length===5&&interactions07.every(x=>x.found&&x.opened),interactions07);
  report.browserExceptions=browserErrors.slice(0,30);
  check('No uncaught browser runtime exceptions',browserErrors.length===0,{errors:report.browserExceptions});
-}catch(e){report.errors.push('Browser QA error: '+String(e?.message||e))}
+}catch(e){report.errors.push('Browser QA error: '+String(e?.message||e));report.browserExceptions=browserErrors.slice(-20)}
 finally{
  report.finishedAt=new Date().toISOString();
  fs.writeFileSync(output+'/phase7-report.json',JSON.stringify(report,null,2)+'\n');

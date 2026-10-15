@@ -57,3 +57,10 @@ with a few narrowly scoped compatibility fixes. No main-branch deployment occurs
 - It asserts the external CSS is parsed, `--ux-space-4` resolves to `16px`, and Today renders without document-level overflow at 1440, 390, and 360 pixels.
 - It saves `qa-artifacts/phase01-loader-{1440,390,360}-today.jpg` for visual review.
 - **Not yet executed:** the added QA script requires a checkout, built `dist/`, Node, and Chrome/Chromium. Screenshots and final browser acceptance remain pending.
+
+## Final mobile cleanup (2026-10-13)
+- Identified the overlapping '+' as `#v55-capture-fab`, the global Quick Capture FAB (original v55 module).
+- Today already has a primary `+ Add` header action, so hide the redundant FAB **only while Today is active on mobile**. Other views and the user's FAB setting remain unchanged.
+- The v58 Attention section shows its two original navigation actions in two equal columns under 420px; handlers and the underlying data remain unchanged.
+- Browser QA explicitly checks the Today FAB is hidden, the All tasks link is hit-testable and the two Attention buttons align in one row at 360px.
+- Before closing Phase 01, review all generated screenshots and confirm GitHub Actions regression, browser and Semgrep checks on the exact final commit. No release should occur from the draft PR.

@@ -49,7 +49,7 @@ test('Phase 05 screen-reader calendar and empty-state support is scoped',()=>{
 test('Phase 05 loads through real loader and precaches offline',()=>{
  assert.equal(loader.split('id="omnios-ux-phase05-styles"').length-1,1);
  assert.equal(loader.split('src="./js/omnios-calendar-phase05.js"').length-1,1);
- assert.match(sw,/second-brain-shell-v11/);
+ assert.match(sw,/second-brain-shell-v12/);
  assert.ok(sw.includes("'./styles/omnios-ux-phase05.css'"));
  assert.ok(sw.includes("'./js/omnios-calendar-phase05.js'"));
 });

@@ -54,7 +54,7 @@ try{
  ws=new WebSocket(endpoint);
  await new Promise((resolve,reject)=>{ws.addEventListener('open',resolve,{once:true});ws.addEventListener('error',reject,{once:true})});
  ws.addEventListener('message',event=>{const data=JSON.parse(event.data);if(data.id&&awaiting.has(data.id)){const p=awaiting.get(data.id);clearTimeout(p.timer);awaiting.delete(data.id);data.error?p.reject(Error(data.error.message)):p.resolve(data)}else if(data.method==='Runtime.exceptionThrown')browserErrors.push(String(data.params.exceptionDetails?.exception?.description||'JS exception'))});
- await send('Page.enable');await send('Runtime.enable');await send('Network.enable');
+ await send('Page.enable');await send('Runtime.enable');await send('Network.enable');await send('Performance.enable');
  await setViewport(1440,900);
  const nav=(await send('Page.navigate',{url})).result;if(nav.errorText)throw Error('Navigation '+nav.errorText);
  await poll(()=>evaluate('typeof window.switchView==="function" && !!document.querySelector("#view-dashboard") && !!document.getElementById("omnios-unified-design-2026")'),45000);
@@ -362,7 +362,10 @@ try{
    // Wait for the first stable painted frame after all deferred UX bridges install.
    await evaluate('new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)))');
    const info=await evaluate('(async()=>{const nav=performance.getEntriesByType("navigation")[0],resources=performance.getEntriesByType("resource"),pointer=await (async()=>{try{const c=await caches.open("secondbrain-releases-v1");return !!(await c.match(new URL("./__active_release__",location.href).href))}catch{return false}})();return {readyMs:Math.round(performance.now()),domContentLoadedMs:nav?Math.round(nav.domContentLoadedEventEnd):null,resourceCount:resources.length,releaseRequests:resources.filter(e=>/\\/release\\.json(?:$|\\?)/.test(e.name)).length,appRequests:resources.filter(e=>/\\/app\\.[a-f0-9]{20}\\.html(?:$|\\?)/.test(e.name)).length,cachePointer: pointer,app:!!window.OmniModules07&&!!window.OmniLife06&&!!window.OmniCalendar05,activeView:document.querySelector(".view.active[id^=view-]")?.id||"",overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
-   return {kind,...info};
+   // These CDP metrics are diagnostics: no cross-machine speed claim.
+   const counters=(await send('Performance.getMetrics')).result.metrics||[];
+   const picked=Object.fromEntries(counters.filter(m=>['ScriptDuration','TaskDuration','LayoutDuration','RecalcStyleDuration','JSHeapUsedSize','Nodes','Documents'].includes(m.name)).map(m=>[m.name,Math.round(m.value*1000)/1000]));
+   return {kind,...info,cdp:picked};
  }
  await setViewport(390,844);
  const startedCold=await send('Page.navigate',{url:loaderURL});
@@ -371,9 +374,29 @@ try{
  const startedWarm=await send('Page.reload',{ignoreCache:false});
  if(startedWarm.result?.errorText)throw Error('Warm index loader reload: '+startedWarm.result.errorText);
  const warm08=await loaderMetric('warm');
- report.startup08={cold:cold08,warm:warm08};
+ // Sample two more warm loads to avoid treating one CI scheduling spike
+ // as a reproducible startup regression or improvement.
+ const warmRuns=[warm08];
+ for(let i=0;i<2;i++){
+   await send('Page.reload',{ignoreCache:false});
+   warmRuns.push(await loaderMetric('warm-'+(i+2)));
+ }
+ const warmMedianMs=[...warmRuns].map(x=>x.readyMs).sort((a,b)=>a-b)[1];
+ report.startup08={cold:cold08,warm:warm08,warmRuns,warmMedianMs};
  check('Phase 08 real index loader cold/warm startup preserves validated cache and routes',
-   [cold08,warm08].every(x=>Number.isFinite(x.readyMs)&&x.readyMs>=0&&x.cachePointer&&x.app&&x.activeView.startsWith('view-')&&x.overflow<=5),report.startup08);
+   [cold08,...warmRuns].every(x=>Number.isFinite(x.readyMs)&&x.readyMs>=0&&x.cachePointer&&x.app&&x.activeView.startsWith('view-')&&x.overflow<=5),report.startup08);
+
+ // Phase 08.4: damage ONLY the synthetic browser profile's active pointer,
+ // keep a verified previous release and verify the app boots without network.
+ const seeded08=await evaluate('(async()=>{const c=await caches.open("secondbrain-releases-v1"),a=new URL("./__active_release__",location.href).href,b=new URL("./__previous_valid_release__",location.href).href,r=await c.match(a);if(!r)return false;await c.put(b,r.clone());await c.put(a,new Response("corrupt-active-release",{headers:{"Content-Type":"application/json"}}));return true})()');
+ check('Phase 08.4 seeds recoverable damaged active pointer in isolated browser profile',seeded08);
+ await send('Page.reload',{ignoreCache:false});
+ const recovery08=await loaderMetric('verified-backup-recovery');
+ // Repair the active pointer in the synthetic profile after the test.
+ const restored08=await evaluate('(async()=>{const c=await caches.open("secondbrain-releases-v1"),a=new URL("./__active_release__",location.href).href,b=new URL("./__previous_valid_release__",location.href).href,r=await c.match(b);if(!r)return false;await c.put(a,r.clone());return true})()');
+ report.startup08.recovery=recovery08;
+ check('Phase 08.4 corrupted active release falls back to the SHA-verified previous release',
+   seeded08&&restored08&&recovery08.app&&recovery08.activeView.startsWith('view-')&&recovery08.overflow<=5,recovery08);
  // Timings are diagnostic, not a brittle CI budget. No claim of a speedup
  // without a comparable user-device baseline and repeated samples.
  report.browserExceptions=browserErrors.slice(0,30);

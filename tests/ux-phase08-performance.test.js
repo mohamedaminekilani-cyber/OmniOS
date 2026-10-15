@@ -45,7 +45,8 @@ test('Phase 08 Life Hub disconnects a detached V43 content observer',()=>{
   assert.equal(observers.length,2,'one root and one content observer');
   const original=observers[1];
   assert.equal(original.targets[0].target,content1);
-  assert.deepEqual(original.targets[0].options,{childList:true});
+  assert.equal(original.targets[0].options.childList,true);
+  assert.equal(original.targets[0].options.subtree,undefined);
 
   for(let i=0;i<5;i++){window.OmniLife06.refresh();while(q.length)q.shift()()}
   assert.equal(observers.length,2,'same content must reuse its observer');

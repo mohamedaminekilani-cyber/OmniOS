@@ -46,3 +46,8 @@ test('Phase 06 includes stylesheet and JS in real loader and offline v10 precach
  assert.ok(sw.includes("'./js/omnios-life-hub-phase06.js'"));
 });
 test('Phase 06 JavaScript parses under Node',()=>assert.doesNotThrow(()=>new vm.Script(js)));
+
+test('Phase 06 deep-domain navigation waits for original v43 view rendering',()=>{
+ assert.match(js,/if\(!route\('life-hub'\)\)return false/);
+ assert.match(js,/setTimeout\(\(\)=>activateDomain\(id\),60\)/);
+});

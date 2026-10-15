@@ -304,18 +304,38 @@ function carryLoaderIntoApp(html){
       try{await releaseCache.put(key,response)}catch(e){console.warn('Offline app cache unavailable',e)}
     }
     const activeKey=new URL('./__active_release__',location.href).href;
+    const backupKey=new URL('./__previous_valid_release__',location.href).href;
     const dismissedKey='omnios_update_dismissed_v1';
     let currentManifest=null,checkingUpdate=false,promptingSha='',updatePromptTimer=0;
 
+    async function readReleasePointer(key){
+      try{
+        const pointer=await releaseCache.match(key);if(!pointer)return null;
+        const m=await pointer.json();
+        if(!m||typeof m.file!=='string'||!/^app\.[a-f0-9]{20}\.html$/.test(m.file))return null;
+        const r=await releaseCache.match(new URL(m.file,location.href).href);
+        if(!r)return null;
+        const text=await r.text();
+        return await verified(m,text)?{m,text}:null;
+      }catch(_){return null}
+    }
     async function installed(){
-      const pointer=await releaseCache.match(activeKey);if(!pointer)return null;
-      const m=await pointer.json(),r=await releaseCache.match(new URL(m.file,location.href).href);
-      if(!r)return null;const text=await r.text();
-      return await verified(m,text)?{m,text}:null;
+      // Never execute a corrupted active cache. The previous pointer is a
+      // checksum-verified fallback, never an unvalidated HTML snapshot.
+      return (await readReleasePointer(activeKey))||(await readReleasePointer(backupKey));
+    }
+    async function rememberRelease(m){
+      // Preserve the last fully verified active release before advancing the
+      // pointer. If an update is interrupted, the prior pointer stays intact.
+      const current=await readReleasePointer(activeKey);
+      if(current&&current.m.sha256!==m.sha256){
+        await cacheRelease(backupKey,new Response(JSON.stringify(current.m),{headers:{'Content-Type':'application/json'}}));
+      }
+      await cacheRelease(activeKey,new Response(JSON.stringify(m),{headers:{'Content-Type':'application/json'}}));
     }
 
     async function verified(m,text){
-      if(m?.version!==1||!/^app\.[a-f0-9]{20}\.html$/.test(m.file)||!/^[a-f0-9]{64}$/.test(m.sha256))return false;
+      if(m?.version!==1||!/^app\.[a-f0-9]{20}\.html$/.test(m.file)||!/^[a-f0-9]{64}$/.test(m.sha256)||m.file!=='app.'+m.sha256.slice(0,20)+'.html')return false;
       const bytes=new TextEncoder().encode(text);if(bytes.length!==m.bytes)return false;
       const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('');
       return hash===m.sha256;
@@ -371,7 +391,7 @@ function carryLoaderIntoApp(html){
         if(!await verified(m,text))throw Error('Release checksum failed');
         await cacheRelease(url,new Response(text,{headers:{'Content-Type':'text/html'}}));
       }
-      if(activate)await cacheRelease(activeKey,new Response(JSON.stringify(m),{headers:{'Content-Type':'application/json'}}));
+      if(activate)await rememberRelease(m);
       return {m,text};
     }
 
@@ -426,7 +446,7 @@ function carryLoaderIntoApp(html){
           if(!text||!await verified(m,text))throw Error('Update payload could not be verified');
           const releaseUrl=new URL(m.file,location.href).href;
           await cacheRelease(releaseUrl,new Response(text,{headers:{'Content-Type':'text/html'}}));
-          await cacheRelease(activeKey,new Response(JSON.stringify(m),{headers:{'Content-Type':'application/json'}}));
+          await rememberRelease(m);
           currentManifest=m;promptingSha='';
           try{sessionStorage.removeItem(dismissedKey)}catch(_){}
           try{const reg=await navigator.serviceWorker?.getRegistration?.();await reg?.update?.()}catch(_){}

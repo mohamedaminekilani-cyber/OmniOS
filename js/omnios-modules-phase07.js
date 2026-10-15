@@ -37,6 +37,22 @@ function decorate(){
  if(toolbar)toolbar.setAttribute('role','search');
  const search=notes?.querySelector('#org-note-search,#notes-search');
  if(search)search.setAttribute('aria-label','Search notes');
+ // Notes V40 uses .org-seg (not .org-segmented). Keep the original layout handlers.
+ const views=notes?.querySelector('.org-toolbar .org-seg');
+ if(views){
+   views.setAttribute('role','group');
+   views.setAttribute('aria-label','Notes layout');
+   views.querySelectorAll('[data-org-view]').forEach(button=>{
+     button.setAttribute('aria-pressed',String(button.classList.contains('active')));
+   });
+ }
+ const collections=notes?.querySelector('.org-rail');
+ if(collections){
+   collections.setAttribute('aria-label','Note collections');
+   collections.querySelectorAll('[data-note-scope]').forEach(button=>{
+     button.setAttribute('aria-pressed',String(button.classList.contains('active')));
+   });
+ }
 }
 function refresh(){
  if(state.pending)return;
@@ -54,7 +70,7 @@ function install(){
    if(root)new MutationObserver(refresh).observe(root,{childList:true});
  }
  document.addEventListener('click',e=>{
-   if(e.target.closest?.('[data-view],[data-ux02-view],[data-habitview],[data-workout-tab],[data-nut-tab]'))requestAnimationFrame(refresh);
+   if(e.target.closest?.('[data-view],[data-ux02-view],[data-habitview],[data-workout-tab],[data-nut-tab],[data-org-view],[data-note-scope],[data-v38-tab]'))requestAnimationFrame(refresh);
  },false);
  window.addEventListener('hashchange',refresh);
  refresh();

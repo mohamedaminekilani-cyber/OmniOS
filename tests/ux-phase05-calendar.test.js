@@ -70,7 +70,7 @@ test('Browser QA runner source parses before expensive browser checks',()=>{
 });
 
 test('Phase 05 restores the existing mobile calendar mode row after legacy renderers',()=>{
- assert.match(js,/center\.style\.setProperty\('display','flex','important'\)/);
+ assert.match(js,/setStyle\(center,'display','flex','important'\)/);
  assert.match(js,/center\.hidden=false/);
  assert.match(js,/center\.style\.removeProperty\('display'\)/);
  assert.match(js,/requestAnimationFrame\(\(\)=>\{/);
@@ -79,6 +79,6 @@ test('Phase 05 restores the existing mobile calendar mode row after legacy rende
 
 test('Phase 05 mobile renders all five existing view buttons, not just the active one',()=>{
  assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)!important/);
- assert.match(js,/b\.style\.setProperty\('display','inline-flex','important'\)/);
+ assert.match(js,/setStyle\(b,'display','inline-flex','important'\)/);
  assert.match(js,/b\.style\.removeProperty\('display'\)/);
 });

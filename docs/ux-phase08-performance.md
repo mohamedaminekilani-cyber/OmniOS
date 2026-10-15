@@ -24,3 +24,24 @@
 
 ## Acceptance
 Run `npm test`, `npm run test:runtime`, `npm run test:browser`, and Semgrep for the exact PR head. Review screens and the new `performance08` report section. **Do not merge or deploy.**
+
+
+## Phase 08 continuation — Calendar and offline reliability (2026-10-15)
+
+### Calendar scheduling
+- The Phase 05 adapter used to decorate the same toolbar unconditionally in both a microtask and an animation frame. It now retains the immediate microtask for responsive semantics and uses its single coalesced frame as a **conditional repair** when an old renderer changes the toolbar reference, mode, mobile display, or hides the buttons after that microtask.
+- Repeated refresh events share one pending microtask and at most one animation frame. The same original five V36 mode buttons remain in the DOM.
+- Unchanged ARIA, gridcell roles, day labels, responsive inline display and month status no longer generate redundant attribute/style writes. A previously marked today cell is unmarked if its role changes; no calendar events, dates, filters or saved state are modified.
+- Behavioral Node tests verify duplicate scheduling is skipped and late mobile suppression is restored. Real-browser QA explicitly hides the existing center/Month button at 390 px and verifies recovery without duplicates or overflow.
+
+### Offline recovery checks
+- Exercised the existing service worker offline behavior without changing `sw.js`: navigation falls back to the cached shell, scripts resolve from shell cache, uncached resources fail closed, and authenticated/API requests bypass offline cache.
+- Verified service-worker activation retains user-assets and `omnios-app-snapshot-*` records and that app-part/release files remain exclusively owned by the release snapshot loader.
+- No new storage, migration, or caching layer was introduced.
+
+### Remaining performance work
+- Collect comparable repeated measurements across cold/warm starts, rather than attributing an improvement to a single CI timing.
+- Profile original content-addressed app-part renderers, startup assembly, images, and long tasks; avoid broad removals that threaten offline release atomicity.
+- Continue expanding persistence recovery tests with synthetic data only.
+
+**Validation:** Node `npm test`, runtime, 1440/390/360 browser QA, Semgrep and screenshot comparison must all pass on the exact Phase 08 continuation commit. No merge or deploy.

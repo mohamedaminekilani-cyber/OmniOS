@@ -313,6 +313,22 @@ try{
  const notesHero07=await evaluate('(()=>{const r=document.getElementById("view-notes");window.switchView("notes");const hero=r.querySelector(".org-hero"),newNote=r.querySelector("#org-note-new");const h=hero?.getBoundingClientRect(),b=newNote?.getBoundingClientRect();return {hero:!!h,create:!!b,within:!!h&&!!b&&b.left>=h.left-3&&b.right<=h.right+3,display:newNote&&getComputedStyle(newNote).display}})()');
  check('Phase 07 Notes primary create action stays inside its mobile hero',
    notesHero07.hero&&notesHero07.create&&notesHero07.within,notesHero07);
+ // Notes V40 renders .org-seg, not the legacy .org-view-switch. Check actual
+ // phone-width geometry and accessible selection without creating records.
+ for(const width of [390,360]){
+   await setViewport(width,844);
+   await evaluate('window.switchView("notes")');await delay(140);
+   const notesControls=await evaluate('(()=>{const root=document.getElementById("view-notes"),group=root?.querySelector(".org-toolbar .org-seg"),rail=root?.querySelector(".org-rail"),search=root?.querySelector("#org-note-search"),rect=group?.getBoundingClientRect(),tabs=[...(group?.querySelectorAll("[data-org-view]")||[])].map(b=>({active:b.classList.contains("active"),pressed:b.getAttribute("aria-pressed"),h:b.getBoundingClientRect().height})),scope=[...(rail?.querySelectorAll("[data-note-scope]")||[])].map(b=>({active:b.classList.contains("active"),pressed:b.getAttribute("aria-pressed")}));return {width:innerWidth,groupLabel:group?.getAttribute("aria-label"),groupRole:group?.getAttribute("role"),rect:rect?{left:rect.left,right:rect.right}:null,searchLabel:search?.getAttribute("aria-label"),railLabel:rail?.getAttribute("aria-label"),tabs,scope,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+   check('Phase 07 Notes mobile layout tabs are visible and accessible at '+width+'px',
+     notesControls.groupRole==='group'&&notesControls.groupLabel==='Notes layout'&&notesControls.searchLabel==='Search notes'&&notesControls.railLabel==='Note collections'&&notesControls.tabs.length===3&&notesControls.tabs.every(x=>x.h>=43&&x.pressed===String(x.active))&&notesControls.tabs.filter(x=>x.active).length===1&&notesControls.scope.every(x=>x.pressed===String(x.active))&&notesControls.rect?.left>=-2&&notesControls.rect?.right<=width+3&&notesControls.overflow<=5,notesControls);
+ }
+ await setViewport(390,844);
+ await evaluate('document.querySelector("#view-notes [data-org-view=\'notes|list\']")?.click()');
+ await delay(140);
+ const notesListState=await evaluate('(()=>{const root=document.getElementById("view-notes"),list=root?.querySelector("[data-org-view=\'notes|list\']"),cards=root?.querySelector("[data-org-view=\'notes|cards\']");return {listActive:list?.classList.contains("active"),listPressed:list?.getAttribute("aria-pressed"),cardsPressed:cards?.getAttribute("aria-pressed"),rendered:!!root?.querySelector("#notes-grid")}})()');
+ check('Phase 07 Notes selection updates when the original List renderer runs',
+   notesListState.listActive&&notesListState.listPressed==='true'&&notesListState.cardsPressed==='false'&&notesListState.rendered,notesListState);
+ await evaluate('document.querySelector("#view-notes [data-org-view=\'notes|cards\']")?.click()');
  const interactions07=await evaluate('(()=>{const out=[];const tests=[["workout","#workout-start-btn"],["diet","#nut-log-now"],["budget","#v38-add-txn"],["habits",".omx-habits-head .btn-primary"],["notes","#org-note-new"]];for(const [view,button] of tests){window.switchView(view);const root=document.getElementById("view-"+view),target=root?.querySelector(button);if(!target){out.push({view,found:false});continue}const before=[...document.querySelectorAll(".modal-overlay.active,#nut-entry-modal")].length;target.click();const after=[...document.querySelectorAll(".modal-overlay.active,#nut-entry-modal")].length;out.push({view,found:true,opened:after>before,before,after});document.querySelectorAll(".modal-overlay.active").forEach(e=>e.classList.remove("active"));const nut=document.getElementById("nut-entry-modal");if(nut)nut.remove();}return out})()');
  check('Phase 07 original modal actions open for Workout, Nutrition, Finance, Habits and Notes',
    interactions07.length===5&&interactions07.every(x=>x.found&&x.opened),interactions07);

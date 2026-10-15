@@ -1,6 +1,6 @@
 # OmniOS UX Phase 07.1 — Phase 06 / 07 integration
 
-**Branch:** `ux/phase07-1-integration-2026-10-15`. Draft-only. No merge or deployment.
+**Branch:** `ux/phase07-1-integration-2026-10-15`. Draft-only. PR #51 targets `main` solely to validate the full stacked UX changes in CI; all source PRs remain untouched. No merge or deployment.
 
 ## Inputs and resolution
 - Phase 06 PR #50, `ux/phase06-life-hub-2026-10-15` at `6ac3b8e2dc0fd3be95c228c7f5aabc6c8be7ff5f`.

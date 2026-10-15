@@ -73,9 +73,13 @@ function install(){
  if(typeof previousSwitch==='function'&&!previousSwitch.__ux03){
    const wrapped=function(...args){
      const result=previousSwitch.apply(this,args);
-     schedule();
-     requestAnimationFrame(schedule);
-     if(args[0]==='dashboard')setTimeout(schedule,120);
+     // Other modules own their own rendering. Do not touch Today's controls
+     // on unrelated navigation; root observers still handle genuine rebuilds.
+     if(args[0]==='today'||args[0]==='dashboard'){
+       schedule();
+       requestAnimationFrame(schedule);
+       if(args[0]==='dashboard')setTimeout(schedule,120);
+     }
      return result;
    };
    wrapped.__ux03=true;

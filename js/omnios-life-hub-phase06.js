@@ -12,7 +12,23 @@ const MODULES=[
   {id:'pantry',label:'Pantry',hint:'Stock & supplies'},
   {id:'wishlist',label:'Wishlist',hint:'Planned purchases'}
 ];
-const state06={installed:false,queued:false,observedContent:new WeakSet()};
+const state06={installed:false,queued:false,contentTarget:null,contentObserver:null};
+function observeContent(content){
+ // The V43 renderer can replace its content container. Disconnect the old
+ // observer before watching the replacement; never accumulate detached roots.
+ if(content===state06.contentTarget)return;
+ state06.contentObserver?.disconnect();
+ state06.contentObserver=null;
+ state06.contentTarget=content||null;
+ if(content){
+   const observer=new MutationObserver(schedule);
+   observer.observe(content,{childList:true});
+   state06.contentObserver=observer;
+ }
+}
+function setAttr(node,name,value){
+ if(node&&node.getAttribute(name)!==value)node.setAttribute(name,value);
+}
 const host=()=>document.getElementById(HOST_ID);
 function existing(id){return !!document.getElementById('view-'+id)}
 function route(id){
@@ -60,31 +76,28 @@ function enhance(){
  const root=host();if(!root)return;
  const shell=root.querySelector('.v43-life-shell');
  const hero=root.querySelector('.v43-hero');
- if(!shell||!hero)return;
+ if(!shell||!hero){observeContent(null);return;}
  root.classList.add('ux06-life-ready');
  const rail=root.querySelector('.v43-life-rail');
- if(rail){rail.setAttribute('role','navigation');rail.setAttribute('aria-label','Life Hub domains');}
+ if(rail){setAttr(rail,'role','navigation');setAttr(rail,'aria-label','Life Hub domains');}
  const overview=root.querySelector('#v43-life-overview');
- if(overview)overview.setAttribute('aria-label','Return to Life Hub overview');
+ setAttr(overview,'aria-label','Return to Life Hub overview');
  // V43 also updates #v43-life-content without replacing the view root.
  const content=root.querySelector('#v43-life-content');
- if(content&&!state06.observedContent.has(content)){
-   state06.observedContent.add(content);
-   new MutationObserver(schedule).observe(content,{childList:true});
- }
+ observeContent(content);
  // Reinsert after the canonical renderer replaces children; never replace its content.
  let links=root.querySelector('#ux06-life-links');
  if(!links){links=createLinks();hero.after(links)}
  else if(links.previousElementSibling!==hero)hero.after(links);
  const selector=root.querySelector('#v43-life-select');
  if(selector){
-   selector.setAttribute('aria-label','Life Hub domain');
-   selector.setAttribute('title','Choose a Life Hub section');
+   setAttr(selector,'aria-label','Life Hub domain');
+   setAttr(selector,'title','Choose a Life Hub section');
  }
  const current=root.querySelector('.v43-life-rail [data-v43-life].active');
  root.querySelectorAll('.v43-life-rail [data-v43-life]').forEach(btn=>{
-   if(btn===current)btn.setAttribute('aria-current','page');
-   else btn.removeAttribute('aria-current');
+   if(btn===current)setAttr(btn,'aria-current','page');
+   else if(btn.hasAttribute('aria-current'))btn.removeAttribute('aria-current');
  });
  root.querySelectorAll('.v43-domain[data-v43-life],.v43-attention .v43-row[data-v43-life]').forEach(card=>{
    if(card.hasAttribute('tabindex'))return;
@@ -93,7 +106,7 @@ function enhance(){
    if(title)card.setAttribute('aria-label','Open '+title);
  });
  const search=root.querySelector('#v43-life-search');
- if(search&&!search.hasAttribute('aria-label'))search.setAttribute('aria-label','Search current Life Hub domain');
+ if(search&&!search.hasAttribute('aria-label'))setAttr(search,'aria-label','Search current Life Hub domain');
 }
 function schedule(){
  if(state06.queued)return;

@@ -44,7 +44,7 @@ test('Phase 07 improves keyboard labels and selected-tab semantics',()=>{
 test('Phase 07 loaders and offline shell include both assets',()=>{
  assert.equal(loader.split('id="omnios-ux-phase07-styles"').length-1,1);
  assert.equal(loader.split('src="./js/omnios-modules-phase07.js"').length-1,1);
- assert.match(sw,/second-brain-shell-v11/);
+ assert.match(sw,/second-brain-shell-v12/);
  assert.ok(sw.includes("'./styles/omnios-ux-phase07.css'"));
  assert.ok(sw.includes("'./js/omnios-modules-phase07.js'"));
 });

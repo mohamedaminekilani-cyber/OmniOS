@@ -30,7 +30,7 @@ test('Control refresh watches only direct children',()=>{
 test('Phase 03 loader and offline assets are included exactly once',()=>{
  assert.equal(loader.split('id="omnios-ux-phase03-styles"').length-1,1);
  assert.equal(loader.split('src="./js/omnios-today-phase03.js"').length-1,1);
- assert.match(sw,/second-brain-shell-v11/);
+ assert.match(sw,/second-brain-shell-v12/);
  assert.ok(sw.includes("'./js/omnios-today-phase03.js'"));
  assert.ok(sw.includes("'./styles/omnios-ux-phase03.css'"));
 });

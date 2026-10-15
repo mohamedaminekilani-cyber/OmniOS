@@ -1,26 +1,33 @@
 # OmniOS UX Phase 06 — Life Hub consolidation
 
-Implementation staged on `ux/phase06-life-hub-2026-10-14`, stacked on Phase 05.
+Status: staged on `ux/phase06-life-hub-2026-10-15`, with browser review required.
 
-## Canonical renderer retained
-- The V43 Life Hub renderer is already the source of truth, and V35 delegates to it. Do not create a third renderer, duplicate the Life Hub state or delete older functions without complete dependency audit.
-- Preserve all ten V43 domains: People, Health, Home, Documents, Administration, Education, Travel, Money, Journal and Automations.
-- Preserve all original record creation, editing, deletion, quick add, filtering, notes and navigation handlers; no new persistence or storage schema.
+## Canonical authority and data safety
+The existing v43 Life Hub is the **only record renderer/editor**. Its domains are Overview, People, Health, Home, Documents, Administration, Education, Travel, Money, Journal and Automations. Phase 06 does not modify `state.life`, persistent storage keys, record schemas, or the hashed assembled release.
 
-## Phase 06 changes
-- Add a lightweight, responsive **Related tools** navigation row linking to Workout, Nutrition, Finance, Grocery, Pantry and Wishlist through `window.switchView`; these remain distinct modules.
-- Add proper keyboard access and role/labels to the existing actionable Overview cards and attention rows. Key activation calls the existing click handler, not a duplicate handler.
-- Retain the existing desktop domain rail and native mobile domain select. Label them and mark the current section for accessibility.
-- Tighten and standardize compact mobile cards and tool hit targets, without replacing the V43 card grid or its domain detail pages.
-- Observe only direct child changes on the Life Hub view and current content container, restoring interaction enhancements after V43 rerenders. No global MutationObserver or extra writes.
-- Use separate `js/omnios-life-phase06.js` and `styles/omnios-ux-phase06.css`, linked into the actual app loader and precached in service-worker shell v10.
+## UX updates
+- Unify Life Hub's presentation around its existing hero, ten-domain rail, searchable record views, edit/delete actions and responsive select.
+- Add one clearly labeled “Your everyday life” navigation row for the separate Workout, Nutrition, Finance, Grocery, Pantry and Wishlist modules, using the existing `switchView` routes rather than duplicate summaries or records.
+- Keep the original v43 domain buttons and section select authoritative; expose non-destructive `OmniLife06.openDomain(id)` and `openModule(id)` for future shortcuts.
+- Make Overview cards and attention rows keyboard-accessible via Enter/Space, and mark the active rail destination using `aria-current`.
+- Maintain one view-level child-list observer to redecorate controls after the existing renderer replaces the view DOM; no global subtree observers.
+- Allow all six module shortcuts to wrap into responsive grids on mobile; existing data editors and original screens remain untouched.
+- Separate CSS and JS are loaded after the content-addressed app via the actual index shell and precached in service worker shell v10.
 
-## Acceptance
-- Pass Node tests, runtime, Semgrep and real-loader browser QA on the **exact final commit**.
-- Confirm the canonical V43 hero appears once, desktop rail is visible, mobile native select works, and all ten domains stay reachable.
-- Confirm a domain card opens via keyboard, Overview returns, existing related Life modules open and preserve their data.
-- Review screenshots at 1440, 390 and 360px; no horizontal overflow, duplicate Life Hub or runtime errors.
-- Review stacked PRs #43–#47 before any merge. No deployment or data migration.
+## Release acceptance
+1. Node regression, runtime, browser and Semgrep checks green on the exact head commit.
+2. Browser screenshots at 1440, 390 and 360px with no page-wide horizontal overflow.
+3. Navigate ten domains, verify current domain select and keyboard card actions, open each of the six standalone Life modules and return.
+4. Verify original record creation/edit, deletion confirmations and saved data persisted without change.
+5. Confirm offline bootstrap and safe rollback. **No merge or deployment** without a reviewed release decision.
 
 ## Rollback
-Remove Phase 06 stylesheet/script injection and service-worker v10 references. Stored records remain unchanged.
+Remove the Phase 06 loader CSS/JS references and service-worker additions, restore previous v9 cache contract. No user data migration required. This PR is stacked on Phase 01–05 draft work.
+
+## Phase 07.1 integration (2026-10-15)
+- Selected PR #50's updated six-card Life Hub shortcut presentation and original V43 domain API as canonical.
+- Preserved Phase 07's bounded direct-child content observer and compatibility `canonical` / `relatedTools` exports for existing consumers.
+- Loaded **only** `js/omnios-life-hub-phase06.js`; the older `js/omnios-life-phase06.js` was removed from the integration branch to avoid duplicate bridge code.
+- Preserved all existing personal records, local storage keys, V43 renderers, and the content-addressed source release manifest.
+- Phase 07 mobile Notes/Finance/Workout/Nutrition/Habits enhancements remain unchanged.
+- Review branch only; do not merge or deploy.

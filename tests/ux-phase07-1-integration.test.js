@@ -30,7 +30,7 @@ test('UX 07.1 preserves original data authority and Phase 07 module handlers',()
  assert.match(life,/canonical:'v43'/);
  assert.match(life,/window\.switchView\(id\)/);
  assert.match(life,/new MutationObserver\(schedule\)\.observe\(root,\{childList:true\}\)/);
- assert.match(life,/new MutationObserver\(schedule\)\.observe\(content,\{childList:true\}\)/);
+ assert.match(life,/observer\.observe\(content,\{childList:true\}\)/);
  assert.doesNotMatch(life+modules,/localStorage\.setItem|indexedDB|persistWorkspace|saveState|\.innerHTML\s*=/);
  assert.doesNotMatch(life+modules,/subtree:true/);
  assert.doesNotThrow(()=>new vm.Script(life));

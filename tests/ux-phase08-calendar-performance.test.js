@@ -39,7 +39,7 @@ function harness(){
    constructor(fn){this.fn=fn;observers.push(this)}
    observe(target,options){this.target=target;this.options=options}
  }
- const context={window,document,MutationObserver:Observer,Date,Math,Number,
+ const context={window,document,MutationObserver:Observer,Date,Math,Number,masterCalendarMode:'month',
    queueMicrotask:fn=>microtasks.push(fn),requestAnimationFrame:fn=>frames.push(fn),console};
  vm.runInNewContext(source,context,{filename:'omnios-calendar-phase05.js'});
  callbacks.get('DOMContentLoaded')();

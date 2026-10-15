@@ -12,7 +12,7 @@ test('Phase 08 warm-loader QA waits for all actual UX bridges before timing',()=
  assert.match(qa,/requestAnimationFrame\(\(\)=>requestAnimationFrame\(done\)\)/);
  assert.match(qa,/await setViewport\(390,844\)/);
  assert.match(qa,/Page\.reload/);
- assert.match(qa,/report\.startup08=\{cold:cold08,warm:warm08\}/);
+ assert.match(qa,/report\.startup08=\{cold:cold08,warm:warm08,warmRuns,warmMedianMs\}/);
 });
 
 test('Phase 08 startup keeps exact checksum validation and atomic release loader',()=>{

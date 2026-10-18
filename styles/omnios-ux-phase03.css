@@ -1,0 +1,47 @@
+/* Phase 03: Today = action, Dashboard = deeper insight. Pure presentation. */
+html #view-today.ux03-focus-mode #v58-today-intelligence{display:none!important}
+html #view-today #ux03-today-controls{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+ padding:11px 15px;margin:12px 0 15px;
+ border:1px solid var(--omx-edge,var(--border-color));
+ border-radius:var(--omx-round,12px);background:var(--omx-card,var(--bg-surface));
+ color:var(--text-primary);min-width:0;
+}
+html #view-today .ux03-command-intro,
+html #view-dashboard .ux03-dashboard-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+html #view-today .ux03-command-heading,
+html #view-dashboard .ux03-dashboard-heading{font-size:13px;font-weight:780;line-height:1.35}
+html #view-today .ux03-command-description,
+html #view-dashboard .ux03-dashboard-description{font-size:12px;color:var(--text-secondary);line-height:1.45}
+html #view-today .ux03-command-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+html #view-today :is(.ux03-command,.ux03-insights-toggle),
+html #view-dashboard .ux03-return-button{
+ display:inline-flex;align-items:center;justify-content:center;min-height:39px;
+ padding:8px 12px;border:1px solid var(--omx-edge,var(--border-color));
+ border-radius:8px;background:var(--omx-raised,var(--bg-elevated));
+ color:var(--text-primary);font-size:12px;font-weight:700;cursor:pointer;
+}
+html #view-today :is(.ux03-command,.ux03-insights-toggle):hover,
+html #view-dashboard .ux03-return-button:hover{border-color:var(--omx-focus,var(--accent-cyan))}
+html #view-today .ux03-insights-toggle{
+ background:transparent;
+ color:var(--omx-focus,var(--accent-cyan));
+}
+html #view-dashboard #ux03-dashboard-return{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+ padding:12px 16px;margin-bottom:14px;border:1px solid var(--omx-edge,var(--border-color));
+ border-radius:var(--omx-round,12px);background:var(--omx-card,var(--bg-surface));
+}
+@media(max-width:760px){
+ html #view-today #ux03-today-controls{padding:12px;gap:10px}
+ html #view-today .ux03-command-intro{width:100%}
+ html #view-today .ux03-command-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:5px}
+ html #view-today .ux03-command{min-width:0;padding:8px 3px;font-size:11px}
+ html #view-today .ux03-insights-toggle{width:100%;min-height:42px}
+ /* The main Add slot in the Phase 02 dock is the universal creation affordance. */
+ html body #view-today #v35-today-add{display:none!important}
+}
+@media(max-width:370px){
+ html #view-today .ux03-command-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+ html #view-today .ux03-command{min-height:39px}
+}

@@ -1,0 +1,58 @@
+/* UX Phase 06 — canonical Life Hub v43 renderer remains the only record authority. */
+html #view-life-hub{min-width:0}
+html #view-life-hub .v43-hero{min-width:0;gap:12px;flex-wrap:wrap}
+html #view-life-hub .v43-hero>div{min-width:0}
+html #view-life-hub .v43-life-shell,
+html #view-life-hub .v43-life-main,
+html #view-life-hub #v43-life-content{min-width:0}
+html #view-life-hub .v43-life-rail{min-width:0}
+html #view-life-hub .v43-life-btn{min-height:40px;gap:10px}
+html #view-life-hub .v43-life-btn[aria-current=page]{color:var(--text-primary);background:var(--omx-raised,var(--bg-elevated));}
+html #view-life-hub :is(.v43-life-btn,.v43-domain,.v43-attention .v43-row,.ux06-life-link):focus-visible{
+ outline:2px solid var(--omx-focus,var(--accent-cyan,#06b6d4));outline-offset:2px;
+}
+html #view-life-hub .v43-domain-grid,
+html #view-life-hub .v43-record-grid{min-width:0}
+html #view-life-hub .v43-domain,
+html #view-life-hub .v43-record{min-width:0;max-width:100%}
+html #view-life-hub .v43-domain-meta,
+html #view-life-hub .v43-record-meta{overflow-wrap:anywhere}
+html #view-life-hub #ux06-life-links{
+ display:flex;align-items:flex-start;flex-direction:column;gap:10px;
+ padding:13px 15px;margin:0 0 14px;
+ border:1px solid var(--omx-edge,var(--border-color,#414754));
+ border-radius:12px;background:var(--omx-card,var(--bg-surface,#1b2028));
+}
+html #view-life-hub .ux06-links-intro{display:flex;flex-direction:column;gap:3px}
+html #view-life-hub .ux06-links-intro strong{font-size:13px;font-weight:780}
+html #view-life-hub .ux06-links-intro span{font-size:12px;color:var(--text-secondary);line-height:1.35}
+html #view-life-hub .ux06-links-grid{
+ display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;width:100%;min-width:0;
+}
+html #view-life-hub .ux06-life-link{
+ display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:4px;
+ min-width:0;min-height:59px;padding:10px;
+ border:1px solid var(--omx-edge,var(--border-color,#414754));
+ border-radius:9px;background:var(--omx-raised,var(--bg-elevated,#252935));
+ color:var(--text-primary);font:inherit;text-align:left;cursor:pointer;
+}
+html #view-life-hub .ux06-life-link strong{font-size:12px;font-weight:720}
+html #view-life-hub .ux06-life-link span{
+ max-width:100%;font-size:10px;color:var(--text-secondary);line-height:1.3;overflow-wrap:anywhere;
+}
+@media(max-width:1090px){
+ html #view-life-hub .ux06-links-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+ html #view-life-hub .v43-life-shell{display:block}
+ html #view-life-hub .v43-life-rail{display:none}
+ html #view-life-hub #v43-life-select{display:block;width:100%;max-width:100%;min-height:44px}
+ html #view-life-hub #ux06-life-links{padding:12px;gap:9px}
+ html #view-life-hub .ux06-links-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ html #view-life-hub .ux06-life-link{min-height:54px;padding:9px}
+ html #view-life-hub .v43-life-toolbar .search-input{min-width:0;width:100%}
+ html #view-life-hub .v43-hero-actions{width:100%;flex-wrap:wrap}
+}
+@media(prefers-reduced-motion:reduce){
+ html #view-life-hub .v43-domain{transition:none}
+}

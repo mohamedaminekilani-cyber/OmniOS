@@ -271,13 +271,25 @@ function carryLoaderIntoApp(html){
   const rootClasses='omnios-startup-gate'+(hasIcon?' omnios-has-boot-icon':'');
   const gateCss='\n<style id="omnios-startup-gate-css">\n'+baseStyle.textContent+'\nhtml.omnios-startup-gate body{overflow:hidden!important}\nhtml.omnios-startup-gate body>*:not(#omnios-boot-screen){visibility:hidden!important;pointer-events:none!important}\n#omnios-boot-screen{background:var(--bg-base,#0f0f11);opacity:1;transition:opacity .18s ease}\n#omnios-boot-screen.is-leaving{opacity:0;pointer-events:none}\n</style>';
   const currentUiAuthorityCss='\n<style id="second-brain-current-ui-authority">\n/* Keep only the current visual authority on migrated pages. */\n#view-today>.v35-page-head,#view-today>.v35-stat-grid,#view-today>.v35-card,#view-today>.v35-grid{display:none!important}\n#view-today>#v58-attention,#view-today>#v58-today-intelligence{display:grid}\n#view-today>#v58-attention{display:flex}\n#view-inbox>.v35-page-head,#view-projects>.v35-page-head{display:none!important}\n#sb-inbox-authority-head,#sb-projects-authority-head{margin-bottom:12px}\n#view-inbox.v58-inbox-captures-hidden>.v35-list{display:none!important}\n</style>';
-  const currentUiAuthorityScript='<script id="second-brain-high-priority-authority">\n(function(){\n\'use strict\';\nlet inboxBusy=false,projectsBusy=false;\nfunction head(view,id,kicker,title,copy,action){\n  let h=document.getElementById(id);\n  if(!h){h=document.createElement(\'div\');h.id=id;h.className=\'v58-page-head sb-authority-head\';h.innerHTML=\'<div><div class="v35-kicker"></div><h3></h3><p></p></div><div class="v35-page-actions"><button type="button" class="btn btn-primary" data-sb-authority-action></button></div>\';}\n  h.querySelector(\'.v35-kicker\').textContent=kicker;h.querySelector(\'h3\').textContent=title;h.querySelector(\'p\').textContent=copy;\n  const b=h.querySelector(\'[data-sb-authority-action]\');b.textContent=action.label;b.onclick=action.run;\n  return h;\n}\nfunction decorateInbox(){\n  const view=document.getElementById(\'view-inbox\');if(!view||inboxBusy)return;inboxBusy=true;\n  try{\n    const old=view.querySelector(\'.v35-page-head\'),process=old?.querySelector(\'#v35-inbox-process\');\n    const h=head(view,\'sb-inbox-authority-head\',\'CAPTURE · TRIAGE\',\'Inbox\',\'Capture quickly, then process only what needs a destination.\',{label:\'Process oldest\',run:()=>process?.click()});\n    const anchor=view.querySelector(\'#v58-inbox-tabs\')||view.querySelector(\'.v35-card\')||view.firstElementChild;\n    if(anchor&&h.parentNode!==view)view.insertBefore(h,anchor);else if(anchor&&h.nextElementSibling!==anchor)view.insertBefore(h,anchor);\n  }finally{inboxBusy=false}\n}\nfunction decorateProjects(){\n  const view=document.getElementById(\'view-projects\');if(!view||projectsBusy)return;projectsBusy=true;\n  try{\n    const old=view.querySelector(\'.v35-page-head\'),add=old?.querySelector(\'#v35-project-add\');\n    const h=head(view,\'sb-projects-authority-head\',\'OUTCOMES · AREAS\',\'Projects & Life Areas\',\'Keep projects, areas and someday items in one outcome-focused workspace.\',{label:(add?.textContent||\'+ Project\').trim(),run:()=>add?.click()});\n    const seg=view.querySelector(\'.v35-segmented\');if(seg&&h.parentNode!==view)view.insertBefore(h,seg);else if(seg&&h.nextElementSibling!==seg)view.insertBefore(h,seg);\n    if(seg&&!seg.querySelector(\'[data-v58-project-relations]\')){const b=document.createElement(\'button\');b.type=\'button\';b.dataset.v58ProjectRelations=\'1\';b.textContent=\'Relations\';b.onclick=()=>window.switchView?.(\'relations\');seg.appendChild(b);}\n    if(seg&&!view.querySelector(\'#v58-project-kpis\')&&typeof state!==\'undefined\'){\n      const ps=Array.isArray(state.life?.projects)?state.life.projects:[],active=ps.filter(p=>p.status===\'active\'),done=ps.filter(p=>p.status===\'completed\'),today=(window.localDateString?localDateString():new Date().toISOString().slice(0,10)),overdue=active.filter(p=>p.targetDate&&p.targetDate<today),linked=ps.reduce((n,p)=>n+(Array.isArray(p.taskIds)?p.taskIds.length:0)+(Array.isArray(p.noteIds)?p.noteIds.length:0),0);\n      const k=document.createElement(\'div\');k.id=\'v58-project-kpis\';k.className=\'v58-kpis v58-project-kpis\';[[\'Active\',active.length],[\'Completed\',done.length],[\'Overdue\',overdue.length],[\'Linked records\',linked]].forEach(([label,value])=>{const x=document.createElement(\'div\');x.className=\'v58-kpi\';const a=document.createElement(\'span\'),b=document.createElement(\'strong\');a.textContent=label;b.textContent=String(value);x.append(a,b);k.appendChild(x)});seg.after(k);\n    }\n  }finally{projectsBusy=false}\n}\nfunction cleanCalendar(){document.documentElement.dataset.calendarAuthority=\'v94-v96\';}\nfunction decorate(){cleanCalendar();decorateInbox();decorateProjects();}\nfunction observe(id,fn){const v=document.getElementById(id);if(!v)return;let queued=false;new MutationObserver(()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;fn()})}).observe(v,{childList:true});}\nfunction ready(){decorate();observe(\'view-inbox\',decorateInbox);observe(\'view-projects\',decorateProjects);}\nif(document.readyState===\'loading\')document.addEventListener(\'DOMContentLoaded\',ready,{once:true});else ready();\n})();\n<\\/script>';
+  const currentUiAuthorityScript='<script id="second-brain-high-priority-authority">\n(function(){\n\'use strict\';\nlet inboxBusy=false,projectsBusy=false;\nfunction head(view,id,kicker,title,copy,action){\n  let h=document.getElementById(id);\n  if(!h){h=document.createElement(\'div\');h.id=id;h.className=\'v58-page-head sb-authority-head\';h.innerHTML=\'<div><div class="v35-kicker"></div><h3></h3><p></p></div><div class="v35-page-actions"><button type="button" class="btn btn-primary" data-sb-authority-action></button></div>\';}\n  h.querySelector(\'.v35-kicker\').textContent=kicker;h.querySelector(\'h3\').textContent=title;h.querySelector(\'p\').textContent=copy;\n  const b=h.querySelector(\'[data-sb-authority-action]\');b.textContent=action.label;b.onclick=action.run;\n  return h;\n}\nfunction decorateInbox(){\n  const view=document.getElementById(\'view-inbox\');if(!view||inboxBusy)return;inboxBusy=true;\n  try{\n    const old=view.querySelector(\'.v35-page-head\'),process=old?.querySelector(\'#v35-inbox-process\');\n    const h=head(view,\'sb-inbox-authority-head\',\'CAPTURE · TRIAGE\',\'Inbox\',\'Capture quickly, then process only what needs a destination.\',{label:\'Process oldest\',run:()=>process?.click()});\n    const anchor=view.querySelector(\'#v58-inbox-tabs\')||view.querySelector(\'.v35-card\')||view.firstElementChild;\n    if(anchor&&h.parentNode!==view)view.insertBefore(h,anchor);else if(anchor&&h.nextElementSibling!==anchor)view.insertBefore(h,anchor);\n  }finally{inboxBusy=false}\n}\nfunction decorateProjects(){\n  const view=document.getElementById(\'view-projects\');if(!view||projectsBusy)return;projectsBusy=true;\n  try{\n    const old=view.querySelector(\'.v35-page-head\'),add=old?.querySelector(\'#v35-project-add\');\n    const h=head(view,\'sb-projects-authority-head\',\'OUTCOMES · AREAS\',\'Projects & Life Areas\',\'Keep projects, areas and someday items in one outcome-focused workspace.\',{label:(add?.textContent||\'+ Project\').trim(),run:()=>add?.click()});\n    const seg=view.querySelector(\'.v35-segmented\');if(seg&&h.parentNode!==view)view.insertBefore(h,seg);else if(seg&&h.nextElementSibling!==seg)view.insertBefore(h,seg);\n    if(seg&&!seg.querySelector(\'[data-v58-project-relations]\')){const b=document.createElement(\'button\');b.type=\'button\';b.dataset.v58ProjectRelations=\'1\';b.textContent=\'Relations\';b.onclick=()=>window.switchView?.(\'relations\');seg.appendChild(b);}\n    if(seg&&!view.querySelector(\'#v58-project-kpis\')&&typeof state!==\'undefined\'){\n      const ps=Array.isArray(state.life?.projects)?state.life.projects:[],active=ps.filter(p=>p.status===\'active\'),done=ps.filter(p=>p.status===\'completed\'),today=(window.localDateString?localDateString():new Date().toISOString().slice(0,10)),overdue=active.filter(p=>p.targetDate&&p.targetDate<today),linked=ps.reduce((n,p)=>n+(Array.isArray(p.taskIds)?p.taskIds.length:0)+(Array.isArray(p.noteIds)?p.noteIds.length:0),0);\n      const k=document.createElement(\'div\');k.id=\'v58-project-kpis\';k.className=\'v58-kpis v58-project-kpis\';[[\'Active\',active.length],[\'Completed\',done.length],[\'Overdue\',overdue.length],[\'Linked records\',linked]].forEach(([label,value])=>{const x=document.createElement(\'div\');x.className=\'v58-kpi\';const a=document.createElement(\'span\'),b=document.createElement(\'strong\');a.textContent=label;b.textContent=String(value);x.append(a,b);k.appendChild(x)});seg.after(k);\n    }\n  }finally{projectsBusy=false}\n}\nfunction cleanCalendar(){document.documentElement.dataset.calendarAuthority=\'v94-v96\';}\nfunction decorate(){cleanCalendar();decorateInbox();decorateProjects();}\nfunction observe(id,fn){const v=document.getElementById(id);if(!v)return;let queued=false;new MutationObserver(()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;fn()})}).observe(v,{childList:true});}\nfunction ready(){decorate();observe(\'view-inbox\',decorateInbox);observe(\'view-projects\',decorateProjects);}\nif(document.readyState===\'loading\')document.addEventListener(\'DOMContentLoaded\',ready,{once:true});else ready();\n})();\n</scr'+'ipt>';
   const bootHtml=boot.outerHTML;
   let out=addRootClass(html,rootClasses);
   out=out.replace(/<\/head>/i,gateCss+currentUiAuthorityCss+'\n'+
-    '<link rel="stylesheet" href="./styles/omnios-ux-foundation.css" id="omnios-ux-foundation-styles">\n</head>');
+    '<link rel="stylesheet" href="./styles/omnios-ux-foundation.css" id="omnios-ux-foundation-styles">\n'+
+    '<link rel="stylesheet" href="./styles/omnios-ux-phase02.css" id="omnios-ux-phase02-styles">\n'+
+    '<link rel="stylesheet" href="./styles/omnios-ux-phase03.css" id="omnios-ux-phase03-styles">\n'+
+    '<link rel="stylesheet" href="./styles/omnios-ux-phase04.css" id="omnios-ux-phase04-styles">\n'+
+    '<link rel="stylesheet" href="./styles/omnios-ux-phase05.css" id="omnios-ux-phase05-styles">\n'+
+    '<link rel="stylesheet" href="./styles/omnios-ux-phase06.css" id="omnios-ux-phase06-styles">\n'+
+    '<link rel="stylesheet" href="./styles/omnios-ux-phase07.css" id="omnios-ux-phase07-styles">\n</head>');
   out=out.replace(/<body([^>]*)>/i,function(m,attrs){return '<body'+attrs+'>\n'+bootHtml});
-  out=out.replace(/<\/body>/i,currentUiAuthorityScript+'\n</body>');
+  out=out.replace(/<\/body>/i,currentUiAuthorityScript+'\n'+
+    '<script src="./js/omnios-navigation-phase02.js" defer></scr'+'ipt>\n'+
+    '<script src="./js/omnios-today-phase03.js" defer></scr'+'ipt>\n'+
+    '<script src="./js/omnios-capture-phase04.js" defer></scr'+'ipt>\n'+
+    '<script src="./js/omnios-calendar-phase05.js" defer></scr'+'ipt>\n'+
+    '<script src="./js/omnios-life-hub-phase06.js" defer></scr'+'ipt>\n'+
+    '<script src="./js/omnios-modules-phase07.js" defer></scr'+'ipt>\n</body>');
   return out;
 }
 
@@ -292,18 +304,38 @@ function carryLoaderIntoApp(html){
       try{await releaseCache.put(key,response)}catch(e){console.warn('Offline app cache unavailable',e)}
     }
     const activeKey=new URL('./__active_release__',location.href).href;
+    const backupKey=new URL('./__previous_valid_release__',location.href).href;
     const dismissedKey='omnios_update_dismissed_v1';
     let currentManifest=null,checkingUpdate=false,promptingSha='',updatePromptTimer=0;
 
+    async function readReleasePointer(key){
+      try{
+        const pointer=await releaseCache.match(key);if(!pointer)return null;
+        const m=await pointer.json();
+        if(!m||typeof m.file!=='string'||!/^app\.[a-f0-9]{20}\.html$/.test(m.file))return null;
+        const r=await releaseCache.match(new URL(m.file,location.href).href);
+        if(!r)return null;
+        const text=await r.text();
+        return await verified(m,text)?{m,text}:null;
+      }catch(_){return null}
+    }
     async function installed(){
-      const pointer=await releaseCache.match(activeKey);if(!pointer)return null;
-      const m=await pointer.json(),r=await releaseCache.match(new URL(m.file,location.href).href);
-      if(!r)return null;const text=await r.text();
-      return await verified(m,text)?{m,text}:null;
+      // Never execute a corrupted active cache. The previous pointer is a
+      // checksum-verified fallback, never an unvalidated HTML snapshot.
+      return (await readReleasePointer(activeKey))||(await readReleasePointer(backupKey));
+    }
+    async function rememberRelease(m){
+      // Preserve the last fully verified active release before advancing the
+      // pointer. If an update is interrupted, the prior pointer stays intact.
+      const current=await readReleasePointer(activeKey);
+      if(current&&current.m.sha256!==m.sha256){
+        await cacheRelease(backupKey,new Response(JSON.stringify(current.m),{headers:{'Content-Type':'application/json'}}));
+      }
+      await cacheRelease(activeKey,new Response(JSON.stringify(m),{headers:{'Content-Type':'application/json'}}));
     }
 
     async function verified(m,text){
-      if(m?.version!==1||!/^app\.[a-f0-9]{20}\.html$/.test(m.file)||!/^[a-f0-9]{64}$/.test(m.sha256))return false;
+      if(m?.version!==1||!/^app\.[a-f0-9]{20}\.html$/.test(m.file)||!/^[a-f0-9]{64}$/.test(m.sha256)||m.file!=='app.'+m.sha256.slice(0,20)+'.html')return false;
       const bytes=new TextEncoder().encode(text);if(bytes.length!==m.bytes)return false;
       const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('');
       return hash===m.sha256;
@@ -359,7 +391,7 @@ function carryLoaderIntoApp(html){
         if(!await verified(m,text))throw Error('Release checksum failed');
         await cacheRelease(url,new Response(text,{headers:{'Content-Type':'text/html'}}));
       }
-      if(activate)await cacheRelease(activeKey,new Response(JSON.stringify(m),{headers:{'Content-Type':'application/json'}}));
+      if(activate)await rememberRelease(m);
       return {m,text};
     }
 
@@ -414,7 +446,7 @@ function carryLoaderIntoApp(html){
           if(!text||!await verified(m,text))throw Error('Update payload could not be verified');
           const releaseUrl=new URL(m.file,location.href).href;
           await cacheRelease(releaseUrl,new Response(text,{headers:{'Content-Type':'text/html'}}));
-          await cacheRelease(activeKey,new Response(JSON.stringify(m),{headers:{'Content-Type':'application/json'}}));
+          await rememberRelease(m);
           currentManifest=m;promptingSha='';
           try{sessionStorage.removeItem(dismissedKey)}catch(_){}
           try{const reg=await navigator.serviceWorker?.getRegistration?.();await reg?.update?.()}catch(_){}

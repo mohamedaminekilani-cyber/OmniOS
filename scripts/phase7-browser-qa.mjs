@@ -353,6 +353,11 @@ try{
  check('Phase 10 shared design tokens resolve on the running page',
    Object.values(tokens10).every(Boolean),tokens10);
 
+ // Phase 10.3: inspect the actual canonical forms and headers at mobile width.
+ const forms10=await evaluate('(()=>{const ids=["workout","diet","budget","habits","notes"];return ids.map(id=>{const root=document.getElementById("view-"+id);const head=root?.querySelector(".workout-hero,.nut-hero,.finance-hero,.v38-finance-head,.org-hero,.habit-toolbar");const input=root?.querySelector(".org-toolbar input,.org-toolbar select,.notes-toolbar input,.notes-toolbar select,.nut-field input,.v38-field input");return {id,found:!!root,headerFits:!head||head.getBoundingClientRect().width<=innerWidth+2,inputFits:!input||input.getBoundingClientRect().right<=innerWidth+2,inputPx:input?parseFloat(getComputedStyle(input).fontSize):null}})})()');
+ check('Phase 10.3 canonical module headers and forms fit 390px viewport',
+   forms10.every(x=>x.found&&x.headerFits&&x.inputFits),{modules:forms10});
+
  // Phase 08 telemetry: record real-loader startup and route-to-painted-frame timing.
  // Informational performance samples are deliberately not rigid time budgets:
  // CI host variability must not create false positives. Functional checks still gate.

@@ -149,3 +149,14 @@ html body .sidebar .ux02-side-group .nav-item{border-radius:var(--ux-radius-sm);
 @media(prefers-reduced-motion:reduce){
  html body .sidebar .ux02-side-toggle,html body .sidebar .ux02-side-links>.nav-item{transition:none}
 }
+
+/* Phase 12 navigation finishes the shared surface system without hiding routes. */
+@media(min-width:761px){
+ html body .sidebar .ux02-side-toggle{border-color:transparent}
+ html body .sidebar .ux02-side-toggle:is(:hover,:focus-visible){background:color-mix(in srgb,var(--ux-accent,#a78bfa) 7%,var(--ux-surface,#1c1e24))}
+ html body .sidebar .ux02-side-links>.nav-item.active{border-color:color-mix(in srgb,var(--ux-accent,#a78bfa) 20%,transparent);font-weight:660}
+ html body .sidebar .ux02-side-count{font-variant-numeric:tabular-nums}
+}
+@media(max-width:760px){
+ html body .ux02-mobile-tab.active{box-shadow:inset 0 2px 0 color-mix(in srgb,var(--ux-accent,#a78bfa) 75%,transparent)}
+}

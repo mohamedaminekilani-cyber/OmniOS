@@ -150,7 +150,12 @@
       b.append(icon(g.icon),el('span','ux02-tab-label',g.label));
       if(g.id==='today'){
         b.setAttribute('aria-label','Go to Today');
-        b.addEventListener('click',()=>navigate('today'));
+        b.addEventListener('click',()=>{
+          // First tap switches directly to Today; tapping the active Today
+          // destination opens its full group (Dashboard and Inbox remain reachable).
+          if(visibleView()==='today')showDrawer('today',b);
+          else navigate('today');
+        });
       }else{
         b.setAttribute('aria-haspopup','dialog');b.setAttribute('aria-expanded','false');
         b.addEventListener('click',()=>{

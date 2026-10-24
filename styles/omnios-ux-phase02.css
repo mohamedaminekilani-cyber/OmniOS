@@ -116,3 +116,19 @@ html body .ux02-mobile-nav,html body .ux02-drawer{display:none}
 @media(prefers-reduced-motion:reduce){
   html body .ux02-side-chevron{transition:none}
 }
+
+/* UX Phase 10.2 — mobile navigation and sidebar use the same token contract.
+   Low specificity on legacy pieces, targeted selectors for Phase 02 dock. */
+html body .sidebar .ux02-side-toggle{
+  gap:var(--ux-nav-gap);min-height:var(--ux-control-height);
+  border-radius:var(--ux-radius-md);padding:var(--ux-space-2) var(--ux-space-3);
+  font-size:var(--ux-text-sm);line-height:var(--ux-leading-normal);
+}
+html body .sidebar .ux02-side-group .nav-item{border-radius:var(--ux-radius-sm);min-width:0}
+@media(max-width:760px){
+  html body .ux02-mobile-nav{gap:var(--ux-space-1);border-radius:var(--ux-radius-lg)}
+  html body .ux02-mobile-tab{min-height:var(--ux-control-height);border-radius:var(--ux-radius-sm)}
+  html body .ux02-mobile-nav .ux02-tab-label{font-size:12px;line-height:1.25;font-weight:700;white-space:nowrap}
+  html body .ux02-drawer button{min-height:var(--ux-control-height)}
+  html body .ux02-drawer :where(.ux02-drawer-title,.ux02-drawer-head){min-width:0}
+}

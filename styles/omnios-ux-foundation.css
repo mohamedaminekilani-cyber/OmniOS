@@ -102,3 +102,66 @@
 @media (max-width:760px){
   html body:has(#view-today.active) #v55-capture-fab{display:none!important}
 }
+
+/* UX Phase 10.1 — unified, reversible design contract.
+   Existing theme variables remain authoritative; bridge names are aliases.
+   No legacy listeners, component IDs or stored preferences are altered. */
+:root{
+  --ux-space-0:0px;--ux-space-7:28px;--ux-space-10:40px;
+  --ux-radius-xs:6px;--ux-radius-xl:20px;--ux-radius-pill:999px;
+  --ux-text-2xs:11px;--ux-text-lg:18px;--ux-text-xl:24px;
+  --ux-leading-tight:1.25;--ux-leading-normal:1.5;
+  --ux-border-subtle:var(--border-light,var(--ux-border));
+  --ux-surface-raised:var(--bg-elevated,var(--ux-surface));
+  --ux-surface-hover:var(--bg-hover,var(--ux-surface-raised));
+  --ux-focus:var(--omx-focus,var(--ux-accent));
+  --ux-control-height:var(--ux-target);
+  --ux-nav-gap:var(--ux-space-2);
+  --ux-page-inline:var(--ux-space-5);
+  --ux-header-gap:var(--ux-space-4);
+}
+:where(.ux-button,.ux-tab,.ux-input,.ux-select,.ux-textarea){
+  box-sizing:border-box;min-width:0;
+}
+:where(.ux-button,.ux-tab){transition:background-color .14s ease,border-color .14s ease}
+.ux-button-secondary{background:var(--ux-surface-raised);border-color:var(--ux-border-subtle)}
+.ux-button-ghost{border-color:transparent;background:transparent}
+.ux-button-danger{color:var(--danger,#e06e6e);border-color:var(--ux-border-subtle);background:var(--ux-surface)}
+.ux-button:disabled,.ux-tab:disabled{opacity:.55;cursor:not-allowed}
+.ux-page-heading,.ux-page-actions,.ux-toolbar{max-width:100%}
+.ux-page-header :where(h1,h2,h3){line-height:var(--ux-leading-tight)}
+.ux-input:focus-visible,.ux-button:focus-visible,.ux-tab:focus-visible{outline-color:var(--ux-focus)}
+@media(max-width:760px){
+  :root{--ux-page-inline:var(--ux-space-4);--ux-header-gap:var(--ux-space-3)}
+  .ux-page-header{gap:var(--ux-header-gap)}
+  .ux-page-actions{width:100%}
+}
+@media(prefers-reduced-motion:reduce){:where(.ux-button,.ux-tab){transition:none}}
+
+/* UX Phase 10.3: opt-in inline validation feedback; no change to legacy fields. */
+.ux-field-feedback{display:block;margin:var(--ux-space-1) 0 var(--ux-space-2);font-size:var(--ux-text-xs);line-height:var(--ux-leading-normal);overflow-wrap:anywhere}
+.ux-field-feedback-error{color:var(--danger,var(--color-danger,#e99696))}
+:where(.ux-input,[data-ux-field])[aria-invalid="true"]{border-color:var(--danger,var(--color-danger,#e99696))}
+:where(.ux-input,[data-ux-field])[aria-invalid="true"]:focus-visible{outline-color:var(--danger,var(--color-danger,#e99696))}
+
+/* Phase 10.4 opt-in dialog. All legacy native dialogs remain unchanged. */
+.ux-dialog-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:var(--ux-space-4);background:rgba(0,0,0,.65)}
+.ux-dialog-panel{box-sizing:border-box;width:min(100%,460px);max-height:calc(100dvh - 32px);overflow-y:auto;background:var(--ux-surface);color:var(--ux-text);border:1px solid var(--ux-border);border-radius:var(--ux-radius-lg);padding:var(--ux-space-6);display:grid;gap:var(--ux-space-3);box-shadow:0 16px 48px rgba(0,0,0,.26)}
+.ux-dialog-heading{margin:0;font-size:var(--ux-text-xl);line-height:var(--ux-leading-tight);overflow-wrap:anywhere}
+.ux-dialog-description{margin:0;color:var(--ux-muted);font-size:var(--ux-text-sm);line-height:var(--ux-leading-normal);white-space:pre-wrap;overflow-wrap:anywhere}
+.ux-dialog-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:var(--ux-space-2);margin-top:var(--ux-space-2)}
+.ux-dialog-panel .ux-field-label{margin-top:var(--ux-space-2)}
+@media(max-width:760px){.ux-dialog-overlay{align-items:flex-end;padding:var(--ux-space-3) var(--ux-space-3) max(12px,env(safe-area-inset-bottom))}.ux-dialog-panel{padding:var(--ux-space-4);border-radius:var(--ux-radius-lg)}.ux-dialog-actions>.ux-button{flex:1;min-width:0}}
+
+/* Phase 10.5–10.7: consistent accessible component primitives.
+   Opt-in class selectors intentionally avoid overriding legacy screens. */
+.ux-stack{display:flex;flex-direction:column;gap:var(--ux-space-4);min-width:0}
+.ux-cluster{display:flex;align-items:center;flex-wrap:wrap;gap:var(--ux-space-2);min-width:0}
+.ux-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:var(--ux-space-4);min-width:0}
+.ux-form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:var(--ux-space-3);min-width:0}
+.ux-textarea,.ux-select{box-sizing:border-box;width:100%;max-width:100%;min-height:var(--ux-control-height);border-radius:var(--ux-radius-sm);padding:var(--ux-space-2) var(--ux-space-3);border:1px solid var(--ux-border);color:var(--ux-text);background:var(--ux-canvas);font:inherit;font-size:var(--ux-text-base)}
+.ux-field-hint{color:var(--ux-muted);font-size:var(--ux-text-xs);line-height:var(--ux-leading-normal)}
+.ux-button:is(:hover,:focus-visible):not(:disabled){border-color:var(--ux-focus)}
+.ux-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.ux-page :where(.ux-page-header,.ux-toolbar,.ux-card,.ux-form-row)>*{min-width:0}
+@media(max-width:760px){.ux-grid,.ux-form-row{grid-template-columns:minmax(0,1fr)}.ux-cluster>.ux-button{min-height:var(--ux-control-height)}}

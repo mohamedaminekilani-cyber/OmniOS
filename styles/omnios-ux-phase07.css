@@ -94,3 +94,41 @@ html #view-notes .org-toolbar #org-note-sort{min-width:0;max-width:100%}
    flex:1 1 auto;min-width:0;min-height:42px;white-space:normal;
  }
 }
+
+/* UX Phase 10.3: align REAL module headers and forms with Phase 10 design
+   aliases. Styling only: never replace the existing markup or save handlers. */
+html :is(#view-workout,#view-diet,#view-budget,#view-habits,#view-notes)
+:is(.workout-hero,.nut-hero,.finance-hero,.v38-finance-head,.org-hero,.habit-toolbar){
+  min-width:0;max-width:100%;column-gap:var(--ux-header-gap);
+}
+html :is(#view-workout,#view-diet,#view-budget,#view-habits,#view-notes)
+:is(.workout-hero-actions,.nut-hero-actions,.finance-hero-actions,.v38-finance-head-actions,.org-actions,.toolbar-group){
+  min-width:0;max-width:100%;gap:var(--ux-nav-gap);
+}
+html :is(#view-workout,#view-diet,#view-budget,#view-habits,#view-notes)
+:is(.workout-hero,.nut-hero,.finance-hero,.v38-finance-head,.org-hero)
+:is(h1,h2,h3){min-width:0;overflow-wrap:anywhere;line-height:var(--ux-leading-tight)}
+html :is(#view-workout,#view-diet,#view-budget,#view-habits,#view-notes)
+:is(.form-group,.form-row,.form-grid,.nut-field,.v38-field,.org-field){
+  min-width:0;max-width:100%;
+}
+html :is(#view-workout,#view-diet,#view-budget,#view-habits,#view-notes)
+:is(input:not([type="checkbox"]):not([type="radio"]),select,textarea){
+  box-sizing:border-box;min-width:0;max-width:100%;
+}
+html :is(#view-workout,#view-diet,#view-budget,#view-habits,#view-notes)
+:is(input,select,textarea,button):focus-visible{
+  outline-color:var(--ux-focus);outline-offset:2px;
+}
+@media(max-width:760px){
+ html :is(#view-workout,#view-diet,#view-budget,#view-habits,#view-notes)
+ :is(.workout-hero-actions,.nut-hero-actions,.finance-hero-actions,.v38-finance-head-actions,.org-actions){max-width:100%;min-width:0}
+ html :is(#view-workout,#view-diet,#view-budget,#view-habits,#view-notes)
+ :is(.workout-hero-actions,.nut-hero-actions,.finance-hero-actions,.v38-finance-head-actions,.org-actions)
+ >:is(button,.btn,.icon-btn){min-height:var(--ux-control-height)}
+ html :is(#view-workout,#view-diet,#view-budget,#view-habits,#view-notes)
+ :is(.notes-toolbar,.org-toolbar,.nut-field,.v38-field,.form-group)
+ :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea){
+   font-size:max(16px,1em);
+ }
+}

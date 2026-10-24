@@ -148,12 +148,16 @@
       const b=el('button','ux02-mobile-tab');
       b.type='button';b.dataset.ux02Group=g.id;
       b.append(icon(g.icon),el('span','ux02-tab-label',g.label));
-      b.setAttribute('aria-haspopup','dialog');b.setAttribute('aria-expanded','false');
-      b.addEventListener('click',()=>{
-        // Every group opens the same destination sheet so no legacy page is stranded.
-        if(!state.dialog?.hidden&&state.dialog.dataset.ux02Group===g.id){closeDrawer();return}
-        showDrawer(g.id,b);
-      });
+      if(g.id==='today'){
+        b.setAttribute('aria-label','Go to Today');
+        b.addEventListener('click',()=>navigate('today'));
+      }else{
+        b.setAttribute('aria-haspopup','dialog');b.setAttribute('aria-expanded','false');
+        b.addEventListener('click',()=>{
+          if(!state.dialog?.hidden&&state.dialog.dataset.ux02Group===g.id){closeDrawer();return}
+          showDrawer(g.id,b);
+        });
+      }
       dock.appendChild(b);state.buttons.push(b);
     });
     const capture=el('button','ux02-mobile-tab ux02-capture');

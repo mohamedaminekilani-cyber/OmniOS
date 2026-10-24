@@ -57,6 +57,43 @@ function decorate(){
    });
  }
 }
+// Opt-in inline feedback for forms migrated to the shared UX contract.
+// No automatic validation or save interception: legacy flows remain authoritative.
+const fieldMessages=new WeakMap();
+let nextMessageId=0;
+function clearFieldError(field){
+ if(!field)return;
+ const record=fieldMessages.get(field);
+ if(!record)return;
+ if(record.hadInvalid)field.setAttribute('aria-invalid',record.invalid);
+ else field.removeAttribute('aria-invalid');
+ if(record.hadDescribedBy)field.setAttribute('aria-describedby',record.describedBy);
+ else field.removeAttribute('aria-describedby');
+ record.message.remove();
+ fieldMessages.delete(field);
+}
+function reportFieldError(field,message){
+ if(!field||typeof field.setAttribute!=='function')return false;
+ const text=String(message||'').trim();
+ if(!text){clearFieldError(field);return false}
+ let record=fieldMessages.get(field);
+ if(!record){
+  const node=document.createElement('p');
+  node.id='ux07-field-feedback-'+(++nextMessageId);
+  node.className='ux-field-feedback ux-field-feedback-error';
+  node.setAttribute('role','alert');
+  const describedBy=field.getAttribute('aria-describedby');
+  record={message:node,hadInvalid:field.hasAttribute('aria-invalid'),
+   invalid:field.getAttribute('aria-invalid'),hadDescribedBy:field.hasAttribute('aria-describedby'),
+   describedBy};
+  fieldMessages.set(field,record);
+  field.insertAdjacentElement('afterend',node);
+  field.setAttribute('aria-describedby',[describedBy,node.id].filter(Boolean).join(' '));
+ }
+ record.message.textContent=text;
+ field.setAttribute('aria-invalid','true');
+ return true;
+}
 function refresh(){
  if(state.pending)return;
  state.pending=true;queueMicrotask(decorate);
@@ -79,7 +116,7 @@ function install(){
  window.addEventListener('hashchange',refresh);
  refresh();
 }
-window.OmniModules07={refresh,views:MODULES.map(m=>m.id).concat(['budget','notes'])};
+window.OmniModules07={refresh,reportFieldError,clearFieldError,views:MODULES.map(m=>m.id).concat(['budget','notes'])};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
 else install();
 })();

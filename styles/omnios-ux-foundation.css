@@ -215,3 +215,21 @@ html body #view-today :is(.card,.ux-card) :is(p,.muted,.text-muted){
 @media(prefers-reduced-motion:reduce){
  html body #view-today :is(.btn,button,.card,.ux-card){transition:none}
 }
+
+/* Phase 12 — cohesive premium polish. Existing actions, DOM, and storage preserved. */
+html body #view-today{--ux12-glow:color-mix(in srgb,var(--ux-accent,#9f87fa) 12%,transparent)}
+html body #view-today :is(.card,.ux-card){background:color-mix(in srgb,var(--ux-surface,#191b22) 94%,transparent);border-color:color-mix(in srgb,var(--ux-border,#343945) 54%,transparent)}
+html body #view-today :is(.card,.ux-card):focus-within{border-color:color-mix(in srgb,var(--ux-accent,#a78bfa) 34%,var(--ux-border,#353943))}
+html body #view-today #v58-attention{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--ux-accent,#a78bfa) 52%,transparent)}
+html body #view-today :is(.v58-page-head,.v35-page-head) :is(h1,h2){text-wrap:balance}
+html body #view-today :is(.v58-page-head,.v35-page-head) :is(.btn,button){font-weight:650}
+html body #view-today :is(.card,.ux-card) :is(h2,h3){line-height:1.25}
+@media(min-width:1100px){
+ html body #view-today :is(.v58-page-head,.v35-page-head){padding-block:22px 28px}
+ html body #view-today :is(.card,.ux-card){border-radius:18px}
+}
+@media(max-width:760px){
+ html body #view-today :is(.card,.ux-card){padding-inline:clamp(12px,4vw,20px)}
+ html body #view-today #v58-attention{box-shadow:inset 2px 0 0 color-mix(in srgb,var(--ux-accent,#a78bfa) 52%,transparent)}
+}
+@media(prefers-reduced-motion:reduce){html body #view-today :is(.card,.ux-card){transition:none}}

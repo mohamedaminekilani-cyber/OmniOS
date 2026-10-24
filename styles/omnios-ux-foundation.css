@@ -143,3 +143,12 @@
 .ux-field-feedback-error{color:var(--danger,var(--color-danger,#e99696))}
 :where(.ux-input,[data-ux-field])[aria-invalid="true"]{border-color:var(--danger,var(--color-danger,#e99696))}
 :where(.ux-input,[data-ux-field])[aria-invalid="true"]:focus-visible{outline-color:var(--danger,var(--color-danger,#e99696))}
+
+/* Phase 10.4 opt-in dialog. All legacy native dialogs remain unchanged. */
+.ux-dialog-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:var(--ux-space-4);background:rgba(0,0,0,.65)}
+.ux-dialog-panel{box-sizing:border-box;width:min(100%,460px);max-height:calc(100dvh - 32px);overflow-y:auto;background:var(--ux-surface);color:var(--ux-text);border:1px solid var(--ux-border);border-radius:var(--ux-radius-lg);padding:var(--ux-space-6);display:grid;gap:var(--ux-space-3);box-shadow:0 16px 48px rgba(0,0,0,.26)}
+.ux-dialog-heading{margin:0;font-size:var(--ux-text-xl);line-height:var(--ux-leading-tight);overflow-wrap:anywhere}
+.ux-dialog-description{margin:0;color:var(--ux-muted);font-size:var(--ux-text-sm);line-height:var(--ux-leading-normal);white-space:pre-wrap;overflow-wrap:anywhere}
+.ux-dialog-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:var(--ux-space-2);margin-top:var(--ux-space-2)}
+.ux-dialog-panel .ux-field-label{margin-top:var(--ux-space-2)}
+@media(max-width:760px){.ux-dialog-overlay{align-items:flex-end;padding:var(--ux-space-3) var(--ux-space-3) max(12px,env(safe-area-inset-bottom))}.ux-dialog-panel{padding:var(--ux-space-4);border-radius:var(--ux-radius-lg)}.ux-dialog-actions>.ux-button{flex:1;min-width:0}}

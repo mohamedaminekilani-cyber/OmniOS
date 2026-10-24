@@ -152,3 +152,16 @@
 .ux-dialog-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:var(--ux-space-2);margin-top:var(--ux-space-2)}
 .ux-dialog-panel .ux-field-label{margin-top:var(--ux-space-2)}
 @media(max-width:760px){.ux-dialog-overlay{align-items:flex-end;padding:var(--ux-space-3) var(--ux-space-3) max(12px,env(safe-area-inset-bottom))}.ux-dialog-panel{padding:var(--ux-space-4);border-radius:var(--ux-radius-lg)}.ux-dialog-actions>.ux-button{flex:1;min-width:0}}
+
+/* Phase 10.5–10.7: consistent accessible component primitives.
+   Opt-in class selectors intentionally avoid overriding legacy screens. */
+.ux-stack{display:flex;flex-direction:column;gap:var(--ux-space-4);min-width:0}
+.ux-cluster{display:flex;align-items:center;flex-wrap:wrap;gap:var(--ux-space-2);min-width:0}
+.ux-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:var(--ux-space-4);min-width:0}
+.ux-form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:var(--ux-space-3);min-width:0}
+.ux-textarea,.ux-select{box-sizing:border-box;width:100%;max-width:100%;min-height:var(--ux-control-height);border-radius:var(--ux-radius-sm);padding:var(--ux-space-2) var(--ux-space-3);border:1px solid var(--ux-border);color:var(--ux-text);background:var(--ux-canvas);font:inherit;font-size:var(--ux-text-base)}
+.ux-field-hint{color:var(--ux-muted);font-size:var(--ux-text-xs);line-height:var(--ux-leading-normal)}
+.ux-button:is(:hover,:focus-visible):not(:disabled){border-color:var(--ux-focus)}
+.ux-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.ux-page :where(.ux-page-header,.ux-toolbar,.ux-card,.ux-form-row)>*{min-width:0}
+@media(max-width:760px){.ux-grid,.ux-form-row{grid-template-columns:minmax(0,1fr)}.ux-cluster>.ux-button{min-height:var(--ux-control-height)}}

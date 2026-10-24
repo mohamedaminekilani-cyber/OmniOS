@@ -18,7 +18,8 @@ test('Phase 10.1 theme aliases remain backwards compatible',()=>{
 test('Phase 10.2 retains original five mobile destinations but makes Today direct',()=>{
  assert.match(navigation,/GROUPS\.forEach\(g=>\{/);
  assert.match(navigation,/if\(g\.id==='today'\)/);
- assert.match(navigation,/b\.addEventListener\('click',\(\)=>navigate\('today'\)\)/);
+ assert.match(navigation,/if\(visibleView\(\)==='today'\)showDrawer\('today',b\)/);
+ assert.match(navigation,/else navigate\('today'\)/);
  assert.match(navigation,/b\.setAttribute\('aria-label','Go to Today'\)/);
  assert.match(navigation,/showDrawer\(g\.id,b\)/);
  assert.match(navigation,/dock\.appendChild\(capture\)/);

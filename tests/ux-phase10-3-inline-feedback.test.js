@@ -51,7 +51,7 @@ test('Phase 10.3 clears only owned accessibility state',()=>{
  assert.equal(reportFieldError(null,'oops'),false);
 });
 test('Phase 10.3 exports voluntary feedback without touching existing persistence or routes',()=>{
- assert.match(source,/window\.OmniModules07=\{refresh,reportFieldError,clearFieldError,views:/);
+ assert.match(source,/window\.OmniModules07=\{refresh,reportFieldError,clearFieldError,dialog:uxDialog,views:/);
  assert.doesNotMatch(source.slice(from,to),/localStorage|indexedDB|saveState|innerHTML|window\.switchView/);
  assert.doesNotThrow(()=>new vm.Script(source));
  const css=fs.readFileSync('styles/omnios-ux-foundation.css','utf8');

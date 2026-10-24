@@ -358,6 +358,10 @@ try{
  check('Phase 10.3 canonical module headers and forms fit 390px viewport',
    forms10.every(x=>x.found&&x.headerFits&&x.inputFits),{modules:forms10});
 
+ // Phase 10.3 opt-in form feedback: live-region and description restoration.
+ const fieldFeedback10=await evaluate('(()=>{const api=window.OmniModules07;if(!api?.reportFieldError||!api?.clearFieldError)return {available:false};const field=document.createElement("input");field.setAttribute("aria-describedby","ux-existing-hint");document.body.append(field);api.reportFieldError(field,"Please provide a value");const msg=field.nextElementSibling;const valid=field.getAttribute("aria-invalid")==="true"&&msg?.getAttribute("role")==="alert"&&msg?.textContent==="Please provide a value"&&field.getAttribute("aria-describedby")?.includes(msg.id);api.clearFieldError(field);const restored=field.getAttribute("aria-describedby")==="ux-existing-hint"&&!field.hasAttribute("aria-invalid")&&!msg.isConnected;field.remove();return {available:true,valid,restored}})()');
+ check('Phase 10.3 inline errors announce feedback and restore existing ARIA descriptions',fieldFeedback10.available&&fieldFeedback10.valid&&fieldFeedback10.restored,fieldFeedback10);
+
  // Phase 08 telemetry: record real-loader startup and route-to-painted-frame timing.
  // Informational performance samples are deliberately not rigid time budgets:
  // CI host variability must not create false positives. Functional checks still gate.

@@ -344,6 +344,15 @@ try{
  check('Phase 07 original modal actions open for Workout, Nutrition, Finance, Habits and Notes',
    interactions07.length===5&&interactions07.every(x=>x.found&&x.opened),interactions07);
 
+ // Phase 10.1/10.2 — functional mobile navigation and shared design tokens.
+ await setViewport(390,844);
+ const nav10=await evaluate('(async()=>{const dock=document.getElementById("ux02-mobile-nav"),tabs=[...dock.querySelectorAll("[data-ux02-group]")],today=tabs.find(b=>b.dataset.ux02Group==="today"),other=tabs.find(b=>b.dataset.ux02Group==="plan");if(!today||!other)return {found:false};window.switchView("notes");today.click();await new Promise(done=>requestAnimationFrame(done));const direct=document.getElementById("view-today")?.classList.contains("active"),closed=document.getElementById("ux02-nav-drawer")?.hidden;other.click();const sheetOpen=!document.getElementById("ux02-nav-drawer")?.hidden;document.querySelector(".ux02-drawer-close")?.click();const cs=getComputedStyle(today.querySelector(".ux02-tab-label"));const sidebar=document.querySelector(".ux02-side-toggle");return {found:true,tabs:tabs.length,direct,closed,sheetOpen,labelPx:parseFloat(cs.fontSize),tapHeight:Math.round(today.getBoundingClientRect().height),sidebarHeight:sidebar?Math.round(sidebar.getBoundingClientRect().height):null,focus:!!getComputedStyle(today).outlineStyle,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+ check('Phase 10 mobile Today is one-tap, other groups retain drawers and readable touch targets',
+   nav10.found&&nav10.tabs===4&&nav10.direct&&nav10.closed&&nav10.sheetOpen&&nav10.labelPx>=12&&nav10.tapHeight>=44&&nav10.overflow<=5,nav10);
+ const tokens10=await evaluate('(()=>{const css=getComputedStyle(document.documentElement),names=["--ux-space-4","--ux-control-height","--ux-surface-raised","--ux-focus","--ux-text-sm","--ux-header-gap"];return Object.fromEntries(names.map(k=>[k,css.getPropertyValue(k).trim()]))})()');
+ check('Phase 10 shared design tokens resolve on the running page',
+   Object.values(tokens10).every(Boolean),tokens10);
+
  // Phase 08 telemetry: record real-loader startup and route-to-painted-frame timing.
  // Informational performance samples are deliberately not rigid time budgets:
  // CI host variability must not create false positives. Functional checks still gate.

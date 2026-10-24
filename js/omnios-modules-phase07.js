@@ -35,11 +35,17 @@ function decorate(){
  if(month){setAttr(month,'role','group');setAttr(month,'aria-label','Finance month navigation');}
  const finTabs=finance?.querySelector('.v38-fin-tabs');
  if(finTabs){setAttr(finTabs,'role','group');setAttr(finTabs,'aria-label','Finance sections');}
+ const addTransaction=finance?.querySelector('#v38-add-txn');
+ setAttr(addTransaction,'aria-label','Add a transaction');
  const notes=document.getElementById('view-notes');
  const toolbar=notes?.querySelector('.org-toolbar,.notes-toolbar');
  setAttr(toolbar,'role','search');
  const search=notes?.querySelector('#org-note-search,#notes-search');
  setAttr(search,'aria-label','Search notes');
+ const sort=notes?.querySelector('#org-note-sort,#notes-sort');
+ setAttr(sort,'aria-label','Sort notes');
+ const addNote=notes?.querySelector('#org-note-new');
+ setAttr(addNote,'aria-label','Create a new note');
  // Notes V40 uses .org-seg (not .org-segmented). Keep the original layout handlers.
  const views=notes?.querySelector('.org-toolbar .org-seg');
  if(views){

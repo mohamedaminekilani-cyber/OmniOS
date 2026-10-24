@@ -56,5 +56,5 @@ test('Phase 10.3 exports voluntary feedback without touching existing persistenc
  assert.doesNotThrow(()=>new vm.Script(source));
  const css=fs.readFileSync('styles/omnios-ux-foundation.css','utf8');
  assert.match(css,/\.ux-field-feedback-error/);
- assert.match(css,/\\[aria-invalid="true"\\]/);
+ assert.ok(css.includes('[aria-invalid="true"]'));
 });

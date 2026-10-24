@@ -137,3 +137,9 @@
   .ux-page-actions{width:100%}
 }
 @media(prefers-reduced-motion:reduce){:where(.ux-button,.ux-tab){transition:none}}
+
+/* UX Phase 10.3: opt-in inline validation feedback; no change to legacy fields. */
+.ux-field-feedback{display:block;margin:var(--ux-space-1) 0 var(--ux-space-2);font-size:var(--ux-text-xs);line-height:var(--ux-leading-normal);overflow-wrap:anywhere}
+.ux-field-feedback-error{color:var(--danger,var(--color-danger,#e99696))}
+:where(.ux-input,[data-ux-field])[aria-invalid="true"]{border-color:var(--danger,var(--color-danger,#e99696))}
+:where(.ux-input,[data-ux-field])[aria-invalid="true"]:focus-visible{outline-color:var(--danger,var(--color-danger,#e99696))}

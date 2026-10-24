@@ -19,7 +19,8 @@ function renderToday(){
    const label=el('div','ux03-command-intro');
    label.append(el('strong','ux03-command-heading','Your day, at a glance'),
      el('span','ux03-command-description','Act here. Review broader trends in Insights.'));
-   const actions=el('div','ux03-command-actions');
+   const actions=el('nav','ux03-command-actions');
+   actions.setAttribute('aria-label','Today shortcuts');
    actions.append(button('Tasks','tasks'),button('Calendar','master-calendar'),button('Inbox','inbox'),button('Insights','dashboard'));
    const toggle=el('button','ux03-insights-toggle');toggle.type='button';
    toggle.id='ux03-connected-toggle';toggle.setAttribute('aria-controls','v58-today-intelligence');
@@ -38,6 +39,12 @@ function renderToday(){
    toggle.textContent=state.expanded?'Hide connected insights':'Show connected insights';
    toggle.setAttribute('aria-expanded',String(state.expanded));
  }
+ // v58 is still rendered by legacy modules. Put the attention summary after
+ // the actual Today snapshot instead of ahead of the greeting. Move the node
+ // rather than re-rendering it so original buttons and listeners survive.
+ const glance=host.querySelector('.om3-daily-glance');
+ const attention=host.querySelector('#v58-attention');
+ if(glance&&attention&&glance.nextElementSibling!==attention)glance.after(attention);
  const extra=host.querySelector('#v58-today-intelligence');
  if(extra)extra.setAttribute('aria-label','Connected insights: projects, Bible, supply and wellbeing');
 }

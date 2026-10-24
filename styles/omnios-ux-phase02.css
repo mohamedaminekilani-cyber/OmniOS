@@ -132,3 +132,20 @@ html body .sidebar .ux02-side-group .nav-item{border-radius:var(--ux-radius-sm);
   html body .ux02-drawer button{min-height:var(--ux-control-height)}
   html body .ux02-drawer :where(.ux02-drawer-title,.ux02-drawer-head){min-width:0}
 }
+
+/* Phase 11 — quieter navigation hierarchy, refined selected state.
+   Uses existing nav DOM and aria-expanded; no click behavior is replaced. */
+@media (min-width:761px){
+ html body .sidebar .nav-menu[data-ux02-ready="1"]{gap:12px!important;padding-inline:8px!important}
+ html body .sidebar .ux02-side-toggle{min-height:46px;border-radius:12px;padding:10px 12px;letter-spacing:-.015em;font-size:14px;font-weight:680;transition:background-color .18s ease,color .18s ease}
+ html body .sidebar .ux02-side-toggle.ux02-active{background:color-mix(in srgb,var(--ux-accent,#a78bfa) 9%,var(--ux-surface,#191a20));color:var(--ux-text,#fff);border-color:color-mix(in srgb,var(--ux-accent,#a78bfa) 13%,transparent)}
+ html body .sidebar .ux02-side-links{margin:3px 0 5px 8px;padding:2px 0 3px 13px;border-left:1px solid color-mix(in srgb,var(--ux-muted,#9fa4b5) 18%,transparent);gap:5px}
+ html body .sidebar .ux02-side-links>.nav-item{min-height:42px;border-radius:11px!important;padding-inline:14px!important;font-size:13px;transition:background-color .16s ease,transform .16s ease}
+ html body .sidebar .ux02-side-links>.nav-item:is(:hover,:focus-visible){background:color-mix(in srgb,var(--ux-accent,#9d80f8) 8%,transparent)}
+ html body .sidebar .ux02-side-links>.nav-item.active{background:color-mix(in srgb,var(--ux-accent,#9d80f8) 14%,var(--ux-surface,#22232a));box-shadow:inset 2px 0 0 var(--ux-accent,#a78bfa);border-radius:10px!important}
+ html body .sidebar .ux02-side-count{font-weight:550;font-size:11px;opacity:.68}
+ html body .sidebar .ux02-side-chevron{opacity:.58;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){
+ html body .sidebar .ux02-side-toggle,html body .sidebar .ux02-side-links>.nav-item{transition:none}
+}

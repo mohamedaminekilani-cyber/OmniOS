@@ -165,3 +165,53 @@
 .ux-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .ux-page :where(.ux-page-header,.ux-toolbar,.ux-card,.ux-form-row)>*{min-width:0}
 @media(max-width:760px){.ux-grid,.ux-form-row{grid-template-columns:minmax(0,1fr)}.ux-cluster>.ux-button{min-height:var(--ux-control-height)}}
+
+/* Phase 11 — Today editorial rhythm. Keep every action and widget visible;
+   rebalance hierarchy rather than deleting information or touching handlers. */
+@media(min-width:761px){
+ html body #view-today{--ux-today-edge:color-mix(in srgb,var(--ux-border,#353840) 60%,transparent)}
+ html body #view-today :is(.v58-page-head,.v35-page-head){padding-block:18px 24px;gap:22px}
+ html body #view-today :is(.v58-page-head,.v35-page-head) :is(h1,h2){font-size:clamp(34px,3vw,48px);font-weight:760;line-height:1.08;letter-spacing:-.045em}
+ html body #view-today :is(.v58-page-head,.v35-page-head) p{font-size:15px;line-height:1.6;opacity:.82}
+ html body #view-today #v58-attention{border-radius:16px;border-color:var(--ux-today-edge);background:color-mix(in srgb,var(--ux-surface,#191b22) 83%,transparent);padding:15px 20px;gap:12px}
+ html body #view-today #v58-attention :is(button,.btn){border-radius:10px}
+ html body #view-today :is(.card,.ux-card){border-color:var(--ux-today-edge);border-radius:17px;box-shadow:0 2px 15px rgba(0,0,0,.065)}
+ html body #view-today :is(.card,.ux-card) :is(h2,h3){letter-spacing:-.025em}
+ html body #view-today :is(.card,.ux-card):hover{border-color:color-mix(in srgb,var(--ux-accent,#9f85f9) 20%,var(--ux-border,#363843))}
+}
+@media(max-width:760px){
+ html body #view-today :is(.v58-page-head,.v35-page-head) :is(h1,h2){font-size:clamp(30px,8vw,39px);letter-spacing:-.04em;line-height:1.12}
+ html body #view-today :is(.card,.ux-card){border-radius:15px}
+}
+
+/* Phase 11.2 — restrained Today action language and dashboard metrics.
+   No elements are concealed: refine visual contrast and spacing only. */
+html body #view-today{
+ --ux11-accent:var(--accent-purple,var(--ux-accent,#a78bfa));
+ --ux11-border:color-mix(in srgb,var(--ux-border,#353943) 52%,transparent);
+}
+html body #view-today :is(.btn,button):not(.nav-item):not(.ux02-mobile-tab){
+ transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+html body #view-today :is(.btn,button):not(.nav-item):not(.ux02-mobile-tab):focus-visible{
+ outline:2px solid var(--ux11-accent);outline-offset:3px;
+}
+html body #view-today :is(.card,.ux-card) :is(strong,.stat-value,.metric-value){
+ font-variant-numeric:tabular-nums;letter-spacing:-.025em;
+}
+html body #view-today :is(.card,.ux-card) :is(p,.muted,.text-muted){
+ line-height:1.55;
+}
+@media(min-width:761px){
+ html body #view-today :is(.v58-page-head,.v35-page-head){max-width:100%;align-items:center}
+ html body #view-today :is(.v58-page-head,.v35-page-head) :is(button,.btn){border-radius:11px;min-height:42px}
+ html body #view-today :is(.card,.ux-card){transition:border-color .18s ease,box-shadow .18s ease}
+ html body #view-today :is(.card,.ux-card):hover{box-shadow:0 8px 28px rgba(0,0,0,.10)}
+}
+@media(max-width:760px){
+ html body #view-today #v58-attention{border-radius:14px;gap:9px}
+ html body #view-today :is(.card,.ux-card){min-width:0}
+}
+@media(prefers-reduced-motion:reduce){
+ html body #view-today :is(.btn,button,.card,.ux-card){transition:none}
+}

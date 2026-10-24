@@ -102,3 +102,38 @@
 @media (max-width:760px){
   html body:has(#view-today.active) #v55-capture-fab{display:none!important}
 }
+
+/* UX Phase 10.1 — unified, reversible design contract.
+   Existing theme variables remain authoritative; bridge names are aliases.
+   No legacy listeners, component IDs or stored preferences are altered. */
+:root{
+  --ux-space-0:0px;--ux-space-7:28px;--ux-space-10:40px;
+  --ux-radius-xs:6px;--ux-radius-xl:20px;--ux-radius-pill:999px;
+  --ux-text-2xs:11px;--ux-text-lg:18px;--ux-text-xl:24px;
+  --ux-leading-tight:1.25;--ux-leading-normal:1.5;
+  --ux-border-subtle:var(--border-light,var(--ux-border));
+  --ux-surface-raised:var(--bg-elevated,var(--ux-surface));
+  --ux-surface-hover:var(--bg-hover,var(--ux-surface-raised));
+  --ux-focus:var(--omx-focus,var(--ux-accent));
+  --ux-control-height:var(--ux-target);
+  --ux-nav-gap:var(--ux-space-2);
+  --ux-page-inline:var(--ux-space-5);
+  --ux-header-gap:var(--ux-space-4);
+}
+:where(.ux-button,.ux-tab,.ux-input,.ux-select,.ux-textarea){
+  box-sizing:border-box;min-width:0;
+}
+:where(.ux-button,.ux-tab){transition:background-color .14s ease,border-color .14s ease}
+.ux-button-secondary{background:var(--ux-surface-raised);border-color:var(--ux-border-subtle)}
+.ux-button-ghost{border-color:transparent;background:transparent}
+.ux-button-danger{color:var(--danger,#e06e6e);border-color:var(--ux-border-subtle);background:var(--ux-surface)}
+.ux-button:disabled,.ux-tab:disabled{opacity:.55;cursor:not-allowed}
+.ux-page-heading,.ux-page-actions,.ux-toolbar{max-width:100%}
+.ux-page-header :where(h1,h2,h3){line-height:var(--ux-leading-tight)}
+.ux-input:focus-visible,.ux-button:focus-visible,.ux-tab:focus-visible{outline-color:var(--ux-focus)}
+@media(max-width:760px){
+  :root{--ux-page-inline:var(--ux-space-4);--ux-header-gap:var(--ux-space-3)}
+  .ux-page-header{gap:var(--ux-header-gap)}
+  .ux-page-actions{width:100%}
+}
+@media(prefers-reduced-motion:reduce){:where(.ux-button,.ux-tab){transition:none}}

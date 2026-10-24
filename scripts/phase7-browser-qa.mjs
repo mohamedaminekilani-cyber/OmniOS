@@ -367,6 +367,12 @@ try{
  check('Phase 10.4 dialog supports Escape, focus restoration, ARIA and explicit confirmation',
    dialog10.available&&dialog10.labelled&&dialog10.cancelled&&dialog10.accepted&&!dialog10.remains,dialog10);
 
+ // Phase 10.8 accessibility sweep: collect concrete dynamic defects for prioritization.
+ // This is a diagnostic report, not a substitute for WCAG/axe manual evaluation.
+ report.accessibility10=await evaluate('(()=>{const roots=["today","planner","life-hub","notes","budget","settings"].map(id=>document.getElementById("view-"+id)).filter(Boolean);const issues=[];for(const root of roots){for(const image of root.querySelectorAll("img:not([alt])"))issues.push({view:root.id,kind:"missing-img-alt",element:image.id||image.className||"img"});for(const node of root.querySelectorAll("button:not([aria-label])")){if(!node.textContent.trim()&&!node.getAttribute("title"))issues.push({view:root.id,kind:"unnamed-button",element:node.id||node.className||"button"})}}return {views:roots.length,issues:issues.slice(0,100),issueCount:issues.length}})()');
+ check('Phase 10.8 accessibility diagnostics cover core route roots',
+   report.accessibility10.views===6,report.accessibility10);
+
  // Phase 08 telemetry: record real-loader startup and route-to-painted-frame timing.
  // Informational performance samples are deliberately not rigid time budgets:
  // CI host variability must not create false positives. Functional checks still gate.

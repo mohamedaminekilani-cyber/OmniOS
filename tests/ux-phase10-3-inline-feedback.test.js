@@ -13,12 +13,12 @@ function setup(){
   return handlers;
 }
 class MockElement{
- constructor(tag){this.tagName=tag;this.attrs=new Map();this.textContent='';this.deleted=false;this.sibling=null;}
+ constructor(tag){this.tagName=tag;this.attrs=new Map();this.textContent='';this.deleted=false;this.sibling=null;this.parentNode=null;}
  setAttribute(n,v){this.attrs.set(n,String(v))}
  getAttribute(n){return this.attrs.has(n)?this.attrs.get(n):null}
  hasAttribute(n){return this.attrs.has(n)}
  removeAttribute(n){this.attrs.delete(n)}
- insertAdjacentElement(position,node){assert.equal(position,'afterend');this.sibling=node}
+ insertAdjacentElement(position,node){assert.equal(position,'afterend');this.sibling=node;node.parentNode={removeChild:x=>{assert.equal(x,node);x.deleted=true;x.parentNode=null}}}
  remove(){this.deleted=true}
 }
 test('Phase 10.3 accessible error preserves original aria-describedby and invalid state',()=>{

@@ -373,6 +373,13 @@ try{
  check('Phase 10.8 accessibility diagnostics cover core route roots',
    report.accessibility10.views===6,report.accessibility10);
 
+ // Phase 10.9: actual canonical action names, including after dynamic module refresh.
+ window.OmniModules07?.refresh();
+ await delay(0);
+ const canonicalNames10=await evaluate('(()=>{const cases=[["v38-add-txn","Add a transaction"],["org-note-new","Create a new note"],["org-note-sort","Sort notes"]];return cases.map(([id,name])=>{const el=document.getElementById(id);return {id,found:!!el,label:el?.getAttribute("aria-label")||"",expected:name}})})()');
+ check('Phase 10 canonical Finance and Notes action labels remain explicit after refresh',
+   canonicalNames10.every(x=>x.found&&x.label===x.expected),canonicalNames10);
+
  // Phase 08 telemetry: record real-loader startup and route-to-painted-frame timing.
  // Informational performance samples are deliberately not rigid time budgets:
  // CI host variability must not create false positives. Functional checks still gate.

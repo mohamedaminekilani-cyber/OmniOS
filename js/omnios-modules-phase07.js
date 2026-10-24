@@ -149,6 +149,9 @@ function uxDialog({title='Confirm action',message='',label='Value',defaultValue=
     // Legacy document-level modal handlers may restore another focus target
     // later in the same Escape event. Reassert after propagation finishes.
     queueMicrotask(()=>{if(!uxDialogOpen&&previous.isConnected)previous.focus()});
+    requestAnimationFrame(()=>{
+     if(!uxDialogOpen&&previous.isConnected)previous.focus();
+    });
    }
    resolve(value);
   }

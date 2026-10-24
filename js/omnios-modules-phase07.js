@@ -69,7 +69,7 @@ function clearFieldError(field){
  else field.removeAttribute('aria-invalid');
  if(record.hadDescribedBy)field.setAttribute('aria-describedby',record.describedBy);
  else field.removeAttribute('aria-describedby');
- record.message.remove();
+ if(record.message.parentNode)record.message.parentNode.removeChild(record.message);
  fieldMessages.delete(field);
 }
 function reportFieldError(field,message){

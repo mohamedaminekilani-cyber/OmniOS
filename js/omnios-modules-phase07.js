@@ -94,6 +94,77 @@ function reportFieldError(field,message){
  field.setAttribute('aria-invalid','true');
  return true;
 }
+// Phase 10.4 — opt-in asynchronous dialogs. Native confirm/prompt flows remain
+// untouched until individual call sites are migrated and validated.
+let uxDialogOpen=false;
+function uxDialog({title='Confirm action',message='',label='Value',defaultValue='',confirmLabel='Continue',danger=false,input=false}={}){
+ if(uxDialogOpen)return Promise.resolve(null);
+ uxDialogOpen=true;
+ return new Promise(resolve=>{
+  const previous=document.activeElement;
+  const overlay=document.createElement('div');
+  overlay.className='ux-dialog-overlay';
+  const panel=document.createElement('section');
+  panel.className='ux-dialog-panel';
+  panel.setAttribute('role','dialog');
+  panel.setAttribute('aria-modal','true');
+  const heading=document.createElement('h2');
+  heading.className='ux-dialog-heading';
+  heading.id='ux-dialog-heading';
+  heading.textContent=String(title);
+  panel.setAttribute('aria-labelledby',heading.id);
+  const description=document.createElement('p');
+  description.className='ux-dialog-description';
+  description.id='ux-dialog-description';
+  description.textContent=String(message);
+  panel.setAttribute('aria-describedby',description.id);
+  panel.append(heading,description);
+  let field=null;
+  if(input){
+   const caption=document.createElement('label');
+   caption.className='ux-field-label';
+   caption.textContent=String(label);
+   field=document.createElement('input');
+   field.className='ux-input';
+   field.type='text';
+   field.value=String(defaultValue);
+   field.id='ux-dialog-input';
+   caption.htmlFor=field.id;
+   panel.append(caption,field);
+  }
+  const actions=document.createElement('div');
+  actions.className='ux-dialog-actions';
+  const cancel=document.createElement('button');
+  cancel.type='button';cancel.className='ux-button ux-button-secondary';cancel.textContent='Cancel';
+  const confirm=document.createElement('button');
+  confirm.type='button';confirm.className='ux-button '+(danger?'ux-button-danger':'ux-button-primary');
+  confirm.textContent=String(confirmLabel);
+  actions.append(cancel,confirm);panel.append(actions);overlay.append(panel);
+  function finish(value){
+   overlay.removeEventListener('keydown',onKey);
+   if(overlay.parentNode)overlay.parentNode.removeChild(overlay);
+   uxDialogOpen=false;
+   if(previous?.isConnected&&typeof previous.focus==='function')previous.focus();
+   resolve(value);
+  }
+  function onKey(e){
+   if(e.key==='Escape'){e.preventDefault();finish(null);return}
+   if(e.key==='Tab'){
+    const nodes=field?[field,cancel,confirm]:[cancel,confirm];
+    const i=nodes.indexOf(document.activeElement);
+    if(e.shiftKey&&i<=0){e.preventDefault();confirm.focus()}
+    else if(!e.shiftKey&&i===nodes.length-1){e.preventDefault();nodes[0].focus()}
+   }
+   if(e.key==='Enter'&&field&&document.activeElement===field){e.preventDefault();finish(field.value)}
+  }
+  overlay.addEventListener('keydown',onKey);
+  cancel.addEventListener('click',()=>finish(null));
+  confirm.addEventListener('click',()=>finish(field?field.value:true));
+  overlay.addEventListener('click',e=>{if(e.target===overlay)finish(null)});
+  document.body.appendChild(overlay);
+  (field||cancel).focus();
+ });
+}
 function refresh(){
  if(state.pending)return;
  state.pending=true;queueMicrotask(decorate);
@@ -116,7 +187,7 @@ function install(){
  window.addEventListener('hashchange',refresh);
  refresh();
 }
-window.OmniModules07={refresh,reportFieldError,clearFieldError,views:MODULES.map(m=>m.id).concat(['budget','notes'])};
+window.OmniModules07={refresh,reportFieldError,clearFieldError,dialog:uxDialog,views:MODULES.map(m=>m.id).concat(['budget','notes'])};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
 else install();
 })();

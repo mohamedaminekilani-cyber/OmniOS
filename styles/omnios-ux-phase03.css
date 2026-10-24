@@ -1,47 +1,172 @@
-/* Phase 03: Today = action, Dashboard = deeper insight. Pure presentation. */
+/* OmniOS Phase 12 — Today, an editorial daily workspace.
+   One authoritative layer for the existing Phase 03 controls and Phase 35
+   actual renderer. No legacy action, card or secondary destination is hidden. */
 html #view-today.ux03-focus-mode #v58-today-intelligence{display:none!important}
-html #view-today #ux03-today-controls{
- display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
- padding:11px 15px;margin:12px 0 15px;
- border:1px solid var(--omx-edge,var(--border-color));
- border-radius:var(--omx-round,12px);background:var(--omx-card,var(--bg-surface));
- color:var(--text-primary);min-width:0;
+html body #view-today{
+  --today12-violet:var(--accent-purple,#a98dff);
+  --today12-lime:var(--accent-lime,#c2f267);
+  --today12-surface:var(--bg-surface,#1b1d23);
+  --today12-line:color-mix(in srgb,var(--border-color,#414451) 62%,transparent);
+  --today12-quiet:var(--text-secondary,#abb1bd);
 }
-html #view-today .ux03-command-intro,
-html #view-dashboard .ux03-dashboard-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
-html #view-today .ux03-command-heading,
-html #view-dashboard .ux03-dashboard-heading{font-size:13px;font-weight:780;line-height:1.35}
-html #view-today .ux03-command-description,
-html #view-dashboard .ux03-dashboard-description{font-size:12px;color:var(--text-secondary);line-height:1.45}
-html #view-today .ux03-command-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-html #view-today :is(.ux03-command,.ux03-insights-toggle),
-html #view-dashboard .ux03-return-button{
- display:inline-flex;align-items:center;justify-content:center;min-height:39px;
- padding:8px 12px;border:1px solid var(--omx-edge,var(--border-color));
- border-radius:8px;background:var(--omx-raised,var(--bg-elevated));
- color:var(--text-primary);font-size:12px;font-weight:700;cursor:pointer;
+html body #view-today .omr-day-hero.om3-today-hero{
+  position:relative;isolation:isolate;overflow:hidden;min-width:0;
+  padding:clamp(24px,3.1vw,46px) clamp(23px,3.1vw,44px)!important;
+  margin:0 0 12px!important;border:1px solid color-mix(in srgb,var(--today12-violet) 13%,transparent);
+  border-radius:24px!important;
+  background:radial-gradient(ellipse at 95% 3%,color-mix(in srgb,var(--today12-violet) 13%,transparent),transparent 49%),
+             linear-gradient(125deg,color-mix(in srgb,var(--today12-surface) 92%,var(--bg-base,#101115)),var(--today12-surface));
+  box-shadow:0 14px 50px rgba(0,0,0,.09);
+  gap:clamp(12px,2vw,28px);align-items:center;
 }
-html #view-today :is(.ux03-command,.ux03-insights-toggle):hover,
-html #view-dashboard .ux03-return-button:hover{border-color:var(--omx-focus,var(--accent-cyan))}
-html #view-today .ux03-insights-toggle{
- background:transparent;
- color:var(--omx-focus,var(--accent-cyan));
+html body #view-today .om3-today-hero .omr-day-copy{min-width:0}
+html body #view-today .om3-today-hero .omr-eyebrow{
+  font-size:11px;letter-spacing:.15em;font-weight:760;color:var(--today12-quiet);
+}
+html body #view-today .om3-today-hero h3{
+  font-size:clamp(35px,4vw,56px)!important;line-height:1.06!important;
+  font-weight:790;letter-spacing:-.05em!important;margin:12px 0 10px!important;
+  text-wrap:balance;
+}
+html body #view-today .om3-today-hero p{
+  font-size:clamp(14px,1.08vw,16px);line-height:1.55;color:var(--today12-quiet);
+  margin:0;max-width:54ch;
+}
+html body #view-today .om3-today-hero .omr-day-hero-actions{
+  display:flex;flex-wrap:wrap;gap:9px;align-items:center;min-width:0;
+}
+html body #view-today .om3-today-hero .omr-day-hero-actions .btn{
+  min-height:44px;border-radius:12px!important;padding:10px 17px!important;
+  font-weight:700;white-space:nowrap;
+}
+html body #view-today #ux03-today-controls{
+  display:flex;align-items:center;justify-content:flex-start;
+  gap:10px;flex-wrap:wrap;min-width:0;
+  padding:3px 0 6px!important;margin:0 0 16px!important;
+  border:0!important;border-radius:0!important;background:transparent!important;
+  box-shadow:none!important;
+}
+/* This copy duplicates the hero. Retain it for assistive technology. */
+html body #view-today .ux03-command-intro{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);
+  white-space:nowrap;border:0;
+}
+html body #view-today .ux03-command-actions{
+  display:flex;align-items:center;flex:1 1 auto;flex-wrap:wrap;gap:7px;min-width:0;
+}
+html body #view-today .ux03-command{
+  min-height:38px;display:inline-flex;align-items:center;justify-content:center;
+  padding:8px 13px!important;font-size:12px;font-weight:680;
+  border-radius:999px!important;border:1px solid var(--today12-line)!important;
+  color:var(--today12-quiet);background:transparent!important;
+  transition:background-color .15s ease,border-color .15s ease,color .15s ease;
+}
+html body #view-today .ux03-command:hover{
+  background:color-mix(in srgb,var(--today12-violet) 10%,transparent)!important;
+  color:var(--text-primary);border-color:color-mix(in srgb,var(--today12-violet) 35%,var(--today12-line))!important;
+}
+html body #view-today .ux03-insights-toggle{
+  min-height:38px;border:0!important;background:transparent!important;
+  color:var(--today12-violet);border-radius:999px;padding:8px 11px!important;
+  font-size:12px;font-weight:720;margin-left:auto;
+}
+html body #view-today :is(.ux03-command,.ux03-insights-toggle):focus-visible{
+  outline:2px solid var(--today12-violet);outline-offset:3px;
+}
+html body #view-today .om3-daily-glance{
+  gap:12px!important;margin:0 0 14px!important;
+}
+html body #view-today .om3-daily-glance .omr-stat{
+  min-width:0;min-height:125px;padding:19px 20px!important;
+  border:1px solid var(--today12-line)!important;border-radius:17px!important;
+  background:color-mix(in srgb,var(--today12-surface) 93%,var(--bg-base,#111216))!important;
+  box-shadow:none!important;
+}
+html body #view-today .om3-daily-glance .omr-stat:nth-child(2){
+  background:color-mix(in srgb,var(--today12-lime) 4%,var(--today12-surface))!important;
+}
+html body #view-today .om3-daily-glance .omr-stat .omr-stat-value{
+  font-size:clamp(26px,2.1vw,34px);font-weight:780;letter-spacing:-.045em;
+  font-variant-numeric:tabular-nums;
+}
+html body #view-today #v58-attention{
+  display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+  margin:0 0 20px!important;padding:9px 13px!important;
+  background:color-mix(in srgb,var(--today12-lime) 4%,var(--bg-base,#111216))!important;
+  border:1px solid color-mix(in srgb,var(--today12-lime) 20%,var(--today12-line))!important;
+  border-left:3px solid var(--today12-lime)!important;
+  border-radius:11px!important;
+}
+html body #view-today #v58-attention strong{font-size:12px;font-weight:740}
+html body #view-today #v58-attention .v58-attention-copy{
+  flex:1 1 220px;min-width:0;font-size:12px;color:var(--today12-quiet);
+}
+html body #view-today #v58-attention .btn{
+  min-height:34px!important;padding:6px 11px!important;font-size:11px;
+  border-radius:9px!important;
+}
+html body #view-today .om3-today-grid{gap:16px!important}
+html body #view-today .om3-today-grid :is(.omr-panel,.omr-feature){
+  border-radius:19px!important;border:1px solid var(--today12-line)!important;
+  padding:clamp(18px,1.65vw,26px)!important;
+  background:var(--today12-surface)!important;box-shadow:none!important;
+}
+html body #view-today .om3-today-grid .omr-panel h4,
+html body #view-today .om3-today-grid .omr-feature h4{
+  font-size:clamp(19px,1.35vw,23px);font-weight:750;
+  letter-spacing:-.035em;line-height:1.2;
+}
+html body #view-today .om3-today-grid .omr-eyebrow{
+  color:var(--today12-violet);font-weight:720;font-size:10px;letter-spacing:.13em;
+}
+html body #view-today .om3-today-grid .omr-empty,
+html body #view-today .om3-today-grid .v35-empty{
+  border-color:color-mix(in srgb,var(--today12-line) 54%,transparent)!important;
+  border-radius:13px!important;background:color-mix(in srgb,var(--bg-base,#101115) 52%,transparent)!important;
+}
+html body #view-today .om3-capture-panel{
+  background:radial-gradient(ellipse at 100% 0%,color-mix(in srgb,var(--today12-violet) 9%,transparent),transparent 70%),var(--today12-surface)!important;
+}
+html body #view-today .om3-capture-panel :is(input,textarea){
+  min-width:0;max-width:100%;border-radius:11px;
 }
 html #view-dashboard #ux03-dashboard-return{
- display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
- padding:12px 16px;margin-bottom:14px;border:1px solid var(--omx-edge,var(--border-color));
- border-radius:var(--omx-round,12px);background:var(--omx-card,var(--bg-surface));
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:12px 16px;margin-bottom:14px;border:1px solid var(--omx-edge,var(--border-color));
+  border-radius:12px;background:var(--omx-card,var(--bg-surface));
 }
+html #view-dashboard .ux03-dashboard-copy{display:flex;flex-direction:column;gap:3px}
+html #view-dashboard .ux03-dashboard-heading{font-size:14px;font-weight:760}
+html #view-dashboard .ux03-dashboard-description{font-size:12px;color:var(--text-secondary)}
+html #view-dashboard .ux03-return-button{min-height:40px;border-radius:10px}
 @media(max-width:760px){
- html #view-today #ux03-today-controls{padding:12px;gap:10px}
- html #view-today .ux03-command-intro{width:100%}
- html #view-today .ux03-command-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:5px}
- html #view-today .ux03-command{min-width:0;padding:8px 3px;font-size:11px}
- html #view-today .ux03-insights-toggle{width:100%;min-height:42px}
- /* The main Add slot in the Phase 02 dock is the universal creation affordance. */
- html body #view-today #v35-today-add{display:none!important}
+  html body #view-today .omr-day-hero.om3-today-hero{
+    padding:22px 17px!important;border-radius:19px!important;gap:12px;
+    align-items:start;
+  }
+  html body #view-today .om3-today-hero h3{font-size:clamp(32px,8vw,43px)!important}
+  html body #view-today .om3-today-hero .omr-day-hero-actions .btn{min-height:43px}
+  html body #view-today #ux03-today-controls{gap:8px;margin-bottom:14px!important}
+  html body #view-today .ux03-command-actions{width:100%;gap:6px}
+  html body #view-today .ux03-command{flex:1 1 calc(50% - 6px);min-height:42px}
+  html body #view-today .ux03-insights-toggle{
+    margin-left:0;width:100%;min-height:42px;
+    background:color-mix(in srgb,var(--today12-violet) 7%,transparent)!important;
+  }
+  html body #view-today .om3-daily-glance{gap:8px!important}
+  html body #view-today .om3-daily-glance .omr-stat{
+    min-height:110px;padding:13px 14px!important;border-radius:14px!important;
+  }
+  html body #view-today #v58-attention{padding:11px!important}
+  html body #view-today #v58-attention .v58-attention-copy{flex-basis:100%}
+  html body #view-today .om3-today-grid :is(.omr-panel,.omr-feature){border-radius:15px!important;padding:16px!important}
+  /* Main Add slot in the Phase 02 dock already supports universal creation. */
+  html body #view-today #v35-today-add{display:none!important}
 }
 @media(max-width:370px){
- html #view-today .ux03-command-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
- html #view-today .ux03-command{min-height:39px}
+  html body #view-today .ux03-command{flex-basis:calc(50% - 6px);padding-inline:7px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  html body #view-today :is(.ux03-command,.ux03-insights-toggle){transition:none}
 }

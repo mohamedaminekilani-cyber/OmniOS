@@ -140,7 +140,10 @@ function uxDialog({title='Confirm action',message='',label='Value',defaultValue=
   confirm.type='button';confirm.className='ux-button '+(danger?'ux-button-danger':'ux-button-primary');
   confirm.textContent=String(confirmLabel);
   actions.append(cancel,confirm);panel.append(actions);overlay.append(panel);
+  let settled=false;
   function finish(value){
+   if(settled)return;
+   settled=true;
    overlay.removeEventListener('keydown',onKey);
    if(overlay.parentNode)overlay.parentNode.removeChild(overlay);
    uxDialogOpen=false;
@@ -156,7 +159,7 @@ function uxDialog({title='Confirm action',message='',label='Value',defaultValue=
    resolve(value);
   }
   function onKey(e){
-   if(e.key==='Escape'){e.preventDefault();finish(null);return}
+   if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(null);return}
    if(e.key==='Tab'){
     const nodes=field?[field,cancel,confirm]:[cancel,confirm];
     const i=nodes.indexOf(document.activeElement);

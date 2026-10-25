@@ -227,6 +227,24 @@ html body .sidebar .ux02-side-group .nav-item{border-radius:var(--ux-radius-sm);
  html body .sidebar .ux02-side-group[hidden],
  html body .sidebar .ux02-side-links>.nav-item[hidden],
  html body .sidebar .ux15-search-status[hidden]{display:none!important}
+
+ /* Late v101 renderer fallback: one visible search entry and the same Quick Access.
+    Keep v101's original route nodes, native collapsible groups and compact behavior. */
+ html body .sidebar.v101-sidebar.ux15-legacy .nav-menu{
+   gap:9px!important;padding:3px 2px 20px!important;scrollbar-width:thin!important;
+ }
+ html body .sidebar.v101-sidebar.ux15-legacy .nav-menu>.ux15-nav-tools{
+   min-width:0;padding:4px 3px 16px;
+ }
+ html body .sidebar.v101-sidebar.ux15-legacy .v101-sidebar-search-toggle,
+ html body .sidebar.v101-sidebar.ux15-legacy .v101-sidebar-search{display:none!important}
+ html body .sidebar.v101-sidebar.ux15-legacy .v101-nav-group[hidden],
+ html body .sidebar.v101-sidebar.ux15-legacy .v101-nav-group .nav-item[hidden],
+ html body .sidebar.v101-sidebar.ux15-legacy .ux15-search-status[hidden]{
+   display:none!important;
+ }
+ html body .sidebar.v101-sidebar.ux15-legacy .v101-nav-group-body{margin-left:11px!important}
+
 }
 html.om2-compact body .sidebar .ux15-nav-tools{display:none}
 @media(max-width:760px){

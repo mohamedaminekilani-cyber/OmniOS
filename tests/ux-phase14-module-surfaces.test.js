@@ -19,3 +19,11 @@ test('Phase 14 is strictly presentational: existing controls and data remain vis
  assert.doesNotMatch(part,/position:\s*fixed|localStorage|indexedDB|innerHTML|saveState/);
  assert.match(part,/focus-visible/);
 });
+
+test('Phase 14 contains only narrow hero geometry exceptions to legacy important styles',()=>{
+ const importantRules=part.match(/!important/g)||[];
+ assert.equal(importantRules.length,4);
+ assert.match(part,/padding:24px 27px!important/);
+ assert.match(part,/padding:18px 17px!important/);
+ assert.doesNotMatch(part,/display:\\s*none|visibility:\\s*hidden|pointer-events:\\s*none/);
+});

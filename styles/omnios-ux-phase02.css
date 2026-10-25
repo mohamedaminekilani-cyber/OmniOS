@@ -133,6 +133,138 @@ html body .sidebar .ux02-side-group .nav-item{border-radius:var(--ux-radius-sm);
   html body .ux02-drawer :where(.ux02-drawer-title,.ux02-drawer-head){min-width:0}
 }
 
+
+/* Phase 15 — efficient, searchable navigation.
+   The four existing intent groups and every original data-view control stay intact.
+   No layout changes to other application modules or Classic density settings. */
+@media(min-width:761px){
+ html:not(.om2-compact) body .sidebar{
+   width:270px!important;min-width:270px!important;
+   background:var(--bg-base,#101217);
+   border-right:1px solid color-mix(in srgb,var(--border-color,#424652) 58%,transparent);
+ }
+ html:not(.om2-compact) body .sidebar .logo{
+   padding-bottom:14px;
+ }
+ html:not(.om2-compact) body .sidebar .logo p{
+   font-size:10px;letter-spacing:.09em;opacity:.65;
+ }
+ html body .sidebar .nav-menu[data-ux02-ready="1"]{
+   gap:9px!important;padding:0 5px 26px!important;
+   scrollbar-width:thin;
+ }
+ html body .sidebar .ux15-nav-tools{
+   flex:none;display:grid;gap:15px;min-width:0;
+   padding:5px 0 15px;margin-bottom:1px;
+   border-bottom:1px solid color-mix(in srgb,var(--border-color,#45454f) 62%,transparent);
+ }
+ html body .sidebar .ux15-search{display:grid;gap:7px;min-width:0}
+ html body .sidebar .ux15-search-label{
+   font:700 10px/1.4 inherit;letter-spacing:.09em;text-transform:uppercase;
+   color:var(--text-secondary,#b0b4c1);
+ }
+ html body .sidebar .ux15-search-field{position:relative;min-width:0}
+ html body .sidebar .ux15-search-field::before{
+   content:"⌕";position:absolute;left:12px;top:50%;transform:translateY(-51%);
+   color:var(--text-secondary,#a5abb6);font-size:21px;line-height:1;pointer-events:none;
+ }
+ html body .sidebar .ux15-search-input{
+   display:block;width:100%;height:43px;min-width:0;box-sizing:border-box;
+   border:1px solid color-mix(in srgb,var(--border-color,#424652) 84%,transparent);
+   border-radius:12px;padding:0 38px 0 39px;
+   background:var(--bg-surface,#1a1d24);color:var(--text-primary,#f4f4f5);
+   font:500 13px/1.35 inherit;letter-spacing:0;outline:none;
+   transition:border-color .16s ease,box-shadow .16s ease;
+ }
+ html body .sidebar .ux15-search-input::placeholder{color:var(--text-secondary,#a4aab5);opacity:.83}
+ html body .sidebar .ux15-search-input:focus-visible{
+   border-color:var(--ux-accent,var(--accent-purple,#a78bfa));
+   box-shadow:0 0 0 3px color-mix(in srgb,var(--ux-accent,var(--accent-purple,#a78bfa)) 18%,transparent);
+ }
+ html body .sidebar .ux15-search-key{
+   position:absolute;right:9px;top:10px;min-width:24px;height:23px;
+   display:grid;place-items:center;border:1px solid var(--border-color,#414551);
+   border-radius:6px;background:var(--bg-elevated,#272a32);pointer-events:none;
+   color:var(--text-secondary,#a5adb8);font:700 11px/1 ui-monospace,monospace;
+ }
+ html body .sidebar .ux15-shortcuts{display:grid;gap:9px}
+ html body .sidebar .ux15-shortcuts-heading{
+   color:var(--text-secondary,#a9b0ba);
+   font-size:10px;font-weight:750;line-height:1.3;letter-spacing:.1em;
+ }
+ html body .sidebar .ux15-shortcuts-grid{
+   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
+ }
+ html body .sidebar .ux15-shortcut{
+   min-width:0;min-height:43px;display:flex;align-items:center;gap:8px;
+   padding:8px 10px;border:1px solid color-mix(in srgb,var(--border-color,#414551) 62%,transparent);
+   border-radius:11px;background:var(--bg-surface,#1a1d24);
+   color:var(--text-secondary,#b3bac6);text-align:left;cursor:pointer;
+   font:650 12px/1.25 inherit;
+   transition:background-color .16s ease,color .16s ease,border-color .16s ease;
+ }
+ html body .sidebar .ux15-shortcut .ux02-nav-icon{width:19px;height:19px}
+ html body .sidebar .ux15-shortcut .ux02-nav-icon svg{width:16px;height:16px}
+ html body .sidebar .ux15-shortcut-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ html body .sidebar .ux15-shortcut:hover{
+   color:var(--text-primary,#fff);
+   background:color-mix(in srgb,var(--ux-accent,var(--accent-purple,#a78bfa)) 7%,var(--bg-surface,#1a1d24));
+   border-color:color-mix(in srgb,var(--ux-accent,var(--accent-purple,#a78bfa)) 22%,var(--border-color,#414551));
+ }
+ html body .sidebar .ux15-shortcut.active{
+   color:var(--text-primary,#fff);
+   border-color:color-mix(in srgb,var(--ux-accent,var(--accent-purple,#a78bfa)) 35%,transparent);
+   background:color-mix(in srgb,var(--ux-accent,var(--accent-purple,#a78bfa)) 13%,var(--bg-surface,#1a1d24));
+ }
+ html body .sidebar .ux15-shortcut:focus-visible{
+   outline:2px solid var(--ux-accent,var(--accent-purple,#a78bfa));outline-offset:2px;
+ }
+ html body .sidebar .ux15-search-status{
+   margin:0;color:var(--text-secondary,#b0b8c4);
+   font-size:12px;line-height:1.5;
+ }
+ html body .sidebar .nav-menu.ux15-searching .ux15-shortcuts{display:none}
+ html body .sidebar .ux02-side-group[hidden],
+ html body .sidebar .ux02-side-links>.nav-item[hidden],
+ html body .sidebar .ux15-search-status[hidden]{display:none!important}
+}
+html.om2-compact body .sidebar .ux15-nav-tools{display:none}
+@media(max-width:760px){
+ html body .ux15-drawer-search-wrap{
+   display:block;padding:12px 14px 9px;
+   background:var(--bg-surface,#1a1d24);
+ }
+ html body .ux15-drawer-search{
+   width:100%;min-height:45px;padding:10px 13px;box-sizing:border-box;
+   border:1px solid var(--border-color,#404550);border-radius:12px;
+   background:var(--bg-elevated,#242830);color:var(--text-primary,#f6f6f6);
+   font:500 14px/1.35 inherit;outline:none;
+ }
+ html body .ux15-drawer-search:focus-visible{
+   border-color:var(--accent-purple,#a78bfa);
+   box-shadow:0 0 0 3px color-mix(in srgb,var(--accent-purple,#a78bfa) 16%,transparent);
+ }
+ html body .ux02-drawer-content{
+   grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
+   padding:10px 14px 16px;
+ }
+ html body .ux02-drawer-destination{
+   min-height:48px;padding:11px 12px;text-align:left;
+   border:1px solid color-mix(in srgb,var(--border-color,#404550) 70%,transparent);
+   border-radius:12px;background:var(--bg-elevated,#242830);
+   font-size:13px;line-height:1.3;
+ }
+ html body .ux02-drawer-destination[hidden],
+ html body .ux15-drawer-empty[hidden]{display:none!important}
+ html body .ux15-drawer-empty{
+   grid-column:1/-1;text-align:center;margin:16px 0;
+   font-size:13px;color:var(--text-secondary,#b4b8c2);
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ html body .sidebar :is(.ux15-search-input,.ux15-shortcut){transition:none}
+}
+
 /* OmniOS Phase 13 — unified navigation design, one owner for BOTH
    the v101 legacy sidebar and the Phase 02 intent sidebar.
    The existing button nodes, routes, grouping, and click handlers are retained. */
@@ -145,7 +277,7 @@ html body .sidebar .ux02-side-group .nav-item{border-radius:var(--ux-radius-sm);
  }
  /* Legacy v101 still renders for some loaded pages; normalize it explicitly. */
  html:not(.om2-compact) body .sidebar.v101-sidebar{
-   width:258px!important; padding:14px 11px!important;gap:13px!important;
+   width:270px!important; padding:14px 11px!important;gap:13px!important;
    background:var(--bg-base,#111217)!important;
    border-right:1px solid var(--ux13-line)!important;
  }

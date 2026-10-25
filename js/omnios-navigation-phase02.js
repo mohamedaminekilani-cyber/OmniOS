@@ -1,7 +1,8 @@
 /* OmniOS Phase 02 — navigation projection, not a router or state migration. */
 (function () {
   'use strict';
-  if (window.OmniNav02) return;
+  // A hot-swapped release can replace the document while retaining window globals.
+  if (window.OmniNav02?.rootElement===document.documentElement && window.OmniNav02?.rootElement?.isConnected) return;
   const GROUPS = [
     {id:'today', label:'Today', icon:'home', landing:'today',
       views:['today','dashboard','inbox']},
@@ -407,15 +408,29 @@
       };
       wrapped.__ux02Original=original;window.switchView=wrapped;
     }
-    const nav=document.querySelector('.sidebar .nav-menu');
-    if(nav){
-      let repairQueued=false;
-      new MutationObserver(()=>{
-        if(repairQueued||nav.querySelector('.ux15-nav-tools'))return;
-        if(!nav.querySelector('.v101-nav-group'))return;
-        repairQueued=true;
-        queueMicrotask(()=>{repairQueued=false;ensureNavigationTools();scheduleSync();});
-      }).observe(nav,{childList:true});
+    // Later OmniOS renderers may replace either nav-menu or the entire sidebar.
+    // Observe structural child changes, not high-frequency data/attribute mutations;
+    // the guard prevents feedback loops when we reinsert a detached utility toolbar.
+    let repairQueued=false;
+    const repairSidebar=()=>{
+      if(repairQueued)return;
+      repairQueued=true;
+      queueMicrotask(()=>{
+        repairQueued=false;
+        const nav=document.querySelector('.sidebar .nav-menu');
+        if(!nav||nav.querySelector('.ux15-nav-tools'))return;
+        if(!nav.querySelector('.v101-nav-group')&&!nav.querySelector('.ux02-side-group'))return;
+        ensureNavigationTools();scheduleSync();
+      });
+    };
+    const root=document.body;
+    if(root){
+      new MutationObserver(records=>{
+        if(records.some(record=>{
+          const target=record.target;
+          return target===root||target.matches?.('.sidebar,.nav-menu')||target.closest?.('.sidebar');
+        }))repairSidebar();
+      }).observe(root,{childList:true,subtree:true});
     }
     const title=byId('view-title');
     if(title)new MutationObserver(()=>scheduleSync()).observe(title,{childList:true,characterData:true,subtree:true});
@@ -435,7 +450,7 @@
     });
     sync();
   }
-  window.OmniNav02={groups:GROUPS,openGroup:id=>showDrawer(id),go:navigate,capture:quickCapture,activeGroup:()=>state.active};
+  window.OmniNav02={rootElement:document.documentElement,groups:GROUPS,openGroup:id=>showDrawer(id),go:navigate,capture:quickCapture,activeGroup:()=>state.active};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
   else install();
 })();

@@ -64,7 +64,7 @@ function renderToday(){
    const relevant=panel===signals&&hasSignals;
    panel.classList.toggle('ux18-collapsed-section',!state.sectionsExpanded&&!relevant);
  });
- const totals=host.querySelectorAll('.om3-daily-glance .omr-stat');
+ const totals=host.querySelectorAll?.('.om3-daily-glance .omr-stat')||[];
  totals.forEach((stat,i)=>stat.classList.toggle('ux18-quiet-stat',!state.sectionsExpanded&&i>=2));
  if(more){
    more.textContent=state.sectionsExpanded?'Show fewer sections':'More for today';
@@ -90,7 +90,7 @@ function renderInbox(){
  if(!head)return;
  let button=host.querySelector('#ux18-inbox-more');
  if(rows.length<=5){
-   button?.remove();rows.forEach(row=>row.classList.remove('ux18-collapsed-section'));
+   button?.replaceWith();rows.forEach(row=>row.classList.remove('ux18-collapsed-section'));
    return;
  }
  if(!button){
@@ -110,7 +110,7 @@ function decorateDashboard(){
  const container=host.querySelector('#v55-dashboard-widgets,.dashboard-grid,.dashboard-widgets');
  const entries=container?[...container.children].filter(node=>node.nodeType===1&&!['SCRIPT','STYLE'].includes(node.tagName)):[];
  let toggle=host.querySelector('#ux18-dashboard-more');
- if(entries.length<=3){toggle?.remove();entries.forEach(node=>node.classList.remove('ux18-collapsed-section'));return}
+ if(entries.length<=3){toggle?.replaceWith();entries.forEach(node=>node.classList.remove('ux18-collapsed-section'));return}
  if(!toggle){
    toggle=el('button','ux18-secondary-toggle','');
    toggle.id='ux18-dashboard-more';toggle.type='button';
@@ -132,13 +132,12 @@ function schedule(){
 }
 function install(){
  if(state.installed)return;
- const today=$('#view-today'),dashboard=$('#view-dashboard'),inbox=$('#view-inbox');
- if(!today||!dashboard||!inbox)return;
+ const today=$('#view-today'),dashboard=$('#view-dashboard');
+ if(!today||!dashboard)return;
  state.installed=true;
  // Only direct child changes: rerendered views replace their children. Avoid subtree observers.
  new MutationObserver(schedule).observe(today,{childList:true});
- new MutationObserver(schedule).observe(dashboard,{childList:true,subtree:false});
- new MutationObserver(schedule).observe(inbox,{childList:true,subtree:false});
+ new MutationObserver(schedule).observe(dashboard,{childList:true});
  // Legacy dashboard renderers can run in deferred tasks after switchView().
  // Reinstate only the lightweight command/header UI once those renders settle.
  const previousSwitch=window.switchView;
@@ -150,7 +149,8 @@ function install(){
      if(args[0]==='today'||args[0]==='dashboard'||args[0]==='inbox'){
        schedule();
        requestAnimationFrame(schedule);
-       if(args[0]==='dashboard'||args[0]==='inbox')setTimeout(schedule,120);
+       if(args[0]==='dashboard')setTimeout(schedule,120);
+       if(args[0]==='inbox')setTimeout(schedule,120);
      }
      return result;
    };

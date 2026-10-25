@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const css=fs.readFileSync('styles/omnios-ux-phase07.css','utf8');
 const foundation=fs.readFileSync('styles/omnios-ux-foundation.css','utf8');
-const phase=css.slice(css.indexOf('/* UX Phase 10.3:'));
+const phase=css.slice(css.indexOf('/* UX Phase 10.3:'),css.indexOf('/* Phase 14 — real-module visual system.'));
 test('Phase 10.3 canonical headers and forms reuse the design contract',()=>{
  assert.ok(phase.startsWith('/* UX Phase 10.3:'));
  for(const view of ['workout','diet','budget','habits','notes'])assert.ok(phase.includes('#view-'+view));

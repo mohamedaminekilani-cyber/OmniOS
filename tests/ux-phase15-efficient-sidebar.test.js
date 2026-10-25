@@ -27,7 +27,7 @@ function fixture(){
   return {w,doc:w.document,ids,destinations,close:()=>w.close()};
 }
 
-test('Phase 15 preserves every original navigation button and route',()=>{
+test('Phase 15 preserves every original navigation button and route',async()=>{
   const x=fixture();try{
     const originals=x.ids.map(id=>x.doc.querySelector('.sidebar .nav-item[data-view="'+id+'"]'));
     assert.equal(x.doc.querySelectorAll('.sidebar .nav-item[data-view]').length,x.ids.length);
@@ -38,6 +38,7 @@ test('Phase 15 preserves every original navigation button and route',()=>{
       ['today','tasks','master-calendar','notes']);
     const tasks=x.doc.querySelector('[data-ux15-view="tasks"]');
     tasks.click();
+    await Promise.resolve();
     assert.equal(x.destinations.at(-1),'tasks');
     assert.equal(x.doc.getElementById('view-tasks').classList.contains('active'),true);
     assert.equal(tasks.getAttribute('aria-current'),'page');

@@ -354,7 +354,7 @@
         .some(dialog=>!dialog.closest('[hidden]')&&dialog.getClientRects().length>0);
       if(window.innerWidth<=760||modalVisible)return;
       const target=event.target;
-      if(target?.closest('input,textarea,select,[contenteditable="true"]'))return;
+      if(target?.closest?.('input,textarea,select,[contenteditable="true"]'))return;
       if(state.searchInput?.isConnected){event.preventDefault();state.searchInput.focus();}
     });
     window.addEventListener('hashchange',()=>scheduleSync());

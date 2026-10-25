@@ -43,6 +43,11 @@ async function visit(view,theme,width){
  check(width+' '+theme+' '+view+' has no blocking welcome overlay',!modal);
  check(width+' '+theme+' '+view+' renders',state.exists&&state.active&&state.visible,{content:state.content});
  check(width+' '+theme+' '+view+' fits viewport',state.overflow<=5,{overflow:state.overflow});
+ if(width>=1024){
+   const menu=await evaluate('(()=>{const sidebar=document.querySelector(".sidebar"),search=sidebar?.querySelector(".ux15-search-input"),buttons=[...sidebar?.querySelectorAll(".ux15-shortcut")||[]],r=search?.getBoundingClientRect();return {renderer:sidebar?.querySelector(".v101-nav-group")?"legacy":"intent",search:!!search&&!!r&&r.width>160&&r.height>=40,shortcuts:buttons.length,connected:buttons.every(x=>x.isConnected),overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+   check(width+' '+theme+' '+view+' Phase 15 quick menu persists after native screen re-renders',
+     menu.search&&menu.shortcuts===4&&menu.connected&&menu.overflow<=5,menu);
+ }
  const png=(await send('Page.captureScreenshot',{format:'jpeg',quality:70,captureBeyondViewport:false,fromSurface:true})).result.data;
  const name=output+'/'+width+'-'+theme+'-'+view+'.jpg';
  const bytes=Buffer.from(png,'base64');

@@ -144,78 +144,78 @@ html body .sidebar .ux02-side-group .nav-item{border-radius:var(--ux-radius-sm);
    --ux13-selected:color-mix(in srgb,var(--ux13-accent) 13%,var(--bg-surface,#1a1b21));
  }
  /* Legacy v101 still renders for some loaded pages; normalize it explicitly. */
- html body .sidebar.v101-sidebar{
+ html:not(.om2-compact) body .sidebar.v101-sidebar{
    width:258px!important; padding:14px 11px!important;gap:13px!important;
    background:var(--bg-base,#111217)!important;
    border-right:1px solid var(--ux13-line)!important;
  }
- html body .sidebar.v101-sidebar>.logo{
+ html:not(.om2-compact) body .sidebar.v101-sidebar>.logo{
    margin:0 0 6px!important;padding:0 2px 13px!important;
    border-bottom:1px solid var(--ux13-line)!important;
  }
- html body .sidebar.v101-sidebar .v101-sidebar-profile{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-sidebar-profile{
    min-height:57px;padding:6px!important;gap:10px;
    border:0!important;border-radius:12px!important;
    background:transparent!important;box-shadow:none!important;
    grid-template-columns:40px minmax(0,1fr) 38px;
  }
- html body .sidebar.v101-sidebar .v101-sidebar-avatar{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-sidebar-avatar{
    width:40px;height:40px;border:1px solid var(--ux13-line);
    border-radius:12px;background:var(--bg-elevated,#252732);
  }
- html body .sidebar.v101-sidebar .v101-sidebar-profile-copy strong{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-sidebar-profile-copy strong{
    font-size:14px!important;letter-spacing:-.02em;line-height:1.28;
  }
- html body .sidebar.v101-sidebar .v101-sidebar-profile-copy span{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-sidebar-profile-copy span{
    font-size:11px!important;line-height:1.4;margin-top:2px;
  }
- html body .sidebar.v101-sidebar .v101-sidebar-search-toggle{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-sidebar-search-toggle{
    width:38px;height:38px;border-radius:11px;
    background:var(--bg-surface,#1b1d24);
    border:1px solid var(--ux13-line);
  }
- html body .sidebar.v101-sidebar .nav-menu{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .nav-menu{
    gap:6px!important;padding:4px 2px 20px!important;
    scrollbar-width:thin;scrollbar-color:var(--ux13-line) transparent;
  }
- html body .sidebar.v101-sidebar .v101-nav-group{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-nav-group{
    --v101-group-accent:var(--ux13-accent);
    border:0!important;border-radius:12px!important;overflow:visible!important;
    background:transparent!important;box-shadow:none!important;
  }
- html body .sidebar.v101-sidebar .v101-nav-group-head{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-nav-group-head{
    min-height:42px!important;padding:7px 12px!important;
    border:1px solid transparent!important;border-radius:11px!important;
    background:transparent!important;color:var(--text-secondary)!important;
    gap:9px!important;transition:background-color .16s ease,color .16s ease;
  }
- html body .sidebar.v101-sidebar .v101-nav-group-head:hover,
- html body .sidebar.v101-sidebar .v101-nav-group-head:focus-visible{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-nav-group-head:hover,
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-nav-group-head:focus-visible{
    background:var(--ux13-hover)!important;color:var(--text-primary)!important;
  }
- html body .sidebar.v101-sidebar .v101-nav-group:not(.collapsed)>.v101-nav-group-head{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-nav-group:not(.collapsed)>.v101-nav-group-head{
    color:var(--text-primary)!important;
  }
- html body .sidebar.v101-sidebar .v101-nav-group-icon{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-nav-group-icon{
    width:23px;height:23px;flex-basis:23px;
    background:none!important;border:0!important;
    color:var(--text-secondary);
  }
- html body .sidebar.v101-sidebar .v101-nav-group:not(.collapsed) .v101-nav-group-icon{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-nav-group:not(.collapsed) .v101-nav-group-icon{
    color:var(--ux13-accent)!important;
  }
- html body .sidebar.v101-sidebar .v101-nav-group-head-title{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-nav-group-head-title{
    color:inherit!important;font-size:11px!important;font-weight:760!important;
    letter-spacing:.095em!important;text-transform:uppercase;
  }
- html body .sidebar.v101-sidebar .v101-nav-group-chevron{opacity:.63}
- html body .sidebar.v101-sidebar .v101-nav-group-body{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-nav-group-chevron{opacity:.63}
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-nav-group-body{
    padding:2px 0 8px 11px!important;margin:0 0 2px 12px;
    gap:3px!important;border:0!important;
    border-left:1px solid var(--ux13-line)!important;
    background:transparent!important;
  }
- html body .sidebar.v101-sidebar .nav-item[data-view]{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .nav-item[data-view]{
    min-height:43px!important;padding:8px 12px!important;
    grid-template-columns:22px minmax(0,1fr) auto!important;
    gap:9px!important;border:1px solid transparent!important;
@@ -223,24 +223,24 @@ html body .sidebar .ux02-side-group .nav-item{border-radius:var(--ux-radius-sm);
    color:var(--text-secondary)!important;font-size:13px!important;
    font-weight:550!important;letter-spacing:-.012em;
  }
- html body .sidebar.v101-sidebar .nav-item[data-view]:hover{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .nav-item[data-view]:hover{
    color:var(--text-primary)!important;background:var(--ux13-hover)!important;
  }
- html body .sidebar.v101-sidebar .nav-item[data-view].active{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .nav-item[data-view].active{
    color:var(--text-primary)!important;background:var(--ux13-selected)!important;
    border-color:color-mix(in srgb,var(--ux13-accent) 12%,transparent)!important;
    font-weight:690!important;box-shadow:inset 3px 0 0 var(--ux13-accent)!important;
  }
- html body .sidebar.v101-sidebar .v101-nav-label{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-nav-label{
    font-size:13px!important;line-height:1.3;letter-spacing:-.012em;
  }
- html body .sidebar.v101-sidebar .v101-nav-icon-wrap{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-nav-icon-wrap{
    width:22px;height:22px;color:var(--text-muted);
  }
- html body .sidebar.v101-sidebar .v101-nav-icon-wrap svg{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .v101-nav-icon-wrap svg{
    width:17px!important;height:17px!important;
  }
- html body .sidebar.v101-sidebar .nav-item.active .v101-nav-icon-wrap{
+ html:not(.om2-compact) body .sidebar.v101-sidebar .nav-item.active .v101-nav-icon-wrap{
    color:var(--ux13-accent)!important;background:transparent!important;
  }
  /* Four intent groups use the same spacing and selected treatment. */

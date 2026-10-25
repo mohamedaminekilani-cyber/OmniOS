@@ -83,6 +83,35 @@ test('Phase 15 mobile drawer can search without replacing destination handlers',
   }finally{x.close()}
 });
 
+
+test('Phase 15 keeps search and Quick Access when the late v101 sidebar replaces the groups',async()=>{
+  const x=fixture();
+  try{
+    const nav=x.doc.querySelector('.sidebar .nav-menu');
+    const legacy=x.doc.createElement('section');
+    legacy.className='v101-nav-group collapsed';
+    legacy.dataset.group='Plan';
+    const head=x.doc.createElement('button');head.className='v101-nav-group-head';
+    head.setAttribute('aria-expanded','false');
+    const body=x.doc.createElement('div');body.className='v101-nav-group-body';
+    x.doc.querySelectorAll('.sidebar .nav-item[data-view]').forEach(button=>body.appendChild(button));
+    legacy.append(head,body);nav.replaceChildren(legacy);
+    await Promise.resolve();await Promise.resolve();await Promise.resolve();
+    assert.equal(x.doc.querySelectorAll('.sidebar .nav-item[data-view]').length,30);
+    assert.equal(x.doc.querySelector('.sidebar').classList.contains('ux15-legacy'),true);
+    const search=x.doc.getElementById('ux15-nav-search');
+    assert.ok(search?.isConnected,'Search must be reinserted after legacy rebuild');
+    assert.equal(x.doc.querySelectorAll('.sidebar .ux15-shortcut').length,4);
+    search.value='bible';search.dispatchEvent(new x.w.Event('input',{bubbles:true}));
+    assert.deepEqual([...nav.querySelectorAll('.nav-item[data-view]:not([hidden])')].map(b=>b.dataset.view),['bible']);
+    assert.equal(legacy.classList.contains('collapsed'),false);
+    search.value='';search.dispatchEvent(new x.w.Event('input',{bubbles:true}));
+    assert.equal(legacy.classList.contains('collapsed'),true,'Native expanded/collapsed preference restored');
+    x.doc.querySelector('[data-ux15-view="notes"]').click();
+    assert.equal(x.destinations.at(-1),'notes');
+  }finally{x.close()}
+});
+
 test('Phase 15 search / shortcuts have responsive, accessible presentation without storage mutations',()=>{
   for(const name of ['ux15-nav-tools','ux15-search-input','ux15-shortcut','ux15-drawer-search',
     'ux02-drawer-destination[hidden]','prefers-reduced-motion:reduce'])assert.ok(css.includes(name),name);

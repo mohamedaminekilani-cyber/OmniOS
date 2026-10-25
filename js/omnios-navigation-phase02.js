@@ -118,10 +118,10 @@
     const sidebar=document.querySelector('.sidebar');
     const nav=sidebar?.querySelector('.nav-menu');
     if(!nav)return;
-    const legacy=!nav.querySelector('.ux02-side-group')&&!!nav.querySelector('.v101-nav-group');
+    const hasIntent=!!nav.querySelector('.ux02-side-group');
+    const legacy=!hasIntent&&!!nav.querySelector('.v101-nav-group');
     sidebar.classList.toggle('ux15-legacy',legacy);
-    if(!legacy)return;
-    if(nav.querySelector('.ux15-nav-tools'))return;
+    if(nav.querySelector('.ux15-nav-tools')||(!legacy&&!hasIntent))return;
     nav.prepend(navigationTools());
   }
   function filterLegacyNavigation(searching){

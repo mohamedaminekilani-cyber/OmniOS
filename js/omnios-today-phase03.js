@@ -71,7 +71,7 @@ function renderToday(){
    more.setAttribute('aria-expanded',String(state.sectionsExpanded));
    more.setAttribute('aria-label',state.sectionsExpanded?'Hide secondary Today sections':'Show additional Today sections');
  }
- host.classList.toggle('ux18-today-minimal',!state.sectionsExpanded);
+ // Existing ux03-focus-mode remains the single root state marker.
 }
 function renderDashboard(){
  const host=$('#view-dashboard');if(!host)return;

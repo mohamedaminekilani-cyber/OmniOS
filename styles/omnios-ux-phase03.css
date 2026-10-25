@@ -17,6 +17,8 @@ html body #view-today .omr-day-hero.om3-today-hero{
   background:radial-gradient(ellipse at 95% 3%,color-mix(in srgb,var(--today12-violet) 13%,transparent),transparent 49%),
              linear-gradient(125deg,color-mix(in srgb,var(--today12-surface) 92%,var(--bg-base,#101115)),var(--today12-surface));
   box-shadow:0 14px 50px rgba(0,0,0,.09);
+  /* Legacy v97 uses a late background shorthand: preserve the editorial gradient. */
+  background-image:radial-gradient(ellipse at 95% 3%,color-mix(in srgb,var(--today12-violet) 13%,transparent),transparent 49%),linear-gradient(125deg,color-mix(in srgb,var(--today12-surface) 92%,var(--bg-base,#101115)),var(--today12-surface))!important;
   gap:clamp(12px,2vw,28px);align-items:center;
 }
 html body #view-today .om3-today-hero .omr-day-copy{min-width:0}
@@ -159,7 +161,11 @@ html #view-dashboard .ux03-return-button{min-height:40px;border-radius:10px}
     min-height:110px;padding:13px 14px!important;border-radius:14px!important;
   }
   html body #view-today #v58-attention{padding:11px!important}
-  html body #view-today #v58-attention .v58-attention-copy{flex-basis:100%}
+  html body #view-today #v58-attention .v58-attention-copy{flex:1 0 100%!important}
+  html body #view-today #v58-attention :is(#v58-attention-open,#v58-automation-open){
+    flex:0 1 auto!important;width:auto!important;min-width:105px!important;
+    max-width:calc(50% - 5px);min-height:40px!important;
+  }
   html body #view-today .om3-today-grid :is(.omr-panel,.omr-feature){border-radius:15px!important;padding:16px!important}
   /* Main Add slot in the Phase 02 dock already supports universal creation. */
   html body #view-today #v35-today-add{display:none!important}

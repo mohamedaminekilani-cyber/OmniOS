@@ -389,6 +389,14 @@ try{
  check('Phase 10 canonical Finance and Notes action labels remain explicit after refresh',
    canonicalNames10.every(x=>x.found&&x.label===x.expected),canonicalNames10);
 
+ // Phase 14 — real cross-module header treatment and responsive geometry.
+ for(const moduleWidth14 of [1440,390,360]){
+  await setViewport(moduleWidth14,moduleWidth14===1440?900:844);
+  const modules14=await evaluate('(async()=>{const defs=[["workout",".workout-hero"],["diet",".nut-hero"],["budget",".v38-finance-head"],["habits",".omx-page-heading"],["notes",".org-hero"]];const previous=document.querySelector(".view.active[id^=view-]")?.id.slice(5)||"today";const result=[];for(const [id,sel] of defs){window.switchView(id);await new Promise(done=>requestAnimationFrame(done));const root=document.getElementById("view-"+id),hero=root?.querySelector(sel),r=hero?.getBoundingClientRect(),cs=hero?getComputedStyle(hero):null;result.push({id,found:!!hero,visible:!!r&&r.width>0&&r.height>0,padding:cs?parseFloat(cs.paddingTop):0,radius:cs?parseFloat(cs.borderTopLeftRadius):0,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth})}window.switchView(previous);return result})()');
+  check('Phase 14 module heroes use readable surfaces at '+moduleWidth14+'px',
+    modules14.length===5&&modules14.every(x=>x.found&&x.visible&&x.padding>=16&&x.radius>=12&&x.overflow<=5),modules14);
+ }
+
  // Phase 08 telemetry: record real-loader startup and route-to-painted-frame timing.
  // Informational performance samples are deliberately not rigid time budgets:
  // CI host variability must not create false positives. Functional checks still gate.

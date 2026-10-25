@@ -144,8 +144,8 @@ html body :is(#view-workout,#view-diet,#view-budget,#view-habits,#view-notes){
 }
 html body :is(#view-workout .workout-hero,#view-diet .nut-hero,#view-budget .v38-finance-head,#view-notes .org-hero,#view-habits .omx-page-heading){
  box-sizing:border-box;min-width:0;max-width:100%;
- min-height:146px;padding:24px 27px;
- border:1px solid var(--ux14-edge);border-radius:20px;
+ min-height:146px;padding:24px 27px!important;
+ border:1px solid var(--ux14-edge);border-radius:20px!important;
  background:radial-gradient(ellipse at 95% 0%,color-mix(in srgb,var(--ux14-accent) 10%,transparent),transparent 54%),var(--ux14-surface);
  box-shadow:0 8px 28px rgba(0,0,0,.055);
  gap:14px;align-items:center;
@@ -192,7 +192,7 @@ html body :is(#view-workout,#view-diet,#view-budget,#view-habits,#view-notes)
 }
 @media(max-width:760px){
  html body :is(#view-workout .workout-hero,#view-diet .nut-hero,#view-budget .v38-finance-head,#view-notes .org-hero,#view-habits .omx-page-heading){
-  min-height:0;padding:18px 17px;border-radius:17px;
+  min-height:0;padding:18px 17px!important;border-radius:17px!important;
   flex-wrap:wrap;gap:11px;align-items:flex-start;
  }
  html body :is(#view-workout .workout-hero,#view-diet .nut-hero,#view-budget .v38-finance-head,#view-notes .org-hero,#view-habits .omx-page-heading)

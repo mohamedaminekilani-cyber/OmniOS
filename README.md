@@ -6,6 +6,8 @@ Live: https://mohamedaminekilani-cyber.github.io/OmniOS/
 
 Production releases are published from verified commits on `main`.
 
+Validated visual release: [Phase 14](https://github.com/mohamedaminekilani-cyber/OmniOS/pull/59) (2026-10-25), including the unified Today layout, navigation, and Workout/Nutrition/Finance/Habits/Notes surfaces from Phases 10–14. This documentation-only update triggers the guarded `main` deployment workflow; no application code or personal data is changed.
+
 ## Develop and verify
 
 ```sh

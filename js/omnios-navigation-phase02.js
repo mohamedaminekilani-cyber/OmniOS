@@ -374,7 +374,7 @@
     queueMicrotask(()=>{syncQueued=false;sync()});
   }
   function sync(){
-    ensureNavigationTools();
+    if(typeof ensureNavigationTools==='function')ensureNavigationTools();
     const current=visibleView(),id=groupId(current);
     state.active=id;
     if(state.groups.size){

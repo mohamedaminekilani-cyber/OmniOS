@@ -26,6 +26,11 @@ test('Phase 12 Today stylesheet directly styles renderer classes, retains connec
  assert.match(css,/#view-today\.ux03-focus-mode #v58-today-intelligence\{display:none!important\}/);
  assert.match(css,/@media\(max-width:760px\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
- const active=css.replace(/#view-today\.ux03-focus-mode #v58-today-intelligence\{display:none!important\}/,'');
+ // These are the two deliberate exceptions: connected insights are hidden
+ // when collapsed, and the universal mobile dock replaces duplicate '+ New'.
+ assert.match(css,/#v35-today-add\{display:none!important\}/);
+ const active=css
+   .replace(/#view-today\.ux03-focus-mode #v58-today-intelligence\{display:none!important\}/,'')
+   .replace(/#v35-today-add\{display:none!important\}/,'');
  assert.doesNotMatch(active,/visibility:\s*hidden|pointer-events:\s*none|display:\s*none/);
 });

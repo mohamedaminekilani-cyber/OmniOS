@@ -19,7 +19,7 @@
   };
   const groupForView = new Map();
   GROUPS.forEach(g=>g.views.forEach(v=>groupForView.set(v,g.id)));
-  const state = {active:'today',dialog:null,trigger:null,buttons:[],groups:new Map(),installed:false,searchInput:null,shortcuts:[],query:''};
+  const state = {active:'today',dialog:null,trigger:null,buttons:[],groups:new Map(),installed:false,searchInput:null,shortcuts:[],query:'',legacyCollapsed:null};
   const byId=id=>document.getElementById(id);
   const viewNode=id=>byId('view-'+id);
   const visibleView=()=>document.querySelector('.view.active[id^="view-"]')?.id.slice(5)||'today';
@@ -61,6 +61,8 @@
     return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase().trim();
   }
   function navigationTools(){
+    state.shortcuts=[];
+    state.searchInput=null;
     const tools=el('section','ux15-nav-tools');
     tools.setAttribute('aria-label','Find and open pages');
     const search=el('div','ux15-search');
@@ -107,11 +109,69 @@
     });
     return tools;
   }
+
+  // The late v101 renderer may replace the navigation after the Phase 02
+  // projection. Keep the optimized search/quick access on either renderer,
+  // without rebuilding the native groups or touching original route buttons.
+  function ensureNavigationTools(){
+    const sidebar=document.querySelector('.sidebar');
+    const nav=sidebar?.querySelector('.nav-menu');
+    if(!nav)return;
+    const legacy=!nav.querySelector('.ux02-side-group')&&!!nav.querySelector('.v101-nav-group');
+    sidebar.classList.toggle('ux15-legacy',legacy);
+    if(!legacy)return;
+    if(nav.querySelector('.ux15-nav-tools'))return;
+    nav.prepend(navigationTools());
+  }
+  function filterLegacyNavigation(searching){
+    const nav=document.querySelector('.sidebar .nav-menu');
+    if(!nav)return;
+    const groups=[...nav.querySelectorAll('.v101-nav-group')];
+    if(!groups.length)return;
+    if(searching&&state.legacyCollapsed===null){
+      state.legacyCollapsed=new Map(groups.map(group=>[group,group.classList.contains('collapsed')]));
+    }
+    let total=0;
+    groups.forEach(group=>{
+      const rows=[...group.querySelectorAll('.nav-item[data-view]')];
+      let count=0;
+      rows.forEach(button=>{
+        const match=!searching||simplify((LABELS[button.dataset.view]||'')+' '+button.textContent+' '+button.dataset.view).includes(state.query);
+        button.hidden=!match;if(match)count++;
+      });
+      total+=searching?count:0;
+      group.hidden=searching&&count===0;
+      if(searching&&count){
+        group.classList.remove('collapsed');
+        group.querySelector('.v101-nav-group-head')?.setAttribute('aria-expanded','true');
+      }
+    });
+    if(!searching&&state.legacyCollapsed!==null){
+      groups.forEach(group=>{
+        const collapsed=state.legacyCollapsed.get(group);
+        if(collapsed===undefined)return;
+        group.classList.toggle('collapsed',collapsed);
+        group.querySelector('.v101-nav-group-head')?.setAttribute('aria-expanded',String(!collapsed));
+      });
+      state.legacyCollapsed=null;
+    }
+    const status=byId('ux15-search-status');
+    if(status){
+      status.hidden=!searching;
+      status.textContent=searching?(total?total+' matching '+(total===1?'page':'pages'):'No pages found'):'';
+    }
+  }
+
   function filterNavigation(value){
     state.query=simplify(value);
     const searching=!!state.query;
     const nav=document.querySelector('.sidebar .nav-menu[data-ux02-ready="1"]');
     nav?.classList.toggle('ux15-searching',searching);
+    const legacyNav=document.querySelector('.sidebar .ux15-legacy .nav-menu');
+    if(legacyNav){
+      legacyNav.classList.toggle('ux15-searching',searching);
+      filterLegacyNavigation(searching);return;
+    }
     let total=0;
     state.groups.forEach(({section,toggle,panel},key)=>{
       const rows=[...panel.querySelectorAll('.nav-item[data-view]')];
@@ -314,6 +374,7 @@
     queueMicrotask(()=>{syncQueued=false;sync()});
   }
   function sync(){
+    ensureNavigationTools();
     const current=visibleView(),id=groupId(current);
     state.active=id;
     if(state.groups.size){
@@ -345,6 +406,16 @@
         return result;
       };
       wrapped.__ux02Original=original;window.switchView=wrapped;
+    }
+    const nav=document.querySelector('.sidebar .nav-menu');
+    if(nav){
+      let repairQueued=false;
+      new MutationObserver(()=>{
+        if(repairQueued||nav.querySelector('.ux15-nav-tools'))return;
+        if(!nav.querySelector('.v101-nav-group'))return;
+        repairQueued=true;
+        queueMicrotask(()=>{repairQueued=false;ensureNavigationTools();scheduleSync();});
+      }).observe(nav,{childList:true});
     }
     const title=byId('view-title');
     if(title)new MutationObserver(()=>scheduleSync()).observe(title,{childList:true,characterData:true,subtree:true});

@@ -479,3 +479,142 @@ html body .sidebar .ux02-side-group .nav-item{border-radius:var(--ux-radius-sm);
    box-shadow:inset 3px 0 0 var(--om16-group-accent,#a78bfa)!important;
  }
 }
+
+
+/* Phase 17 — deliberate phone navigation: color-coded tabs, readable single-column
+   page discovery, reachable search, safe-area-aware dock, and reliable sheet scroll. */
+@media (max-width:760px) {
+ html body .ux02-mobile-nav{
+   --ux17-blue:#65a9ee;
+   --ux17-purple:#b18bf2;
+   --ux17-green:#5ebc9e;
+   --ux17-amber:#e6ad62;
+   left:max(8px,env(safe-area-inset-left))!important;
+   right:max(8px,env(safe-area-inset-right))!important;
+   bottom:calc(7px + env(safe-area-inset-bottom))!important;
+   padding:5px!important;gap:3px!important;
+   min-height:68px!important;border-radius:18px!important;
+   background:var(--bg-surface,#1a1d24)!important;
+   box-shadow:0 9px 30px rgba(0,0,0,.24),0 0 0 1px rgba(255,255,255,.015)!important;
+ }
+ html body .ux02-mobile-tab{
+   --ux17-tab-accent:var(--accent-purple,#b18bf2);
+   min-width:0!important;min-height:56px!important;
+   padding:5px 1px!important;gap:2px!important;
+   border-radius:12px!important;
+   touch-action:manipulation;
+   -webkit-tap-highlight-color:transparent;
+ }
+ html body .ux02-mobile-tab[data-ux02-group="today"]{--ux17-tab-accent:#65a9ee}
+ html body .ux02-mobile-tab[data-ux02-group="plan"]{--ux17-tab-accent:#b18bf2}
+ html body .ux02-mobile-tab[data-ux02-group="life"]{--ux17-tab-accent:#5ebc9e}
+ html body .ux02-mobile-tab[data-ux02-group="library"]{--ux17-tab-accent:#e6ad62}
+ html body .ux02-mobile-tab.active{
+   color:var(--text-primary,#eef0f2)!important;
+   background:color-mix(in srgb,var(--ux17-tab-accent) 17%,var(--bg-surface,#1a1d24))!important;
+   border-color:color-mix(in srgb,var(--ux17-tab-accent) 36%,transparent)!important;
+   box-shadow:inset 0 3px 0 var(--ux17-tab-accent)!important;
+ }
+ html body .ux02-mobile-tab.active .ux02-nav-icon{color:var(--ux17-tab-accent)!important}
+ html body .ux02-mobile-nav .ux02-tab-label{
+   font-size:12px!important;line-height:1.15!important;letter-spacing:-.015em;
+   max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ }
+ html body .ux02-mobile-nav .ux02-nav-icon{width:22px;height:22px}
+ html body .ux02-mobile-nav .ux02-capture .ux02-nav-icon{
+   background:var(--accent-purple,#6f5ce8);border-radius:9px;
+ }
+ html body .view-container{
+   padding-bottom:calc(108px + env(safe-area-inset-bottom))!important;
+ }
+ html body.ux02-drawer-open{overflow:hidden!important;overscroll-behavior:none}
+ html body .ux02-drawer:not([hidden]){
+   padding:10px max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))!important;
+   align-items:flex-end!important;
+ }
+ html body .ux02-drawer-sheet{
+   width:min(540px,100%)!important;
+   max-height:min(81dvh,720px)!important;
+   display:flex!important;flex-direction:column!important;
+   overflow:hidden!important;min-height:0;
+   border-radius:20px 20px 15px 15px!important;
+   border-color:color-mix(in srgb,var(--ux17-drawer-accent,#b18bf2) 42%,var(--border-color,#353a45))!important;
+   background:var(--bg-surface,#1a1d24)!important;
+ }
+ html body .ux02-drawer-head{
+   flex:none!important;gap:8px!important;
+   padding:14px 14px 10px!important;
+   border-bottom:0!important;
+   border-top:3px solid var(--ux17-drawer-accent,#b18bf2);
+ }
+ html body .ux02-drawer-title{
+   font-size:18px!important;line-height:1.3!important;
+   color:var(--text-primary,#eef0f2);
+ }
+ html body .ux02-drawer-close{
+   min-height:44px!important;min-width:64px;
+   padding:8px 12px!important;
+   font-size:13px!important;
+ }
+ html body .ux17-drawer-search-wrap{
+   display:block;flex:none;padding:4px 14px 4px;
+ }
+ html body .ux17-drawer-search{
+   box-sizing:border-box;display:block;width:100%;max-width:100%;
+   height:46px;padding:10px 14px;
+   font:inherit;font-size:16px;line-height:1.35;
+   color:var(--text-primary,#eef0f2);
+   background:var(--bg-base,#111217);
+   border:1px solid var(--border-color,#414551);border-radius:11px;
+   -webkit-appearance:none;appearance:none;
+ }
+ html body .ux17-drawer-search::placeholder{color:var(--text-secondary,#b7c0ce);opacity:1}
+ html body .ux17-drawer-search:focus-visible{
+   outline:2px solid var(--ux17-drawer-accent,#b18bf2);outline-offset:2px;
+ }
+ html body .ux17-drawer-status{
+   flex:none;padding:3px 15px 7px;margin:0;
+   color:var(--text-secondary,#b7c0ce);font-size:12px;line-height:1.3;
+ }
+ html body .ux02-drawer-content{
+   flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto;
+   grid-template-columns:minmax(0,1fr)!important;
+   align-content:start;gap:7px!important;
+   padding:2px 12px calc(14px + env(safe-area-inset-bottom))!important;
+   -webkit-overflow-scrolling:touch;
+   overscroll-behavior-y:contain;
+ }
+ html body .ux02-drawer-destination{
+   box-sizing:border-box;min-height:49px!important;
+   padding:12px 14px!important;display:flex;justify-content:space-between;
+   align-items:center;gap:12px;
+   border-radius:12px!important;
+   font-size:14px!important;line-height:1.3;font-weight:600;
+   background:var(--bg-elevated,#252732);
+   touch-action:manipulation;
+ }
+ html body .ux02-drawer-destination[aria-current="page"]{
+   border-color:var(--ux17-drawer-accent,#b18bf2)!important;
+   background:color-mix(in srgb,var(--ux17-drawer-accent,#b18bf2) 15%,var(--bg-elevated,#252732))!important;
+   box-shadow:inset 3px 0 var(--ux17-drawer-accent,#b18bf2);
+ }
+ html body .ux17-destination-group{flex:none;font-size:11px;font-weight:600;color:var(--text-secondary,#b7c0ce)}
+ html body .ux17-drawer-empty{
+   margin:10px 2px;padding:18px 8px;text-align:center;font-size:13px;
+   line-height:1.5;color:var(--text-secondary,#b7c0ce);
+ }
+ html body .ux02-drawer-sheet :is(button,input):focus-visible{
+   outline:2px solid var(--ux17-drawer-accent,#b18bf2)!important;
+   outline-offset:2px!important;
+ }
+}
+@media (max-width:370px){
+ html body .ux02-mobile-nav .ux02-tab-label{font-size:11.5px!important}
+ html body .ux02-drawer-content{padding-inline:10px!important}
+}
+@media (max-width:760px) and (max-height:600px){
+ html body .ux02-drawer-sheet{max-height:90dvh!important}
+}
+@media (prefers-reduced-motion:reduce){
+ html body .ux02-mobile-tab,html body .ux02-drawer-sheet{transition:none!important}
+}

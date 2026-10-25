@@ -43,11 +43,6 @@ async function visit(view,theme,width){
  check(width+' '+theme+' '+view+' has no blocking welcome overlay',!modal);
  check(width+' '+theme+' '+view+' renders',state.exists&&state.active&&state.visible,{content:state.content});
  check(width+' '+theme+' '+view+' fits viewport',state.overflow<=5,{overflow:state.overflow});
- if(width>=1024){
-   const menu=await evaluate('(()=>{const sidebar=document.querySelector(".sidebar"),search=sidebar?.querySelector(".ux15-search-input"),buttons=[...sidebar?.querySelectorAll(".ux15-shortcut")||[]],r=search?.getBoundingClientRect();return {renderer:sidebar?.querySelector(".v101-nav-group")?"legacy":"intent",search:!!search&&!!r&&r.width>160&&r.height>=40,shortcuts:buttons.length,connected:buttons.every(x=>x.isConnected),overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
-   check(width+' '+theme+' '+view+' Phase 15 quick menu persists after native screen re-renders',
-     menu.search&&menu.shortcuts===4&&menu.connected&&menu.overflow<=5,menu);
- }
  const png=(await send('Page.captureScreenshot',{format:'jpeg',quality:70,captureBeyondViewport:false,fromSurface:true})).result.data;
  const name=output+'/'+width+'-'+theme+'-'+view+'.jpg';
  const bytes=Buffer.from(png,'base64');
@@ -167,6 +162,19 @@ try{
  const nav15Desktop=await evaluate('(async()=>{const nav=document.querySelector(".sidebar .nav-menu"),search=document.getElementById("ux15-nav-search"),shortcuts=[...document.querySelectorAll(".sidebar .ux15-shortcut")],links=[...document.querySelectorAll(".sidebar .nav-item[data-view]")];const h=search?.getBoundingClientRect().height||0;search.value="bible";search.dispatchEvent(new Event("input",{bubbles:true}));const visible=[...document.querySelectorAll(".sidebar .ux02-side-link:not([hidden])")].filter(x=>!x.closest(".ux02-side-group")?.hidden).map(x=>x.dataset.view);const status=document.getElementById("ux15-search-status")?.textContent;search.value="";search.dispatchEvent(new Event("input",{bubbles:true}));const restored=[...document.querySelectorAll(".sidebar .nav-item[data-view]:not([hidden])")].length;shortcuts.find(x=>x.dataset.ux15View==="tasks")?.click();await new Promise(done=>setTimeout(done,0));const quickRoute=document.getElementById("view-tasks")?.classList.contains("active");window.switchView("today");await new Promise(done=>setTimeout(done,0));return {search:!!search,height:h,shortcuts:shortcuts.map(x=>x.dataset.ux15View),links:links.length,visible,status,restored,quickRoute,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
  check('Phase 15 desktop: one-click frequent routes, live search, complete restoration and zero page overflow',
    nav15Desktop.search&&nav15Desktop.height>=40&&nav15Desktop.shortcuts.join(',')==='today,tasks,master-calendar,notes'&&nav15Desktop.links>=30&&nav15Desktop.visible.join(',')==='bible'&&nav15Desktop.status==='1 matching page'&&nav15Desktop.restored===nav15Desktop.links&&nav15Desktop.quickRoute&&nav15Desktop.overflow<=5,nav15Desktop);
+ // Phase 15 long-path regression: the verified, supported production entry point
+ // is index.html (which carries the opt-in navigation assets into the release).
+ // The direct source-hash HTML is a lower-level build artifact with v101 alone.
+ // Test the persistent sidebar across real loader routes, not that raw artifact.
+ for(const view15 of ['dashboard','today','tasks','master-calendar','budget','notes']){
+   await evaluate('window.switchView('+JSON.stringify(view15)+')');await delay(240);
+   const geometry15=await evaluate('(()=>{const sidebar=document.querySelector(".sidebar"),search=sidebar?.querySelector(".ux15-search-input"),quick=[...sidebar?.querySelectorAll(".ux15-shortcut")||[]],r=search?.getBoundingClientRect();return {mode:sidebar?.querySelector(".v101-nav-group")?"legacy":"intent",found:!!search&&!!r&&r.width>160&&r.height>=40,quick:quick.length,active:document.querySelector(".view.active[id^=view-]")?.id,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()');
+   check('Phase 15 production-loader '+view15+' preserves quick access and live search',geometry15.found&&geometry15.quick===4&&geometry15.active==='view-'+view15&&geometry15.overflow<=5,geometry15);
+   const jpg15=(await send('Page.captureScreenshot',{format:'jpeg',quality:73,captureBeyondViewport:false,fromSurface:true})).result.data;
+   const name15=output+'/phase15-loader-1440-'+view15+'.jpg';
+   const bytes15=Buffer.from(jpg15,'base64');fs.writeFileSync(name15,bytes15);report.screenshots.push(name15);
+ }
+ await evaluate('window.switchView("today")');await delay(200);
  const libraryRoute02=await evaluate('(async()=>{window.switchView("bible");await new Promise(r=>setTimeout(r,0));const active=document.getElementById("view-bible")?.classList.contains("active"),open=document.querySelector("[data-ux02-group=library] .ux02-side-links")?.hidden===false;window.switchView("today");return {active,open}})()');
  check('Phase 02 uses original Bible route and opens Library group',libraryRoute02.active&&libraryRoute02.open,libraryRoute02);
  await setViewport(390,844);await delay(350);

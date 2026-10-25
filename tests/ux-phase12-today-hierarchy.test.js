@@ -29,8 +29,19 @@ test('Phase 12 Today stylesheet directly styles renderer classes, retains connec
  // These are the two deliberate exceptions: connected insights are hidden
  // when collapsed, and the universal mobile dock replaces duplicate '+ New'.
  assert.match(css,/#v35-today-add\{display:none!important\}/);
- const active=css
+ // Phase 12 guarantees that the original page controls are not removed.
+ // Phase 18 deliberately adds *reversible* hidden secondary sections; test
+ // that independent contract separately rather than rejecting all disclosure.
+ const legacy=css.split('/* Phase 18 — progressive disclosure')[0];
+ const active=legacy
    .replace(/#view-today\.ux03-focus-mode #v58-today-intelligence\{display:none!important\}/,'')
    .replace(/#v35-today-add\{display:none!important\}/,'');
  assert.doesNotMatch(active,/visibility:\s*hidden|pointer-events:\s*none|display:\s*none/);
+ const disclosure=css.split('/* Phase 18 — progressive disclosure')[1];
+ assert.ok(disclosure,'Phase 18 has an explicit, scoped disclosure rule');
+ assert.match(disclosure,/#view-today,#view-dashboard,#view-inbox/);
+ assert.match(disclosure,/\.ux18-collapsed-section/);
+ assert.match(js,/sectionsExpanded/);
+ assert.match(js,/dashboardExpanded/);
+ assert.match(js,/inboxExpanded/);
 });

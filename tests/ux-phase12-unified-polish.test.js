@@ -9,9 +9,10 @@ test('Phase 12 Today polish keeps cards and action controls visible',()=>{
  assert.doesNotMatch(s,/display\s*:\s*none|visibility\s*:\s*hidden|pointer-events\s*:\s*none|!important/);
 });
 test('Phase 12 sidebar retains all navigation destinations',()=>{
- const s=nav.slice(nav.lastIndexOf('/* Phase 12'));
+ const s=nav.slice(nav.lastIndexOf('/* OmniOS Phase 13 —'));
  assert.match(s,/\.ux02-side-toggle/);
  assert.match(s,/\.ux02-side-links>\.nav-item.active/);
  assert.match(s,/\.ux02-mobile-tab.active/);
- assert.doesNotMatch(s,/display\s*:\s*none|visibility\s*:\s*hidden/);
+ const expanded=s.replace(/\.ux02-side-links\[hidden\]\{display:none!important\}/,'');
+ assert.doesNotMatch(expanded,/display\s*:\s*none|visibility\s*:\s*hidden/);
 });

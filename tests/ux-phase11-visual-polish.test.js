@@ -3,13 +3,15 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const nav=fs.readFileSync('styles/omnios-ux-phase02.css','utf8');
 const today=fs.readFileSync('styles/omnios-ux-foundation.css','utf8');
-const n=nav.slice(nav.lastIndexOf('/* Phase 11'));
+const n=nav.slice(nav.lastIndexOf('/* OmniOS Phase 13 —'));
 const t=today.slice(today.lastIndexOf('/* Phase 11'));
 test('Phase 11 navigation keeps existing links and accessible states',()=>{
  assert.match(n,/\.ux02-side-links/);
  assert.match(n,/\.ux02-side-toggle/);
  assert.match(n,/\.nav-item\.active/);
- assert.doesNotMatch(n,/display\s*:\s*none|visibility\s*:\s*hidden|pointer-events\s*:\s*none/);
+ assert.match(n,/\.ux02-side-links\[hidden\]\{display:none!important\}/);
+ const expanded=n.replace(/\.ux02-side-links\[hidden\]\{display:none!important\}/,'');
+ assert.doesNotMatch(expanded,/display\s*:\s*none|visibility\s*:\s*hidden|pointer-events\s*:\s*none/);
  assert.match(n,/prefers-reduced-motion/);
 });
 test('Phase 11 Today polish preserves all cards and actions',()=>{

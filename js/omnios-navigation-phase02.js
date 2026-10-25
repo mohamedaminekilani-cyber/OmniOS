@@ -350,7 +350,9 @@
     if(title)new MutationObserver(()=>scheduleSync()).observe(title,{childList:true,characterData:true,subtree:true});
     document.addEventListener('keydown',event=>{
       if(event.key!=='/'||event.ctrlKey||event.altKey||event.metaKey||event.shiftKey)return;
-      if(window.innerWidth<=760||document.querySelector('[role="dialog"][aria-modal="true"]:not([hidden])'))return;
+      const modalVisible=[...document.querySelectorAll('[role="dialog"][aria-modal="true"]')]
+        .some(dialog=>!dialog.closest('[hidden]')&&dialog.getClientRects().length>0);
+      if(window.innerWidth<=760||modalVisible)return;
       const target=event.target;
       if(target?.closest('input,textarea,select,[contenteditable="true"]'))return;
       if(state.searchInput?.isConnected){event.preventDefault();state.searchInput.focus();}

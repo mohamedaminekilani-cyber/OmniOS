@@ -103,6 +103,51 @@
       const nav=src.get(key);return {id:key,label:(LABELS[key]||nav?.textContent?.trim()||key.replace(/-/g,' '))};
     });
   }
+  // Phase 17: search is global once entered, while the initial sheet stays
+  // scoped to the section the user tapped. No personal data is persisted.
+  function drawerPages(id,query){
+    const text=(query||'').trim().toLocaleLowerCase();
+    if(!text)return buttonsForGroup(id).map(page=>({...page,group:id}));
+    const seen=new Set(),matches=[];
+    GROUPS.forEach(g=>{
+      buttonsForGroup(g.id).forEach(page=>{
+        if(seen.has(page.id))return;
+        seen.add(page.id);
+        if((page.label+' '+page.id.replace(/-/g,' ')).toLocaleLowerCase().includes(text)){
+          matches.push({...page,group:g.id});
+        }
+      });
+    });
+    return matches;
+  }
+  function renderDrawerPages(id){
+    const d=state.dialog;if(!d)return;
+    const input=d.querySelector('.ux17-drawer-search');
+    const query=input?.value||'';
+    const searched=!!query.trim();
+    const content=d.querySelector('.ux02-drawer-content');
+    const results=drawerPages(id,query);
+    content.replaceChildren();
+    for(const page of results){
+      const b=el('button','ux02-drawer-destination',page.label);
+      b.type='button';b.dataset.ux02View=page.id;
+      if(page.id===visibleView())b.setAttribute('aria-current','page');
+      if(searched){
+        const groupLabel=group(page.group)?.label||'Library';
+        b.appendChild(el('span','ux17-destination-group',groupLabel));
+      }
+      content.appendChild(b);
+    }
+    if(!results.length){
+      const empty=el('p','ux17-drawer-empty','No pages found. Try another search.');
+      content.appendChild(empty);
+    }
+    const status=d.querySelector('.ux17-drawer-status');
+    if(status)status.textContent=searched
+      ?results.length+' matching '+(results.length===1?'page':'pages')
+      :results.length+' pages in '+(group(id)?.label||'Library');
+    d.classList.toggle('ux17-searching',searched);
+  }
   function closeDrawer(){
     const d=state.dialog;if(!d||d.hidden)return;
     d.hidden=true;document.body.classList.remove('ux02-drawer-open');
@@ -115,18 +160,14 @@
     state.trigger=trigger||document.activeElement;
     const g=group(id)||GROUPS[3];
     d.querySelector('.ux02-drawer-title').textContent=g.label;
-    const body=d.querySelector('.ux02-drawer-content');
-    body.replaceChildren();
-    for(const page of buttonsForGroup(g.id)){
-      const b=el('button','ux02-drawer-destination',page.label);
-      b.type='button';b.dataset.ux02View=page.id;
-      if(page.id===visibleView())b.setAttribute('aria-current','page');
-      body.appendChild(b);
-    }
     d.dataset.ux02Group=g.id;
+    d.style.setProperty('--ux17-drawer-accent',({today:'#65a9ee',plan:'#b18bf2',life:'#5ebc9e',library:'#e6ad62'})[g.id]);
+    const input=d.querySelector('.ux17-drawer-search');
+    if(input)input.value='';
+    renderDrawerPages(g.id);
     d.hidden=false;
     document.body.classList.add('ux02-drawer-open');
-    state.buttons.forEach(b=>b.setAttribute('aria-expanded',String(b.dataset.ux02Group===id)));
+    state.buttons.forEach(b=>b.setAttribute('aria-expanded',String(b.dataset.ux02Group===g.id)));
     d.querySelector('.ux02-drawer-close').focus({preventScroll:true});
   }
   function navigate(id){
@@ -157,7 +198,7 @@
           else navigate('today');
         });
       }else{
-        b.setAttribute('aria-haspopup','dialog');b.setAttribute('aria-expanded','false');
+        b.setAttribute('aria-haspopup','dialog');b.setAttribute('aria-expanded','false');b.setAttribute('aria-controls','ux02-nav-drawer');
         b.addEventListener('click',()=>{
           if(!state.dialog?.hidden&&state.dialog.dataset.ux02Group===g.id){closeDrawer();return}
           showDrawer(g.id,b);
@@ -173,22 +214,33 @@
     dialog.id='ux02-nav-drawer';dialog.hidden=true;
     dialog.setAttribute('role','presentation');
     const shade=el('button','ux02-drawer-shade');shade.type='button';shade.setAttribute('aria-label','Close page menu');shade.addEventListener('click',closeDrawer);
-    const sheet=el('section','ux02-drawer-sheet');sheet.setAttribute('role','dialog');sheet.setAttribute('aria-modal','true');sheet.setAttribute('aria-label','Browse OmniOS pages');
+    const sheet=el('section','ux02-drawer-sheet');sheet.setAttribute('role','dialog');sheet.setAttribute('aria-modal','true');sheet.setAttribute('aria-labelledby','ux02-drawer-title');
     const head=el('div','ux02-drawer-head');
-    const title=el('h3','ux02-drawer-title','Plan');
+    const title=el('h3','ux02-drawer-title','Plan');title.id='ux02-drawer-title';
     const dismiss=el('button','ux02-drawer-close','Close');dismiss.type='button';dismiss.setAttribute('aria-label','Close page menu');dismiss.addEventListener('click',closeDrawer);
     head.append(title,dismiss);
+    const searchWrap=el('div','ux17-drawer-search-wrap');
+    const search=el('input','ux17-drawer-search');
+    search.type='search';search.autocomplete='off';search.spellcheck=false;
+    search.placeholder='Find any page…';
+    search.setAttribute('aria-label','Search all OmniOS pages');
+    search.addEventListener('input',()=>renderDrawerPages(state.dialog?.dataset.ux02Group||'library'));
+    searchWrap.appendChild(search);
+    const status=el('p','ux17-drawer-status');
+    status.setAttribute('role','status');status.setAttribute('aria-live','polite');
     const content=el('div','ux02-drawer-content');
+    content.id='ux02-drawer-destinations';
     content.addEventListener('click',e=>{const b=e.target.closest('[data-ux02-view]');if(b)navigate(b.dataset.ux02View)});
-    sheet.append(head,content);dialog.append(shade,sheet);
+    sheet.append(head,searchWrap,status,content);dialog.append(shade,sheet);
     document.body.append(dock,dialog);state.dialog=dialog;
     document.addEventListener('keydown',e=>{
       if(state.dialog?.hidden)return;
       if(e.key==='Escape'){e.preventDefault();closeDrawer()}
       if(e.key==='Tab'){
-        const allowed=[...state.dialog.querySelectorAll('button:not([disabled])')].filter(x=>x.getBoundingClientRect().width>0);
+        const allowed=[...state.dialog.querySelectorAll('.ux02-drawer-sheet button:not([disabled]),.ux02-drawer-sheet input:not([disabled])')].filter(x=>x.getBoundingClientRect().width>0);
         const first=allowed[0],last=allowed[allowed.length-1];
-        if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}
+        if(!allowed.includes(document.activeElement)){e.preventDefault();(e.shiftKey?last:first)?.focus()}
+        else if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}
         else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}
       }
     });

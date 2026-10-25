@@ -188,7 +188,7 @@ html body :is(#view-workout .workout-kpi-grid,#view-habits .habit-summary-grid,#
 html body :is(#view-workout,#view-diet,#view-budget,#view-habits,#view-notes)
  :is(.workout-hero,.nut-hero,.v38-finance-head,.org-hero,.omx-page-heading,.org-toolbar,.workout-tabs,.nut-tabs,.v38-fin-tabs,.habit-toolbar)
  :is(button,input,select,textarea):focus-visible{
- outline:2px solid var(--ux14-accent)!important;outline-offset:2px;
+ outline:2px solid var(--ux14-accent);outline-offset:2px;
 }
 @media(max-width:760px){
  html body :is(#view-workout .workout-hero,#view-diet .nut-hero,#view-budget .v38-finance-head,#view-notes .org-hero,#view-habits .omx-page-heading){
@@ -209,6 +209,6 @@ html body :is(#view-workout,#view-diet,#view-budget,#view-habits,#view-notes)
 @media(prefers-reduced-motion:reduce){
  html body :is(#view-workout,#view-diet,#view-budget,#view-habits,#view-notes)
  :is(.workout-hero,.nut-hero,.v38-finance-head,.org-hero,.habit-toolbar,.workout-tabs,.nut-tabs,.v38-fin-tabs) *{
-  transition:none!important;
+  transition:none;
  }
 }

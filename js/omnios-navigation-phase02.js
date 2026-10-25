@@ -19,7 +19,7 @@
   };
   const groupForView = new Map();
   GROUPS.forEach(g=>g.views.forEach(v=>groupForView.set(v,g.id)));
-  const state = {active:'today',dialog:null,trigger:null,buttons:[],groups:new Map(),installed:false};
+  const state = {active:'today',dialog:null,trigger:null,buttons:[],groups:new Map(),installed:false,searchInput:null,shortcuts:[],query:''};
   const byId=id=>document.getElementById(id);
   const viewNode=id=>byId('view-'+id);
   const visibleView=()=>document.querySelector('.view.active[id^="view-"]')?.id.slice(5)||'today';
@@ -37,7 +37,8 @@
       calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/>',
       heart:'<path d="M20.8 8.5c0 4.8-8.8 10.2-8.8 10.2S3.2 13.3 3.2 8.5a4.7 4.7 0 0 1 8.8-2.2 4.7 4.7 0 0 1 8.8 2.2z"/>',
       book:'<path d="M12 6c-3.6-2.4-6.6-2.4-9-1v14c3-1.4 6-1.4 9 1 3-2.4 6-2.4 9-1V5c-3-1.4-6-1.4-9 1Z"/><path d="M12 6v14"/>',
-      plus:'<path d="M12 4v16M4 12h16"/>'
+      plus:'<path d="M12 4v16M4 12h16"/>',
+      check:'<path d="m4 12 5 5L20 6"/><path d="M4 5h9"/>'
     };
     const span=el('span','ux02-nav-icon');
     span.setAttribute('aria-hidden','true');
@@ -53,6 +54,106 @@
   function knownScreens(){
     return [...document.querySelectorAll('.view[id^="view-"]')].map(v=>v.id.slice(5)).filter(Boolean);
   }
+
+  // Phase 15: shortcuts are projections of existing routes, never replacement screens.
+  // Search filters the original navigation buttons without changing their handlers.
+  function simplify(value){
+    return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase().trim();
+  }
+  function navigationTools(){
+    const tools=el('section','ux15-nav-tools');
+    tools.setAttribute('aria-label','Find and open pages');
+    const search=el('div','ux15-search');
+    const label=el('label','ux15-search-label','Search pages');
+    label.htmlFor='ux15-nav-search';
+    const field=el('div','ux15-search-field');
+    const input=el('input','ux15-search-input');
+    input.type='search';input.id='ux15-nav-search';input.autocomplete='off';
+    input.spellcheck=false;input.placeholder='Find a page…';
+    input.setAttribute('aria-keyshortcuts','/');
+    const key=el('kbd','ux15-search-key','/');
+    field.append(input,key);search.append(label,field);tools.append(search);
+    const shortcuts=el('div','ux15-shortcuts');
+    const eyebrow=el('div','ux15-shortcuts-heading','QUICK ACCESS');
+    const grid=el('div','ux15-shortcuts-grid');
+    const favourites=[
+      {id:'today',text:'Today',glyph:'home'},
+      {id:'tasks',text:'Tasks',glyph:'check'},
+      {id:'master-calendar',text:'Calendar',glyph:'calendar'},
+      {id:'notes',text:'Notes',glyph:'book'}
+    ];
+    favourites.forEach(item=>{
+      if(!viewNode(item.id))return;
+      const button=el('button','ux15-shortcut');button.type='button';
+      button.dataset.ux15View=item.id;
+      button.append(icon(item.glyph),el('span','ux15-shortcut-label',item.text));
+      button.addEventListener('click',()=>navigate(item.id));
+      grid.appendChild(button);state.shortcuts.push(button);
+    });
+    shortcuts.append(eyebrow,grid);tools.append(shortcuts);
+    const status=el('p','ux15-search-status');
+    status.id='ux15-search-status';status.hidden=true;status.setAttribute('role','status');
+    status.setAttribute('aria-live','polite');tools.append(status);
+    state.searchInput=input;
+    input.addEventListener('input',()=>filterNavigation(input.value));
+    input.addEventListener('keydown',event=>{
+      if(event.key==='Escape'){
+        event.preventDefault();input.value='';filterNavigation('');input.blur();
+      }else if(event.key==='Enter'&&state.query){
+        const first=[...document.querySelectorAll('.sidebar .ux02-side-link:not([hidden])')]
+          .find(b=>!b.closest('.ux02-side-group')?.hidden);
+        if(first){event.preventDefault();first.click();clearNavigationSearch();}
+      }
+    });
+    return tools;
+  }
+  function filterNavigation(value){
+    state.query=simplify(value);
+    const searching=!!state.query;
+    const nav=document.querySelector('.sidebar .nav-menu[data-ux02-ready="1"]');
+    nav?.classList.toggle('ux15-searching',searching);
+    let total=0;
+    state.groups.forEach(({section,toggle,panel},key)=>{
+      const rows=[...panel.querySelectorAll('.nav-item[data-view]')];
+      let count=0;
+      rows.forEach(button=>{
+        const match=!searching||simplify((LABELS[button.dataset.view]||'')+' '+button.textContent+' '+button.dataset.view).includes(state.query);
+        button.hidden=!match;
+        if(match)count++;
+      });
+      total+=searching?count:0;
+      section.hidden=searching&&count===0;
+      if(searching){
+        panel.hidden=count===0;
+        toggle.setAttribute('aria-expanded',String(count>0));
+        section.classList.toggle('ux02-selected',count>0);
+      }
+      const number=toggle.querySelector('.ux02-side-count');
+      if(number)number.textContent=searching?String(count):String(rows.length);
+    });
+    const status=byId('ux15-search-status');
+    if(status){
+      status.hidden=!searching;
+      status.textContent=searching?(total?total+' matching '+(total===1?'page':'pages'):'No pages found'):'';
+    }
+    if(!searching)expand(groupId(visibleView()),false);
+  }
+  function clearNavigationSearch(){
+    if(!state.searchInput)return;
+    state.searchInput.value='';filterNavigation('');
+  }
+  function filterDrawer(query){
+    const body=state.dialog?.querySelector('.ux02-drawer-content');
+    if(!body)return;
+    let count=0;const needle=simplify(query);
+    body.querySelectorAll('[data-ux02-view]').forEach(button=>{
+      const match=simplify(button.textContent+' '+button.dataset.ux02View).includes(needle);
+      button.hidden=!match;if(match)count++;
+    });
+    const empty=body.querySelector('.ux15-drawer-empty');
+    if(empty)empty.hidden=count>0;
+  }
+
   function setupSidebar(){
     const nav=document.querySelector('.sidebar .nav-menu');
     if(!nav||nav.dataset.ux02Ready==='1')return !!nav;
@@ -65,6 +166,7 @@
     named.forEach((b,id)=>{if(!accounted.has(id))groups[3].rows.push(b)});
     const carry=[...nav.children].filter(x=>!x.classList.contains('nav-item')&&!x.classList.contains('nav-section'));
     const fragment=document.createDocumentFragment();
+    fragment.appendChild(navigationTools());
     groups.forEach(({g,rows})=>{
       const section=el('section','ux02-side-group');
       section.dataset.ux02Group=g.id;
@@ -86,6 +188,7 @@
     return true;
   }
   function expand(id,manual){
+    if(manual&&state.query)clearNavigationSearch();
     state.groups.forEach((record,key)=>{
       const expanded=key===id;
       record.panel.hidden=!expanded;
@@ -123,6 +226,10 @@
       if(page.id===visibleView())b.setAttribute('aria-current','page');
       body.appendChild(b);
     }
+    const empty=el('p','ux15-drawer-empty','No matching pages');empty.hidden=true;
+    body.appendChild(empty);
+    const drawerSearch=d.querySelector('.ux15-drawer-search');
+    if(drawerSearch)drawerSearch.value='';
     d.dataset.ux02Group=g.id;
     d.hidden=false;
     document.body.classList.add('ux02-drawer-open');
@@ -131,7 +238,7 @@
   }
   function navigate(id){
     if(!viewNode(id)||typeof window.switchView!=='function')return;
-    closeDrawer();window.switchView(id);scheduleSync();
+    closeDrawer();clearNavigationSearch();window.switchView(id);scheduleSync();
   }
   function quickCapture(){
     closeDrawer();
@@ -178,9 +285,15 @@
     const title=el('h3','ux02-drawer-title','Plan');
     const dismiss=el('button','ux02-drawer-close','Close');dismiss.type='button';dismiss.setAttribute('aria-label','Close page menu');dismiss.addEventListener('click',closeDrawer);
     head.append(title,dismiss);
+    const drawerSearchWrap=el('div','ux15-drawer-search-wrap');
+    const drawerSearch=el('input','ux15-drawer-search');
+    drawerSearch.type='search';drawerSearch.autocomplete='off';drawerSearch.spellcheck=false;
+    drawerSearch.placeholder='Search this section…';drawerSearch.setAttribute('aria-label','Search pages in this section');
+    drawerSearch.addEventListener('input',()=>filterDrawer(drawerSearch.value));
+    drawerSearchWrap.appendChild(drawerSearch);
     const content=el('div','ux02-drawer-content');
     content.addEventListener('click',e=>{const b=e.target.closest('[data-ux02-view]');if(b)navigate(b.dataset.ux02View)});
-    sheet.append(head,content);dialog.append(shade,sheet);
+    sheet.append(head,drawerSearchWrap,content);dialog.append(shade,sheet);
     document.body.append(dock,dialog);state.dialog=dialog;
     document.addEventListener('keydown',e=>{
       if(state.dialog?.hidden)return;
@@ -209,6 +322,11 @@
       if(record?.panel.hidden)expand(id,false);
       state.groups.forEach(({toggle},key)=>toggle.classList.toggle('ux02-active',key===id));
     }
+    state.shortcuts.forEach(b=>{
+      const active=b.dataset.ux15View===current;
+      b.classList.toggle('active',active);
+      if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');
+    });
     state.buttons.forEach(b=>{
       const active=b.dataset.ux02Group===id;
       b.classList.toggle('active',active);
@@ -230,6 +348,13 @@
     }
     const title=byId('view-title');
     if(title)new MutationObserver(()=>scheduleSync()).observe(title,{childList:true,characterData:true,subtree:true});
+    document.addEventListener('keydown',event=>{
+      if(event.key!=='/'||event.ctrlKey||event.altKey||event.metaKey||event.shiftKey)return;
+      if(window.innerWidth<=760||document.querySelector('[role="dialog"][aria-modal="true"]:not([hidden])'))return;
+      const target=event.target;
+      if(target?.closest('input,textarea,select,[contenteditable="true"]'))return;
+      if(state.searchInput?.isConnected){event.preventDefault();state.searchInput.focus();}
+    });
     window.addEventListener('hashchange',()=>scheduleSync());
     window.addEventListener('popstate',()=>scheduleSync());
     document.addEventListener('click',e=>{

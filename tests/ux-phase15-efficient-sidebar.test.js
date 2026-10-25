@@ -112,6 +112,25 @@ test('Phase 15 keeps search and Quick Access when the late v101 sidebar replaces
   }finally{x.close()}
 });
 
+
+test('Phase 15 restores quick tools when OmniOS replaces the entire sidebar DOM node',async()=>{
+  const x=fixture();
+  try{
+    const original=x.doc.querySelector('aside.sidebar');
+    const sidebar=x.doc.createElement('aside');sidebar.className='sidebar v101-sidebar';
+    const nav=x.doc.createElement('nav');nav.className='nav-menu';
+    const group=x.doc.createElement('section');group.className='v101-nav-group';
+    const body=x.doc.createElement('div');body.className='v101-nav-group-body';
+    original.querySelectorAll('.nav-item[data-view]').forEach(button=>body.appendChild(button));
+    group.appendChild(body);nav.appendChild(group);sidebar.appendChild(nav);original.replaceWith(sidebar);
+    await Promise.resolve();await Promise.resolve();await Promise.resolve();
+    assert.ok(sidebar.querySelector('.ux15-search-input'),'Search reattached on new sidebar');
+    assert.equal(sidebar.querySelectorAll('.ux15-shortcut').length,4);
+    assert.equal(sidebar.querySelectorAll('.nav-item[data-view]').length,30);
+    assert.equal(sidebar.classList.contains('ux15-legacy'),true);
+  }finally{x.close()}
+});
+
 test('Phase 15 search / shortcuts have responsive, accessible presentation without storage mutations',()=>{
   for(const name of ['ux15-nav-tools','ux15-search-input','ux15-shortcut','ux15-drawer-search',
     'ux02-drawer-destination[hidden]','prefers-reduced-motion:reduce'])assert.ok(css.includes(name),name);

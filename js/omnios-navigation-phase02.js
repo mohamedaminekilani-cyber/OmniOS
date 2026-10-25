@@ -322,7 +322,7 @@
       if(record?.panel.hidden)expand(id,false);
       state.groups.forEach(({toggle},key)=>toggle.classList.toggle('ux02-active',key===id));
     }
-    state.shortcuts.forEach(b=>{
+    (state.shortcuts||[]).forEach(b=>{
       const active=b.dataset.ux15View===current;
       b.classList.toggle('active',active);
       if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');

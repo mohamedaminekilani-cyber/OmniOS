@@ -167,7 +167,7 @@
     const searching=!!state.query;
     const nav=document.querySelector('.sidebar .nav-menu[data-ux02-ready="1"]');
     nav?.classList.toggle('ux15-searching',searching);
-    const legacyNav=document.querySelector('.sidebar .ux15-legacy .nav-menu');
+    const legacyNav=document.querySelector('.sidebar.ux15-legacy .nav-menu');
     if(legacyNav){
       legacyNav.classList.toggle('ux15-searching',searching);
       filterLegacyNavigation(searching);return;

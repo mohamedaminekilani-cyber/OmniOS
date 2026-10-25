@@ -88,7 +88,7 @@ test('Phase 15 search / shortcuts have responsive, accessible presentation witho
     'ux02-drawer-destination[hidden]','prefers-reduced-motion:reduce'])assert.ok(css.includes(name),name);
   assert.match(js,/aria-keyshortcuts/);
   assert.match(js,/aria-live/);
-  assert.match(js,/target\?\.closest\('input,textarea,select,\[contenteditable="true"\]'\)/);
+  assert.match(js,/target\?\.closest\?\.\('input,textarea,select,\[contenteditable="true"\]'\)/);
   assert.doesNotMatch(js,/localStorage\.setItem|indexedDB\.open|location\.href\s*=/);
   assert.doesNotMatch(js,/innerHTML\s*=\s*(?:[a-zA-Z_$][\w$]*|["']<div)/);
 });

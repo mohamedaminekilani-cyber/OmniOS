@@ -27,7 +27,7 @@ function setup(){
 test('Phase 17: initial mobile sheet keeps all pages in selected section and announces count',()=>{
  const {dom,w,d,drawer}=setup();
  assert.ok(w.OmniNav02);
- d.querySelector('[data-ux02-group="plan"]').click();
+ d.querySelector('#ux02-mobile-nav [data-ux02-group="plan"]').click();
  assert.equal(drawer.hidden,false);
  assert.equal(drawer.dataset.ux02Group,'plan');
  assert.equal(d.body.classList.contains('ux02-drawer-open'),true);
@@ -39,7 +39,7 @@ test('Phase 17: initial mobile sheet keeps all pages in selected section and ann
 });
 test('Phase 17: cross-section search reveals and navigates to a page from another group',()=>{
  const {dom,w,d,drawer}=setup();
- d.querySelector('[data-ux02-group="plan"]').click();
+ d.querySelector('#ux02-mobile-nav [data-ux02-group="plan"]').click();
  const search=drawer.querySelector('.ux17-drawer-search');
  assert.equal(search.getAttribute('aria-label'),'Search all OmniOS pages');
  search.value='notes';search.dispatchEvent(new w.Event('input',{bubbles:true}));
@@ -55,7 +55,7 @@ test('Phase 17: cross-section search reveals and navigates to a page from anothe
 });
 test('Phase 17: no-result state, close-and-reopen reset, and Escape restore trigger focus',()=>{
  const {dom,w,d,drawer}=setup();
- const trigger=d.querySelector('[data-ux02-group="life"]');
+ const trigger=d.querySelector('#ux02-mobile-nav [data-ux02-group="life"]');
  trigger.focus();trigger.click();
  const input=drawer.querySelector('.ux17-drawer-search');
  input.value='something-very-unlikely-xyz';
